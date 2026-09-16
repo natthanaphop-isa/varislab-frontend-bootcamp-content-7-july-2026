@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง e2e test ของ feature Coffees: ตั้ง test database แยกด้วย Docker Compose, ใช้ pre/post hooks ของ npm และวางโครง test ด้วย it.todo" />
+  <title>สร้าง e2e Test แรก</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 68 จาก 77</p>
+    <h1>สร้าง e2e Test แรก</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ทดสอบ feature module เดี่ยว ๆ (Coffees) โดย import เฉพาะ module ที่ต้องการเข้า <code>TestingModule</code></li>
+        <li>ตั้ง test database แยกจาก database พัฒนาใน <code>docker-compose.yml</code> และสตาร์ต/ปิดอัตโนมัติด้วย pre/post hooks ของ npm</li>
+        <li>วางโครง test ล่วงหน้าด้วย <code>it.todo</code> ก่อนเติม logic จริง</li>
+      </ul>
+    </section>
+
+    <h2>ข้อดีของ modular architecture ตอนทดสอบ</h2>
+    <p>เพราะเราห่อ feature ไว้ใน modules มาตลอดคอร์ส ตอนนี้ได้ผลตอบแทน: จะทดสอบ feature ไหน ก็ import เฉพาะ module นั้นเข้า <code>TestingModule</code> ไม่ต้องลาก <code>AppModule</code> ทั้งใบ ในบทนี้เราจะทดสอบ CRUD endpoints ของ <code>CoffeesModule</code> ที่สร้างกันมาทั้งคอร์ส</p>
+    <p>แต่ e2e ต้องมี database จริง — และไม่ควรใช้ตัวเดียวกับที่เราพัฒนา เพราะ test จะเขียน/ลบข้อมูลทิ้ง วิธีของคอร์สคือเพิ่ม service ที่สองใน <code>docker-compose.yml</code> เป็น <strong>test-db</strong> ที่ map คนละ port</p>
+    <pre><code># docker-compose.yml - FINAL CODE
+version: "3"
+
+services:
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: pass123
+  test-db:
+    image: postgres
+    restart: always
+    ports:
+      - "5433:5432" # 👈 ใช้ 5433 เพราะ 5432 เป็นของ db ปกติ
+    environment:
+      POSTGRES_PASSWORD: pass123</code></pre>
+
+    <h2>ให้ npm สตาร์ตและเก็บกวาด database ให้อัตโนมัติ</h2>
+    <p>npm รู้จัก hook ชื่อ <code>pre&lt;script&gt;</code> และ <code>post&lt;script&gt;</code>: ถ้ามี script ชื่อ <code>pretest:e2e</code> มันจะรันก่อน <code>test:e2e</code> เสมอ และ <code>posttest:e2e</code> รันหลังจบ เราใช้คู่นี้ยก test-db ขึ้นก่อนรัน และ tear down ทิ้งเมื่อเสร็จ</p>
+    <pre><code>// package.json
+"pretest:e2e": "docker-compose up -d test-db &amp;&amp; sleep 3 &amp;&amp; DATABASE_URL=postgresql://postgres:pass123@localhost:5433/postgres npx prisma migrate deploy",
+"test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+"posttest:e2e": "docker-compose stop test-db &amp;&amp; docker-compose rm -f test-db"</code></pre>
+    <p>script <code>test:e2e</code> ตรงกลางคือตัวเดิมที่ Nest เตรียมให้ ไม่ต้องแก้ — npm จะรัน <code>pretest:e2e</code> ก่อนและ <code>posttest:e2e</code> หลังให้เองตามชื่อ</p>
+    <p>test-db ที่เพิ่งถูกสร้างเป็นฐานข้อมูลเปล่า จึงต้องสร้าง schema ให้ก่อน: <code>sleep 3</code> รอให้ Postgres พร้อมรับ connection แล้ว <code>prisma migrate deploy</code> apply migration ทั้งหมดจากบทที่ 31 ลงไป โดยส่ง <code>DATABASE_URL</code> ของ test-db เป็น environment variable หน้าคำสั่ง — ค่านี้ชนะค่าใน <code>.env</code> เพราะ <code>dotenv</code> ไม่เขียนทับตัวแปรที่มีอยู่แล้ว</p>
+    <div class="note"><p>ถ้าคุณข้ามบทที่ 31 และยังใช้ <code>db push</code> อยู่ ให้เปลี่ยนคำสั่งท้ายเป็น <code>npx prisma db push</code> แทน ส่วนผู้ใช้ Windows ให้ติดตั้ง <code>cross-env</code> (<code>npm i -D cross-env</code>) แล้วนำหน้าคำสั่งด้วย <code>cross-env DATABASE_URL=...</code> เพราะ syntax ตั้งตัวแปรหน้าคำสั่งแบบนี้ใช้ได้เฉพาะ shell ตระกูล Unix</p></div>
+    <div class="warning"><p>เมื่อ script ข้างใน error (เช่น Vitest fail) post hook อาจไม่รัน! ทางเลือกคือ (1) รัน <code>posttest:e2e</code> เองเมื่อ Vitest พัง หรือ (2) ใช้ไลบรารี <code>npm-run-all</code> (<code>npm i -D npm-run-all</code>) กับ flag <code>--continue-on-error</code> โดยย้ายขั้น teardown มาเป็น script ปกติ เช่น <code>"test:e2e": "npm-run-all test:e2e:run test:e2e:teardown --continue-on-error"</code> เพื่อให้เก็บกวาดเสมอแม้ test จะแดง</p></div>
+
+    <h2>โครง test: ประกาศก่อน เติมทีหลัง</h2>
+    <pre><code>/* test/coffees/coffees.e2e-spec.ts - FINAL CODE */
+import { INestApplication } from '@nestjs/common';
+import { TestingModule, Test } from '@nestjs/testing';
+import { CoffeesModule } from '../../src/coffees/coffees.module.js';
+import { PrismaModule } from '../../src/prisma/prisma.module.js';
+
+// 👈 ชี้ PrismaService ไป test-db (port 5433) ก่อนที่ module ใด ๆ จะถูกสร้าง
+process.env.DATABASE_URL =
+  'postgresql://postgres:pass123@localhost:5433/postgres';
+
+describe('[Feature] Coffees - /coffees', () =&gt; {
+  let app: INestApplication;
+
+  beforeAll(async () =&gt; {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        CoffeesModule, // 👈 เฉพาะ module ที่ทดสอบ
+        PrismaModule,  // 👈 ให้ PrismaService แก่ CoffeesModule (ไม่ต้องลาก AppModule)
+      ],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  it.todo('Create [POST /]');
+  it.todo('Get all [GET /]');
+  it.todo('Get one [GET /:id]');
+  it.todo('Update one [PATCH /:id]');
+  it.todo('Delete one [DELETE /:id]');
+
+  afterAll(async () =&gt; {
+    await app.close();
+  });
+});</code></pre>
+    <p>เราตั้ง <code>process.env.DATABASE_URL</code> ที่บรรทัดบนสุดของไฟล์ เพราะ <code>PrismaService</code> อ่านค่านี้ใน constructor — ต้องมีค่าก่อน <code>compile()</code> สร้าง provider และเพราะ test ไม่ได้ import <code>ConfigModule</code> จึงไม่มีใครโหลด <code>.env</code> มาทับค่านี้</p>
+    <p><code>it.todo</code> ประกาศรายการ test ที่ตั้งใจจะเขียนโดยยังไม่มี body — Vitest จะรายงานเป็น <q>todo</q> แยกจาก pass/fail ทำให้เราวางแผนครอบคลุม CRUD ทั้ง 5 เส้นได้ก่อนแล้วค่อยเติม logic ในบทถัดไป</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ตั้ง test database และโครง suite ของ Coffees</h2>
+      <p>เพิ่ม <code>test-db</code> ใน compose file, เพิ่ม pre/post hooks ใน <code>package.json</code> แล้วสร้าง <code>test/coffees/coffees.e2e-spec.ts</code> ตามโค้ดด้านบน</p>
+      <div class="prompt-example"><code># รันเฉพาะ e2e ของ feature coffees
+npm run test:e2e -- coffees
+# สังเกต: pretest:e2e ยก test-db ขึ้นเอง และ posttest:e2e เก็บกวาดให้</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>Suite <q>[Feature] Coffees - /coffees</q> boot สำเร็จโดยต่อกับ Postgres ที่ port 5433 และ Vitest สรุปผลเป็น 5 todo tests โดยไม่มี fail — พร้อมสำหรับเติม logic ในบทถัดไป</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ระหว่าง test รัน ใช้ <code>docker ps</code> ดูว่า container ของ <code>test-db</code> ขึ้นที่ port 5433 และหายไปหลัง test จบ</li>
+        <li>log ของ <code>pretest:e2e</code> แสดง <code>prisma migrate deploy</code> apply migrations ลง test-db สำเร็จ</li>
+        <li>ผลรายงาน Vitest แสดง <code>5 todo</code> ใน summary</li>
+        <li>ยืนยันว่า database พัฒนา (port 5432) ไม่ถูก test แตะ: ข้อมูล coffees เดิมยังอยู่ครบ</li>
+        <li>ลองทำให้ Vitest error (เช่นพิมพ์ syntax ผิดชั่วคราว) แล้วสังเกตว่า post hook รันหรือไม่ — จะได้เข้าใจกับดักใน warning ด้านบนจากของจริง</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/fundamentals/testing">Testing: end-to-end testing (NestJS)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-migrate/workflows/development-and-production">Prisma Migrate: migrate deploy (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/modules">Modules: ประโยชน์ของ encapsulation ตอนทดสอบ (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="67_diving-into-e2e-tests.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="69_implementing-e2e-test-logic.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

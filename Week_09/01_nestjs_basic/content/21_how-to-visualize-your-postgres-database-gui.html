@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ติดตั้ง pgAdmin หรือ GUI อื่น ๆ เพื่อดู ตรวจสอบ และแก้ไขข้อมูลใน PostgreSQL ที่รันอยู่ใน Docker" />
+  <title>ดูฐานข้อมูล Postgres ด้วย GUI</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 21 จาก 77</p>
+    <h1>ดูฐานข้อมูล Postgres ด้วย GUI</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เลือกเครื่องมือ GUI สำหรับสำรวจฐานข้อมูล PostgreSQL ที่เหมาะกับ workflow ของคุณ</li>
+        <li>สร้าง connection จาก pgAdmin ไปยัง Postgres container ที่รันด้วย Docker Compose ในบทที่แล้ว</li>
+        <li>ใช้ GUI ตรวจสอบตารางและข้อมูลจริง เพื่อยืนยันผลของโค้ดที่จะเขียนในบทถัด ๆ ไป</li>
+      </ul>
+    </section>
+
+    <h2>ทำไมต้องมี GUI ทั้งที่ยิง API ก็เห็นข้อมูล</h2>
+    <p>ตลอดหลายบทต่อจากนี้ เราจะให้ Prisma สร้างตาราง เพิ่มคอลัมน์ และสร้างตารางเชื่อม relation ให้จาก <code>schema.prisma</code> การเห็น<em>สภาพจริง</em>ของฐานข้อมูล — ตารางชื่ออะไร คอลัมน์เป็นชนิดไหน ข้อมูลถูก insert จริงไหม — ช่วยให้เราแยกได้ทันทีว่าปัญหาอยู่ที่โค้ดฝั่ง NestJS หรืออยู่ที่ฐานข้อมูล การไล่ดูผ่าน <code>psql</code> ใน terminal ทำได้เช่นกัน แต่ GUI ทำให้การสำรวจ schema และไล่ข้อมูลทีละแถวเร็วกว่ามาก</p>
+    <p>เครื่องมือที่คอร์สแนะนำคือ <a href="https://www.pgadmin.org/">pgAdmin</a> ซึ่งเป็นเครื่องมือฟรีสำหรับดู แก้ไข และ browse ฐานข้อมูล Postgres แต่ถ้าคุณคุ้นเคยกับเครื่องมืออื่นอยู่แล้ว เช่น TablePlus, DBeaver หรือ DataGrip ก็ใช้แทนกันได้ทั้งหมด เพราะสิ่งที่เราต้องการมีแค่การเชื่อมต่อแบบ Postgres มาตรฐาน</p>
+
+    <h2>ข้อมูลการเชื่อมต่อมาจาก docker-compose.yml</h2>
+    <p>ค่าที่ต้องใช้สร้าง connection คือค่าเดียวกับที่เรากำหนดไว้ใน <code>docker-compose.yml</code> ของบทที่แล้ว ซึ่ง map port <code>5432</code> ของ container ออกมาที่เครื่องเรา และตั้งรหัสผ่านผ่าน environment variable</p>
+    <div class="comparison" role="region" aria-label="ค่าการเชื่อมต่อฐานข้อมูล" tabindex="0">
+      <table>
+        <thead><tr><th>ฟิลด์ใน GUI</th><th>ค่า</th><th>มาจากไหน</th></tr></thead>
+        <tbody>
+          <tr><td>Host</td><td><code>localhost</code></td><td>container map port ออกมาที่เครื่องเรา</td></tr>
+          <tr><td>Port</td><td><code>5432</code></td><td><code>ports: "5432:5432"</code> ใน docker-compose.yml</td></tr>
+          <tr><td>Username</td><td><code>postgres</code></td><td>ค่า default ของ image <code>postgres</code></td></tr>
+          <tr><td>Password</td><td><code>pass123</code></td><td><code>POSTGRES_PASSWORD</code> ใน docker-compose.yml</td></tr>
+          <tr><td>Database</td><td><code>postgres</code></td><td>database เริ่มต้นที่ image สร้างให้</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><p>การใช้งาน pgAdmin เชิงลึกอยู่นอกขอบเขตของคอร์สนี้ หากติดขัดตอนสร้าง connection ให้ดู<a href="https://www.pgadmin.org/docs/pgadmin4/latest/connecting.html">เอกสารการเชื่อมต่อของ pgAdmin</a> ประกอบ</p></div>
+    <div class="warning"><p>ค่า <code>pass123</code> เป็นรหัสผ่านสำหรับเครื่อง dev เท่านั้น ในบทถัดไปค่าทั้งหมดนี้จะถูกรวมเป็น connection string เดียวชื่อ <code>DATABASE_URL</code> ในไฟล์ <code>.env</code> (ห้าม commit) และในบท Application Configuration เราจะให้ NestJS โหลดและ validate ค่านี้อย่างเป็นระบบ</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">เชื่อม pgAdmin เข้ากับ Postgres ใน Docker</h2>
+      <p>ตรวจว่า container จากบทที่แล้วยังรันอยู่ แล้วติดตั้ง pgAdmin จากเว็บทางการ จากนั้นสร้าง Server connection ใหม่ด้วยค่าจากตารางด้านบน</p>
+      <div class="prompt-example"><code># ตรวจว่า Postgres container รันอยู่
+docker-compose up -d
+docker ps
+
+# จากนั้นใน pgAdmin: Object &gt; Register &gt; Server...
+# General &gt; Name: iluvcoffee-local
+# Connection &gt; Host: localhost, Port: 5432,
+# Username: postgres, Password: pass123</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>pgAdmin เชื่อมต่อสำเร็จและเห็น database ชื่อ <code>postgres</code> ใน tree ด้านซ้าย ตอนนี้ยังไม่มีตารางของแอปเรา — นั่นถูกต้องแล้ว เพราะเราจะให้ Prisma สร้างตาราง <code>coffee</code> ให้ในบทที่ 23 เมื่อถึงตอนนั้นให้กลับมา refresh ดูใน GUI นี้อีกครั้ง</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>รัน <code>docker ps</code> แล้วเห็น container ของ image <code>postgres</code> เปิด port <code>5432</code> อยู่</li>
+        <li>สร้าง connection ใน GUI สำเร็จโดยไม่มี error เรื่องรหัสผ่านหรือ host</li>
+        <li>Browse เข้าไปเห็น database <code>postgres</code> และ schema <code>public</code> ได้</li>
+        <li>ทดลองเปิด Query Tool แล้วรัน <code>SELECT 1;</code> ได้ผลลัพธ์กลับมา</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.pgadmin.org/">pgAdmin — PostgreSQL Tools</a></li>
+      <li><a href="https://www.pgadmin.org/docs/pgadmin4/latest/connecting.html">Connecting to a Server (pgAdmin Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/database">Database (NestJS Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="20_running-postgresql.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="22_introducing-prisma.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

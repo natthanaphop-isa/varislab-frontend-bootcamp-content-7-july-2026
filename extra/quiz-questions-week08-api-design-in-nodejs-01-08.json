@@ -1,0 +1,169 @@
+{
+  "questions": [
+    {
+      "prompt": "โปรเจกต์หลักที่ใช้เรียนตลอดคอร์ส API Design in Node.js คืออะไร?",
+      "choices": [
+        "หน้าเว็บ Habit Tracker ที่เน้น Animation และการจัดการ State ฝั่ง Browser",
+        "Habit Tracker REST API ที่มี Authentication, CRUD, Validation, Database, Test และการ Deploy",
+        "โปรแกรม Command Line สำหรับบันทึก Habit ลงไฟล์ Text เท่านั้น"
+      ],
+      "correctChoice": 2,
+      "explanation": "คอร์สนี้สร้าง Habit Tracker REST API ตั้งแต่ศูนย์ โดยครอบคลุม Authentication, CRUD, Validation, Database, Integration Test และการ Deploy ส่วนการสร้าง UI ไม่อยู่ในขอบเขตของคอร์ส"
+    },
+    {
+      "prompt": "เหตุใดคอร์สนี้จึงกำหนดให้ใช้ Node.js เวอร์ชัน 23.6.0 ขึ้นไป?",
+      "choices": [
+        "เพื่อให้ Express สร้าง Database ให้โดยอัตโนมัติ",
+        "เพื่อให้ Postman เชื่อมต่อกับ localhost ได้",
+        "เพื่อให้รันไฟล์ TypeScript ได้โดยตรงโดยไม่ต้องมีขั้นตอน Build"
+      ],
+      "correctChoice": 3,
+      "explanation": "Node.js เวอร์ชัน 23.6.0 ขึ้นไปสามารถรันไฟล์ TypeScript ที่ใช้ไวยากรณ์ตามข้อกำหนดของคอร์สได้โดยตรง จึงไม่ต้อง Compile เป็น JavaScript ก่อนรัน"
+    },
+    {
+      "prompt": "เหตุใดการดูแล Security ของโค้ด Node.js จึงเป็นความรับผิดชอบของผู้พัฒนามากกว่าโค้ดที่รันใน Browser?",
+      "choices": [
+        "Node.js ไม่มี Browser Sandbox มาจำกัดสิทธิ์ โค้ดจึงเข้าถึงทรัพยากรของเครื่องได้ตามสิทธิ์ของผู้ใช้ที่รันมัน",
+        "Node.js ไม่รองรับการเข้ารหัสข้อมูลทุกชนิด",
+        "Browser อนุญาตให้ JavaScript อ่านไฟล์ทุกไฟล์บนเครื่องได้โดยอัตโนมัติ"
+      ],
+      "correctChoice": 1,
+      "explanation": "Browser ครอบโค้ดด้วย Sandbox และจำกัดการเข้าถึงไฟล์หรือเครือข่ายบางรูปแบบ แต่ Node.js ทำงานบนระดับระบบปฏิบัติการและมีสิทธิ์ตามผู้ใช้ที่รัน Process นั้น"
+    },
+    {
+      "prompt": "Backend แบบใดตรงกับ Server ที่จะสร้างในคอร์ส และมีคุณสมบัติใด?",
+      "choices": [
+        "Cron Job ที่ตื่นขึ้นมาทำงานเฉพาะทุกเที่ยงคืน",
+        "Long-lived Server ที่เปิดค้างเพื่อรับ Request ต่อเนื่อง เก็บ State ระหว่าง Request และรองรับ WebSocket ได้",
+        "Edge Function ที่มี Node.js Runtime ครบทุก API และเปิด Connection ยาวได้เสมอ"
+      ],
+      "correctChoice": 2,
+      "explanation": "คอร์สนี้สร้าง Long-lived Server ซึ่งเป็นโปรแกรมที่เปิดค้างไว้เพื่อรับ Request ต่อเนื่อง และเหมาะกับงานที่ต้องเก็บ State ระหว่าง Request หรือใช้ WebSocket"
+    },
+    {
+      "prompt": "เหตุใดโปรเจกต์จึงแยกการสร้าง Express App ไว้ใน src/server.ts และเรียก app.listen() ใน src/index.ts?",
+      "choices": [
+        "เพื่อให้แต่ละไฟล์ใช้ Port คนละหมายเลขพร้อมกัน",
+        "เพื่อให้ Express แปลง TypeScript เป็น JavaScript ได้",
+        "เพื่อแยกการนิยาม App ออกจากการเริ่ม Server ทำให้ Import App ไปทดสอบได้โดยไม่ต้องเปิด Server จริง"
+      ],
+      "correctChoice": 3,
+      "explanation": "src/server.ts มีหน้าที่นิยาม App ส่วน src/index.ts เป็น Entry Point ที่เริ่มฟัง Port การแยกเช่นนี้ทำให้ Test สามารถ Import App ไปใช้ได้โดยไม่ต้องเปิด Server จริง"
+    },
+    {
+      "prompt": "ข้อใดอธิบาย Script และ Error นี้ได้ถูกต้อง?",
+      "body": "<pre><code>\"dev\": \"node --watch src/index.ts\"\n\nError: EADDRINUSE</code></pre>",
+      "choices": [
+        "--watch ทำให้ Server รีสตาร์ทเมื่อไฟล์โค้ดเปลี่ยน และ EADDRINUSE หมายถึงมีโปรแกรมอื่นใช้ Port นั้นอยู่แล้ว",
+        "--watch ทำให้ Server หยุดทันทีหลังตอบ Request แรก และ EADDRINUSE หมายถึงหาไฟล์ index.ts ไม่พบ",
+        "--watch ใช้ Build TypeScript ส่วน EADDRINUSE หมายถึง TypeScript มี Type Error"
+      ],
+      "correctChoice": 1,
+      "explanation": "Flag --watch เฝ้าดูการแก้ไขไฟล์โค้ดแล้วรีสตาร์ท Server ให้อัตโนมัติ ส่วน EADDRINUSE เกิดเมื่อ Port ที่ต้องการเปิดฟังถูกโปรแกรมอื่นใช้งานอยู่"
+    },
+    {
+      "prompt": "เมื่อ Server ลงทะเบียนเฉพาะ Route ด้านล่าง แล้วส่ง POST ไปที่ /health จะเกิดอะไรขึ้น?",
+      "body": "<pre><code>app.get('/health', (req, res) =&gt; {\n  res.status(200).json({ status: 'OK' })\n})</code></pre>",
+      "choices": [
+        "Express จะเรียก GET Handler เดิม เพราะ Path ตรงกัน",
+        "ได้รับ 404 Not Found เพราะ Express จับคู่ Route จากทั้ง HTTP Verb และ Path",
+        "ได้รับ 201 Created เพราะ POST ใช้สำหรับสร้างข้อมูล"
+      ],
+      "correctChoice": 2,
+      "explanation": "Route ของ Express ต้องตรงทั้ง Verb และ Path โค้ดลงทะเบียนเพียง GET /health ดังนั้น POST /health จึงไม่ตรงกับ Route ใดและได้ 404"
+    },
+    {
+      "prompt": "เมื่อใช้ res.json() ส่ง Object กลับ Client ข้อใดถูกต้อง?",
+      "choices": [
+        "Express ตั้ง Content-Type เป็น application/json ให้ และ Client ควรตรวจทั้ง Status Code, Headers และ Body",
+        "Express ส่ง Function และ Object แบบ Cyclic เป็น JSON ได้โดยอัตโนมัติ",
+        "Client ต้องดูเฉพาะ Body เพราะ Status Code และ Headers ไม่มีผลต่อการตีความ Response"
+      ],
+      "correctChoice": 1,
+      "explanation": "res.json() ตั้ง Header Content-Type สำหรับ JSON ให้โดยอัตโนมัติ และ Response ที่สมบูรณ์มีทั้ง Status Code, Headers และ Body ซึ่งล้วนมีข้อมูลสำคัญต่อ Client"
+    },
+    {
+      "prompt": "เหตุผลสำคัญของการใช้ Environment Variables แทนการ Hardcode ค่า Config ลงใน Source Code คืออะไร?",
+      "choices": [
+        "เพื่อให้ Environment Variable เปลี่ยน TypeScript เป็น JavaScript ได้เร็วขึ้น",
+        "เพื่อให้ทุก Environment ต้องใช้ Database และ Port ค่าเดียวกัน",
+        "เพื่อไม่ให้ Secret ติดไปกับ Repository และให้โค้ดชุดเดียวใช้ค่าต่างกันใน Development, Test และ Production ได้"
+      ],
+      "correctChoice": 3,
+      "explanation": "Environment Variables แยกค่าที่เปลี่ยนตามสถานที่รันและข้อมูลลับออกจากโค้ด ทำให้ Source Code ชุดเดียวใช้ Config คนละชุดได้โดยไม่เปิดเผย Secret ใน Git"
+    },
+    {
+      "prompt": "โค้ดโหลด Environment ด้านล่างมีพฤติกรรมอย่างไรเมื่อ APP_STAGE เป็น production?",
+      "body": "<pre><code>if (isDevelopment) {\n  loadEnv()\n} else if (isTesting) {\n  loadEnv('test')\n}</code></pre>",
+      "choices": [
+        "โหลดทั้ง .env และ .env.test แล้วรวมค่ากัน",
+        "ไม่โหลดไฟล์ .env เพราะ Production รับค่าผ่าน process.env ที่ Hosting Provider ฉีดเข้ามา",
+        "สร้าง .env.production ใหม่และ Commit ขึ้น Git อัตโนมัติ"
+      ],
+      "correctChoice": 2,
+      "explanation": "ใน Production โปรเจกต์ไม่โหลดไฟล์ .env ค่าต่าง ๆ จะถูกตั้งใน process.env โดยผู้ให้บริการ Hosting ส่วน Development โหลด .env และ Test โหลด .env.test"
+    },
+    {
+      "prompt": "จาก Zod Schema นี้ Environment Variable ใดบังคับต้องมี เพราะไม่มีค่า Default?",
+      "body": "<pre><code>const envSchema = z.object({\n  PORT: z.coerce.number().positive().default(3000),\n  DATABASE_URL: z.string().startsWith('postgresql://'),\n  JWT_SECRET: z.string().min(32),\n  BCRYPT_ROUNDS: z.coerce.number().default(12),\n})</code></pre>",
+      "choices": [
+        "DATABASE_URL และ JWT_SECRET",
+        "PORT และ BCRYPT_ROUNDS",
+        "ทุกตัว เพราะ Zod ไม่รองรับค่า Default"
+      ],
+      "correctChoice": 1,
+      "explanation": "DATABASE_URL และ JWT_SECRET ไม่มี .default() จึงต้องส่งค่ามาให้ครบ ส่วน PORT และ BCRYPT_ROUNDS ใช้ค่า Default ได้เมื่อไม่มี Environment Variable"
+    },
+    {
+      "prompt": "ข้อใดอธิบายประโยชน์ของ envSchema.parse(process.env) และ process.exit(1) ได้ถูกต้อง?",
+      "choices": [
+        "parse ใช้ตรวจ Type เฉพาะใน Editor ส่วน process.exit(1) หมายถึงโปรแกรมทำงานสำเร็จ",
+        "parse ทำให้ทุกค่ากลายเป็น String และ process.exit(1) รีสตาร์ท Server โดยไม่แจ้ง Error",
+        "parse ตรวจและแปลงค่าจริงตอน Runtime ส่วน process.exit(1) ทำให้แอป Fail Fast ด้วย Exit Code ที่บอกว่าจบเพราะ Error"
+      ],
+      "correctChoice": 3,
+      "explanation": "Zod ตรวจข้อมูลจริงขณะ Runtime และแปลงค่าตาม Schema ได้ หากค่าจำเป็นไม่ผ่าน process.exit(1) จะหยุด Process พร้อมสื่อให้ CI/CD หรือ Hosting ทราบว่าเริ่มแอปไม่สำเร็จ"
+    },
+    {
+      "prompt": "Route ใดเหมาะสำหรับแก้เฉพาะบาง Field ของ User หมายเลข 123 ตามธรรมเนียม REST?",
+      "choices": [
+        "POST /api/users/123",
+        "PATCH /api/users/123",
+        "GET /api/users/123"
+      ],
+      "correctChoice": 2,
+      "explanation": "PATCH สื่อถึงการแก้ไขข้อมูลเพียงบางส่วน ส่วน PUT ใช้แทนที่ Resource ทั้งก้อน, GET ใช้อ่าน และ POST มักใช้สร้าง Resource ใหม่"
+    },
+    {
+      "prompt": "เหตุใด Request ที่เข้า Handler นี้จึงหมุนรอโดยไม่จบ?",
+      "body": "<pre><code>app.post('/cake', (req, res) =&gt; {\n  // ไม่มีคำสั่งส่ง Response\n})</code></pre>",
+      "choices": [
+        "Handler ไม่ได้ส่ง Response กลับ จึงปล่อย Connection ค้างและเกิดอาการ Hanging",
+        "POST Route ทุกตัวต้องมี Path Parameter จึงจะตอบกลับได้",
+        "Express รอให้ Client เปลี่ยน Request เป็น GET โดยอัตโนมัติ"
+      ],
+      "correctChoice": 1,
+      "explanation": "ทุก Handler ต้องส่ง Response หรือส่ง Error ต่อไปให้ระบบจัดการ หากไม่ทำอย่างใดอย่างหนึ่ง Connection จะยังเปิดค้างและ Client จะรอไปเรื่อย ๆ"
+    },
+    {
+      "prompt": "หาก habitRouter ถูก Mount ที่ /api/habits Route ใดในไฟล์ Router จะจับคู่กับ GET /api/habits/42?",
+      "choices": [
+        "router.get('/api/habits/:id', handler)",
+        "router.get('/habits/:id', handler)",
+        "router.get('/:id', handler)"
+      ],
+      "correctChoice": 3,
+      "explanation": "Path ภายใน Subrouter เป็น Path สัมพัทธ์จากจุดที่ถูก Mount เมื่อ Mount ที่ /api/habits จึงเขียนเพียง /:id เพื่อให้ URL รวมเป็น /api/habits/:id"
+    },
+    {
+      "prompt": "เหตุใดตัวอย่าง userRoutes.ts จึงไม่เปิด POST / สำหรับสร้าง User โดยตรง?",
+      "choices": [
+        "เพราะ Express Router ไม่รองรับ Method POST",
+        "เพราะ User ปกติควรถูกสร้างผ่านขั้นตอนสมัครสมาชิกที่มี Business Logic ของ Authentication ไม่ใช่ Route ที่ข้ามกระบวนการนั้น",
+        "เพราะ REST กำหนดว่าห้ามสร้าง Resource ประเภท User"
+      ],
+      "correctChoice": 2,
+      "explanation": "การสร้าง User ควรผ่าน Route สมัครสมาชิกเพื่อให้ใช้ Business Logic และข้อกำหนดด้าน Authentication ที่ถูกต้อง การเปิด POST /users โดยไม่มีเหตุผลอาจทำให้ข้ามกระบวนการสำคัญเหล่านั้น"
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ตั้งค่า Prisma Migrate ใน NestJS: เปลี่ยนจาก db push มาเป็น migration ที่มีประวัติ, สร้างและแก้ SQL ด้วย --create-only, ย้อนกลับแบบ forward-only และ deploy อย่างปลอดภัย" />
+  <title>ตั้งค่า Migrations ด้วย Prisma Migrate</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 31 จาก 77</p>
+    <h1>ตั้งค่า Migrations ด้วย Prisma Migrate</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่าทำไม production ต้องใช้ migrations แทน <code>prisma db push</code></li>
+        <li>สร้าง migration ด้วย <code>migrate dev</code> และใช้ <code>--create-only</code> เพื่ออ่านและแก้ SQL ก่อนรันจริง</li>
+        <li>ย้อนการเปลี่ยนแปลงแบบ forward-only และรู้ว่า <code>migrate deploy</code> คือคำสั่งที่ใช้บน production</li>
+      </ul>
+    </section>
+
+    <h2>ทำไมต้องมี Migrations</h2>
+    <p>ตลอดบทที่ผ่านมาเราใช้ <code>prisma db push</code> ให้ Prisma ปรับ schema ของฐานข้อมูลตาม <code>schema.prisma</code> โดยตรง ซึ่งสะดวกมากตอนพัฒนา แต่มันไม่เก็บประวัติ ไม่มีอะไรให้ทีมรีวิว และพร้อมจะ drop column ทิ้งเมื่อเห็นว่าฟิลด์หายไปจาก schema — บน production นั่นคือข้อมูลจริงของผู้ใช้ที่หายทันที <strong>Prisma Migrate</strong> บันทึกการเปลี่ยนแปลง schema แต่ละครั้งเป็นไฟล์ SQL ใน <code>prisma/migrations/&lt;timestamp&gt;_&lt;ชื่อ&gt;/migration.sql</code> ซึ่ง commit ขึ้น git และจดว่าไฟล์ไหนถูก apply แล้วในตาราง <code>_prisma_migrations</code> ทำให้ทุก environment รันขั้นตอนชุดเดียวกัน ครั้งเดียว ตามลำดับ</p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ db push, migrate dev และ migrate deploy" tabindex="0">
+      <table>
+        <thead><tr><th>คำสั่ง</th><th>ใช้ที่ไหน</th><th>เขียนไฟล์ migration?</th><th>อาจลบข้อมูล?</th></tr></thead>
+        <tbody>
+          <tr><td><code>prisma db push</code></td><td>เครื่อง dev ช่วง prototype</td><td>ไม่ — แก้ฐานข้อมูลตรง ๆ</td><td>ได้ (เตือนก่อน แต่ทำได้)</td></tr>
+          <tr><td><code>prisma migrate dev</code></td><td>เครื่อง dev เท่านั้น</td><td>ใช่ — สร้างและ apply</td><td>ได้ อาจสั่ง reset ฐานข้อมูลเมื่อเจอ drift</td></tr>
+          <tr><td><code>prisma migrate deploy</code></td><td>staging / production / CI</td><td>ไม่ — apply ไฟล์ที่ค้างอยู่เท่านั้น</td><td>เฉพาะที่ SQL ในไฟล์สั่งไว้</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning"><p>ห้ามรัน <code>migrate dev</code> หรือ <code>migrate reset</code> ชี้ไปที่ production เด็ดขาด — ทั้งคู่มีสิทธิ์ล้างฐานข้อมูลทิ้งแล้วสร้างใหม่ บน production มีเพียง <code>migrate deploy</code> เท่านั้น</p></div>
+
+    <h2>ขั้นที่ 1: เปลี่ยนจาก push มาเป็น migrate</h2>
+    <p>รัน <code>migrate dev</code> พร้อมตั้งชื่อ migration แรก ฐานข้อมูลของเราถูกสร้างด้วย <code>db push</code> จึงมีตารางครบแต่<em>ไม่มีประวัติ migration</em> Prisma จะตรวจพบว่า schema จริงกับประวัติไม่ตรงกัน (เรียกว่า <strong>drift</strong>) และถามว่าจะ reset ฐานข้อมูลไหม — บนเครื่อง dev ตอบ yes ได้เลย ข้อมูลกาแฟทดลองเดี๋ยว POST ใหม่ก็จบ</p>
+    <pre><code>npx prisma migrate dev --name init</code></pre>
+    <p>ผลลัพธ์คือโฟลเดอร์ <code>prisma/migrations/&lt;timestamp&gt;_init/</code> ที่มี <code>migration.sql</code> บรรจุ <code>CREATE TABLE</code> และ <code>CREATE INDEX</code> ของ <code>coffee</code>, <code>flavor</code>, <code>event</code> และตารางเชื่อม <code>_CoffeeToFlavor</code> ทั้งหมด พร้อมตาราง <code>_prisma_migrations</code> ในฐานข้อมูลที่จดว่า <code>init</code> ถูก apply แล้ว จากนี้ไปทุกครั้งที่แก้ <code>schema.prisma</code> ให้ใช้ <code>migrate dev</code> แทน <code>db push</code></p>
+
+    <h2>ขั้นที่ 2: เปลี่ยนชื่อ column แบบไม่ทำข้อมูลหาย</h2>
+    <p>ลองเปลี่ยนชื่อฟิลด์ <code>name</code> ของ <code>Coffee</code> เป็น <code>title</code> ใน <code>schema.prisma</code> แล้วสร้าง migration ด้วย flag <code>--create-only</code> ซึ่งบอกให้ Prisma <em>เขียนไฟล์ SQL แต่ยังไม่รัน</em> เพราะตารางมีข้อมูลอยู่ Prisma จะเตือนว่า <q>Added the required column `title` … There are N rows in this table, it is not possible to execute this step</q> แล้วถามว่าจะสร้างไฟล์ไหม — ตอบ <code>y</code> เพราะเรากำลังจะแก้ SQL นั้นเองอยู่แล้ว (ชื่อ migration ถูกแปลงเป็น <code>coffee_refactor</code> โดยอัตโนมัติ Prisma ใช้ underscore ในชื่อโฟลเดอร์เสมอ)</p>
+    <pre><code>npx prisma migrate dev --name coffee-refactor --create-only</code></pre>
+    <p>เปิดไฟล์ที่ได้มาอ่าน: Prisma มองเห็นแค่ว่าฟิลด์หนึ่งหายไปและอีกฟิลด์โผล่มา มันไม่มีทางรู้ว่านี่คือการเปลี่ยนชื่อ จึงเขียน SQL แบบทำลายข้อมูล พร้อมคอมเมนต์เตือนไว้ด้านบน</p>
+    <pre><code>-- prisma/migrations/&lt;timestamp&gt;_coffee_refactor/migration.sql
+-- สิ่งที่ Prisma generate ให้ (ห้ามรันแบบนี้)
+/*
+  Warnings:
+
+  - You are about to drop the column `name` on the `coffee` table. All the data in the column will be lost.
+  - Added the required column `title` to the `coffee` table without a default value. This is not possible if the table is not empty.
+
+*/
+-- AlterTable
+ALTER TABLE "coffee" DROP COLUMN "name",
+ADD COLUMN     "title" TEXT NOT NULL;</code></pre>
+    <p>แก้เนื้อหาของ <code>migration.sql</code> ให้เป็นการเปลี่ยนชื่อจริง ๆ แล้วค่อยสั่ง apply และ generate client ใหม่ให้ type <code>Coffee</code> รู้จัก <code>title</code></p>
+    <pre><code>-- migration.sql ฉบับที่แก้แล้ว
+ALTER TABLE "coffee" RENAME COLUMN "name" TO "title";</code></pre>
+    <pre><code>npx prisma migrate dev
+npx prisma generate</code></pre>
+    <div class="note"><p><code>--create-only</code> คือ workflow มาตรฐานสำหรับทุกการเปลี่ยนแปลงที่ไม่ตรงไปตรงมา: ให้ Prisma ร่าง SQL ให้ก่อน แล้วเราอ่าน แก้ และรีวิวก่อนรันเสมอ โดยเฉพาะบรรทัดที่มีคำว่า <code>DROP</code> และตั้งแต่ Prisma 7 <code>migrate dev</code> จะไม่รัน <code>prisma generate</code> ให้อัตโนมัติ ต้องสั่งเองทุกครั้งหลัง apply</p></div>
+
+    <h2>ขั้นที่ 3: ย้อนกลับแบบ forward-only</h2>
+    <p>Prisma Migrate ไม่มีเมธอด <code>down</code> — ประวัติ migration เดินหน้าอย่างเดียว การ "ย้อน" จึงทำด้วยการเขียน migration <em>ใหม่</em>ที่ทำสิ่งตรงข้าม ข้อดีคือประวัติเป็นเส้นตรงและตรงกับสิ่งที่เกิดขึ้นจริงในทุก environment ไม่มีสถานะ "เคย apply แล้วถอนออก" ให้สับสน เนื่องจากบทที่เหลือของคอร์สยังใช้ชื่อ <code>name</code> อยู่ เราจะเปลี่ยนกลับด้วยวิธีนี้พอดี: แก้ <code>title</code> กลับเป็น <code>name</code> ใน schema, สร้าง migration ด้วย <code>--create-only</code>, แก้ SQL เป็น <code>RENAME COLUMN "title" TO "name"</code> แล้ว apply</p>
+    <pre><code>npx prisma migrate dev --name coffee-refactor-revert --create-only
+# แก้ migration.sql เป็น:
+#   ALTER TABLE "coffee" RENAME COLUMN "title" TO "name";
+npx prisma migrate dev
+npx prisma generate</code></pre>
+
+    <h2>ขั้นที่ 4: บน production ใช้ migrate deploy</h2>
+    <p>เมื่อโค้ดพร้อมไฟล์ migration ถูก deploy ไปยัง server ให้รัน <code>migrate deploy</code> ใน pipeline ก่อน start แอป — คำสั่งนี้อ่าน <code>_prisma_migrations</code> แล้ว apply เฉพาะไฟล์ที่ยังไม่เคยรัน ตามลำดับ ไม่ generate ไม่ reset และไม่ถามอะไร จึงปลอดภัยสำหรับ automation ส่วน <code>migrate status</code> ใช้ดูว่า environment นั้นค้าง migration ไหนอยู่บ้าง</p>
+    <pre><code># ใน deploy pipeline / CI
+npx prisma migrate deploy
+
+# ตรวจสถานะได้ทุกที่
+npx prisma migrate status</code></pre>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">เปลี่ยนชื่อ column แบบไม่ทำข้อมูลหาย</h2>
+      <p>ในโปรเจกต์ <code>iluvcoffee</code> สร้าง migration แรกจาก schema ปัจจุบัน, POST กาแฟไว้สักตัว, แล้วทำ migration เปลี่ยนชื่อ <code>name</code> → <code>title</code> ด้วย SQL ที่แก้เอง จากนั้นย้อนกลับด้วย migration ที่สอง</p>
+      <div class="prompt-example"><code>npx prisma migrate dev --name init
+# POST กาแฟไว้ 1 ตัวเพื่อใช้พิสูจน์ว่าข้อมูลไม่หาย
+# แก้ schema: name → title
+npx prisma migrate dev --name coffee-refactor --create-only
+# แก้ SQL เป็น RENAME COLUMN แล้ว
+npx prisma migrate dev
+npx prisma generate
+# ย้อนกลับแบบ forward-only (แก้ schema: title → name)
+npx prisma migrate dev --name coffee-refactor-revert --create-only
+npx prisma migrate dev
+npx prisma generate
+npx prisma migrate status</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>โฟลเดอร์ <code>prisma/migrations/</code> มี 3 โฟลเดอร์ (<code>&lt;timestamp&gt;_init</code>, <code>&lt;timestamp&gt;_coffee_refactor</code>, <code>&lt;timestamp&gt;_coffee_refactor_revert</code>) และตาราง <code>_prisma_migrations</code> มี 3 แถวตรงกัน หลัง migration ที่สอง ตาราง <code>coffee</code> มี column <code>title</code> แทน <code>name</code> โดยกาแฟที่ POST ไว้ยังอยู่ครบพร้อมค่าเดิม และหลัง migration ที่สาม column กลับเป็น <code>name</code> เหมือนเดิม <code>migrate status</code> รายงานว่า database is up to date</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>เปิด GUI จากบทที่ 21 แล้วดูตาราง <code>coffee</code> ว่า column เปลี่ยนตาม migration และแถวข้อมูลเดิมไม่หาย</li>
+        <li>ตาราง <code>_prisma_migrations</code> มีแถว <code>…_init</code>, <code>…_coffee_refactor</code>, <code>…_coffee_refactor_revert</code> พร้อม <code>finished_at</code></li>
+        <li>รัน <code>npx prisma migrate status</code> — ต้องได้ <q>3 migrations found in prisma/migrations</q> และ <q>Database schema is up to date!</q> ไม่มีอะไรค้าง</li>
+        <li><code>.env</code> และ <code>prisma7.config.ts</code> ไม่ต้องแก้อะไรเลย — migrate ใช้ <code>DATABASE_URL</code> ชุดเดียวกับแอป</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-migrate">Prisma Migrate (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-migrate/workflows/customizing-migrations">Customizing migrations with --create-only (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-migrate/workflows/prototyping-your-schema">Prototyping with db push (Prisma Docs)</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="30_adding-indexes-to-models.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="32_control-nestjs-module-encapsulation.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

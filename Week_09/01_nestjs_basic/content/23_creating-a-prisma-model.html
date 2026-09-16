@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="นิยาม Coffee model ใน schema.prisma แล้วใช้ prisma db push กับ prisma generate ให้กลายเป็นตารางจริงใน PostgreSQL พร้อม TypeScript type ที่ตรงกัน" />
+  <title>สร้าง Prisma Model</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 23 จาก 77</p>
+    <h1>สร้าง Prisma Model</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>นิยาม model ใน <code>schema.prisma</code> ด้วย field, ชนิดข้อมูล และ attribute อย่าง <code>@id</code>, <code>@default()</code> และ <code>@@map()</code></li>
+        <li>ใช้ <code>prisma db push</code> สร้างตารางในฐานข้อมูลจาก schema และ <code>prisma generate</code> สร้าง type ให้ตรงกัน</li>
+        <li>ยืนยันว่าตาราง <code>coffee</code> ใน PostgreSQL มีคอลัมน์ตรงกับ model จริง</li>
+      </ul>
+    </section>
+
+    <h2>Model คือหนึ่งบล็อกที่แทนหนึ่งตาราง</h2>
+    <p><strong>Model</strong> คือบล็อก <code>model</code> ในไฟล์ <code>schema.prisma</code> — Prisma จะ map หนึ่ง model เป็นหนึ่งตาราง SQL และ map แต่ละ field เป็นคอลัมน์ ต่างจากที่เราเคยเขียน class <code>Coffee</code> เปล่า ๆ ไว้ที่ <code>entities/coffee.entity.ts</code> ในบทที่ 12 ตอนนี้ความจริงเรื่องโครงสร้างข้อมูลจะอยู่ในไฟล์ schema ที่เดียว แล้ว TypeScript type ถูก generate ออกมาให้แทน เขียนต่อท้ายสองบล็อกของบทที่แล้วใน <code>prisma/schema.prisma</code></p>
+    <pre><code>// prisma/schema.prisma
+model Coffee {
+  id      Int      @id @default(autoincrement())
+  name    String
+  brand   String
+  flavors String[]
+
+  @@map("coffee")
+}</code></pre>
+    <ul>
+      <li><code>Int @id @default(autoincrement())</code> ประกาศ primary key ชนิด auto-increment ให้ฐานข้อมูลรันเลขให้เอง</li>
+      <li><code>String</code> เฉย ๆ กลายเป็นคอลัมน์ชนิด <code>text</code> ใน PostgreSQL และทุก field เป็น NOT NULL โดยปริยาย — ถ้าอยากให้เว้นว่างได้ต้องเติม <code>?</code> ต่อท้ายชนิด เช่น <code>String?</code></li>
+      <li><code>String[]</code> คือ scalar list ที่ PostgreSQL รองรับเป็นคอลัมน์ชนิด array (<code>text[]</code>) — เหมาะกับ <code>flavors</code> ที่ตอนนี้ยังเป็น array ของ string ก่อนจะแยกเป็น model ของตัวเองในบทที่ 25</li>
+      <li><code>@@map("coffee")</code> บอกชื่อตารางจริงในฐานข้อมูล ถ้าไม่ใส่ Prisma จะใช้ชื่อ model ตรง ๆ คือ <code>"Coffee"</code> ตัวใหญ่ ซึ่งเวลาเขียน SQL เองต้องใส่เครื่องหมายคำพูดครอบทุกครั้ง — เราเลือก map เป็นตัวเล็กเพื่อให้ SQL ในบทถัด ๆ ไปเรียบง่าย</li>
+    </ul>
+
+    <h2>db push: สร้างตารางจาก schema ในคำสั่งเดียว</h2>
+    <p>Schema เป็นแค่ไฟล์ข้อความ ฐานข้อมูลยังไม่รู้เรื่องอะไรทั้งนั้น คำสั่ง <code>prisma db push</code> จะเทียบ schema กับสภาพจริงในฐานข้อมูลแล้วสร้าง/แก้ตารางให้ตรงกันโดยไม่สร้างไฟล์ migration ใด ๆ — เหมาะกับการเรียนรู้และ prototype ที่เราต้องการเห็นผลเร็ว แต่ <strong>ไม่ใช่วิธีสำหรับ production</strong> เพราะมันไม่บันทึกประวัติการเปลี่ยนแปลงและอาจลบคอลัมน์พร้อมข้อมูลได้ (บทที่ 31 จะเปลี่ยนไปใช้ <code>prisma migrate</code>)</p>
+    <pre><code>npx prisma db push
+npx prisma generate</code></pre>
+    <p>ตั้งแต่ Prisma 7 <code>db push</code> ไม่รัน <code>generate</code> ให้อัตโนมัติแล้ว จึงต้องสั่งเองทุกครั้ง เพื่อให้ Prisma Client ใน <code>src/generated/prisma</code> รู้จัก model ใหม่และมี type <code>Coffee</code> ให้ import เมื่อรันครบสองคำสั่ง ตารางจะโผล่ในฐานข้อมูลทันที</p>
+    <pre><code>+-------------+--------------+----------------------------+
+|                          coffee                         |
++-------------+--------------+----------------------------+
+| id          | integer      | PRIMARY KEY AUTO_INCREMENT |
+| name        | text         | NOT NULL                   |
+| brand       | text         | NOT NULL                   |
+| flavors     | text[]       |                            |
++-------------+--------------+----------------------------+</code></pre>
+    <div class="warning"><p><strong>อย่าเพิ่งลบ <code>src/coffees/entities/coffee.entity.ts</code></strong> — <code>coffees.service.ts</code> ปัจจุบัน (จากบทที่ 15) ยัง <code>import { Coffee } from './entities/coffee.entity.js'</code> อยู่ ถ้าลบไฟล์นี้ตอนนี้จะได้ <code>error TS2307: Cannot find module './entities/coffee.entity.js'</code> ทันทีที่ build เก็บไฟล์นี้ไว้ก่อน แล้วบทที่ 24 จะลบให้พร้อมกับตอนที่เปลี่ยน service ไปใช้ type <code>Coffee</code> จาก Prisma Client โดยตรง</p></div>
+    <div class="note"><p>จำเป็นจังหวะให้ขึ้นใจ: แก้ <code>schema.prisma</code> → <code>db push</code> → <code>generate</code> ทุกครั้ง ถ้าลืมขั้นสุดท้าย type ในเอดิเตอร์กับตารางจริงจะไม่ตรงกันแบบเงียบ ๆ ทางลัดที่ช่วยได้คือเพิ่ม script ใน <code>package.json</code> เช่น <code>"db:push": "prisma db push &amp;&amp; prisma generate"</code> แล้วเรียก <code>npm run db:push</code> คำสั่งเดียวจบ</p></div>
+    <div class="note"><p>นอกจาก pgAdmin ในบทที่ 21 Prisma มี GUI ของตัวเองด้วย: <code>npx prisma studio</code> เปิดหน้าเว็บที่อ่าน schema ของเราตรง ๆ แล้วให้ browse และแก้ข้อมูลทีละแถวได้ ใช้ตัวไหนก็ได้ตามถนัด</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สร้างตาราง coffee ตัวแรกของโปรเจกต์</h2>
+      <p>เพิ่ม model <code>Coffee</code> ลง <code>prisma/schema.prisma</code> ตามโค้ดด้านบน (ยังไม่ต้องลบ <code>src/coffees/entities/coffee.entity.ts</code> — ดูคำเตือนด้านบน) แล้ว push schema ขึ้นฐานข้อมูลโดยเปิด Docker ไว้</p>
+      <div class="prompt-example"><code>docker-compose up -d
+npx prisma db push
+npx prisma generate
+
+# แล้วเปิด pgAdmin (บทที่ 21) ดูตาราง:
+# Databases &gt; postgres &gt; Schemas &gt; public &gt; Tables &gt; coffee</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>db push</code> จบด้วยข้อความ <q>Your database is now in sync with your Prisma schema</q> และเมื่อ refresh ใน pgAdmin จะเห็นตาราง <code>coffee</code> โผล่ขึ้นมาพร้อมคอลัมน์ <code>id</code>, <code>name</code>, <code>brand</code>, <code>flavors</code> ตรงตาม model ทุกประการ — โดยที่เราไม่ได้เขียน SQL <code>CREATE TABLE</code> เองแม้แต่บรรทัดเดียว ส่วน <code>generate</code> ทำให้ <code>import { Coffee } from '../generated/prisma/client.js'</code> ใช้ได้พร้อม autocomplete ครบทั้ง 4 field</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>prisma/schema.prisma</code> มีบล็อก <code>model Coffee</code> ครบ 4 field และ <code>@@map("coffee")</code></li>
+        <li>ผลของ <code>npx prisma db push</code> ขึ้น <q>Your database is now in sync</q> โดยไม่มี error</li>
+        <li>ใน pgAdmin หรือ GUI ที่ใช้ เห็นตาราง <code>coffee</code> พร้อม 4 คอลัมน์ และ <code>id</code> เป็น primary key</li>
+        <li>ลองเพิ่ม field ใหม่ชั่วคราวใน model แล้ว <code>db push</code> อีกครั้ง — ตารางควรได้คอลัมน์ใหม่ทันที (ลบออกแล้ว push กลับด้วย)</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema">Prisma schema (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-migrate/workflows/prototyping-your-schema">Prototyping your schema with db push (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/recipes/prisma">Prisma Recipe (NestJS Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="22_introducing-prisma.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="24_using-prisma-client-to-access-database.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

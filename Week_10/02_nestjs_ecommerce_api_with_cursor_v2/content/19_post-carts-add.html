@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เปิด route POST /carts/add ด้วย CartsController ลงทะเบียน OrdersModule แล้วพิสูจน์ทั้ง 201, 400, 404 และการ rollback ด้วย curl กับ psql" />
+  <title>POST /carts/add</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 19 จาก 24</p>
+    <h1>POST /carts/add</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เปิด route <code>POST /carts/add</code> ให้ตรงกับ path ที่ React app เรียกโดยไม่แก้ฝั่ง frontend</li>
+        <li>อธิบายได้ว่าทำไมไฟล์ controller ชื่อ <code>carts</code> แต่ module และ service ใช้คำว่า <code>orders</code></li>
+        <li>พิสูจน์ทั้งสี่พฤติกรรมด้วย curl: 201, 400 ขาด <code>userId</code>, 404 สินค้าไม่มีจริงพร้อม rollback, 400 email ผิดรูป</li>
+      </ul>
+    </section>
+
+    <h2>path มาจาก client ไม่ใช่จากเรา</h2>
+    <p>ถ้าออกแบบ API ใหม่ตั้งแต่ต้น การสั่งซื้อควรเป็น <code>POST /orders</code> แต่คอร์สนี้มีข้อจำกัดที่ชัดเจน: React app เรียก <code>POST /carts/add</code> และเราสัญญาว่าจะไม่แก้โค้ด frontend นอกจาก base URL ดังนั้น path ต้องเป็น <code>/carts/add</code> เป๊ะ ๆ — พลาดตัวเดียวก็ได้ 404 ทุกครั้งที่กดสั่งซื้อ</p>
+    <p>ทางออกคือแยกสองเรื่องนี้ออกจากกัน: <strong>path เป็นเรื่องของสัญญากับ client</strong> จึงตั้งชื่อไฟล์ controller ตาม path (<code>carts.controller.ts</code> + <code>@Controller('carts')</code>) ส่วน <strong>module และ service เป็นเรื่องของ domain</strong> คือการสั่งซื้อ จึงใช้คำว่า <code>orders</code> (<code>orders.module.ts</code>, <code>orders.service.ts</code>) โครงสร้างนี้บอกคนอ่านโค้ดคนต่อไปได้ทันทีว่า "ชื่อ carts มาจากข้อจำกัดภายนอก ไม่ใช่จากวิธีที่เราคิดเรื่องธุรกิจ"</p>
+    <div class="note"><p>ทั้งสองไฟล์อยู่ในโฟลเดอร์ <code>src/orders/</code> เดียวกัน ตามหลักการรวม domain ไว้ใน module เดียวจากบทที่ 14 ของคอร์ส NestJS Fundamentals — คนหาโค้ดเรื่องคำสั่งซื้อจะเจอทุกอย่างในที่เดียว แม้ route จะชื่อ <code>/carts</code></p></div>
+
+    <h2>ทวนของเดิม: @Body และ status 201</h2>
+    <p>บทที่ 8 และ 9 ของคอร์ส NestJS Fundamentals วางพื้นไว้แล้วสองข้อที่ใช้ตรง ๆ ในบทนี้ ข้อแรก <code>@Body() dto: AddCartDto</code> — การ<em>ประกาศชนิด</em>ของ parameter ให้เป็น class ของ DTO คือสิ่งที่ทำให้ <code>ValidationPipe</code> รู้ว่าต้องเอา rule ชุดไหนมาตรวจ ถ้าเขียนเป็น <code>@Body() dto: any</code> หรือลืมใส่ชนิด DTO ทั้งชุดของบทที่ 17 จะไม่ทำงานเลยแม้แต่ข้อเดียว และไม่มี error ใด ๆ เตือน</p>
+    <p>ข้อสอง handler ที่เป็น <code>@Post()</code> ของ Nest ตอบ <code>201 Created</code> เป็นค่าเริ่มต้นอยู่แล้ว ตรงกับสัญญาของ dummyjson พอดี จึง<strong>ไม่ต้อง</strong>ใส่ <code>@HttpCode()</code> — ใส่ <code>@HttpCode(200)</code> ไปจะกลายเป็นการทำสัญญาเสียเอง</p>
+    <p>สุดท้าย <code>OrdersModule</code> ต้องถูก import เข้า <code>AppModule</code> ไม่ทำขั้นนี้ Nest จะไม่รู้จัก controller ตัวใหม่ และจะไม่มีบรรทัด <code>Mapped {/carts/add, POST}</code> ใน log ตอน start — ซึ่งเป็นวิธีตรวจที่เร็วที่สุดว่าลืมหรือไม่ลืม</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+└── src/
+    ├── app.module.ts               (แก้ไข: เพิ่ม OrdersModule ต่อจาก ProductsModule)
+    └── orders/
+        ├── carts.controller.ts     (สร้างใหม่)
+        └── orders.module.ts        (สร้างใหม่)</code></pre>
+    <ul>
+      <li><strong><code>src/orders/carts.controller.ts</code></strong> — สัญญา: ต้องเป็น <code>@Controller('carts')</code> กับ <code>@Post('add')</code> และรับ body ด้วย <code>@Body() dto: AddCartDto</code> · ต้องไม่ใส่ <code>@HttpCode()</code>, ไม่คิดเลขหรือแตะ Prisma ใน controller</li>
+      <li><strong><code>src/orders/orders.module.ts</code></strong> — สัญญา: ต้องประกาศ <code>controllers: [CartsController]</code> และ <code>providers: [OrdersService]</code> · ต้องไม่ import <code>PrismaModule</code> ซ้ำ (บทที่ 6 ทำให้มันเป็น global module แล้ว)</li>
+      <li><strong><code>src/app.module.ts</code></strong> — สัญญา: ต้องเพิ่ม <code>OrdersModule</code> ต่อจาก <code>ProductsModule</code> ใน <code>imports</code> · ต้องไม่แตะ <code>ConfigModule</code>, <code>controllers</code> หรือ <code>providers</code> เดิม</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor เปิด route แล้วยิงทดสอบสี่กรณี</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before carts controller"</code>) — prompt ยก <code>@src/products/products.controller.ts</code> และ <code>@src/products/products.module.ts</code> ให้เป็นแบบอย่าง และย้ำเรื่องชื่อไฟล์กับ path ไว้ชัด ๆ เพราะนี่คือจุดที่ AI ชอบ "แก้ให้ดีขึ้น" โดยไม่ได้ขอ</p>
+      <p>ก่อนส่ง อ่าน<a href="01_what-well-be-building.html">กติกาของคอร์ส</a>อีกครั้ง: AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้ — ถ้าอธิบายไม่ได้ แปลว่ายังไม่ผ่านบทนี้</p>
+      <div class="cursor-prompt"><code>สร้าง CartsController ที่เปิด POST /carts/add และลงทะเบียน OrdersModule
+
+บริบท: @src/orders/orders.service.ts @src/orders/dto/add-cart.dto.ts @src/products/products.controller.ts @src/products/products.module.ts @src/app.module.ts @.cursor/rules/project.mdc
+React app เรียก POST /carts/add (path นี้ต้องตรงตัว เพราะเราแทนที่ dummyjson โดยไม่แก้ฝั่ง frontend) และคาดหวัง status 201
+OrdersService.create(dto: AddCartDto) คืน Promise&lt;CartResponseDto&gt; แล้ว
+products.controller.ts และ products.module.ts คือรูปแบบมาตรฐานของ controller และ module ในโปรเจกต์นี้
+
+โครงสร้าง: สร้าง/แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- src/orders/carts.controller.ts (สร้างใหม่)
+- src/orders/orders.module.ts (สร้างใหม่)
+- src/app.module.ts (แก้ไข: เพิ่ม OrdersModule ต่อจาก ProductsModule)
+
+ข้อกำหนดทางเทคนิค:
+- carts.controller.ts: @Controller('carts') export class CartsController constructor(private readonly ordersService: OrdersService)
+  handler @Post('add') create(@Body() dto: AddCartDto) return this.ordersService.create(dto)
+  ไม่ต้องใส่ @HttpCode เพราะ POST ของ Nest ตอบ 201 อยู่แล้ว
+- orders.module.ts: @Module({ controllers: [CartsController], providers: [OrdersService] })
+- ชื่อไฟล์ controller คือ carts.controller.ts (ตาม path) แต่ module และ service ใช้คำว่า orders (ตาม domain)
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์อื่นนอกจากที่ระบุ
+- ยังไม่ต้องเปิด CORS</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>ชื่อไฟล์คือ <code>carts.controller.ts</code> และ class คือ <code>CartsController</code> ไม่ใช่ <code>OrdersController</code></li>
+        <li><code>@Controller('carts')</code> คู่กับ <code>@Post('add')</code> — รวมกันได้ <code>POST /carts/add</code> ไม่มี <code>/orders</code> โผล่ที่ไหน</li>
+        <li>parameter เป็น <code>@Body() dto: AddCartDto</code> มีชนิดกำกับครบ ไม่ใช่ <code>any</code> และไม่มี <code>@Body('products')</code> แยกส่วน</li>
+        <li>ไม่มี <code>@HttpCode()</code> ใน controller เลย</li>
+        <li>handler บรรทัดเดียว <code>return this.ordersService.create(dto)</code> — ไม่มี try/catch, ไม่มีการคิดเลข, ไม่มีการเรียก Prisma ตรง</li>
+        <li><code>orders.module.ts</code> มี <code>controllers: [CartsController]</code> และ <code>providers: [OrdersService]</code> ไม่มี <code>imports</code> เกินมา</li>
+        <li><code>app.module.ts</code> เพิ่ม <code>OrdersModule</code> ต่อจาก <code>ProductsModule</code> และ <code>git diff src/app.module.ts</code> เห็นแค่บรรทัด import กับบรรทัดใน array</li>
+        <li>import ทุกตัวลงท้ายด้วย <code>.js</code> ตามกติกา ESM ของโปรเจกต์</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ตั้งชื่อเป็น <code>OrdersController</code> พร้อม <code>@Controller('orders')</code> เพราะมันดูสอดคล้องกับชื่อ service และ module มากกว่า ผลคือโค้ดดูสวยแต่ React app ได้ 404 ทุกครั้งที่กดสั่งซื้อ อีกกรณีคือแถม <code>@HttpCode(201)</code> (ไม่ผิดผลลัพธ์ แต่เกินความจำเป็นและ prompt สั่งห้าม) หรือเผลอ import <code>PrismaModule</code> เข้า <code>OrdersModule</code> ซ้ำ ทั้งที่มันเป็น global module อยู่แล้ว</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <pre><code>// src/orders/carts.controller.ts
+import { Body, Controller, Post } from '@nestjs/common';
+import { AddCartDto } from './dto/add-cart.dto.js';
+import { OrdersService } from './orders.service.js';
+
+@Controller('carts')
+export class CartsController {
+  constructor(private readonly ordersService: OrdersService) {}
+
+  @Post('add')
+  create(@Body() dto: AddCartDto) {
+    return this.ordersService.create(dto);
+  }
+}</code></pre>
+      <pre><code>// src/orders/orders.module.ts
+import { Module } from '@nestjs/common';
+import { CartsController } from './carts.controller.js';
+import { OrdersService } from './orders.service.js';
+
+@Module({
+  controllers: [CartsController],
+  providers: [OrdersService],
+})
+export class OrdersModule {}</code></pre>
+      <pre><code>// src/app.module.ts
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { OrdersModule } from './orders/orders.module.js';
+import { PrismaModule } from './prisma/prisma.module.js';
+import { ProductsModule } from './products/products.module.js';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    ProductsModule,
+    OrdersModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>รัน <code>npm run start:dev</code> แล้ว log ต้องมีสองบรรทัดนี้ ถ้าไม่มี แปลว่าลืม import <code>OrdersModule</code> เข้า <code>AppModule</code></p>
+      <pre><code>LOG [RoutesResolver] CartsController {/carts}: +0ms
+LOG [RouterExplorer] Mapped {/carts/add, POST} route +0ms</code></pre>
+      <p>ยิง body เดียวกับที่ React app ส่ง จะได้ <code>201 Created</code> พร้อมตัวเลขตรงกับ <code>docs/contract/cart-add.txt</code> ทุกตัว</p>
+      <pre><code>curl -s -i -X POST http://localhost:3000/carts/add -H 'Content-Type: application/json' \
+  -d '{"userId":1,"products":[{"id":1,"quantity":2}],"address":{"address":"1 Sukhumvit Rd","email":"a@b.com","phone":"0812345678"}}'</code></pre>
+      <pre><code>HTTP/1.1 201 Created
+
+{"id":1,"products":[{"id":1,"title":"Essence Mascara Lash Princess","price":9.99,"quantity":2,"total":19.98,"discountPercentage":10.48,"discountedPrice":18,"thumbnail":"https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp"}],"total":19.98,"discountedTotal":18,"userId":1,"totalProducts":1,"totalQuantity":2}</code></pre>
+      <div class="note"><p><code>id</code> ที่ได้คือ <code>1</code> เพราะเป็นคำสั่งซื้อใบแรกในฐานข้อมูลของคุณ ส่วนในสัญญาที่จับจาก dummyjson เป็น <code>209</code> — ค่านี้เป็น id ที่รันตามลำดับของแต่ละฐานข้อมูล จึงต่างกันได้และไม่ถือว่าผิดสัญญา field อื่นทั้งหมด (<code>total</code>, <code>discountedTotal</code>, <code>discountedPrice</code>, <code>totalProducts</code>, <code>totalQuantity</code>) ต้องตรงเป๊ะ</p></div>
+      <p>สามกรณีที่เหลือคือกรณีที่พลาดแล้วรู้ยาก จึงต้องยิงดูให้เห็นด้วยตาทั้งหมด ไม่มี <code>userId</code> → <code>400</code> จาก <code>ValidationPipe</code> โดยที่ <code>message</code> เป็น array และมีสองข้อ เพราะทั้ง <code>@IsInt()</code> และ <code>@Min(1)</code> ไม่ผ่านพร้อมกัน</p>
+      <pre><code>curl -s -i -X POST http://localhost:3000/carts/add -H 'Content-Type: application/json' \
+  -d '{"products":[{"id":1,"quantity":1}],"address":{"address":"x","email":"a@b.com","phone":"1"}}'</code></pre>
+      <pre><code>HTTP/1.1 400 Bad Request
+
+{"message":["userId must not be less than 1","userId must be an integer number"],"error":"Bad Request","statusCode":400}</code></pre>
+      <p>สินค้า id ที่ไม่มีจริง → <code>404</code> จาก <code>NotFoundException</code> ที่ throw อยู่ข้างใน transaction ข้อความตรงกับที่ <code>GET /products/:id</code> ตอบในบทที่ 12</p>
+      <pre><code>curl -s -i -X POST http://localhost:3000/carts/add -H 'Content-Type: application/json' \
+  -d '{"userId":1,"products":[{"id":99999,"quantity":1}],"address":{"address":"x","email":"a@b.com","phone":"1"}}'</code></pre>
+      <pre><code>HTTP/1.1 404 Not Found
+
+{"message":"Product with id '99999' not found","error":"Not Found","statusCode":404}</code></pre>
+      <p>email ผิดรูป → <code>400</code> โดยชื่อ field ใน message มีคำนำหน้า <code>address.</code> ซึ่งเป็นหลักฐานว่า <code>@ValidateNested()</code> ของบทที่ 17 ไล่ตรวจเข้าไปข้างใน object จริง</p>
+      <pre><code>curl -s -i -X POST http://localhost:3000/carts/add -H 'Content-Type: application/json' \
+  -d '{"userId":1,"products":[{"id":1,"quantity":1}],"address":{"address":"x","email":"not-an-email","phone":"1"}}'</code></pre>
+      <pre><code>HTTP/1.1 400 Bad Request
+
+{"message":["address.email must be an email"],"error":"Bad Request","statusCode":400}</code></pre>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>log ตอน start มีบรรทัด <code>Mapped {/carts/add, POST} route</code></li>
+        <li>ยิงทั้งสี่ curl ข้างบนแล้วได้ status <code>201</code>, <code>400</code>, <code>404</code>, <code>400</code> ตามลำดับ พร้อม body ตรงกับตัวอย่าง</li>
+        <li>แถวที่บันทึกลงฐานข้อมูลมีจริง และยอดตรงกับ response
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce \
+  -c 'SELECT id, "userId", total, "discountedTotal", "totalQuantity" FROM "Order";'</code></pre>
+          <pre><code> id | userId | total | discountedTotal | totalQuantity
+----+--------+-------+-----------------+---------------
+  1 |      1 | 19.98 |              18 |             2
+(1 row)</code></pre></li>
+        <li>พิสูจน์ว่า transaction rollback จริง: หลังยิงครบทั้งสี่กรณี จำนวนคำสั่งซื้อต้องยังเป็น <code>1</code> ใบ — กรณี 404 ไม่ทิ้งใบครึ่ง ๆ ไว้ และสองกรณี 400 ถูกปัดตกก่อนถึง service
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT count(*) FROM "Order";'</code></pre>
+          <pre><code> count
+-------
+     1
+(1 row)</code></pre></li>
+        <li><code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT "orderId", "productId", title, price, quantity, total, "discountedPrice" FROM "OrderItem";'</code> เห็นบรรทัดเดียวที่เก็บ snapshot ชื่อและราคาสินค้าไว้ครบ ไม่ใช่แค่ <code>productId</code></li>
+        <li><code>npm run build &amp;&amp; npm run lint</code> ผ่านทั้งคู่</li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: POST /carts/add"</code></li>
+      </ul>
+      <p>ถึงตรงนี้ API ของเราครอบคลุมทุก endpoint ที่ React app ต้องใช้แล้ว เหลือแต่การเปิดประตูให้เบราว์เซอร์เรียกได้จริง ซึ่งคือเรื่อง CORS ในบทถัดไป</p>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/controllers#request-payloads">Controllers: Request payloads และ status code ของ POST (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/modules">Modules (NestJS Docs)</a></li>
+      <li><a href="https://dummyjson.com/docs/carts">Carts: add a new cart (DummyJSON Docs)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="18_creating-orders-in-a-transaction.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="20_enabling-cors-and-port-config.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

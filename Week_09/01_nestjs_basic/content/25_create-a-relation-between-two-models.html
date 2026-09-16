@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เปลี่ยน flavors จาก scalar list เป็น Flavor model แยก แล้วผูก many-to-many กับ Coffee ใน schema.prisma ให้ Prisma สร้างตารางเชื่อมให้เอง" />
+  <title>สร้าง Relation ระหว่างสอง Models</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 25 จาก 77</p>
+    <h1>สร้าง Relation ระหว่างสอง Models</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>แยกความแตกต่างของ relation ทั้งสามแบบ: one-to-one, one-to-many/many-to-one และ many-to-many และรู้ว่าแต่ละแบบเขียนอย่างไรใน <code>schema.prisma</code></li>
+        <li>ผูก <code>Coffee</code> กับ <code>Flavor</code> แบบ many-to-many ด้วย relation field <code>Flavor[]</code> / <code>Coffee[]</code> ทั้งสองฝั่ง</li>
+        <li>อธิบายได้ว่าตารางเชื่อม <code>_CoffeeToFlavor</code> เกิดขึ้นได้อย่างไร และทำไม <code>Flavor.name</code> ต้องเป็น <code>@unique</code></li>
+      </ul>
+    </section>
+
+    <h2>Relation สามแบบที่ต้องรู้จัก</h2>
+    <p><strong>Relation</strong> คือความสัมพันธ์ระหว่างตารางที่ผูกกันด้วยฟิลด์ร่วม โดยทั่วไปคือ primary key กับ foreign key Prisma ให้เรานิยามความสัมพันธ์เหล่านี้เป็น <em>relation field</em> ใน <code>schema.prisma</code> โดยตรง แล้วสร้าง foreign key และตารางที่จำเป็นในฐานข้อมูลให้เอง</p>
+    <div class="comparison" role="region" aria-label="ชนิดของ relation ใน Prisma" tabindex="0">
+      <table>
+        <thead><tr><th>ชนิด</th><th>ความหมาย</th><th>หน้าตาใน schema.prisma</th></tr></thead>
+        <tbody>
+          <tr><td>One-to-one</td><td>แถวในตารางหลักจับคู่กับแถวในตารางปลายทางได้แถวเดียวเท่านั้น</td><td>ฝั่งหนึ่ง <code>profile Profile?</code> อีกฝั่ง <code>user User @relation(fields: [userId], references: [id])</code> พร้อม <code>userId Int @unique</code></td></tr>
+          <tr><td>One-to-many / Many-to-one</td><td>แถวในตารางหลักมีแถวที่เกี่ยวข้องในตารางปลายทางได้หลายแถว</td><td>ฝั่ง one: <code>posts Post[]</code> ฝั่ง many: <code>author User @relation(fields: [authorId], references: [id])</code> พร้อม <code>authorId Int</code></td></tr>
+          <tr><td>Many-to-many</td><td>ทั้งสองฝั่งต่างมีแถวที่เกี่ยวข้องกันได้หลายแถว</td><td><code>flavors Flavor[]</code> และ <code>coffees Coffee[]</code> — ไม่ต้องเขียน foreign key เอง Prisma สร้างตารางเชื่อมให้ (implicit many-to-many)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>กาแฟหนึ่งตัวมีได้หลาย flavor และ flavor หนึ่ง (เช่น <code>chocolate</code>) ก็อยู่ในกาแฟได้หลายตัว — ความสัมพันธ์ระหว่าง <code>Coffee</code> กับ <code>Flavor</code> จึงเป็น many-to-many</p>
+
+    <h2>เปลี่ยน flavors จาก scalar list เป็น model จริง</h2>
+    <p>เพิ่ม model <code>Flavor</code> ใหม่ใน <code>prisma/schema.prisma</code> แล้วแก้ field <code>flavors</code> ของ <code>Coffee</code> ให้ชี้ไปหา model นั้นแทน <code>String[]</code> เดิม กติกาสำคัญของ Prisma คือ<strong>ต้องประกาศ relation ทั้งสองฝั่งเสมอ</strong> — ถ้าเขียนแค่ <code>flavors Flavor[]</code> ฝั่ง <code>Coffee</code> แต่ลืม <code>coffees Coffee[]</code> ฝั่ง <code>Flavor</code> Prisma จะ error ทันที (หรือสั่ง <code>npx prisma format</code> ให้เติมฝั่งที่ขาดให้อัตโนมัติ)</p>
+    <pre><code>/* prisma/schema.prisma */
+model Coffee {
+  id      Int      @id @default(autoincrement())
+  name    String
+  brand   String
+  flavors Flavor[] // "กาแฟตัวนี้มี flavor อะไรบ้าง"
+
+  @@map("coffee")
+}
+
+model Flavor {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  coffees Coffee[] // "flavor นี้อยู่ในกาแฟตัวไหนบ้าง"
+
+  @@map("flavor")
+}</code></pre>
+    <p>เพราะทั้งสองฝั่งเป็น array และไม่มีฝั่งไหนถือ foreign key เอง Prisma จึงรู้ว่านี่คือ <strong>implicit many-to-many</strong> และจะสร้างตารางเชื่อมชื่อ <code>_CoffeeToFlavor</code> ให้เองโดยที่เราไม่ต้องเขียน model ของมันเลย ตารางนี้มีสองคอลัมน์คือ <code>A</code> (id ของ <code>Coffee</code>) และ <code>B</code> (id ของ <code>Flavor</code>) — ชื่อตารางและลำดับ A/B มาจากการเรียงชื่อ model ตามตัวอักษร</p>
+    <p>ส่วน <code>@unique</code> บน <code>Flavor.name</code> ทำสองหน้าที่: กันไม่ให้มี <code>chocolate</code> ซ้ำกันหลายแถวในตาราง <code>flavor</code> และเป็นฟิลด์ที่บทที่ 27 จะใช้ค้นหา flavor เดิมด้วย <code>connectOrCreate</code> ซึ่งบังคับว่าต้องค้นด้วยฟิลด์ที่ unique เท่านั้น ก่อน push ลองรัน <code>npx prisma validate</code> เพื่อให้ Prisma ตรวจว่า relation ครบทั้งสองฝั่งและชนิดตรงกัน</p>
+    <div class="warning"><p>การเปลี่ยนคอลัมน์ <code>flavors</code> จาก array เป็น relation คือการ <strong>drop คอลัมน์พร้อมข้อมูลในนั้น</strong> — ถ้าตาราง <code>coffee</code> มีแถวอยู่ (จาก workshop บทที่ 24) <code>npx prisma db push</code> จะหยุดเตือนว่าข้อมูลในคอลัมน์จะหาย แล้วถามยืนยัน <q>Do you want to ignore the warning(s)?</q> ตอบ <code>y</code> ได้<em>เฉพาะบนเครื่อง dev</em> เท่านั้น (หรือใส่ flag <code>--accept-data-loss</code> เพื่อข้ามคำถาม) ถ้าตารางยังว่างจะ push ผ่านเงียบ ๆ เพราะไม่มีข้อมูลให้เสีย — นี่คือเหตุผลที่ production ต้องใช้ migrations (บทที่ 31) แทน</p></div>
+    <div class="note"><p>หลัง push อย่าลืม <code>npx prisma generate</code> — ตอนนี้ generated client จะมี type <code>Flavor</code> เพิ่มขึ้นมา และ <code>CoffeesService.create()</code> จะ<em>type-check ไม่ผ่านชั่วคราว</em> เพราะ <code>flavors: string[]</code> ใน DTO ไม่ตรงกับ relation field แล้ว ถือว่าถูกต้อง ให้คอมเมนต์ body ของ <code>create</code>/<code>update</code> ออกก่อน (หรือ cast เป็น <code>any</code> ชั่วคราว) แล้วเราจะเขียนใหม่ให้ถูกต้องในบทที่ 27</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ผูก Coffee กับ Flavor เข้าด้วยกัน</h2>
+      <p>เพิ่ม model <code>Flavor</code> และแก้ <code>Coffee</code> ใน <code>schema.prisma</code> ตามโค้ดด้านบน validate แล้ว push ลงฐานข้อมูล generate client ใหม่ จากนั้นไปดูตารางที่เกิดขึ้น</p>
+      <div class="prompt-example"><code>npx prisma validate
+npx prisma db push          # ตอบ y เมื่อถูกถามเรื่อง data loss (dev เท่านั้น)
+npx prisma generate
+npm run start:dev
+
+# ใน pgAdmin ควรเห็น 3 ตาราง:
+#   coffee            - ข้อมูลกาแฟ (ไม่มีคอลัมน์ flavors แล้ว)
+#   flavor            - ข้อมูล flavor
+#   _CoffeeToFlavor   - ตารางเชื่อม many-to-many (คอลัมน์ A, B)</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ฐานข้อมูลมี 3 ตาราง: <code>coffee</code> (ไม่มีคอลัมน์ <code>flavors</code> แล้ว), <code>flavor</code> และตารางเชื่อม <code>_CoffeeToFlavor</code> ที่ถือ foreign key ของทั้งสองฝั่งในคอลัมน์ <code>A</code> และ <code>B</code> ตอนนี้ endpoint สร้างกาแฟพร้อม flavor จะยังทำงานไม่ครบ — เราจะแก้ให้บันทึกลง relation จริงในบทที่ 27 เรื่อง nested writes</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>npx prisma validate</code> ผ่านโดยไม่มี error เรื่อง relation ขาดฝั่ง — ทั้ง <code>flavors Flavor[]</code> และ <code>coffees Coffee[]</code> ประกาศครบ</li>
+        <li>เห็นตาราง <code>_CoffeeToFlavor</code> ใน pgAdmin พร้อมคอลัมน์ <code>A</code>/<code>B</code> ที่เป็น foreign key ไปยัง <code>coffee.id</code> และ <code>flavor.id</code></li>
+        <li>คอลัมน์ <code>flavors</code> ชนิด array หายไปจากตาราง <code>coffee</code> แล้ว และ <code>flavor.name</code> มี unique constraint</li>
+        <li>เปิด <code>src/generated/prisma/client</code> แล้วเห็น type <code>Flavor</code> export ออกมา (แสดงว่า generate ใหม่สำเร็จ)</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/relations">Relations (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/relations/many-to-many-relations">Many-to-many relations (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/recipes/prisma">Prisma Recipe (NestJS Docs)</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="24_using-prisma-client-to-access-database.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="26_retrieve-models-with-their-relations.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

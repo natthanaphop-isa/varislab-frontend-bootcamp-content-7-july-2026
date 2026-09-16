@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เปิด whitelist และ forbidNonWhitelisted ของ ValidationPipe เพื่อตัดหรือปฏิเสธ property แปลกปลอมที่ client แอบส่งมา" />
+  <title>ป้องกันข้อมูลคำขอที่ไม่พึงประสงค์</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 17 จาก 77</p>
+    <h1>ป้องกันข้อมูลคำขอที่ไม่พึงประสงค์</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายความเสี่ยงของการรับ property ที่ไม่ได้ประกาศไว้ใน DTO (mass assignment)</li>
+        <li>เปิด <code>whitelist</code> เพื่อให้ pipe ตัด property แปลกปลอมทิ้งอัตโนมัติ</li>
+        <li>เปิด <code>forbidNonWhitelisted</code> เมื่อต้องการปฏิเสธ request ที่มีของเกินมาแทนการตัดเงียบ ๆ</li>
+      </ul>
+    </section>
+
+    <h2>ปัญหา: Client ส่งอะไรมาก็รับหมด</h2>
+    <p>ต่อให้เปิด <code>ValidationPipe</code> แล้ว payload ที่มี property <em>เกิน</em>จากที่ DTO ประกาศก็ยังไหลผ่านเข้ามาได้ เช่น client แนบ <code>{"name": "Roast", "brand": "Brew", "flavors": [], "isAdmin": true}</code> — ถ้าโค้ดของเรานำ object นี้ไป save ตรง ๆ ค่า <code>isAdmin</code> ที่ไม่มีใครตั้งใจรับก็ติดเข้าไปด้วย ช่องโหว่ตระกูลนี้เรียกว่า <strong>mass assignment</strong> และเป็นสิ่งที่ต้องปิดตั้งแต่ชั้นรับข้อมูล</p>
+
+    <h2>whitelist: ตัดของเกินทิ้งเงียบ ๆ</h2>
+    <pre><code>/* main.ts */
+app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+}));</code></pre>
+    <p>เมื่อเปิด <code>whitelist</code> pipe จะ<strong>ลบ</strong>ทุก property ที่ไม่มี decorator ของ <code>class-validator</code> ประกาศไว้ใน DTO ออกจาก object ก่อนส่งถึง handler — client จะส่งอะไรเกินมาก็ตาม สิ่งที่โค้ดเราเห็นมีเฉพาะ field ในสัญญาเท่านั้น</p>
+
+    <h2>forbidNonWhitelisted: ปฏิเสธไปเลยให้รู้ตัว</h2>
+    <pre><code>/* main.ts */
+app.useGlobalPipes(new ValidationPipe({
+   forbidNonWhitelisted: true,
+   whitelist: true,
+}));</code></pre>
+    <p>บางระบบอยากได้พฤติกรรมที่เข้มกว่า: แทนที่จะตัดเงียบ ๆ ให้ตอบ 400 บอก client ตรง ๆ ว่าส่ง property ที่ไม่รู้จักมา ตัวเลือก <code>forbidNonWhitelisted</code> (ซึ่งต้องใช้คู่กับ <code>whitelist</code>) ทำแบบนั้น:</p>
+    <pre><code>{
+  "statusCode": 400,
+  "message": ["property isAdmin should not exist"],
+  "error": "Bad Request"
+}</code></pre>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบโหมดจัดการ property แปลกปลอม" tabindex="0">
+      <table>
+        <thead><tr><th>การตั้งค่า</th><th>พฤติกรรมต่อ property เกิน</th><th>เหมาะกับ</th></tr></thead>
+        <tbody>
+          <tr><td>ค่า default</td><td>ปล่อยผ่านเข้ามาทั้งก้อน</td><td>ไม่แนะนำสำหรับ API ที่รับข้อมูลจากภายนอก</td></tr>
+          <tr><td><code>whitelist: true</code></td><td>ตัดทิ้งเงียบ ๆ handler เห็นเฉพาะ field ใน DTO</td><td>API ทั่วไปที่อยากทนต่อ client รุ่นเก่า/ใหม่ปะปน</td></tr>
+          <tr><td>+ <code>forbidNonWhitelisted: true</code></td><td>ตอบ 400 พร้อมชื่อ property ที่เกินมา</td><td>ระบบที่ต้องการ contract เข้มงวดและอยากเห็น client ผิดตั้งแต่ dev</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning"><p><code>whitelist</code> ตัดสินจาก decorator — property ใน DTO ที่<em>ไม่มี</em> validation decorator เลยจะถูกตัดทิ้งไปด้วย ถ้ามี field ที่ไม่ต้องตรวจอะไรจริง ๆ ให้ใส่ <code>@Allow()</code> จาก <code>class-validator</code> กำกับไว้</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ลองแนบ property แปลกปลอมแล้วดูชะตากรรมของมัน</h2>
+      <p>เปิด <code>whitelist</code> ก่อน ยิง payload ที่มีของเกิน แล้วเปิด <code>forbidNonWhitelisted</code> เพิ่มและยิงซ้ำ เปรียบเทียบผลทั้งสองแบบ</p>
+      <div class="prompt-example"><code>curl -X POST http://localhost:3000/coffees \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Roast", "brand": "Brew", "flavors": ["mocha"], "isAdmin": true}'</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>โหมด <code>whitelist</code> อย่างเดียว: สร้างสำเร็จ แต่ record ที่ได้ไม่มี <code>isAdmin</code> ติดมาด้วย เมื่อเพิ่ม <code>forbidNonWhitelisted</code>: ได้ 400 พร้อมข้อความ <code>property isAdmin should not exist</code></p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>โหมด whitelist: <code>GET /coffees</code> ยืนยันว่ารายการใหม่ไม่มี field <code>isAdmin</code></li>
+        <li>โหมดเข้ม: response 400 ระบุชื่อ property ที่เกินมาอย่างชัดเจน</li>
+        <li>payload ปกติที่มีเฉพาะ field ตาม DTO ยังผ่านได้ทั้งสองโหมด</li>
+        <li>การตั้งค่าอยู่ที่ <code>main.ts</code> ที่เดียว — มีผลกับทุก endpoint โดยไม่ต้องแก้ controller ใด</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation: Stripping and forbidding properties (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/pipes">Pipes (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="16_validate-input-data-with-data-transfer-objects.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="18_auto-transform-payloads-to-dto-instances.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

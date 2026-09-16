@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง Dynamic Module ใน NestJS: เขียน static register() ที่รับ options แล้ว return DynamicModule เพื่อให้ module ปรับพฤติกรรมตามผู้ใช้" />
+  <title>สร้าง Dynamic Module</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 39 จาก 77</p>
+    <h1>สร้าง Dynamic Module</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายข้อจำกัดของ static module ที่ config ตายตัวจนใช้ซ้ำข้ามบริบทไม่ได้</li>
+        <li>เขียนเมธอด <code>static register(options)</code> ที่ return <code>DynamicModule</code></li>
+        <li>ใช้ dynamic module รับค่าจากผู้เรียก (เช่น connection options) ตอน import</li>
+      </ul>
+    </section>
+
+    <h2>ปัญหา: module แบบ static ปรับแต่งไม่ได้</h2>
+    <p>ลองนึกถึง <code>DatabaseModule</code> ที่สร้าง connection provider ไว้ภายใน: ถ้าเขียน host/port ตายตัวใน module ผู้ใช้ทุกคนจะได้ connection เดียวกันหมด ปรับต่อไม่ได้เลย นี่คือรูปแบบที่เราจะเริ่มจากมันก่อน</p>
+    <pre><code># สร้าง DatabaseModule
+nest g mo database</code></pre>
+    <pre><code>// ความพยายามแรก: provider "CONNECTION" ที่ config ฝังตายตัว
+{
+  provide: 'CONNECTION',
+  useValue: new PrismaClient({
+    adapter: new PrismaPg({
+      connectionString: 'postgresql://postgres:pass123@localhost:5432/postgres',
+    }),
+  }),
+}</code></pre>
+    <p>Module ประเภทนี้ต้องการสิ่งเดียวกับที่ library modules อย่าง <code>ConfigModule.forRoot(...)</code> (บทที่ 42) หรือ <code>MongooseModule.forRoot(...)</code> (บทที่ 72) ทำ: ให้<em>ผู้ import</em> เป็นคนส่ง config เข้ามา — กลไกเบื้องหลังของ pattern นั้นคือ <strong>Dynamic Module</strong></p>
+
+    <h2>ทางออก: static register() ที่ return DynamicModule</h2>
+    <p>Dynamic module คือ module ที่มี static method (ตามธรรมเนียมชื่อ <code>register</code>, <code>forRoot</code> หรือ <code>forFeature</code>) รับ options แล้ว return object ตาม interface <code>DynamicModule</code> ซึ่งประกอบ providers ขึ้น ณ ตอนเรียก จึงฝังค่าจากผู้ใช้ลงไปได้</p>
+    <pre><code>// database.module.ts
+import { DynamicModule, Module } from '@nestjs/common';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../generated/prisma/client.js';
+
+export interface DatabaseOptions {
+  connectionString: string;
+}
+
+// โครงเริ่มต้น
+@Module({})
+export class DatabaseModule {
+  static register(options: DatabaseOptions): DynamicModule {  }
+}
+
+// เวอร์ชันสมบูรณ์: สร้าง CONNECTION จาก options ที่ผู้เรียกส่งมา
+@Module({})
+export class DatabaseModule {
+  static register(options: DatabaseOptions): DynamicModule {
+    return {
+      module: DatabaseModule,
+      providers: [
+        {
+          provide: 'CONNECTION',
+          useValue: new PrismaClient({ adapter: new PrismaPg(options) }),
+        },
+      ],
+      exports: ['CONNECTION'],
+    };
+  }
+}</code></pre>
+    <p>ฝั่งผู้ใช้ import ด้วยการเรียกเมธอดแทนการอ้างชื่อ class เฉย ๆ</p>
+    <pre><code>// ใช้ dynamic DatabaseModule ใน imports ของ module อื่น
+imports: [
+  DatabaseModule.register({ // ส่งค่าจริงเข้าไปตอน import
+    connectionString: process.env.DATABASE_URL!, // ! กัน strict mode ชั่วคราว — บทที่ 48 เปลี่ยนเป็น getOrThrow
+  })
+]</code></pre>
+    <div class="note"><p><code>PrismaPg</code> รับ options ชุดเดียวกับ <code>pg.Pool</code> (เช่น <code>max</code> จำนวน connection สูงสุด) interface <code>DatabaseOptions</code> จึงเป็นที่ที่เหมาะจะขยายให้ผู้ใช้ปรับ pool ได้ในอนาคต — นี่คือคุณค่าของการให้ผู้ import เป็นคนส่ง config</p></div>
+    <div class="warning"><p>provider <code>'CONNECTION'</code> ตัวนี้คือ <code>PrismaClient</code> ตัวที่สองของแอป (มี connection pool ของตัวเอง) เราสร้างมันเพื่อเรียนรู้กลไกของ dynamic module เท่านั้น — โค้ดจริงของ <code>CoffeesService</code> ยังใช้ <code>PrismaService</code> จาก <code>PrismaModule</code> ตามเดิม อย่าเผลอเปิดหลาย client ในแอปจริงโดยไม่จำเป็น</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สร้าง DatabaseModule.register ของตัวเอง</h2>
+      <p>generate <code>DatabaseModule</code>, เขียน <code>static register(options: DatabaseOptions)</code> ตามตัวอย่าง แล้ว import จาก <code>CoffeeRatingModule</code> (บทที่ 32) พร้อมส่ง <code>connectionString</code> จากนั้น inject token <code>'CONNECTION'</code> ที่ไหนสักแห่งแล้วลอง query เพื่อพิสูจน์ว่า client ที่ได้ต่อฐานข้อมูลตาม options ที่ส่งจริง</p>
+      <div class="prompt-example"><code>nest g mo database
+
+// coffee-rating.module.ts
+imports: [
+  DatabaseModule.register({
+    connectionString: process.env.DATABASE_URL!, // ! กัน strict mode ชั่วคราว — บทที่ 48 เปลี่ยนเป็น getOrThrow
+  }),
+]
+
+// coffee-rating.service.ts — ทดลองใช้ CONNECTION
+constructor(@Inject('CONNECTION') private readonly connection: PrismaClient) {}
+async onModuleInit() {
+  console.log(await this.connection.$queryRaw`SELECT current_database()`);
+}
+
+npm run start:dev</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>แอป start ได้ปกติ และ log แสดงผล <code>[ { current_database: 'postgres' } ]</code> จาก client ที่ inject มา — module เดียวกันนี้สามารถถูก import ที่อื่นด้วย <code>connectionString</code> คนละชุด (เช่น ชี้ไป test-db ในบทที่ 68) ได้ทันที ซึ่งเป็นสิ่งที่ static module ทำไม่ได้</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ตรวจว่า <code>register()</code> return object ที่มีทั้ง <code>module: DatabaseModule</code>, <code>providers</code> และ <code>exports</code></li>
+        <li><code>$queryRaw</code> ผ่าน <code>'CONNECTION'</code> ได้ผลลัพธ์กลับมา แสดงว่า options ถูกส่งถึง <code>PrismaPg</code> จริง</li>
+        <li>ทดลอง import <code>DatabaseModule.register()</code> ด้วย <code>connectionString</code> ปลอมใน module อื่น — query จาก instance นั้นต้อง error ขณะที่ instance แรกยังทำงาน</li>
+        <li><code>CoffeesService</code> ยังใช้ <code>PrismaService</code> ตามเดิม ไม่ได้ถูกเปลี่ยนมาใช้ <code>'CONNECTION'</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/fundamentals/dynamic-modules">Dynamic modules — NestJS Docs</a></li>
+      <li><a href="https://docs.nestjs.com/modules">Modules — NestJS Docs</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="38_leverage-async-providers.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="40_control-providers-scope.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

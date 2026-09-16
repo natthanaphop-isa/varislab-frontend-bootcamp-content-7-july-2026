@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง CoffeesModule เพื่อรวม controller และ service ของ domain เดียวกันไว้ด้วยกัน และเข้าใจ 4 ส่วนหลักของ @Module decorator" />
+  <title>ห่อ Business Domain ไว้ใน Modules</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 14 จาก 77</p>
+    <h1>ห่อ Business Domain ไว้ใน Modules</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายหน้าที่ของ <code>controllers</code>, <code>providers</code>, <code>imports</code> และ <code>exports</code> ใน <code>@Module()</code> ได้</li>
+        <li>สร้าง module ใหม่ด้วย Nest CLI และย้าย component ของ domain เข้าไปอยู่ในนั้น</li>
+        <li>ออกแบบโครงสร้างแอปให้แต่ละ business domain มีขอบเขตของตัวเอง</li>
+      </ul>
+    </section>
+
+    <h2>Module คือหน่วยจัดระเบียบของ NestJS</h2>
+    <p>ตอนนี้ <code>CoffeesController</code> และ <code>CoffeesService</code> ยังแปะอยู่ใน <code>AppModule</code> ซึ่งพอแอปโตขึ้นจะกลายเป็นกองรวมของทุกอย่าง แนวคิดของ Nest คือหนึ่ง <strong>business domain</strong> ควรมี <strong>module</strong> ของตัวเอง — ทุกอย่างเกี่ยวกับกาแฟอยู่ในโฟลเดอร์ <code>coffees/</code> ภายใต้ <code>CoffeesModule</code> เดียว</p>
+    <p><code>@Module()</code> decorator รับ object ที่มี 4 ส่วนหลัก:</p>
+    <div class="comparison" role="region" aria-label="สี่ส่วนหลักของ Module" tabindex="0">
+      <table>
+        <thead><tr><th>Property</th><th>หน้าที่</th></tr></thead>
+        <tbody>
+          <tr><td><code>controllers</code></td><td>API routes ที่ให้ module นี้ instantiate — คิดง่าย ๆ ว่าเป็นเส้นทางเข้าของ HTTP</td></tr>
+          <tr><td><code>providers</code></td><td>services ที่ให้ Nest injector สร้างขึ้น — โดย default ใช้ได้เฉพาะ<em>ภายใน</em> module นี้ เว้นแต่ประกาศใน <code>exports</code></td></tr>
+          <tr><td><code>imports</code></td><td>รายชื่อ module <em>อื่น</em> ที่ module นี้ต้องใช้ — provider ที่ module เหล่านั้น export จะพร้อมใช้ที่นี่</td></tr>
+          <tr><td><code>exports</code></td><td>provider ของ module นี้ที่เปิดให้ทุกที่ที่ import module นี้เข้าไปใช้ได้</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>สร้าง CoffeesModule</h2>
+    <pre><code>nest g module coffees
+# shorthand: nest g mo coffees</code></pre>
+    <p>CLI สร้าง <code>coffees/coffees.module.ts</code> และเพิ่ม <code>CoffeesModule</code> เข้า <code>imports</code> ของ <code>AppModule</code> ให้อัตโนมัติ จากนั้นย้าย controller และ service ของเราเข้ามาประกาศที่นี่แทน</p>
+    <pre><code>/* coffees.module.ts */
+import { Module } from '@nestjs/common';
+import { CoffeesController } from './coffees.controller.js';
+import { CoffeesService } from './coffees.service.js';
+
+@Module({
+  controllers: [CoffeesController],
+  providers: [CoffeesService]
+})
+export class CoffeesModule {}</code></pre>
+    <div class="warning"><p>อย่าลืม<strong>ลบ</strong> <code>CoffeesController</code> และ <code>CoffeesService</code> ออกจาก declaration ใน <code>AppModule</code> — ถ้าประกาศซ้ำสองที่ Nest จะสร้าง instance ซ้ำซ้อน ซึ่งทำให้เกิดพฤติกรรมแปลก ๆ เมื่อ service เก็บ state</p></div>
+    <p>เมื่อเสร็จแล้ว <code>AppModule</code> ควรเหลือแค่ <code>imports: [CoffeesModule]</code> และโครงสร้างโฟลเดอร์ของ domain กาแฟจะครบวงจรในที่เดียว:</p>
+    <pre><code>src/
+├── app.module.ts
+└── coffees/
+    ├── coffees.controller.ts
+    ├── coffees.service.ts
+    ├── coffees.module.ts
+    ├── dto/
+    └── entities/
+        └── coffee.entity.ts</code></pre>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">แยก domain กาแฟออกเป็น module ของตัวเอง</h2>
+      <p>สร้าง <code>CoffeesModule</code> ด้วย CLI, ประกาศ controller/service ในนั้น แล้วลบการประกาศเดิมออกจาก <code>AppModule</code> ให้สะอาด</p>
+      <div class="prompt-example"><code>nest g mo coffees
+# แก้ coffees.module.ts ให้มี controllers + providers
+# ลบ CoffeesController / CoffeesService ออกจาก app.module.ts
+npm run start:dev</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>แอป start ได้โดยไม่มี error เรื่อง dependency resolution และทุก endpoint ของ <code>/coffees</code> ยังทำงานเหมือนเดิมทุกประการ — การ refactor โครงสร้างไม่ควรเปลี่ยนพฤติกรรมภายนอกเลย</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>log ตอน start มีบรรทัด <code>CoffeesModule dependencies initialized</code></li>
+        <li><code>GET /coffees</code> และ <code>GET /coffees/1</code> ยังตอบเหมือนก่อน refactor</li>
+        <li><code>app.module.ts</code> ไม่มีการอ้างถึง <code>CoffeesController</code> หรือ <code>CoffeesService</code> ตรง ๆ อีก</li>
+        <li>ไฟล์ทั้งหมดของ domain กาแฟอยู่ใต้โฟลเดอร์ <code>src/coffees/</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/modules">Modules (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/cli/overview">Nest CLI: generate module (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="13_send-user-friendly-error-messages.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="15_introduction-to-data-transfer-objects.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

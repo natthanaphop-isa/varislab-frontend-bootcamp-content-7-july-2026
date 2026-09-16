@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สำรวจโครงสร้างโปรเจกต์ NestJS ที่ scaffold มาให้: main.ts, AppModule, controller และ service ทำงานร่วมกันอย่างไร" />
+  <title>มีอะไรอยู่ในแอปพลิเคชัน NestJS</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 2 จาก 77</p>
+    <h1>มีอะไรอยู่ในแอปพลิเคชัน NestJS</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายหน้าที่ของไฟล์หลักที่ <code>nest new</code> สร้างมาให้ได้ทีละไฟล์</li>
+        <li>ไล่เส้นทางของ request ตั้งแต่ <code>main.ts</code> จนถึง controller และ service</li>
+        <li>บอกได้ว่า separation of concerns ของ Nest ช่วยให้โฟกัสที่งานตรงหน้าได้อย่างไร</li>
+      </ul>
+    </section>
+
+    <h2>ทุกอย่างมีที่ทางของตัวเอง</h2>
+    <p>จุดขายสำคัญของ NestJS คือ <strong>separation of concerns</strong> ที่แทบไม่ต้องออกแรงจัดเอง: ทุกอย่างในแอป Nest มีโครงสร้างและตำแหน่งที่ชัดเจน ทำให้เราใช้เวลากับ business logic ตรงหน้า แทนที่จะเสียเวลาถกเรื่องการจัดไฟล์หรือ convention กันเองในทีม โปรเจกต์ที่สร้างจาก <code>nest new iluvcoffee</code> จะมีโครงหน้าตาแบบนี้</p>
+    <pre><code>iluvcoffee/
+├── src/
+│   ├── app.controller.spec.ts   # unit test ของ controller
+│   ├── app.controller.ts        # controller ตัวอย่าง (จัดการ route)
+│   ├── app.module.ts            # root module ของแอป
+│   ├── app.service.ts           # service ตัวอย่าง (business logic)
+│   └── main.ts                  # entry point — bootstrap แอป
+├── test/
+│   └── app.e2e-spec.ts          # e2e test ตัวอย่าง
+├── .prettierrc                  # ค่าตั้งของ Prettier (จัด format โค้ด)
+├── nest-cli.json                # ค่าตั้งของ Nest CLI
+├── oxlint.json                  # ค่าตั้งของ oxlint (linter)
+├── package.json
+├── tsconfig.build.json          # tsconfig สำหรับ nest build (compile เฉพาะ src/)
+├── tsconfig.json
+├── vitest.config.ts             # ค่าตั้ง Vitest สำหรับ unit tests
+└── vitest.config.e2e.ts         # ค่าตั้ง Vitest สำหรับ e2e tests</code></pre>
+    <p>สังเกตว่า <code>package.json</code> มี <code>"type": "module"</code> — โปรเจกต์ NestJS 12 เป็น <strong>ES module</strong> ตั้งแต่ต้น เครื่องมือที่มากับ scaffold คือ oxlint (<code>npm run lint</code>), Prettier (<code>npm run format</code>) และ Vitest (<code>npm test</code>) ซึ่งเราจะได้ใช้ในบทเรื่องการทดสอบ</p>
+
+    <h2>เส้นทางของ request: main.ts → module → controller → service</h2>
+    <p>ทุกอย่างเริ่มที่ <code>main.ts</code> ซึ่งเรียก <code>NestFactory.create()</code> เพื่อสร้าง application instance จาก root module แล้วสั่งให้ฟังที่ port ที่กำหนด (อ่านจาก <code>process.env.PORT</code> ถ้าไม่ตั้งจะใช้ 3000)</p>
+    <pre><code>import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module.js';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  await app.listen(process.env.PORT ?? 3000);
+}
+await bootstrap();</code></pre>
+    <p>สองจุดที่ต่างจากโค้ด Node.js แบบเก่า: import ไฟล์ในโปรเจกต์ต้องลงท้ายด้วย <code>.js</code> เสมอ (<code>'./app.module.js'</code>) เพราะใน ES module Node จะ resolve ไฟล์ที่ compile แล้ว TypeScript จึงบังคับให้ระบุนามสกุลแม้เราจะเขียนไฟล์ <code>.ts</code> อยู่ก็ตาม และ <code>await bootstrap()</code> เป็น top-level await ที่ ES module อนุญาตให้เขียนได้โดยไม่ต้องห่อใน function อีกชั้น — ทุก import ที่ <code>nest g</code> สร้างให้ตลอดคอร์สจะมี <code>.js</code> ติดมาให้เองอยู่แล้ว</p>
+    <p>จากนั้นแต่ละชิ้นส่วนแบ่งหน้าที่กันชัดเจน:</p>
+    <div class="comparison" role="region" aria-label="หน้าที่ของแต่ละไฟล์" tabindex="0">
+      <table>
+        <thead><tr><th>ไฟล์</th><th>หน้าที่</th><th>สิ่งที่ควรอยู่ / ไม่ควรอยู่</th></tr></thead>
+        <tbody>
+          <tr><td><code>app.module.ts</code></td><td>ประกาศว่า module นี้มี controllers และ providers อะไรบ้าง</td><td>เป็นแค่ "สารบัญ" ของ dependency graph — ไม่ใส่ logic</td></tr>
+          <tr><td><code>app.controller.ts</code></td><td>รับ HTTP request, แกะข้อมูล, ส่งต่อให้ service แล้วคืน response</td><td>บาง ๆ เสมอ — business logic ไม่ควรอยู่ที่นี่</td></tr>
+          <tr><td><code>app.service.ts</code></td><td>เก็บ business logic ที่ controller เรียกใช้ผ่าน dependency injection</td><td>ไม่รู้จัก HTTP เลย จึงทดสอบง่ายและนำไปใช้ซ้ำได้</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      <p>โครงสร้างนี้คือแพตเทิร์นที่เราจะทำซ้ำตลอดคอร์ส: ทุก feature ใหม่ (เช่น <code>coffees</code>) จะได้ controller + service + module ของตัวเอง แล้วนำ module นั้นมา import เข้า <code>AppModule</code></p>
+    </div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">Scaffold โปรเจกต์แล้วไล่อ่านทีละไฟล์</h2>
+      <p>สร้างโปรเจกต์ <code>iluvcoffee</code> ที่เราจะใช้ตลอดทั้งคอร์ส แล้วเปิดใน editor เพื่อไล่เส้นทางของ request ด้วยตัวเอง เริ่มจาก <code>main.ts</code> ตามไปที่ <code>AppModule</code> แล้วดูว่า <code>AppController</code> เรียก <code>AppService</code> ตรงไหน</p>
+      <div class="prompt-example"><code>nest new iluvcoffee
+cd iluvcoffee
+code .   # หรือเปิดด้วย editor ที่ใช้อยู่</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ได้โปรเจกต์ที่มีโครงตาม tree ด้านบน และเมื่อไล่อ่านจะเห็นชัดว่า <code>AppController</code> รับ <code>AppService</code> เข้ามาทาง constructor (dependency injection) และ route <code>GET /</code> คืนข้อความ <q>Hello World!</q> ที่มาจาก service ไม่ใช่จาก controller เอง</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ใน <code>main.ts</code> ชี้ได้ว่า root module ที่ใช้ bootstrap คือ <code>AppModule</code></li>
+        <li>ใน <code>app.module.ts</code> เห็น <code>AppController</code> ในช่อง <code>controllers</code> และ <code>AppService</code> ในช่อง <code>providers</code></li>
+        <li>อธิบายได้ใน 1 ประโยคว่าทำไมข้อความ <q>Hello World!</q> ถึงอยู่ใน service ไม่ใช่ controller</li>
+        <li>ลองแก้ข้อความใน <code>app.service.ts</code> แล้วดูว่าผลลัพธ์ของ <code>GET /</code> เปลี่ยนตาม (จะได้ทดสอบจริงในบทที่ 5)</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/first-steps">First steps (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/modules">Modules (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/controllers">Controllers (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="01_installing-nestjs-cli.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="03_what-well-be-building-in-this-course.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

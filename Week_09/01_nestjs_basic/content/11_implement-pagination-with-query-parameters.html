@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="รับ query parameters อย่าง limit และ offset ด้วย @Query() decorator เพื่อวางรากฐาน pagination ให้ endpoint รายการกาแฟ" />
+  <title>ทำ Pagination ด้วย Query Parameters</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 11 จาก 77</p>
+    <h1>ทำ Pagination ด้วย Query Parameters</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อ่าน query parameters จาก URL ด้วย <code>@Query()</code> decorator ได้</li>
+        <li>อธิบายได้ว่าทำไม endpoint ที่คืนรายการควรรองรับ <code>limit</code> และ <code>offset</code> ตั้งแต่แรก</li>
+        <li>แยกความต่างระหว่าง route parameter, request body และ query parameter ได้ชัดเจน</li>
+      </ul>
+    </section>
+
+    <h2>ทำไมรายการต้องมี Pagination</h2>
+    <p>endpoint อย่าง <code>GET /coffees</code> ที่คืน <em>ทุก</em> record ในระบบอาจดูไม่มีปัญหาตอนพัฒนา แต่เมื่อข้อมูลโตขึ้นเป็นหลักหมื่นหลักแสน รายการเดียวจะกินทั้ง memory, เวลา query และ bandwidth วิธีมาตรฐานคือให้ client ระบุ <strong>query parameters</strong> เช่น <code>limit</code> (จำนวนที่ต้องการ) และ <code>offset</code> (ข้ามไปกี่รายการ) เพื่อขอข้อมูลเป็นหน้า ๆ เช่น <code>GET /coffees?limit=10&amp;offset=20</code></p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบช่องทางส่งข้อมูลเข้า endpoint" tabindex="0">
+      <table>
+        <thead><tr><th>ช่องทาง</th><th>Decorator</th><th>เหมาะกับ</th></tr></thead>
+        <tbody>
+          <tr><td>Route parameter เช่น <code>/coffees/1</code></td><td><code>@Param()</code></td><td>ระบุ resource ชิ้นเดียวแบบเจาะจง</td></tr>
+          <tr><td>Query parameter เช่น <code>?limit=10</code></td><td><code>@Query()</code></td><td>ตัวเลือกเสริม: pagination, การกรอง, การเรียงลำดับ</td></tr>
+          <tr><td>Request body (JSON payload)</td><td><code>@Body()</code></td><td>ข้อมูลสำหรับสร้างหรือแก้ไข resource</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>รับ Query Parameters ด้วย <code>@Query()</code></h2>
+    <p>เพิ่ม <code>@Query()</code> เข้าไปใน parameter ของ <code>findAll()</code> เพื่อรับ object ที่รวม query ทั้งหมดของ request นั้น จากนั้น destructure เอาเฉพาะ key ที่สนใจ</p>
+    <pre><code>import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+
+@Controller('coffees')
+export class CoffeesController {
+  @Get()
+  findAll(@Query() paginationQuery: any) {
+    const { limit, offset } = paginationQuery;
+    return `This action returns all coffees. Limit ${limit}, offset: ${offset}`;
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return `This action returns #${id} coffee`;
+  }
+
+  @Post()
+  create(@Body() body: any) {
+    return body;
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() body: any) {
+    return `This action updates #${id} coffee`;
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return `This action removes #${id} coffee`;
+  }
+}</code></pre>
+    <p>เช่นเดียวกับ <code>@Param()</code> คุณสามารถระบุชื่อเจาะจงได้ เช่น <code>@Query('limit') limit: number</code> เพื่อรับค่าเดียว แต่การรับเป็น object เดียวจะสะดวกกว่าเมื่อ query มีหลายตัว และในบทที่ 28 เราจะยกระดับ object นี้เป็น DTO ที่ validate ได้จริง</p>
+    <div class="note"><p>ตอนนี้ค่าใน query ยังเป็น string เสมอ (มาจาก URL) เช่น <code>limit</code> ที่ได้คือ <code>"10"</code> ไม่ใช่ <code>10</code> — บทที่ 18 จะเปิด auto-transform ของ <code>ValidationPipe</code> เพื่อแปลง type ให้อัตโนมัติ</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">เพิ่ม limit และ offset ให้ GET /coffees</h2>
+      <p>แก้ <code>findAll()</code> ใน <code>coffees.controller.ts</code> ให้รับ <code>@Query()</code> ตามโค้ดด้านบน แล้วยิงทดสอบด้วย Insomnia หรือ curl โดยใส่ query ต่างกันหลายแบบ</p>
+      <div class="prompt-example"><code>curl "http://localhost:3000/coffees?limit=10&amp;offset=20"
+curl "http://localhost:3000/coffees?limit=5"
+curl "http://localhost:3000/coffees"</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>คำขอแรกตอบ <q>This action returns all coffees. Limit 10, offset: 20</q>; คำขอที่ไม่ส่ง query บางตัวจะเห็นค่านั้นเป็น <code>undefined</code> ซึ่งเป็นพฤติกรรมปกติ เพราะ query เป็นตัวเลือกเสริมที่ client จะส่งหรือไม่ก็ได้</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ยิง <code>GET /coffees?limit=10&amp;offset=20</code> แล้วเห็นค่า limit และ offset สะท้อนกลับมาในข้อความ</li>
+        <li>ยิงโดยไม่ใส่ query เลย แล้ว endpoint ยังทำงานได้ ไม่ throw error</li>
+        <li>ลอง <code>console.log(typeof limit)</code> เพื่อยืนยันว่าค่าที่ได้ตอนนี้เป็น string</li>
+        <li>route อื่น ๆ (<code>GET /coffees/:id</code>, <code>POST /coffees</code>) ยังทำงานเหมือนเดิม</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/controllers">Controllers: Query parameters (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation: Auto-transform payloads (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="10_handling-update-and-delete-requests.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="12_creating-a-basic-service.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

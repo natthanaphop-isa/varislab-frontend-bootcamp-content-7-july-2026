@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง response DTO หกคลาสและ mapper บริสุทธิ์หนึ่งฟังก์ชัน ที่แปลงแถวสินค้าจาก Prisma ให้เป็นรูปทรง Product 22 คีย์ของ dummyjson รวมถึงกรณี brand เป็น null" />
+  <title>แปลงแถวจากฐานข้อมูลเป็นรูปทรงของ dummyjson</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 11 จาก 24</p>
+    <h1>แปลงแถวจากฐานข้อมูลเป็นรูปทรงของ dummyjson</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายความต่างระหว่าง <em>รูปทรงที่เก็บ</em> (แถวใน Postgres) กับ <em>รูปทรงที่ตอบ</em> (JSON ของ dummyjson) ได้ทีละคีย์</li>
+        <li>เขียน mapper บริสุทธิ์ที่เป็นที่<strong>เดียว</strong>ในโปรเจกต์ที่รู้จักทั้งสองรูปทรง</li>
+        <li>จัดการคีย์ที่ต้อง<em>หายไปทั้งคีย์</em> (ไม่ใช่เป็น <code>null</code>) ด้วย conditional spread ได้อย่างถูก type</li>
+      </ul>
+    </section>
+
+    <h2>สองรูปทรงที่ไม่เหมือนกัน และไม่ควรทำให้เหมือนกัน</h2>
+    <p>ฐานข้อมูลกับ API มีเป้าหมายต่างกัน ตารางอยากได้คอลัมน์แบน ๆ ที่ index ได้ ส่วน client อยากได้ JSON ที่อ่านง่ายและซ้อนเป็นชั้น ลองดูจุดที่ทั้งสองไม่ตรงกันใน <code>schema.prisma</code> ของเรา</p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบรูปทรงที่เก็บกับรูปทรงที่ตอบ" tabindex="0">
+      <table>
+        <thead><tr><th>ในฐานข้อมูล</th><th>ใน contract ของ dummyjson</th><th>งานที่ mapper ต้องทำ</th></tr></thead>
+        <tbody>
+          <tr><td>คอลัมน์ <code>width</code>, <code>height</code>, <code>depth</code></td><td>object <code>dimensions { width, height, depth }</code></td><td>ห่อสามคอลัมน์เป็น object เดียว</td></tr>
+          <tr><td>คอลัมน์ <code>barcode</code>, <code>qrCode</code>, <code>createdAt</code>, <code>updatedAt</code></td><td>object <code>meta { createdAt, updatedAt, barcode, qrCode }</code></td><td>ห่อสี่คอลัมน์เป็น <code>meta</code></td></tr>
+          <tr><td><code>categoryId</code> + relation <code>category</code> (ทั้ง object)</td><td><code>category</code> เป็น string เช่น <code>"beauty"</code></td><td>ดึงแค่ <code>category.slug</code> ออกมา</td></tr>
+          <tr><td><code>DateTime</code> → JavaScript <code>Date</code></td><td>ISO string เช่น <code>"2025-04-30T09:41:02.053Z"</code></td><td>เรียก <code>.toISOString()</code> ทั้งสามจุด</td></tr>
+          <tr><td><code>brand String?</code> → ค่า <code>null</code> ได้</td><td>ถ้าไม่มี brand จะ<strong>ไม่มีคีย์</strong> <code>brand</code> เลย</td><td>ใส่คีย์เฉพาะเมื่อไม่ใช่ <code>null</code></td></tr>
+          <tr><td><code>Review</code> มี <code>id</code> และ <code>productId</code></td><td>review มีเพียงห้าคีย์</td><td>เลือกเฉพาะห้าคีย์ ตัด <code>id</code>/<code>productId</code> ออก</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ถ้าเราปล่อยให้แต่ละ endpoint แปลงเอง ความรู้เรื่อง 22 คีย์นี้จะกระจายไปทั้งโปรเจกต์ แล้ววันหนึ่งจะมี endpoint ที่ลืมแปลง <code>date</code> เราจึงรวบไว้ที่ฟังก์ชันเดียวชื่อ <code>toProductResponse</code></p>
+
+    <h2>ทำไม mapper ต้องเป็นฟังก์ชันบริสุทธิ์ ไม่ใช่ method ใน service</h2>
+    <p><code>toProductResponse(product)</code> รับค่าเข้า คืนค่าออก ไม่แตะฐานข้อมูล ไม่แตะ config ไม่มี state — เรียก <code>export function</code> ธรรมดาก็พอ ไม่ต้อง <code>@Injectable()</code> ผลที่ได้คือ</p>
+    <ul>
+      <li>เทสได้โดยไม่ต้องยก Nest ขึ้นมาเลย: ประกอบ object เข้าไปตรง ๆ แล้วเทียบผลลัพธ์ ไม่ต้องมี <code>Test.createTestingModule</code> ไม่ต้องมีฐานข้อมูล</li>
+      <li>ทุก endpoint ที่คืนสินค้า (บทที่ 12, 13, 14) เรียกฟังก์ชันเดียวกัน จึงตอบรูปทรงเดียวกันแน่นอน</li>
+      <li>เวลา contract เปลี่ยน มีที่เดียวที่ต้องแก้</li>
+    </ul>
+
+    <h2>ทำไมใช้ <code>class</code> ไม่ใช่ <code>interface</code> สำหรับ response DTO</h2>
+    <p><code>interface</code> หายไปตอน compile จึงไม่เหลือข้อมูลอะไรให้ tool อ่านตอน runtime ในบทที่ 21 เราจะเปิด Swagger CLI plugin ซึ่งอ่าน field ของ <strong>class</strong> เพื่อสร้าง schema ของเอกสาร API ให้อัตโนมัติ ถ้าเราประกาศเป็น interface ไว้ตอนนี้ ก็ต้องมาเขียนใหม่ทั้งหมดในบทนั้น</p>
+    <p>ข้อกังวลปกติของการใช้ class คือ TypeScript จะบ่นว่า field ไม่ถูก assign ใน constructor (<code>strictPropertyInitialization</code>) แต่ <code>tsconfig.json</code> ของ scaffold Nest 12 ตั้ง <code>"strictPropertyInitialization": false</code> ไว้ให้แล้ว ดังนั้นการประกาศเปล่า ๆ แบบ <code>title: string;</code> จึง compile ผ่าน โดยที่ <code>"strict": true</code> ยังเปิดอยู่ตามปกติ</p>
+
+    <h2>คีย์ที่ต้องหายไปทั้งคีย์: conditional spread</h2>
+    <p>dummyjson ไม่ส่ง <code>"brand": null</code> มา — มันไม่ส่งคีย์ <code>brand</code> มาเลยสำหรับสินค้าที่ไม่มีแบรนด์ นี่คือความต่างที่ <code>diff</code> จับได้ วิธีที่เราใช้คือ spread แบบมีเงื่อนไข</p>
+    <pre><code>...(product.brand !== null ? { brand: product.brand } : {}),</code></pre>
+    <p>ถ้าเงื่อนไขเป็นเท็จ เรา spread object ว่าง คีย์จึงไม่เกิดขึ้นเลย ทั้งใน object จริงและใน type ที่ TypeScript อนุมาน</p>
+    <p>ทางเลือกที่ดูสั้นกว่าคือ <code>brand: product.brand ?? undefined</code> — ผล JSON เหมือนกัน เพราะ <code>JSON.stringify</code> ตัดคีย์ที่เป็น <code>undefined</code> ทิ้งอยู่แล้ว แต่มันเปิดช่องให้เขียน type ของ DTO เป็น <code>brand: string | null</code> ตามไปด้วย ซึ่งจะกลายเป็นการประกาศว่า API ของเราส่ง <code>null</code> ได้ (ทั้งที่ไม่เคยส่ง) เราจึงเลือก spread แบบมีเงื่อนไข คู่กับ DTO ที่ประกาศ <code>brand?: string</code> — <code>?</code> ตัวเดียวในไฟล์ทั้งไฟล์</p>
+
+    <h2>type ของแถวที่มี relation ติดมาด้วย</h2>
+    <p><code>Product</code> ที่ Prisma export ให้คือแถวเปล่า ๆ ของตาราง <code>Product</code> เท่านั้น — ไม่มี <code>category</code> ไม่มี <code>reviews</code> ค่าพวกนี้จะติดมาเฉพาะเมื่อ query สั่ง <code>include</code> เราจึงประกาศ type ของ input ให้ตรงกับที่สั่ง</p>
+    <pre><code>export type ProductWithRelations = Product &amp; { category: Category; reviews: Review[] };</code></pre>
+    <p>type สามตัวนี้มาจาก Prisma Client ที่เรา generate ไว้ที่ <code>src/generated/prisma/client.ts</code> (ตามที่ตั้ง <code>output</code> ไว้ใน <code>schema.prisma</code>) ไฟล์นั้น export <code>Product</code>, <code>Category</code>, <code>Review</code> ให้พร้อมใช้ และเราเรียกด้วย <code>import type</code> เพราะต้องการเฉพาะ type ไม่ต้องการโค้ดตอน runtime</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>src/products/
+├── dto/
+│   └── product-response.dto.ts       (สร้างใหม่)
+└── product.mapper.ts                 (สร้างใหม่)</code></pre>
+    <ul>
+      <li><strong><code>src/products/dto/product-response.dto.ts</code></strong> — สัญญา: ต้องมีหกคลาสตามลำดับ (<code>ProductDimensionsDto</code>, <code>ProductReviewDto</code>, <code>ProductMetaDto</code>, <code>ProductResponseDto</code>, <code>CategoryResponseDto</code>, <code>ProductListResponseDto</code>) และ <code>ProductResponseDto</code> ต้องมี 22 field เรียงตาม contract / ต้องไม่มี decorator ไม่มี method และมี <code>?</code> ได้ที่ <code>brand</code> ที่เดียว</li>
+      <li><strong><code>src/products/product.mapper.ts</code></strong> — สัญญา: ต้อง export <code>ProductWithRelations</code> และ <code>toProductResponse</code> ที่คืน <code>ProductResponseDto</code> โดยเรียงคีย์ตาม contract / ต้องไม่ใช้ <code>any</code> ไม่ใช้ <code>as</code> และต้องไม่ส่ง <code>id</code>/<code>productId</code> ของ review ออกไป</li>
+    </ul>
+    <p>บทนี้ไม่แตะ <code>products.service.ts</code> เลย — ยังไม่มี endpoint ไหนเรียก mapper จนถึงบทถัดไป</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor สร้าง DTO และ mapper แล้วตรวจคีย์ให้ครบ 22 ตัว</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before product mapper"</code>) เปิด <code>docs/contract/product-1.json</code> ไว้ข้าง ๆ ด้วย เพราะรอบนี้เราจะนับคีย์เทียบกันจริง ๆ</p>
+      <div class="cursor-prompt"><code>สร้าง response DTO และ mapper ที่แปลงแถวสินค้าจาก Prisma เป็นรูปทรง Product ของ dummyjson
+
+บริบท: @prisma/schema.prisma @src/products/products.service.ts @docs/contract/product-1.json @.cursor/rules/project.mdc
+docs/contract/product-1.json คือรูปทรงเป้าหมาย: 22 key เรียงตามนี้
+  id, title, description, category, price, discountPercentage, rating, stock, tags, brand, sku, weight,
+  dimensions { width, height, depth }, warrantyInformation, shippingInformation, availabilityStatus,
+  reviews [{ rating, comment, date, reviewerName, reviewerEmail }], returnPolicy, minimumOrderQuantity,
+  meta { createdAt, updatedAt, barcode, qrCode }, images, thumbnail
+ในฐานข้อมูล category เป็น relation (ต้องตอบเป็น slug string) ส่วน dimensions และ meta ถูกแบนเป็นคอลัมน์ width/height/depth และ barcode/qrCode/createdAt/updatedAt
+date ทุกตัวใน dummyjson เป็น ISO string เช่น "2025-04-30T09:41:02.053Z"
+สินค้าที่ brand เป็น null ใน DB ต้องไม่มี key brand ใน response (dummyjson ไม่ส่ง key นี้มาเลย ไม่ใช่ส่ง null)
+Prisma Client อยู่ที่ src/generated/prisma/client.ts และ export type ของ model ชื่อ Product, Category, Review
+
+โครงสร้าง: สร้างไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- src/products/dto/product-response.dto.ts (สร้างใหม่)
+- src/products/product.mapper.ts (สร้างใหม่)
+
+ข้อกำหนดทางเทคนิค:
+- product-response.dto.ts: export class หกตัวตามลำดับ ไม่มี decorator ไม่มี method มีแต่ field ที่ระบุ type
+  ProductDimensionsDto { width: number; height: number; depth: number }
+  ProductReviewDto { rating: number; comment: string; date: string; reviewerName: string; reviewerEmail: string }
+  ProductMetaDto { createdAt: string; updatedAt: string; barcode: string; qrCode: string }
+  ProductResponseDto ที่มี field ครบ 22 ตัวตามลำดับด้านบน โดย category: string, brand?: string (optional ตัวเดียว), dimensions: ProductDimensionsDto, reviews: ProductReviewDto[], meta: ProductMetaDto, tags และ images เป็น string[]
+  CategoryResponseDto { slug: string; name: string; url: string }
+  ProductListResponseDto { products: ProductResponseDto[]; total: number; skip: number; limit: number }
+- product.mapper.ts: import type { Category, Product, Review } from '../generated/prisma/client.js'
+  export type ProductWithRelations = Product &amp; { category: Category; reviews: Review[] }
+  export function toProductResponse(product: ProductWithRelations): ProductResponseDto
+  สร้าง object literal เรียง key ตามลำดับ contract, category เป็น product.category.slug,
+  brand ใส่เฉพาะเมื่อไม่เป็น null ด้วย spread แบบมีเงื่อนไข ...(product.brand !== null ? { brand: product.brand } : {})
+  date, createdAt, updatedAt แปลงด้วย .toISOString()
+  reviews map ทีละตัวเลือกเฉพาะห้า field ของ contract (ห้ามส่ง id หรือ productId ออกไป)
+- ห้ามใช้ any ห้ามใช้ as
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์อื่นนอกจากที่ระบุ (products.service.ts ยังไม่ต้องแก้)
+- ห้ามสร้าง index.ts / barrel
+- ยังไม่ต้องสร้าง endpoint ที่ใช้ mapper</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>ใน DTO มีหกคลาสครบ และมีเครื่องหมาย <code>?</code> เพียงจุดเดียวคือ <code>brand?: string</code> — ค้นหาคำว่า <code>null</code> ในไฟล์นี้ ต้องไม่เจอเลย</li>
+        <li><code>ProductResponseDto</code> มี 22 field เรียงตามลำดับของ contract (นับเทียบกับ <code>docs/contract/product-1.json</code> ทีละบรรทัด)</li>
+        <li>type ของ model นำเข้าด้วย <code>import type</code> ไม่ใช่ <code>import</code> ธรรมดา และ path ลงท้าย <code>.js</code></li>
+        <li>brand ใช้ conditional spread ไม่ใช่ <code>?? undefined</code> หรือ <code>|| ''</code></li>
+        <li>เรียก <code>.toISOString()</code> ครบสามจุด: <code>review.date</code>, <code>product.createdAt</code>, <code>product.updatedAt</code> — และไม่มี <code>Date</code> object ไหนหลุดออกไปเป็น field</li>
+        <li>object ของ review ที่ map ออกมามีห้าคีย์เท่านั้น ไม่มี <code>id</code> ไม่มี <code>productId</code></li>
+        <li><code>npm run build</code> ผ่าน และในไฟล์ทั้งสองไม่มีคำว่า <code>any</code> หรือ <code>as</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> เขียน <code>brand: product.brand ?? undefined</code> — runtime ยังถูก (JSON ตัด <code>undefined</code> ทิ้ง) แต่เมื่อเขียนแบบนี้ Cursor มักไปประกาศใน DTO เป็น <code>brand: string | null</code> หรือ <code>brand: string | undefined</code> ตามด้วย ให้เปิด DTO เช็กเสมอ อีกข้อที่พลาดบ่อยคือ <code>category: product.category</code> (ยัด object ทั้งก้อนเข้าไป) แทนที่จะเป็น <code>product.category.slug</code> — TypeScript จะฟ้องให้ ถ้า DTO ประกาศ <code>category: string</code> ไว้ถูก ซึ่งเป็นอีกเหตุผลที่เราเขียน DTO ก่อน mapper</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <p><code>src/products/dto/product-response.dto.ts</code></p>
+      <pre><code>export class ProductDimensionsDto {
+  width: number;
+  height: number;
+  depth: number;
+}
+
+export class ProductReviewDto {
+  rating: number;
+  comment: string;
+  date: string;
+  reviewerName: string;
+  reviewerEmail: string;
+}
+
+export class ProductMetaDto {
+  createdAt: string;
+  updatedAt: string;
+  barcode: string;
+  qrCode: string;
+}
+
+export class ProductResponseDto {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  discountPercentage: number;
+  rating: number;
+  stock: number;
+  tags: string[];
+  brand?: string;
+  sku: string;
+  weight: number;
+  dimensions: ProductDimensionsDto;
+  warrantyInformation: string;
+  shippingInformation: string;
+  availabilityStatus: string;
+  reviews: ProductReviewDto[];
+  returnPolicy: string;
+  minimumOrderQuantity: number;
+  meta: ProductMetaDto;
+  images: string[];
+  thumbnail: string;
+}
+
+export class CategoryResponseDto {
+  slug: string;
+  name: string;
+  url: string;
+}
+
+export class ProductListResponseDto {
+  products: ProductResponseDto[];
+  total: number;
+  skip: number;
+  limit: number;
+}</code></pre>
+      <p><code>src/products/product.mapper.ts</code></p>
+      <pre><code>import type { Category, Product, Review } from '../generated/prisma/client.js';
+import { ProductResponseDto } from './dto/product-response.dto.js';
+
+export type ProductWithRelations = Product &amp; { category: Category; reviews: Review[] };
+
+export function toProductResponse(product: ProductWithRelations): ProductResponseDto {
+  return {
+    id: product.id,
+    title: product.title,
+    description: product.description,
+    category: product.category.slug,
+    price: product.price,
+    discountPercentage: product.discountPercentage,
+    rating: product.rating,
+    stock: product.stock,
+    tags: product.tags,
+    ...(product.brand !== null ? { brand: product.brand } : {}),
+    sku: product.sku,
+    weight: product.weight,
+    dimensions: { width: product.width, height: product.height, depth: product.depth },
+    warrantyInformation: product.warrantyInformation,
+    shippingInformation: product.shippingInformation,
+    availabilityStatus: product.availabilityStatus,
+    reviews: product.reviews.map((review) =&gt; ({
+      rating: review.rating,
+      comment: review.comment,
+      date: review.date.toISOString(),
+      reviewerName: review.reviewerName,
+      reviewerEmail: review.reviewerEmail,
+    })),
+    returnPolicy: product.returnPolicy,
+    minimumOrderQuantity: product.minimumOrderQuantity,
+    meta: {
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+      barcode: product.barcode,
+      qrCode: product.qrCode,
+    },
+    images: product.images,
+    thumbnail: product.thumbnail,
+  };
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>มีไฟล์ใหม่สองไฟล์ และ <code>npm run build</code> จบด้วย exit 0 โดยไม่มี error ตามด้วย <code>npm run lint</code> ที่เงียบสนิท — <em>ยังไม่มีอะไรให้ยิง curl ในบทนี้</em> เพราะไม่มี endpoint ไหนเรียก <code>toProductResponse</code> เลย คนที่พิสูจน์ว่า mapper ถูกจริงคือบทถัดไป</p>
+      <p>การที่ build ผ่านไม่ได้แค่บอกว่า syntax ถูก — มันบอกว่า type ของทุกคอลัมน์ที่ mapper หยิบมามีอยู่จริงใน Prisma Client ที่ generate ไว้ และรูปทรงที่ประกอบขึ้นตรงกับ <code>ProductResponseDto</code> ทุกคีย์</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>npm run build</code> ได้ exit 0 (ไม่มี error TS ใด ๆ) และ <code>npm run lint</code> ไม่พิมพ์อะไรออกมา</li>
+        <li>นับคีย์: <code>node -e "const d=require('./docs/contract/product-1.json');console.log(Object.keys(d).length)"</code> ต้องได้ <code>22</code> เท่ากับจำนวน field ใน <code>ProductResponseDto</code></li>
+        <li>ลองแก้ <code>category: product.category.slug</code> เป็น <code>category: product.category</code> ชั่วคราวแล้ว <code>npm run build</code> — ต้องได้ error ทันที (ยืนยันว่า DTO ทำหน้าที่เป็นยาม) แล้วแก้กลับ</li>
+        <li><code>grep -n "any\|as " src/products/product.mapper.ts src/products/dto/product-response.dto.ts</code> — ต้องไม่เจอ</li>
+        <li>commit ผลงานด้วย <code>git add -A &amp;&amp; git commit -m "feat: product response dto and mapper"</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/select-fields">Select fields &amp; relations (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/type-safety">Type safety and generated types (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/serialization">Serialization (NestJS Docs)</a></li>
+      <li><a href="https://dummyjson.com/docs/products">Products endpoints (DummyJSON Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="10_get-products-categories.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="12_get-product-by-id.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

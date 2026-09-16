@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เปิด ValidationPipe แบบ global ใส่ decorator ของ class-validator ใน DTO และใช้ PartialType ลดโค้ดซ้ำใน UpdateCoffeeDto" />
+  <title>Validate ข้อมูลขาเข้าด้วย DTO</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 16 จาก 77</p>
+    <h1>Validate ข้อมูลขาเข้าด้วย DTO</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เปิดใช้ <code>ValidationPipe</code> แบบ global ใน <code>main.ts</code></li>
+        <li>กำหนดกฎ validation บน DTO ด้วย decorator ของ <code>class-validator</code></li>
+        <li>ใช้ <code>PartialType</code> จาก <code>@nestjs/mapped-types</code> สร้าง UpdateDto โดยไม่เขียนซ้ำ</li>
+      </ul>
+    </section>
+
+    <h2>ทำให้สัญญาใน DTO มีผลจริงตอน Runtime</h2>
+    <p>DTO จากบทที่แล้วช่วยเฉพาะตอนคอมไพล์ — client ยังส่ง payload มั่ว ๆ มาได้โดย Nest ไม่ปริปาก <code>ValidationPipe</code> คือกลไกมาตรฐานที่ตรวจ payload ทุกก้อนเทียบกับกฎที่ประกาศไว้บน DTO ให้อัตโนมัติ เริ่มจากติดตั้ง dependencies สองตัวและเปิด pipe แบบ global:</p>
+    <pre><code>npm i class-validator class-transformer</code></pre>
+    <pre><code>/* main.ts */
+app.useGlobalPipes(new ValidationPipe());</code></pre>
+    <p>จากนั้นแปะ decorator บอกกฎลงบน property ของ <code>CreateCoffeeDto</code>:</p>
+    <pre><code>import { IsString } from 'class-validator';
+
+export class CreateCoffeeDto {
+  @IsString()
+  readonly name: string;
+
+  @IsString()
+  readonly brand: string;
+
+  @IsString({ each: true })
+  readonly flavors: string[];
+}</code></pre>
+    <p><code>{ each: true }</code> บอกว่า <code>flavors</code> ต้องเป็น array ที่<em>สมาชิกทุกตัว</em>เป็น string ถ้า client ส่ง field ขาดหรือ type ผิด Nest จะตอบ 400 Bad Request พร้อมรายการข้อผิดพลาดโดยที่ handler ของเราไม่ถูกเรียกเลย:</p>
+    <pre><code>{
+  "statusCode": 400,
+  "message": ["name must be a string"],
+  "error": "Bad Request"
+}</code></pre>
+
+    <h2>PartialType: UpdateDto ที่ไม่ต้องเขียนซ้ำ</h2>
+    <p><code>UpdateCoffeeDto</code> ของเราคือ <code>CreateCoffeeDto</code> เวอร์ชันที่ทุก field เป็น optional — การคัดลอกมาแก้มือทั้ง property และ validation rule คือโค้ดซ้ำที่จะหลุด sync กันในที่สุด <code>@nestjs/mapped-types</code> มี utility แก้ปัญหานี้ตรง ๆ:</p>
+    <pre><code>npm i @nestjs/mapped-types</code></pre>
+    <pre><code>/* dto/update-coffee.dto.ts */
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateCoffeeDto } from './create-coffee.dto.js';
+
+export class UpdateCoffeeDto extends PartialType(CreateCoffeeDto) {}</code></pre>
+    <p><code>PartialType</code> คืน class ใหม่ที่มีทุก property ของต้นฉบับแบบ optional และ<strong>สืบทอด validation rules ทั้งหมด</strong>มาด้วย — แก้กฎที่ <code>CreateCoffeeDto</code> ที่เดียว UpdateDto ได้ผลตามทันที</p>
+    <div class="note"><p>ถ้าภายหลังคุณใช้ Swagger (บทที่ 59 เป็นต้นไป) ให้เปลี่ยนไป import <code>PartialType</code> จาก <code>@nestjs/swagger</code> แทน เพื่อให้เอกสาร API รู้จัก field ที่เป็น optional ด้วย</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">เปิด validation แล้วลองส่งของผิด</h2>
+      <p>ติดตั้ง dependencies, เปิด <code>ValidationPipe</code> ใน <code>main.ts</code>, ใส่กฎใน <code>CreateCoffeeDto</code> และเขียน <code>UpdateCoffeeDto</code> ใหม่ด้วย <code>PartialType</code> แล้วทดลองยิง payload ที่ตั้งใจให้ผิด</p>
+      <div class="prompt-example"><code>npm i class-validator class-transformer @nestjs/mapped-types
+
+curl -X POST http://localhost:3000/coffees \
+  -H "Content-Type: application/json" \
+  -d '{"brand": "Buddy Brew"}'
+
+curl -X POST http://localhost:3000/coffees \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Shipwreck Roast", "brand": "Buddy Brew", "flavors": ["caramel"]}'</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>คำขอแรก (ไม่มี <code>name</code> และ <code>flavors</code>) ตอบ 400 พร้อม message array ระบุทุก field ที่ผิด ส่วนคำขอที่สองผ่าน validation และสร้างกาแฟได้ตามปกติ</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ส่ง <code>name</code> เป็น number เช่น <code>{"name": 123}</code> แล้วได้ 400 พร้อมข้อความ <code>name must be a string</code></li>
+        <li>ส่ง <code>flavors</code> ที่มีสมาชิกไม่ใช่ string แล้วโดนปฏิเสธเพราะ <code>{ each: true }</code></li>
+        <li><code>PATCH /coffees/1</code> ด้วย <code>{"name": "New Roast"}</code> ผ่านได้ แม้ส่งแค่ field เดียว — ยืนยันว่า PartialType ทำให้ทุก field เป็น optional</li>
+        <li><code>PATCH /coffees/1</code> ด้วย <code>{"name": 123}</code> ยังโดน 400 — ยืนยันว่า validation rule สืบทอดมาด้วย</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation: ValidationPipe (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/openapi/mapped-types">Mapped types: PartialType (NestJS)</a></li>
+      <li><a href="https://github.com/typestack/class-validator">class-validator: Decorator reference</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="15_introduction-to-data-transfer-objects.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="17_handling-malicious-request-data.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

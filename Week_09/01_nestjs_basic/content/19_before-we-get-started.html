@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="จุดแยกสำคัญของคอร์ส: บันทึกความคืบหน้าหลังจบ Chapter 2 ไว้ใน git branch แยก ก่อนเดินหน้าเข้าสู่บท PostgreSQL และ Prisma" />
+  <title>ก่อนเริ่มบทฐานข้อมูล: เก็บความคืบหน้าไว้ใน Branch</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 19 จาก 77</p>
+    <h1>ก่อนเริ่มบทฐานข้อมูล: เก็บความคืบหน้าไว้ใน Branch</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายโครงสร้างสองเส้นทางฐานข้อมูลของคอร์ส (PostgreSQL หลัก, MongoDB โบนัส) ได้</li>
+        <li>บันทึก snapshot ของโค้ด ณ จุดจบ Chapter 2 ไว้ใน git branch แยก</li>
+        <li>กลับมาใช้ snapshot นั้นเป็นจุดตั้งต้นของบท MongoDB ได้ในภายหลัง</li>
+      </ul>
+    </section>
+
+    <h2>ทางแยกของคอร์ส: SQL กับ NoSQL</h2>
+    <p>บทนี้เป็นจุดต่อจาก Chapter 2 <q>Creating a REST API Application</q> ซึ่งเป็นเส้นทางหลัก (standard path) ของคอร์ส แต่คอร์สนี้ยังมีบทโบนัส <strong>NoSQL / MongoDB</strong> (บทที่ 70–77) ที่<em>เริ่มจากจุดเดียวกัน</em>คือโค้ด ณ ตอนจบ Chapter 2 เช่นกัน — ไม่ใช่ต่อจากบท Prisma</p>
+    <p>การแยกสองเส้นทางแบบนี้ทำให้คุณเลือกเรียนเฉพาะฐานข้อมูลที่โปรเจกต์ของคุณใช้จริงได้ หรือจะโค้ดตามทั้งสองเส้นทางก็ได้ ขอแค่มี snapshot ของจุดตั้งต้นเก็บไว้</p>
+    <div class="warning"><p><strong>สำคัญมาก:</strong> ถ้าคุณตั้งใจจะโค้ดตามทั้งบท PostgreSQL และบท MongoDB ให้บันทึกความคืบหน้าปัจจุบัน (จุดจบ Chapter 2) ลง branch แยก<em>ก่อน</em>เริ่มบทถัดไป มิฉะนั้นเมื่อถึงบท MongoDB คุณจะต้องมานั่งถอนโค้ด Prisma ออกเอง</p></div>
+
+    <h2>บันทึก Snapshot ด้วย Git Branch</h2>
+    <p>วิธีที่ตรงไปตรงมาที่สุด: สร้าง branch ใหม่เก็บสถานะปัจจุบันไว้ แล้วกลับมาทำงานต่อบน branch หลักตามเดิม</p>
+    <pre><code>git add .
+git commit -m "Finish Chapter 2: REST API application"
+
+git branch end-of-chapter-2
+
+git branch
+# * master (หรือ main)
+#   end-of-chapter-2</code></pre>
+    <p>เท่านี้ branch <code>end-of-chapter-2</code> จะชี้ไปที่ commit ปัจจุบันตลอดไป ส่วนเราทำงานต่อบน <code>master</code> เข้าสู่บท Prisma ได้เลย เมื่อถึงบทที่ 70 ค่อย <code>git checkout end-of-chapter-2</code> (หรือแตก branch ใหม่จากจุดนั้น) เพื่อเริ่มเส้นทาง MongoDB จากจุดที่ถูกต้อง</p>
+    <div class="note"><p>ถ้ายังไม่ได้ init git ในโปรเจกต์ ให้รัน <code>git init</code> ก่อน — โปรเจกต์ที่สร้างด้วย <code>nest new</code> มักมี git repository ให้แล้ว ตรวจได้ด้วย <code>git status</code></p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สร้างจุดเซฟก่อนเดินหน้า</h2>
+      <p>commit งานทั้งหมดของ Chapter 2 แล้วสร้าง branch ชื่อสื่อความหมาย เช่น <code>end-of-chapter-2</code> จากนั้นยืนยันว่าตัวเองยังอยู่บน branch หลัก</p>
+      <div class="prompt-example"><code>git status
+git add .
+git commit -m "Finish Chapter 2: REST API application"
+git branch end-of-chapter-2
+git branch</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>git branch</code> แสดงทั้ง branch หลัก (มีเครื่องหมาย <code>*</code>) และ <code>end-of-chapter-2</code> โดย working tree สะอาด (<code>nothing to commit</code>) — คุณพร้อมเริ่มติดตั้ง PostgreSQL ในบทถัดไปโดยมีจุดถอยหลังที่ปลอดภัย</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>git status</code> ตอบ <code>nothing to commit, working tree clean</code></li>
+        <li><code>git branch</code> เห็น <code>end-of-chapter-2</code> อยู่ในรายการ</li>
+        <li><code>git log --oneline -1 end-of-chapter-2</code> ชี้ไปที่ commit ล่าสุดของ Chapter 2</li>
+        <li>คุณยังอยู่บน branch หลัก (master/main) พร้อมเรียนบทที่ 20 ต่อ</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals: Course path (คอร์สต้นฉบับ)</a></li>
+      <li><a href="https://git-scm.com/docs/git-branch">git-branch documentation</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="18_auto-transform-payloads-to-dto-instances.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="20_running-postgresql.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

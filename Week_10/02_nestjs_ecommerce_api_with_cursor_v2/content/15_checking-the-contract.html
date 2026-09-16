@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เขียน script ที่ยิงทั้ง API ของเราและ dummyjson ด้วย request ชุดเดียวกัน แล้วรายงาน path แรกที่ต่างกัน เปลี่ยนการตรวจสัญญาจากงานมือให้เป็นคำสั่งเดียว" />
+  <title>ตรวจสัญญากับ dummyjson อัตโนมัติ</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 15 จาก 24</p>
+    <h1>ตรวจสัญญากับ dummyjson อัตโนมัติ</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เปลี่ยนการตรวจสัญญาจาก curl ทีละคำสั่งเป็นคำสั่งเดียวที่ตรวจแปด request ให้ครบ</li>
+        <li>อธิบายว่าทำไมการเทียบต้อง normalize ก่อน และเขียนตัวเทียบที่บอก <em>path แรกที่ต่างกัน</em> ไม่ใช่แค่บอกว่า "ต่าง"</li>
+        <li>รู้และเขียนไว้เป็นลายลักษณ์อักษรว่า API ของเราต่างจาก dummyjson ที่จุดไหน และทำไมยอมรับได้</li>
+      </ul>
+    </section>
+
+    <h2>curl ทีละคำสั่งไม่ขยายตาม</h2>
+    <p>ห้าบทที่ผ่านมาเราตรวจสัญญาด้วยมือ: ยิง curl เรียงคีย์ <code>diff</code> ดูคำว่า <code>IDENTICAL</code> วิธีนี้ได้ผลตอนมี endpoint เดียว แต่ตอนนี้มีสี่ตัว และแต่ละตัวมีหลายกรณี (หน้าแรก, หน้าสุดท้าย, id ที่ไม่มี, หมวดที่ไม่มี) การจะรู้ว่าการแก้โค้ดวันนี้ทำสัญญาพังหรือไม่ ต้องไล่ยิงใหม่หมดทุกครั้ง ซึ่งจะไม่มีใครทำ</p>
+    <p>สิ่งที่เราต้องการคือ <em>regression test ของสัญญา</em>: คำสั่งเดียวที่ยิง request ชุดเดิมไปทั้งสองฝั่ง (ของเราและ dummyjson จริง) เทียบผล แล้วบอกว่าต่างที่ path ไหน — และคืน exit code ที่ไม่ใช่ศูนย์เมื่อพัง เพื่อให้เอาไปแขวนใน CI ได้ในอนาคต</p>
+    <p>จุดที่ทำให้ script นี้ต่างจาก unit test คือมัน<strong>ยิง dummyjson จริง</strong> ไม่ได้เทียบกับไฟล์สัญญาที่วางไว้ตอนบทที่ 3 ดังนั้นถ้าวันหนึ่ง dummyjson เปลี่ยนรูปทรง เราจะรู้ (ข้อเสียคือมันต้องมีเน็ต และช้ากว่า test ปกติ — จึงเป็นคำสั่งแยก ไม่ผูกกับ <code>npm test</code>)</p>
+
+    <h2>normalize: ทำให้สองฝั่งเทียบกันได้อย่างเป็นธรรม</h2>
+    <p>ถ้าเอา JSON สองก้อนมาเทียบตรง ๆ จะพังด้วยเรื่องที่ไม่ใช่ความผิด สองเรื่อง</p>
+    <ul>
+      <li><strong>ลำดับคีย์</strong> — JSON object ไม่มีความหมายเรื่องลำดับ (ต่างจาก array) ถ้าเราสลับตำแหน่ง <code>brand</code> กับ <code>sku</code> client ก็อ่านได้เหมือนกัน เราจึงสร้าง object ใหม่ที่เรียงคีย์ตามตัวอักษรทั้งสองฝั่งก่อนเทียบ</li>
+      <li><strong>host ใน string</strong> — field <code>url</code> ของ category ต้องต่างกันโดยตั้งใจ (นั่นคือประเด็นทั้งหมดของบทที่ 10) เราจึงแทนที่ <code>https://dummyjson.com</code> ด้วย <code>http://localhost:3000</code> ในทุก string ก่อนเทียบ</li>
+    </ul>
+    <p>สังเกตว่า normalize ทำงานกับ <em>ทุก</em> string ไม่ใช่เฉพาะ field <code>url</code> — เขียนแบบนี้สั้นกว่าและปลอดภัยกว่าการไล่ระบุ field ทีละตัว เพราะถ้า dummyjson เพิ่ม field ที่มี host ขึ้นมาใหม่ เราก็ยังเทียบได้</p>
+    <p>ส่วน response ที่เป็น error เราเทียบ <strong>เฉพาะ <code>message</code></strong> เพราะ body ของ <code>HttpException</code> ใน Nest มีคีย์ <code>error</code> และ <code>statusCode</code> เพิ่มมาเสมอ ซึ่งเป็นความต่างที่เราตั้งใจยอมรับ (client อ่านแค่ <code>message</code>) ถ้าเทียบทั้งก้อน ทุก error path จะขึ้น ❌ ตลอดกาลจนเราเลิกดูมัน — และ test ที่แดงตลอดเวลาคือ test ที่ไม่มีอยู่</p>
+
+    <h2>บอก path แรกที่ต่างกัน ไม่ใช่บอกว่า "ต่าง"</h2>
+    <p>วิธีที่ง่ายที่สุดคือ <code>JSON.stringify(a) === JSON.stringify(b)</code> ซึ่งบอกได้แค่ว่าเหมือนหรือไม่เหมือน เมื่อ response มีสินค้า 30 ชิ้น แต่ละชิ้น 22 คีย์ คำตอบว่า "ไม่เหมือน" ไม่ช่วยอะไรเลย</p>
+    <p><code>firstDifference</code> จึงเดินลงไปทีละชั้นแล้วคืน path เป็น string เช่น</p>
+    <pre><code>$.thumbnail missing on local
+$.products.length 3 vs 2
+$.products[0].brand: "Essence" vs undefined</code></pre>
+    <p>สิ่งที่มันต้องจับให้ครบมีสามแบบ: ความยาว array ไม่เท่ากัน, คีย์ที่หายไป<strong>ฝั่งใดก็ได้</strong> (จึงต้องวน union ของคีย์ทั้งสองฝั่ง ไม่ใช่วนแค่ฝั่งเดียว), และค่าที่ต่างกัน</p>
+
+    <h2>ทำไม <code>node scripts/contract-check.ts</code> รันได้เลย ไม่ต้องมี tsx</h2>
+    <p>ใน <code>package.json</code> เราใช้ <code>tsx</code> รัน <code>prisma/seed.ts</code> แต่ script นี้เรียก <code>node</code> ตรง ๆ เพราะ Node 24 ขึ้นไปรันไฟล์ <code>.ts</code> ได้เองด้วยการ <em>ลบ type ออก</em> (type stripping) ไม่ได้ compile — จึงเร็วและไม่ต้องมี dependency เพิ่ม</p>
+    <p>ข้อแลกเปลี่ยนคือมันลบได้เฉพาะ syntax ที่ "ลบแล้วโค้ดยังถูก" (erasable syntax) สิ่งที่ใช้ไม่ได้คือ <code>enum</code>, <code>namespace</code> และ parameter property (<code>constructor(private x: number)</code>) เพราะสามอย่างนี้ต้อง <em>สร้างโค้ดเพิ่ม</em> ไม่ใช่แค่ลบ prompt ของบทนี้จึงห้ามทั้งสามตัวไว้ชัด ๆ และห้าม <code>import</code> ด้วย เพื่อให้ script เป็นไฟล์เดียวจบ ไม่ต้องพึ่ง resolution ของโปรเจกต์เลย</p>
+    <div class="note"><p><code>fetch</code>, <code>Promise.all</code> และ top-level <code>await</code> เป็นของที่มีใน Node อยู่แล้ว ไม่ต้องติดตั้ง <code>node-fetch</code> หรืออะไรเพิ่ม</p></div>
+
+    <h2>ความต่างที่เรายอมรับ — และเหตุผล</h2>
+    <p>เอกสารนี้สำคัญเท่ากับตัว script เพราะมันคือเส้นแบ่งระหว่าง "รู้ว่าต่าง" กับ "ไม่รู้ว่าต่าง"</p>
+    <div class="comparison" role="region" aria-label="ความต่างระหว่าง API ของเรากับ dummyjson ที่ยอมรับได้" tabindex="0">
+      <table>
+        <thead><tr><th>จุดที่ต่าง</th><th>dummyjson</th><th>ของเรา</th><th>ทำไมยอมรับได้</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>GET /products/abc</code> (id ที่ไม่ใช่ตัวเลข)</td>
+            <td>404</td>
+            <td>400 <code>Validation failed (numeric string is expected)</code></td>
+            <td><code>ParseIntPipe</code> ดักก่อนเข้า handler และ 400 ตรงความจริงกว่า (request ผิดรูป ไม่ใช่ของไม่มี) React app ไม่เคยส่ง id ที่ไม่ใช่ตัวเลข</td>
+          </tr>
+          <tr>
+            <td>body ของ error</td>
+            <td>มีแค่ <code>message</code></td>
+            <td>มี <code>message</code> + <code>error</code> + <code>statusCode</code></td>
+            <td>เป็นรูปแบบมาตรฐานของ <code>HttpException</code> ใน Nest และ client อ่านแค่ <code>message</code> — script จึงเทียบเฉพาะ <code>message</code></td>
+          </tr>
+          <tr>
+            <td>field <code>url</code> ของ category</td>
+            <td><code>https://dummyjson.com/products/category/beauty</code></td>
+            <td><code>http://localhost:3000/products/category/beauty</code></td>
+            <td>ต่างที่ host เท่านั้น และต้องต่าง ไม่งั้น client จะยิงกลับไปหา dummyjson — <code>normalize</code> แทน host ให้ก่อนเทียบ</td>
+          </tr>
+          <tr>
+            <td>ลำดับคีย์ใน object</td>
+            <td>ลำดับของมัน</td>
+            <td>ลำดับตาม mapper ของเรา</td>
+            <td>JSON object ไม่มีความหมายเรื่องลำดับคีย์ — <code>normalize</code> เรียงตัวอักษรทั้งสองฝั่งก่อนเทียบ</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>scripts/
+└── contract-check.ts                 (สร้างใหม่)
+package.json                          (แก้ไข: เพิ่ม script contract:check)</code></pre>
+    <ul>
+      <li><strong><code>scripts/contract-check.ts</code></strong> — สัญญา: ต้องยิงแปด request ตามลำดับที่กำหนดไปทั้งสองฝั่งพร้อมกัน, normalize ก่อนเทียบ, รายงาน path แรกที่ต่างกัน และ <code>process.exit(1)</code> เมื่อมี ❌ / ต้องไม่มีบรรทัด <code>import</code> เลย และต้องไม่ใช้ <code>enum</code>, <code>namespace</code> หรือ parameter property</li>
+      <li><strong><code>package.json</code></strong> — สัญญา: ต้องเพิ่ม <code>"contract:check": "node scripts/contract-check.ts"</code> / ต้องไม่แก้ script อื่นและไม่เพิ่ม dependency</li>
+    </ul>
+    <p>ไม่มีไฟล์ใน <code>src/</code> ถูกแตะในบทนี้เลย — สิ่งที่เราสร้างคือเครื่องมือตรวจ ไม่ใช่ฟีเจอร์</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor เขียน script ตรวจสัญญา</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before contract check"</code>) ปล่อยให้ API รันอยู่ที่ <code>http://localhost:3000</code> ไว้ เพราะเราจะรันตรวจทันทีหลังได้โค้ด</p>
+      <div class="cursor-prompt"><code>เขียน script ตรวจว่า API ของเราตอบเหมือน dummyjson สำหรับทุก endpoint ฝั่ง GET
+
+บริบท: @package.json @docs/contract @.cursor/rules/project.mdc
+API ของเรารันที่ http://localhost:3000 และ dummyjson อยู่ที่ https://dummyjson.com
+endpoint ที่ต้องเทียบ: /products/categories, /products (มี limit/skip), /products/:id, /products/category/:slug
+ความต่างที่ยอมรับได้: (1) field url ของ category ต่างกันแค่ host (2) response error ของเรามี key statusCode และ error เพิ่มจาก message (3) ลำดับ key ใน object ไม่สำคัญ
+script รันด้วย node ตรง ๆ (Node 24 รัน .ts ที่มีแต่ type annotation ได้เอง) ห้าม import อะไรเลย และห้ามใช้ enum, namespace หรือ parameter properties
+
+โครงสร้าง: สร้าง/แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- scripts/contract-check.ts (สร้างใหม่)
+- package.json (แก้ไข: เพิ่ม script "contract:check": "node scripts/contract-check.ts")
+
+ข้อกำหนดทางเทคนิค:
+- const LOCAL = process.env.LOCAL_URL ?? 'http://localhost:3000' และ const REMOTE = 'https://dummyjson.com'
+- const REQUESTS ตามลำดับนี้
+  '/products/categories', '/products?limit=3&amp;skip=0', '/products?limit=2&amp;skip=190', '/products/1', '/products/194', '/products/9999',
+  '/products/category/beauty?limit=2&amp;skip=1', '/products/category/nope?limit=5&amp;skip=0'
+- type Json = null | boolean | number | string | Json[] | { [key: string]: Json } และ type guard isObject(value: Json)
+- function normalize(value: Json): Json — array: map ซ้ำ, object: สร้าง object ใหม่เรียง key ตามตัวอักษรและ normalize ค่าข้างใน, string: replace REMOTE ด้วย LOCAL, อื่น ๆ คืนเดิม
+- function firstDifference(a: Json, b: Json, path = '$'): string | null — คืน path แรกที่ต่างกัน เช่น "$.products[0].brand: \"Essence\" vs undefined" หรือ "$.products.length 3 vs 2" ถ้าเหมือนกันทั้งหมดคืน null ต้องรายงานทั้ง key ที่หายไปฝั่งใดฝั่งหนึ่งและค่าที่ต่างกัน
+- async function load(base: string, path: string): Promise&lt;{ status: number; body: Json }&gt;
+- loop ทุก REQUESTS ด้วย top-level await: ยิงทั้งสองฝั่งพร้อมกันด้วย Promise.all ถ้า status ต่างกันรายงาน "status &lt;remote&gt; vs &lt;local&gt;", ถ้า status &gt;= 400 เทียบเฉพาะ body.message, ไม่งั้นเทียบ normalize ของทั้งสอง body
+  พิมพ์บรรทัดละ request ขึ้นต้นด้วย ✅ หรือ ❌ ตามด้วย path และ diff (ถ้ามี)
+- จบด้วย process.exit(1) ถ้ามี ❌ อย่างน้อยหนึ่งรายการ ไม่งั้น exit 0
+- ห้ามใช้ any ห้ามใช้ as ยกเว้น (await response.json()) as Json
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์ใน src/
+- ห้ามรัน script ให้ผมรันเอง
+- ยังไม่ต้องเพิ่ม model ของคำสั่งซื้อ</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>ไม่มีบรรทัด <code>import</code> ในไฟล์เลย (<code>grep -n "^import" scripts/contract-check.ts</code> ต้องไม่เจอ)</li>
+        <li><code>REQUESTS</code> มีแปดรายการ เรียงตามลำดับที่สั่งไว้เป๊ะ</li>
+        <li><code>normalize</code> เรียงคีย์ด้วย <code>.sort()</code> จริง และเรียก <code>normalize</code> ซ้ำกับค่าข้างในทั้ง array และ object</li>
+        <li>การแทน host ทำกับค่าที่เป็น string ทุกตัว ไม่ใช่เฉพาะ field ชื่อ <code>url</code></li>
+        <li><code>firstDifference</code> วน union ของคีย์สองฝั่ง (<code>new Set([...Object.keys(a), ...Object.keys(b)])</code>) จึงจับคีย์ที่หายไปได้ทั้งสองทาง และมีข้อความแยกระหว่าง <code>missing on remote</code> กับ <code>missing on local</code></li>
+        <li>เส้นทาง error เทียบเฉพาะ <code>message</code> ไม่ใช่ทั้ง body</li>
+        <li>ปิดท้ายด้วย <code>process.exit(1)</code> เมื่อมี ❌ และไม่มี <code>enum</code>, <code>namespace</code> หรือ parameter property ในไฟล์</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ตัดจบด้วย <code>JSON.stringify(a) === JSON.stringify(b)</code> — โค้ดสั้นลงมาก แต่ทำลายคุณค่าทั้งหมดของ script เพราะพอ ❌ ขึ้นแล้วเราไม่รู้ว่าต่างที่ไหน อีกข้อคือเติม <code>import fetch from 'node-fetch'</code> เข้ามาตามความเคยชิน ซึ่งจะทำให้ <code>node</code> รันไฟล์นี้ไม่ได้ทันที (ทั้งที่ <code>fetch</code> มีอยู่ใน Node แล้ว) ถ้าเห็นบรรทัด <code>import</code> ให้ลบ ไม่ใช่ไปติดตั้งแพ็กเกจ</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <p><code>scripts/contract-check.ts</code></p>
+      <pre><code>const LOCAL = process.env.LOCAL_URL ?? 'http://localhost:3000';
+const REMOTE = 'https://dummyjson.com';
+
+const REQUESTS = [
+  '/products/categories',
+  '/products?limit=3&amp;skip=0',
+  '/products?limit=2&amp;skip=190',
+  '/products/1',
+  '/products/194',
+  '/products/9999',
+  '/products/category/beauty?limit=2&amp;skip=1',
+  '/products/category/nope?limit=5&amp;skip=0',
+];
+
+type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
+
+function isObject(value: Json): value is { [key: string]: Json } {
+  return value !== null &amp;&amp; typeof value === 'object' &amp;&amp; !Array.isArray(value);
+}
+
+function normalize(value: Json): Json {
+  if (Array.isArray(value)) {
+    return value.map(normalize);
+  }
+  if (isObject(value)) {
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) =&gt; [key, normalize(value[key])]),
+    );
+  }
+  if (typeof value === 'string') {
+    return value.replace(REMOTE, LOCAL);
+  }
+  return value;
+}
+
+function firstDifference(a: Json, b: Json, path = '$'): string | null {
+  if (Array.isArray(a) &amp;&amp; Array.isArray(b)) {
+    if (a.length !== b.length) {
+      return `${path}.length ${a.length} vs ${b.length}`;
+    }
+    for (let i = 0; i &lt; a.length; i++) {
+      const diff = firstDifference(a[i], b[i], `${path}[${i}]`);
+      if (diff) return diff;
+    }
+    return null;
+  }
+  if (isObject(a) &amp;&amp; isObject(b)) {
+    for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+      if (!(key in a)) return `${path}.${key} missing on remote`;
+      if (!(key in b)) return `${path}.${key} missing on local`;
+      const diff = firstDifference(a[key], b[key], `${path}.${key}`);
+      if (diff) return diff;
+    }
+    return null;
+  }
+  return a === b ? null : `${path}: ${JSON.stringify(a)} vs ${JSON.stringify(b)}`;
+}
+
+async function load(base: string, path: string): Promise&lt;{ status: number; body: Json }&gt; {
+  const response = await fetch(`${base}${path}`);
+  const body = (await response.json()) as Json;
+  return { status: response.status, body };
+}
+
+function messageOf(body: Json): Json {
+  return isObject(body) ? body.message : null;
+}
+
+let failures = 0;
+for (const path of REQUESTS) {
+  const [remote, local] = await Promise.all([load(REMOTE, path), load(LOCAL, path)]);
+  let diff: string | null;
+  if (remote.status !== local.status) {
+    diff = `status ${remote.status} vs ${local.status}`;
+  } else if (remote.status &gt;= 400) {
+    diff = firstDifference(messageOf(remote.body), messageOf(local.body), '$.message');
+  } else {
+    diff = firstDifference(normalize(remote.body), normalize(local.body));
+  }
+  console.log(`${diff ? '❌' : '✅'} ${path}${diff ? `  ${diff}` : ''}`);
+  if (diff) failures += 1;
+}
+process.exit(failures === 0 ? 0 : 1);</code></pre>
+      <p>บรรทัดที่ <code>package.json</code> ได้เพิ่มมาคือบรรทัดเดียว วางไว้ต่อจาก <code>db:seed</code></p>
+      <pre><code>"contract:check": "node scripts/contract-check.ts",</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>เปิด API ไว้ที่ <code>http://localhost:3000</code> (ด้วย <code>npm run start:dev</code>) แล้วรัน <code>npm run contract:check</code> ในอีก terminal จะได้แปดบรรทัดและ exit code 0</p>
+      <pre><code>✅ /products/categories
+✅ /products?limit=3&amp;skip=0
+✅ /products?limit=2&amp;skip=190
+✅ /products/1
+✅ /products/194
+✅ /products/9999
+✅ /products/category/beauty?limit=2&amp;skip=1
+✅ /products/category/nope?limit=5&amp;skip=0</code></pre>
+      <p>บรรทัด <code>/products/9999</code> ที่ขึ้น ✅ หมายถึงทั้งสองฝั่งตอบ 404 <em>และ</em> ข้อความ <code>message</code> ตรงกันตัวอักษรต่อตัวอักษร ซึ่งเป็นผลของงานในบทที่ 12</p>
+      <p>script ไม่พิมพ์คำเตือนอะไรออก stderr เลยบน Node เวอร์ชันที่ใช้ตรวจทานคอร์สนี้ — ถ้าคุณเห็น warning เรื่อง type stripping แปลว่า Node ของคุณเก่ากว่า หรือมีบรรทัด <code>import</code>/syntax ที่ลบไม่ได้ปนอยู่ในไฟล์</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>npm run contract:check</code> ได้ ✅ แปดบรรทัดและ <code>echo $?</code> ได้ <code>0</code></li>
+        <li>lint ไฟล์นี้ด้วยมือ เพราะ <code>npm run lint</code> ครอบแค่ <code>src/</code> และ <code>test/</code> — <code>npx oxlint scripts/contract-check.ts</code> ต้องไม่พิมพ์อะไรออกมา</li>
+        <li>ทำให้พังเพื่อดูว่ามันจับได้จริง: ใน <code>src/products/product.mapper.ts</code> แก้บรรทัดสุดท้ายของ object ที่ return เป็น <code>thumbnail: product.thumbnail + '-broken',</code> ชั่วคราว — แก้ที่<em>ค่า</em> ไม่ใช่เปลี่ยนชื่อ field เพราะถ้าเปลี่ยนชื่อ TypeScript จะฟ้องว่าไม่ตรงกับ <code>ProductResponseDto</code> แล้ว watch mode จะไม่ restart ให้เลย (นั่นคือกลไกป้องกันชั้นแรกของเรา แต่มันทำให้แบบฝึกหัดนี้ไม่ได้ทดสอบอะไร) รอ watch mode compile แล้วรันตรวจซ้ำ — ห้าบรรทัดที่มีสินค้าติดมาใน response จะกลายเป็น ❌
+          <pre><code>✅ /products/categories
+❌ /products?limit=3&amp;skip=0  $.products[0].thumbnail: "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp" vs "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp-broken"
+❌ /products?limit=2&amp;skip=190  $.products[0].thumbnail: "https://cdn.dummyjson.com/product-images/womens-watches/rolex-cellini-moonphase/thumbnail.webp" vs "https://cdn.dummyjson.com/product-images/womens-watches/rolex-cellini-moonphase/thumbnail.webp-broken"
+❌ /products/1  $.thumbnail: "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp" vs "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp-broken"
+❌ /products/194  $.thumbnail: "https://cdn.dummyjson.com/product-images/womens-watches/women's-wrist-watch/thumbnail.webp" vs "https://cdn.dummyjson.com/product-images/womens-watches/women's-wrist-watch/thumbnail.webp-broken"
+✅ /products/9999
+❌ /products/category/beauty?limit=2&amp;skip=1  $.products[0].thumbnail: "https://cdn.dummyjson.com/product-images/beauty/eyeshadow-palette-with-mirror/thumbnail.webp" vs "https://cdn.dummyjson.com/product-images/beauty/eyeshadow-palette-with-mirror/thumbnail.webp-broken"
+✅ /products/category/nope?limit=5&amp;skip=0</code></pre>
+          สามบรรทัดที่ยังขึ้น ✅ อธิบายได้ทุกบรรทัด: <code>/products/categories</code> ไม่มี <code>thumbnail</code> ใน response, <code>/products/9999</code> เทียบแค่ <code>message</code> ของ 404 และ <code>/products/category/nope?limit=5&amp;skip=0</code> คืน <code>products</code> เป็น array ว่าง ส่วน <code>exit code</code> เป็น <code>1</code>
+        </li>
+        <li>ย้อนกลับด้วย <code>git checkout -- src/products/product.mapper.ts</code> รอ compile แล้วรันตรวจอีกครั้ง — ต้องกลับมา ✅ แปดบรรทัดและ exit 0 ก่อนจะ commit</li>
+        <li>ตัดเน็ตแล้วรันดูก็ได้ — script จะ throw ตอน <code>fetch</code> ฝั่ง dummyjson ซึ่งเป็นพฤติกรรมที่ถูก: การตรวจนี้ต้องมีเน็ตโดยเจตนา</li>
+        <li>commit ผลงานด้วย <code>git add -A &amp;&amp; git commit -m "feat: contract check script"</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://dummyjson.com/docs/products">Products endpoints (DummyJSON Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/exception-filters">Exception filters: standard error body (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation: error response shape (NestJS Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="14_get-products-by-category.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="16_modeling-orders.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สารบัญ Workshop ภาษาไทย NestJS Fundamentals: 77 บทเรียน ตั้งแต่ติดตั้ง CLI สร้าง REST API ต่อฐานข้อมูล PostgreSQL/MongoDB จนถึงการทดสอบ" />
+  <title>NestJS Fundamentals: สร้าง REST API ตั้งแต่ศูนย์ถึงโปรดักชัน</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <h1>NestJS Fundamentals: สร้าง REST API ตั้งแต่ศูนย์ถึงโปรดักชัน</h1>
+
+    <p>เส้นทางเรียนรู้ NestJS แบบต่อเนื่อง 77 บทเรียน: เราจะสร้าง REST API เกี่ยวกับกาแฟชื่อ <code>iluvcoffee</code> ตั้งแต่ scaffold โปรเจกต์, สร้าง CRUD endpoints, เชื่อม PostgreSQL ด้วย Prisma, เข้าใจ Dependency Injection ถึงแก่น, ใช้ building blocks อย่าง filters/guards/interceptors/pipes, ทำเอกสารด้วย Swagger, เขียน unit และ e2e tests และปิดท้ายด้วยเส้นทางโบนัส MongoDB + Mongoose</p>
+
+    <section aria-label="ผลลัพธ์การเรียนรู้">
+      <p><strong>เมื่อเรียนจบ:</strong> คุณจะออกแบบ API เป็น modules ตาม business domain, ตรวจสอบและแปลงข้อมูลขาเข้าด้วย DTO + ValidationPipe, ทำงานกับฐานข้อมูลทั้ง SQL และ NoSQL อย่างปลอดภัย (relations, transactions, indexes, migrations), เลือกใช้ custom providers และ scopes ได้ถูกสถานการณ์ และมีชุดทดสอบที่พิสูจน์ว่าระบบทำงานจริง</p>
+    </section>
+
+    <section aria-label="ความรู้ที่ควรมี">
+      <p><strong>สิ่งที่ควรเตรียม:</strong> พื้นฐาน TypeScript และ HTTP; ติดตั้ง <a href="https://nodejs.org">Node.js</a> และ Docker Desktop; มี REST client เช่น <a href="https://insomnia.rest">Insomnia</a> หรือ Postman สำหรับยิงทดสอบ endpoint</p>
+    </section>
+
+    <section class="workshop" aria-labelledby="setup-heading">
+      <h2 id="setup-heading">1–5. เริ่มต้นกับ NestJS</h2>
+      <p>Workshop ใช้โปรเจกต์เดียวแบบสะสมชื่อ <code>iluvcoffee</code>: บทหลังต่อยอดจากโค้ดของบทก่อนหน้า จึงควรเรียนตามลำดับ เตรียมเครื่องมือด้วยคำสั่งต่อไปนี้</p>
+      <pre><code>npm i -g @nestjs/cli
+nest new iluvcoffee
+cd iluvcoffee
+npm run start:dev</code></pre>
+      <ol>
+        <li><a href="01_installing-nestjs-cli.html">ติดตั้ง NestJS CLI</a></li>
+        <li><a href="02_whats-inside-a-nestjs-application.html">มีอะไรอยู่ในแอปพลิเคชัน NestJS</a></li>
+        <li><a href="03_what-well-be-building-in-this-course.html">สิ่งที่เราจะสร้างกันในคอร์สนี้</a></li>
+        <li><a href="04_prerequisite-install-insomnia.html">เตรียมเครื่องมือ: ติดตั้ง Insomnia</a></li>
+        <li><a href="05_running-nestjs-in-development-mode.html">รัน NestJS ในโหมด Development</a></li>
+      </ol>
+    </section>
+
+    <section class="lesson-index" aria-labelledby="rest-heading">
+      <h2 id="rest-heading">6–18. สร้าง REST API Application</h2>
+      <ol start="6">
+        <li><a href="06_creating-a-basic-controller.html">สร้าง Controller พื้นฐาน</a></li>
+        <li><a href="07_use-route-parameters.html">ใช้ Route Parameters</a></li>
+        <li><a href="08_handling-request-body-payload.html">จัดการ Request Body (Payload)</a></li>
+        <li><a href="09_response-status-codes.html">กำหนด Response Status Codes</a></li>
+        <li><a href="10_handling-update-and-delete-requests.html">จัดการคำขอ Update และ Delete</a></li>
+        <li><a href="11_implement-pagination-with-query-parameters.html">ทำ Pagination ด้วย Query Parameters</a></li>
+        <li><a href="12_creating-a-basic-service.html">สร้าง Service พื้นฐาน</a></li>
+        <li><a href="13_send-user-friendly-error-messages.html">ส่ง Error Message ที่เป็นมิตรกับผู้ใช้</a></li>
+        <li><a href="14_encompass-business-domain-in-modules.html">ห่อ Business Domain ไว้ใน Modules</a></li>
+        <li><a href="15_introduction-to-data-transfer-objects.html">รู้จัก Data Transfer Objects (DTO)</a></li>
+        <li><a href="16_validate-input-data-with-data-transfer-objects.html">Validate ข้อมูลขาเข้าด้วย DTO</a></li>
+        <li><a href="17_handling-malicious-request-data.html">ป้องกันข้อมูลคำขอที่ไม่พึงประสงค์</a></li>
+        <li><a href="18_auto-transform-payloads-to-dto-instances.html">แปลง Payload เป็น DTO Instance อัตโนมัติ</a></li>
+      </ol>
+    </section>
+
+    <section class="lesson-index" aria-labelledby="prisma-heading">
+      <h2 id="prisma-heading">19–31. ต่อฐานข้อมูล PostgreSQL ด้วย Prisma</h2>
+      <ol start="19">
+        <li><a href="19_before-we-get-started.html">ก่อนเริ่มบทฐานข้อมูล: เก็บความคืบหน้าไว้ใน Branch</a></li>
+        <li><a href="20_running-postgresql.html">รัน PostgreSQL ด้วย Docker Compose</a></li>
+        <li><a href="21_how-to-visualize-your-postgres-database-gui.html">ดูฐานข้อมูล Postgres ด้วย GUI</a></li>
+        <li><a href="22_introducing-prisma.html">รู้จัก Prisma และ PrismaService</a></li>
+        <li><a href="23_creating-a-prisma-model.html">สร้าง Prisma Model</a></li>
+        <li><a href="24_using-prisma-client-to-access-database.html">ใช้ Prisma Client เข้าถึงฐานข้อมูล</a></li>
+        <li><a href="25_create-a-relation-between-two-models.html">สร้าง Relation ระหว่างสอง Models</a></li>
+        <li><a href="26_retrieve-models-with-their-relations.html">ดึง Models พร้อม Relations</a></li>
+        <li><a href="27_using-nested-writes.html">ใช้ Nested Writes สร้างและอัปเดตพร้อม Relation</a></li>
+        <li><a href="28_adding-pagination.html">เพิ่ม Pagination ที่ชั้นฐานข้อมูล</a></li>
+        <li><a href="29_use-transactions.html">ใช้ Transactions</a></li>
+        <li><a href="30_adding-indexes-to-models.html">เพิ่ม Indexes ให้ Models</a></li>
+        <li><a href="31_setting-up-migrations.html">ตั้งค่า Migrations ด้วย Prisma Migrate</a></li>
+      </ol>
+    </section>
+
+    <section class="lesson-index" aria-labelledby="di-heading">
+      <h2 id="di-heading">32–41. เจาะลึก Dependency Injection</h2>
+      <ol start="32">
+        <li><a href="32_control-nestjs-module-encapsulation.html">ควบคุม Module Encapsulation</a></li>
+        <li><a href="33_diving-into-custom-providers.html">เจาะลึก Custom Providers</a></li>
+        <li><a href="34_value-based-providers.html">Value-based Providers (useValue)</a></li>
+        <li><a href="35_non-class-based-provider-tokens.html">Provider Tokens ที่ไม่ใช่ Class</a></li>
+        <li><a href="36_class-providers.html">Class Providers (useClass)</a></li>
+        <li><a href="37_factory-providers.html">Factory Providers (useFactory)</a></li>
+        <li><a href="38_leverage-async-providers.html">ใช้ Async Providers</a></li>
+        <li><a href="39_create-a-dynamic-module.html">สร้าง Dynamic Module</a></li>
+        <li><a href="40_control-providers-scope.html">ควบคุม Scope ของ Providers</a></li>
+        <li><a href="41_diving-deeper-into-request-scoped-providers.html">เจาะลึก Request-scoped Providers</a></li>
+      </ol>
+    </section>
+
+    <section class="lesson-index" aria-labelledby="config-heading">
+      <h2 id="config-heading">42–48. Application Configuration</h2>
+      <ol start="42">
+        <li><a href="42_introducing-the-config-module.html">รู้จัก Config Module</a></li>
+        <li><a href="43_custom-environment-file-paths.html">กำหนด Path ของ Environment File เอง</a></li>
+        <li><a href="44_schema-validation.html">Validate ตัวแปรแวดล้อมด้วย Schema</a></li>
+        <li><a href="45_using-the-config-service.html">ใช้งาน ConfigService</a></li>
+        <li><a href="46_custom-configuration-files.html">สร้าง Configuration Files ของตัวเอง</a></li>
+        <li><a href="47_configuration-namespaces-and-partial-registration.html">Configuration Namespaces และ Partial Registration</a></li>
+        <li><a href="48_asynchronously-configure-dynamic-modules.html">ตั้งค่า Dynamic Modules แบบ Asynchronous</a></li>
+      </ol>
+    </section>
+
+    <section class="lesson-index" aria-labelledby="blocks-heading">
+      <h2 id="blocks-heading">49–58. Building Blocks: Filters, Guards, Interceptors, Pipes</h2>
+      <ol start="49">
+        <li><a href="49_introducing-more-building-blocks.html">รู้จัก Building Blocks เพิ่มเติม</a></li>
+        <li><a href="50_understanding-binding-techniques.html">เข้าใจเทคนิคการ Bind</a></li>
+        <li><a href="51_catch-exceptions-with-filters.html">จับ Exceptions ด้วย Filters</a></li>
+        <li><a href="52_protect-routes-with-guards.html">ป้องกัน Routes ด้วย Guards</a></li>
+        <li><a href="53_using-metadata-to-build-generic-guards-or-interceptors.html">ใช้ Metadata สร้าง Guards และ Interceptors แบบ Generic</a></li>
+        <li><a href="54_add-pointcuts-with-interceptors.html">เพิ่ม Pointcuts ด้วย Interceptors</a></li>
+        <li><a href="55_handling-timeouts-with-interceptors.html">จัดการ Timeout ด้วย Interceptors</a></li>
+        <li><a href="56_creating-custom-pipes.html">สร้าง Custom Pipes</a></li>
+        <li><a href="57_bonus-add-request-logging-with-middleware.html">โบนัส: เพิ่ม Request Logging ด้วย Middleware</a></li>
+        <li><a href="58_bonus-create-custom-param-decorators.html">โบนัส: สร้าง Custom Param Decorators</a></li>
+      </ol>
+    </section>
+
+    <section class="lesson-index" aria-labelledby="swagger-heading">
+      <h2 id="swagger-heading">59–63. เอกสาร API ด้วย OpenAPI (Swagger)</h2>
+      <ol start="59">
+        <li><a href="59_introducing-the-swagger-module.html">รู้จัก Swagger Module</a></li>
+        <li><a href="60_enabling-cli-plugin.html">เปิดใช้ Swagger CLI Plugin</a></li>
+        <li><a href="61_decorating-model-properties.html">ตกแต่ง Model Properties ให้เอกสารครบ</a></li>
+        <li><a href="62_adding-example-responses.html">เพิ่ม Example Responses</a></li>
+        <li><a href="63_using-tags-to-group-resources.html">จัดกลุ่ม Resources ด้วย Tags</a></li>
+      </ol>
+    </section>
+
+    <section class="lesson-index" aria-labelledby="testing-heading">
+      <h2 id="testing-heading">64–69. การทดสอบด้วย Vitest</h2>
+      <ol start="64">
+        <li><a href="64_introduction-to-vitest.html">รู้จัก Vitest</a></li>
+        <li><a href="65_getting-started-with-test-suites.html">เริ่มต้นกับ Test Suites</a></li>
+        <li><a href="66_adding-unit-tests.html">เขียน Unit Tests</a></li>
+        <li><a href="67_diving-into-e2e-tests.html">เจาะลึก e2e Tests</a></li>
+        <li><a href="68_creating-our-first-e2e-test.html">สร้าง e2e Test แรก</a></li>
+        <li><a href="69_implementing-e2e-test-logic.html">เขียน Logic ของ e2e Test</a></li>
+      </ol>
+    </section>
+
+    <section class="lesson-index" aria-labelledby="mongo-heading">
+      <h2 id="mongo-heading">70–77. โบนัส: MongoDB + Mongoose</h2>
+      <p>เส้นทางนี้แตกต่อจากจุดจบของ Chapter 2 (บทที่ 18) — ถ้าโค้ดตามอยู่ ให้กลับไปที่ branch ที่บันทึกไว้ในบทที่ 19 ก่อนเริ่ม</p>
+      <ol start="70">
+        <li><a href="70_before-we-get-started-mongodb.html">ก่อนเริ่มบท MongoDB: กลับไปที่จุดจบ Chapter 2</a></li>
+        <li><a href="71_running-mongodb.html">รัน MongoDB ด้วย Docker Compose</a></li>
+        <li><a href="72_introducing-the-mongoose-module.html">รู้จัก Mongoose Module</a></li>
+        <li><a href="73_creating-a-mongoose-model.html">สร้าง Mongoose Model</a></li>
+        <li><a href="74_using-a-mongoose-model-to-access-mongodb.html">ใช้ Mongoose Model เข้าถึง MongoDB</a></li>
+        <li><a href="75_adding-pagination-mongodb.html">เพิ่ม Pagination (MongoDB)</a></li>
+        <li><a href="76_use-transactions-mongodb.html">ใช้ Transactions (MongoDB)</a></li>
+        <li><a href="77_adding-indexes-to-schemas.html">เพิ่ม Indexes ให้ Schemas</a></li>
+      </ol>
+    </section>
+
+    <div class="updated">
+      <p>ตรวจทานเมื่อ 1 กันยายน 2026: เวอร์ชันของ NestJS, Prisma, Mongoose และ dependencies อื่น ๆ เปลี่ยนแปลงได้ตามรอบการเผยแพร่ ก่อนใช้กับงานจริงให้ตรวจ<a href="https://docs.nestjs.com/">เอกสารทางการของ NestJS</a> เสมอ</p>
+    </div>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

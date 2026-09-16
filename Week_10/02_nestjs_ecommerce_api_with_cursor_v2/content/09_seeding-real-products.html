@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เขียน seed script ที่ดึงสินค้าและหมวดหมู่จริงจาก dummyjson ลง PostgreSQL ใน transaction เดียว แล้วตรวจจำนวนแถวด้วย psql" />
+  <title>Seed สินค้าจริงจาก dummyjson</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 9 จาก 24</p>
+    <h1>Seed สินค้าจริงจาก dummyjson</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เขียน seed script ที่รันนอก NestJS ด้วย <code>tsx</code> และสร้าง <code>PrismaClient</code> พร้อม adapter เอง</li>
+        <li>อธิบายได้ว่าทำไมต้องลบข้อมูลตามลำดับ foreign key และทำไมต้องห่อทั้งหมดไว้ใน transaction</li>
+        <li>ยืนยันด้วย <code>psql</code> ว่าฐานข้อมูลมีสินค้า 194 ชิ้น หมวดหมู่ 24 หมวด และรีวิว 582 รายการ</li>
+      </ul>
+    </section>
+
+    <h2>seed คือสคริปต์ธรรมดา ไม่ใช่ส่วนหนึ่งของแอป</h2>
+    <p>เราเคย seed ฐานข้อมูลมาแล้วใน <a href="../../../Week_08/02_API_Design_in_Nodejs_v1/content/19_seeding_the_database.html">Week_08 บทที่ 19</a> แนวคิดเดิมทั้งหมด: seed คือไฟล์ที่รันด้วยมือเมื่อเราต้องการเติมข้อมูลตั้งต้น ไม่ใช่ provider ของ Nest และไม่ถูกเรียกตอนแอป boot สามข้อที่ต้องคุมให้ดีคือ ลบของเก่าตาม<strong>ลำดับ foreign key</strong>, แทรกทีเดียวหลายแถวด้วย <code>createMany</code> และทำให้รันซ้ำได้ไม่พัง</p>
+    <p>ลำดับการลบของเราคือ <code>review</code> → <code>product</code> → <code>category</code> เสมอ — ลูกก่อนแม่ ถ้าสลับไปลบ <code>category</code> ก่อน PostgreSQL จะปฏิเสธ เพราะยังมีแถวใน <code>Product</code> ที่ <code>categoryId</code> ชี้มาหาอยู่ (foreign key เป็น restrict ตามค่าปริยาย) สังเกตว่าเราไม่พึ่ง <code>onDelete: Cascade</code> ของ <code>Review</code> ให้ลบแทน ทั้งที่มันทำได้ เพราะการเขียนลำดับออกมาชัด ๆ อ่านแล้วเข้าใจเจตนาได้ทันที</p>
+
+    <h2>ทำไมดึงสดจาก dummyjson ไม่ commit สินค้า 194 ชิ้นไว้ในโปรเจกต์</h2>
+    <p>ไฟล์ใน <code>docs/contract/</code> คือ <strong>ตัวอย่างรูปทรง</strong> ของ response ที่เราใช้เป็นสัญญา (สินค้าหนึ่งชิ้น หนึ่งหน้า หนึ่งรายการหมวดหมู่) ส่วนแคตตาล็อกทั้งก้อนคือ <strong>ข้อมูล</strong> ซึ่งไม่ควรอยู่ใน git — มันใหญ่ เปลี่ยนได้ตลอดโดยไม่กระทบสัญญา และการดึงสดยังทำให้บทที่ 15 (ตรวจสัญญาอัตโนมัติ) เทียบกับของจริงได้ตรงกันมากขึ้น สิ่งที่เราคงไว้เหมือนเดิมเป๊ะ ๆ คือ <code>id</code> ของทุกชิ้น เพราะ React app ลิงก์ด้วย id ตรง ๆ — ถ้า id ขยับ ลิงก์ที่ผู้ใช้บุ๊กมาร์กไว้จะพาไปสินค้าผิดชิ้น</p>
+
+    <h2>createMany สามครั้ง ไม่ใช่ create 194 ครั้ง</h2>
+    <p>เขียนแบบวน loop เรียก <code>create</code> ทีละชิ้นก็ได้ผลถูกต้อง แต่หมายถึงการคุยกับฐานข้อมูลอย่างน้อย 194 + 582 รอบ ช้ากว่ากันหลายเท่า <code>createMany</code> ส่งทั้งชุดไปใน statement เดียว</p>
+    <ul>
+      <li>เรียกสามครั้งตามลำดับ: <code>category</code> → <code>product</code> → <code>review</code> (แม่ก่อนลูก ตรงข้ามกับลำดับการลบ) เพราะ <code>Product.categoryId</code> ต้องมีหมวดหมู่อยู่ก่อน และ <code>Review.productId</code> ต้องมีสินค้าอยู่ก่อน</li>
+      <li>ระหว่างสองขั้นแรกเราต้องอ่าน <code>Category</code> กลับมาทำ <code>Map</code> จาก <code>slug</code> ไป <code>id</code> เพราะ dummyjson ส่งหมวดหมู่มาเป็น slug string (<code>"category": "beauty"</code>) แต่ตารางเราต้องการเลข <code>categoryId</code></li>
+      <li><code>createMany</code> แทรกตามลำดับของ array ที่ส่งไป จึงได้ลำดับรีวิวเหมือนที่ dummyjson ส่งมา — สำคัญกับบทที่ 11 ที่ต้อง map ออกไปให้เหมือนต้นฉบับ</li>
+    </ul>
+
+    <h2>ทำไมต้องรันด้วย tsx</h2>
+    <p>Prisma generate client ออกมาเป็นไฟล์ <code>.ts</code> ใน <code>src/generated/prisma/</code> แต่ข้างในไฟล์เหล่านั้น import กันด้วยนามสกุล <code>.js</code> (ตามกติกาของ ES module) Node เปล่า ๆ รันไฟล์ <code>.ts</code> ไม่ได้และไล่ import แบบนี้ไม่ถูก ส่วน <code>tsx</code> ทำทั้งสองอย่าง: แปลง TypeScript ให้ตอนรัน และแก้ปัญหา path ให้ด้วย เราจึงเพิ่ม script <code>"db:seed": "tsx prisma/seed.ts"</code> ไว้ใน <code>package.json</code> แล้วเรียกด้วย <code>npm run db:seed</code></p>
+    <p>เพราะสคริปต์นี้อยู่นอก NestJS มันจึงไม่มี <code>ConfigModule</code> มาโหลด <code>.env</code> ให้ ต้อง <code>import 'dotenv/config'</code> เป็นบรรทัดแรกเอง และต้อง <code>new PrismaClient({ adapter: … })</code> เองเหมือนที่ <code>PrismaService</code> ทำ — นี่เป็นข้อยกเว้นเดียวของกฎ <q>ห้าม <code>new PrismaClient</code> ในไฟล์อื่น</q> ใน <code>.cursor/rules/project.mdc</code> เพราะไฟล์นี้ไม่ได้อยู่ใน dependency injection ของ Nest เลย</p>
+
+    <h2>ทำไมต้องห่อด้วย transaction</h2>
+    <p>ขั้นตอนของเราคือ <q>ลบทั้งหมดแล้วเติมใหม่</q> ถ้า fetch ล้มกลางทาง หรือสินค้าชิ้นใดมี slug ที่ไม่มีในตาราง <code>Category</code> แล้ว error ถูก throw หลังลบไปแล้ว เราจะเหลือฐานข้อมูลว่างหรือมีแคตตาล็อกครึ่งเดียว <code>prisma.$transaction(async (tx) =&gt; { … })</code> ทำให้ทุกคำสั่งข้างในสำเร็จพร้อมกันหรือย้อนกลับพร้อมกัน — หลักการเดียวกับ <a href="../../../Week_09/01_nestjs_basic/content/29_use-transactions.html">Week_09 บทที่ 29</a> ข้อสำคัญคือข้างใน block นี้ต้องเรียกผ่าน <code>tx</code> ไม่ใช่ <code>prisma</code> ไม่อย่างนั้นคำสั่งนั้นจะหลุดออกไปนอก transaction</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+├── prisma/seed.ts      (สร้างใหม่)
+└── package.json        (แก้ไข: เพิ่ม script db:seed)</code></pre>
+    <ul>
+      <li><strong><code>prisma/seed.ts</code></strong> — สัญญา: ต้อง <code>import 'dotenv/config'</code> บรรทัดแรก, ดึง categories และ products ทั้งหมด (<code>limit=0</code>), ลบ–เติมใหม่ภายใน <code>$transaction</code> เดียว และปิดท้ายด้วย <code>console.log</code> บอกจำนวนที่ seed / ต้องไม่ใช้ <code>upsert</code>, ไม่วน <code>create</code> ทีละชิ้น, ไม่ใช้ <code>any</code> และไม่ใช้ <code>!</code></li>
+      <li><strong><code>package.json</code></strong> — สัญญา: ต้องมี <code>"db:seed": "tsx prisma/seed.ts"</code> เพิ่มใน <code>scripts</code> / ต้องไม่เพิ่ม dependency ใหม่และต้องไม่แก้ script เดิม</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ให้ Cursor เขียน seed script แล้วรันเอง</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent prompt นี้ยาวที่สุดในคอร์สเพราะมันบอกลำดับการทำงานของ <code>main()</code> เป็นข้อ ๆ — นั่นคือประเด็น: งานที่มีลำดับหลายขั้นต้องเขียนลำดับให้ครบ ไม่ปล่อยให้ AI เดา</p>
+      <div class="cursor-prompt"><code>เขียน seed script ที่ดึงสินค้าและหมวดหมู่จริงจาก dummyjson ลง PostgreSQL
+
+บริบท: @prisma/schema.prisma @src/prisma/prisma.service.ts @package.json @docs/contract/products-page.json @docs/contract/categories.json @.cursor/rules/project.mdc
+schema มี model Category, Product, Review แล้ว migrate และ generate แล้ว Prisma Client อยู่ที่ src/generated/prisma/client.ts
+GET https://dummyjson.com/products/categories คืน array ของ { slug, name, url } จำนวน 24 รายการ
+GET https://dummyjson.com/products?limit=0 คืน { products, total, skip, limit } โดย products คือสินค้าทั้งหมด 194 ชิ้น รูปทรงแต่ละชิ้นตาม docs/contract/products-page.json
+สินค้าแต่ละชิ้นมี reviews 3 รายการ และ field category เป็น slug string ที่ตรงกับ categories
+สินค้าบางชิ้นไม่มี field brand
+script นี้รันนอก NestJS ด้วย tsx (ติดตั้งไว้แล้วเป็น devDependency) จึงต้องสร้าง PrismaClient เองพร้อม adapter แบบเดียวกับ prisma.service.ts และต้อง import 'dotenv/config' บรรทัดแรก
+Node.js เวอร์ชันนี้มี fetch ในตัว ห้ามติดตั้ง axios
+
+โครงสร้าง: สร้าง/แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- prisma/seed.ts (สร้างใหม่)
+- package.json (แก้ไข: เพิ่ม script "db:seed": "tsx prisma/seed.ts")
+
+ข้อกำหนดทางเทคนิค:
+- ประกาศ interface DummyCategory, DummyReview, DummyProduct ที่บรรยาย payload ของ dummyjson ให้ครบทุก field ตาม docs/contract (brand เป็น optional)
+- ฟังก์ชัน fetchJson&lt;T&gt;(path: string): Promise&lt;T&gt; ที่ต่อ path เข้ากับ https://dummyjson.com และ throw Error ถ้า response.ok เป็น false
+- ฟังก์ชัน main() ทำงานตามลำดับ: ดึง categories และ products ทั้งหมด (limit=0) แล้วเข้า prisma.$transaction(async (tx) =&gt; { ... }) ซึ่งข้างใน
+  1. ลบข้อมูลเดิมตามลำดับ review, product, category ด้วย deleteMany
+  2. category.createMany จาก slug และ name
+  3. อ่าน category กลับมาแล้วสร้าง Map จาก slug ไป id พร้อมฟังก์ชันช่วยที่ throw Error บอกชื่อ slug ถ้าไม่พบ
+  4. product.createMany โดยส่ง id เดิมของ dummyjson แบน dimensions เป็น width/height/depth และ meta เป็น barcode/qrCode/createdAt/updatedAt (แปลง string เป็น new Date) brand ที่ไม่มีให้เป็น null
+  5. review.createMany จาก flatMap ของ reviews ทุกชิ้น พร้อม productId และ date เป็น new Date
+- ห้ามใช้ upsert ห้ามวน loop create ทีละชิ้น
+- จบด้วย console.log บอกจำนวน categories, products, reviews ที่ seed
+- บรรทัดล่างสุดใช้ top-level await เรียก main() ใน try/finally ที่ finally เรียก prisma.$disconnect()
+- ห้ามใช้ any และห้าม non-null assertion (!)
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ schema.prisma, prisma7.config.ts หรือไฟล์ใน src/
+- ห้ามรัน script ให้ผมรันเอง
+- ยังไม่ต้องสร้าง controller หรือ endpoint ของสินค้า</code></div>
+      <p>ตรวจโค้ดตามหัวข้อถัดไปให้จบก่อน แล้วรันเอง <strong>สองครั้ง</strong> เพื่อพิสูจน์ว่ารันซ้ำได้ไม่พังและไม่เกิดข้อมูลซ้ำ</p>
+      <div class="prompt-example"><code>npm run db:seed
+npm run db:seed</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>บรรทัดแรกของไฟล์คือ <code>import 'dotenv/config';</code> — ถ้าอยู่บรรทัดอื่นหรือไม่มี <code>DATABASE_URL</code> จะเป็น <code>undefined</code> ตอนสร้าง client</li>
+        <li>สร้าง client ด้วย <code>new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) })</code> และ import <code>PrismaClient</code> จาก <code>'../src/generated/prisma/client.js'</code> (สังเกต <code>../src/</code> เพราะไฟล์นี้อยู่ในโฟลเดอร์ <code>prisma/</code>)</li>
+        <li>ลำดับ <code>deleteMany</code> คือ <code>review</code> → <code>product</code> → <code>category</code> และทุกคำสั่งข้างใน transaction เรียกผ่าน <code>tx</code> ไม่ใช่ <code>prisma</code></li>
+        <li>มี <code>createMany</code> สามครั้งพอดี ไม่มี <code>upsert</code> และไม่มี <code>for</code>/<code>map</code> ที่เรียก <code>create</code> ทีละชิ้น</li>
+        <li>ส่ง <code>id: product.id</code> ตรง ๆ (ถ้า AI ตัด field นี้ออก id จะหลุดไปเป็นค่าอื่นและ React app จะลิงก์ผิด)</li>
+        <li><code>brand: product.brand ?? null</code> — ใช้ <code>??</code> ไม่ใช่ <code>||</code> (ถ้าใช้ <code>||</code> แบรนด์ที่เป็น string ว่างจะกลายเป็น null ไปด้วย)</li>
+        <li>สาม field ที่เป็นวันเวลาถูกห่อด้วย <code>new Date(...)</code>: <code>createdAt</code>, <code>updatedAt</code> ของสินค้า และ <code>date</code> ของรีวิว — Prisma ต้องการ <code>DateTime</code> ไม่ใช่ string</li>
+        <li>ไม่มี <code>any</code> และไม่มี non-null assertion (<code>!</code>) — การหา id จาก slug ต้องเป็นฟังก์ชันที่ <code>throw Error</code> พร้อมชื่อ slug เมื่อไม่พบ</li>
+        <li><code>package.json</code> มี <code>"db:seed": "tsx prisma/seed.ts"</code> และ dependencies ไม่มีตัวใหม่ (โดยเฉพาะต้องไม่มี <code>axios</code> หรือ <code>node-fetch</code>)</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> วน <code>create</code> ทีละชิ้น (ได้ผลถูกแต่ช้ามาก และผิดข้อกำหนดที่เราเขียนไว้) หรือลืม <code>?limit=0</code> แล้วดึงมาแค่ 30 ชิ้นตามค่าปริยายของ dummyjson — ข้อหลังนี้ดูจาก log ไม่ออกเลยถ้าไม่นับแถว การตรวจจำนวนด้วย <code>psql</code> ในหัวข้อถัดไปคือด่านที่จับได้</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <pre><code>// prisma/seed.ts
+import 'dotenv/config';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../src/generated/prisma/client.js';
+
+interface DummyCategory {
+  slug: string;
+  name: string;
+  url: string;
+}
+
+interface DummyReview {
+  rating: number;
+  comment: string;
+  date: string;
+  reviewerName: string;
+  reviewerEmail: string;
+}
+
+interface DummyProduct {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  discountPercentage: number;
+  rating: number;
+  stock: number;
+  tags: string[];
+  brand?: string;
+  sku: string;
+  weight: number;
+  dimensions: { width: number; height: number; depth: number };
+  warrantyInformation: string;
+  shippingInformation: string;
+  availabilityStatus: string;
+  reviews: DummyReview[];
+  returnPolicy: string;
+  minimumOrderQuantity: number;
+  meta: { createdAt: string; updatedAt: string; barcode: string; qrCode: string };
+  images: string[];
+  thumbnail: string;
+}
+
+const SOURCE = 'https://dummyjson.com';
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
+
+async function fetchJson&lt;T&gt;(path: string): Promise&lt;T&gt; {
+  const response = await fetch(`${SOURCE}${path}`);
+  if (!response.ok) {
+    throw new Error(`${path} responded ${response.status}`);
+  }
+  return response.json() as Promise&lt;T&gt;;
+}
+
+async function main() {
+  const categories = await fetchJson&lt;DummyCategory[]&gt;('/products/categories');
+  const { products } = await fetchJson&lt;{ products: DummyProduct[] }&gt;('/products?limit=0');
+
+  await prisma.$transaction(async (tx) =&gt; {
+    await tx.review.deleteMany();
+    await tx.product.deleteMany();
+    await tx.category.deleteMany();
+
+    await tx.category.createMany({
+      data: categories.map(({ slug, name }) =&gt; ({ slug, name })),
+    });
+    const categoryIdBySlug = new Map(
+      (await tx.category.findMany()).map((category) =&gt; [category.slug, category.id]),
+    );
+    const categoryId = (slug: string): number =&gt; {
+      const id = categoryIdBySlug.get(slug);
+      if (id === undefined) {
+        throw new Error(`Unknown category slug: ${slug}`);
+      }
+      return id;
+    };
+
+    await tx.product.createMany({
+      data: products.map((product) =&gt; ({
+        id: product.id,
+        title: product.title,
+        description: product.description,
+        price: product.price,
+        discountPercentage: product.discountPercentage,
+        rating: product.rating,
+        stock: product.stock,
+        tags: product.tags,
+        brand: product.brand ?? null,
+        sku: product.sku,
+        weight: product.weight,
+        width: product.dimensions.width,
+        height: product.dimensions.height,
+        depth: product.dimensions.depth,
+        warrantyInformation: product.warrantyInformation,
+        shippingInformation: product.shippingInformation,
+        availabilityStatus: product.availabilityStatus,
+        returnPolicy: product.returnPolicy,
+        minimumOrderQuantity: product.minimumOrderQuantity,
+        barcode: product.meta.barcode,
+        qrCode: product.meta.qrCode,
+        images: product.images,
+        thumbnail: product.thumbnail,
+        createdAt: new Date(product.meta.createdAt),
+        updatedAt: new Date(product.meta.updatedAt),
+        categoryId: categoryId(product.category),
+      })),
+    });
+
+    await tx.review.createMany({
+      data: products.flatMap((product) =&gt;
+        product.reviews.map((review) =&gt; ({
+          productId: product.id,
+          rating: review.rating,
+          comment: review.comment,
+          date: new Date(review.date),
+          reviewerName: review.reviewerName,
+          reviewerEmail: review.reviewerEmail,
+        })),
+      ),
+    });
+  });
+
+  const reviewCount = products.reduce((count, product) =&gt; count + product.reviews.length, 0);
+  console.log(`Seeded ${categories.length} categories, ${products.length} products, ${reviewCount} reviews`);
+}
+
+try {
+  await main();
+} finally {
+  await prisma.$disconnect();
+}</code></pre>
+      <pre><code>// package.json (เฉพาะบรรทัดที่เพิ่ม ในบล็อก scripts)
+    "db:seed": "tsx prisma/seed.ts",</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ทั้งสองครั้งต้องได้บรรทัดสรุปเหมือนกันเป๊ะ</p>
+      <pre><code>&gt; ecommerce-api@0.0.1 db:seed
+&gt; tsx prisma/seed.ts
+
+Seeded 24 categories, 194 products, 582 reviews</code></pre>
+      <p>ครั้งแรกใช้เวลาราวสามวินาที ครั้งที่สองเร็วขึ้น (dummyjson ตอบไวขึ้นและ Node อุ่นเครื่องแล้ว) ตัวเลข 582 มาจาก 194 ชิ้น × รีวิวชิ้นละ 3 รายการ ถ้าได้ <code>Seeded 24 categories, 30 products, 90 reviews</code> แปลว่าลืม <code>limit=0</code> ให้แก้ query string แล้วรันใหม่</p>
+      <div class="warning">
+        <p>สคริปต์นี้ <strong>ลบข้อมูลเดิมทั้งหมด</strong> ก่อนเติมใหม่ทุกครั้ง บนเครื่องเรียนไม่มีปัญหา แต่ห้ามเอาแบบแผนนี้ไปรันกับฐานข้อมูลที่มีข้อมูลจริงของผู้ใช้</p>
+      </div>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>นับแถวทั้งสามตารางในคำสั่งเดียว — อย่าเชื่อ <code>console.log</code> ของสคริปต์ตัวเอง ให้ถามฐานข้อมูลตรง ๆ</li>
+      </ul>
+      <div class="prompt-example"><code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT (SELECT count(*) FROM "Category") AS categories, (SELECT count(*) FROM "Product") AS products, (SELECT count(*) FROM "Review") AS reviews;'</code></div>
+      <pre><code> categories | products | reviews
+------------+----------+---------
+         24 |      194 |     582
+(1 row)</code></pre>
+      <ul>
+        <li>สินค้าที่ไม่มียี่ห้อต้องเป็น NULL ไม่ใช่ string ว่าง: <code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT count(*) FROM "Product" WHERE brand IS NULL;'</code> ต้องได้ <code>92</code></li>
+        <li>หมวดหมู่เรียงตามที่ dummyjson ส่งมา: <code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT id, slug FROM "Category" ORDER BY id LIMIT 3;'</code> ต้องได้ <code>beauty</code>, <code>fragrances</code>, <code>furniture</code> เรียงตามลำดับนี้</li>
+        <li><code>npm run lint</code> ผ่าน แต่ต้องรัน <code>npx oxlint prisma/seed.ts</code> เพิ่มด้วย เพราะ script <code>lint</code> ของ scaffold ครอบแค่ <code>src/</code> กับ <code>test/</code> — ไฟล์ใน <code>prisma/</code> ไม่ถูกตรวจถ้าไม่สั่งเอง (ไม่มี output = ไม่มีปัญหา)</li>
+        <li>commit ด้วย <code>git add -A &amp;&amp; git commit -m "feat: seed from dummyjson"</code></li>
+      </ul>
+      <div class="note">
+        <p>ตัวเลข <code>id</code> ของหมวดหมู่จะไม่ใช่ 1, 2, 3 ถ้าคุณ seed ซ้ำ — รอบแรกได้ 1–24 รอบที่สองได้ 25–48 ไปเรื่อย ๆ เพราะ <code>deleteMany</code> (คือ <code>DELETE</code>) ไม่รีเซ็ต sequence ของ PostgreSQL ให้ (มีแต่ <code>TRUNCATE … RESTART IDENTITY</code> ที่ทำ) ไม่ต้องแก้อะไร: สิ่งที่ต้องตรงคือ<strong>ลำดับ</strong>ของ slug ไม่ใช่ตัวเลข และไม่มี endpoint ไหนในคอร์สนี้ส่ง id ของหมวดหมู่ออกไปให้ client เลย — React app อ้างอิงหมวดหมู่ด้วย slug เท่านั้น</p>
+      </div>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/crud">CRUD: createMany, deleteMany (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/transactions">Transactions and batch queries (Prisma Docs)</a></li>
+      <li><a href="https://dummyjson.com/docs/products">Products endpoints: limit, skip (DummyJSON Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="08_running-the-first-migration.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="10_get-products-categories.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

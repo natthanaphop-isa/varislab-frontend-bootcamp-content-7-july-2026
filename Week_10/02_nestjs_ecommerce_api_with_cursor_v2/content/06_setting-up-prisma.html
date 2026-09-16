@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ติดตั้ง Prisma 7 พร้อม driver adapter แล้วให้ Cursor สร้าง PrismaModule แบบ global และเปิด ConfigModule ใน AppModule" />
+  <title>ติดตั้ง Prisma และ PrismaModule</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 6 จาก 24</p>
+    <h1>ติดตั้ง Prisma และ PrismaModule</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่าทำไม Prisma 7 ต้องสร้าง <code>PrismaClient</code> พร้อม driver adapter เสมอ</li>
+        <li>แยกได้ว่า <code>prisma7.config.ts</code> เป็นไฟล์ของ CLI ส่วน <code>PrismaService</code> เป็นของแอป</li>
+        <li>ทำให้ <code>PrismaService</code> ถูก inject ได้ทุกโมดูลด้วย <code>@Global()</code> และอ่าน <code>.env</code> ผ่าน <code>ConfigModule</code></li>
+      </ul>
+    </section>
+
+    <h2>Prisma 7 ไม่มี default engine ต้องบอก driver adapter ทุกครั้ง</h2>
+    <p>ใน <a href="../../../Week_09/01_nestjs_basic/content/22_introducing-prisma.html">Week_09 บทที่ 22</a> เราเห็นรูปแบบนี้มาแล้ว: Prisma 7 ไม่ต่อฐานข้อมูลด้วย engine binary ของตัวเองอีกต่อไป แต่ต่อผ่าน <strong>driver adapter</strong> ซึ่งเป็น driver ของภาษา JavaScript จริง ๆ สำหรับ PostgreSQL คือแพ็กเกจ <code>@prisma/adapter-pg</code> ที่ครอบ <code>pg</code> ไว้ ผลคือทุกครั้งที่ <code>new PrismaClient()</code> เราต้องส่ง <code>adapter</code> เข้าไปด้วย</p>
+    <pre><code>// รูปแบบที่ Prisma 7 ต้องการ
+new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });</code></pre>
+    <p>ถ้าเขียนแบบ Prisma 5 (<code>new PrismaClient()</code> เปล่า ๆ แล้ว import จาก <code>@prisma/client</code>) โค้ดจะ compile ผ่านแต่พังตอนรันด้วย error ว่าต้องมี adapter — เป็นจุดที่ AI พลาดบ่อยที่สุดในบทนี้ เพราะตัวอย่างบนอินเทอร์เน็ตส่วนใหญ่ยังเป็นของ Prisma 5</p>
+
+    <h2>prisma init สร้างสองไฟล์ ไฟล์ละหน้าที่</h2>
+    <p><code>npx prisma init</code> จะสร้าง <code>prisma/schema.prisma</code> (พิมพ์เขียวของฐานข้อมูล) และ <code>prisma7.config.ts</code> (ไฟล์ตั้งค่าของ CLI) ไฟล์แรกเราจะเติม model ในบทที่ 7 ไฟล์ที่สองปล่อยไว้เฉย ๆ ตลอดคอร์ส</p>
+    <pre><code>// prisma/schema.prisma ที่ prisma init สร้างให้
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}</code></pre>
+    <ul>
+      <li><code>provider = "prisma-client"</code> คือ generator รุ่นใหม่ที่ออกมาเป็นไฟล์ TypeScript ธรรมดา (รุ่นเก่าชื่อ <code>prisma-client-js</code> และซ่อนตัวไว้ใน <code>node_modules</code>)</li>
+      <li><code>output = "../src/generated/prisma"</code> แปลว่า client ที่ generate จะมาโผล่เป็นโค้ดในโปรเจกต์เราที่ <code>src/generated/prisma/</code> — เราจึง import จาก path นั้น ไม่ใช่จาก <code>@prisma/client</code></li>
+      <li><code>datasource db</code> ไม่มี <code>url</code> เพราะ Prisma 7 ย้ายการอ่าน connection string ไปไว้ใน <code>prisma7.config.ts</code></li>
+    </ul>
+    <pre><code>// prisma7.config.ts — ไฟล์นี้ CLI ใช้เท่านั้น แอปที่รันอยู่ไม่ได้อ่าน
+import "dotenv/config";
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
+  datasource: {
+    url: process.env["DATABASE_URL"],
+  },
+});</code></pre>
+    <p>บรรทัด <code>import "dotenv/config"</code> ในไฟล์นี้มีเพื่อให้คำสั่งอย่าง <code>npx prisma migrate dev</code> อ่าน <code>.env</code> เองได้ เพราะ CLI รันนอก NestJS — ไม่มี <code>ConfigModule</code> มาช่วย นี่คือเหตุผลเดียวที่โปรเจกต์นี้ยังต้องติดตั้ง <code>dotenv</code></p>
+
+    <h2>PrismaService คือ PrismaClient ที่ผูกกับ lifecycle ของ Nest</h2>
+    <p>เราไม่เรียก <code>new PrismaClient()</code> กระจายทั่วโปรเจกต์ (กติกาใน <code>.cursor/rules/project.mdc</code> ห้ามไว้) แต่ห่อไว้ใน provider เดียวที่ <code>extends PrismaClient</code> แล้วใช้ hook ของ Nest สองตัว: <code>onModuleInit</code> เรียก <code>$connect()</code> ตอนแอปเริ่ม และ <code>onModuleDestroy</code> เรียก <code>$disconnect()</code> ตอนแอปปิด เพื่อให้ connection pool ถูกคืนอย่างเรียบร้อย</p>
+    <p>จากนั้น <code>PrismaModule</code> ติด <code>@Global()</code> เพื่อให้โมดูลอื่น (products ในบทที่ 10, orders ในบทที่ 18) inject <code>PrismaService</code> ได้ทันทีโดยไม่ต้อง import <code>PrismaModule</code> ซ้ำในทุกโมดูล — เทคนิคเดียวกับ <a href="../../../Week_09/01_nestjs_basic/content/32_control-nestjs-module-encapsulation.html">Week_09 บทที่ 32</a></p>
+
+    <h2>เปิด ConfigModule ตั้งแต่วันแรก</h2>
+    <p>เราใส่ <code>ConfigModule.forRoot({ isGlobal: true })</code> เป็นรายการแรกของ <code>imports</code> ตั้งแต่บทนี้ แม้ยังไม่มีใครใช้ <code>ConfigService</code> เลย เหตุผลสองข้อ</p>
+    <ul>
+      <li><code>ConfigModule</code> โหลด <code>.env</code> เข้า <code>process.env</code> ให้เอง เราจึงไม่ต้องเขียน <code>import 'dotenv/config'</code> ไว้หัว <code>main.ts</code> — รายละเอียดเรื่องนี้อยู่ใน <a href="../../../Week_09/01_nestjs_basic/content/42_introducing-the-config-module.html">Week_09 บทที่ 42</a></li>
+      <li><code>isGlobal: true</code> ทำให้ <code>ConfigService</code> ถูก inject ได้ทุกที่ บทที่ 10 จะใช้อ่าน <code>APP_URL</code> และบทที่ 20 จะใช้อ่าน <code>PORT</code> กับ <code>CORS_ORIGIN</code></li>
+    </ul>
+    <p><code>ConfigModule.forRoot()</code> โหลด <code>.env</code> เข้า <code>process.env</code> ทันทีตอนที่ array <code>imports</code> ถูกประเมิน จึงมีค่าก่อนที่ provider ตัวไหนจะถูกสร้าง — การวางไว้ตัวแรกเป็นธรรมเนียมที่ช่วยตอนมี module อื่นอ่าน <code>process.env</code> ในตัวเลือกของ <code>forRoot()</code> ของมันเอง</p>
+    <div class="note">
+      <p>บทนี้ยังติดตั้ง <code>tsx</code> เป็น devDependency ไปด้วย แม้จะยังไม่ได้ใช้ เพราะ seed script ในบทที่ 9 รัน <strong>นอก</strong> NestJS: มันเป็นไฟล์ TypeScript ที่ต้องรันตรง ๆ และต้อง import ไฟล์ที่ Prisma generate มาได้ <code>tsx</code> ทำสองอย่างนั้นให้ในคำสั่งเดียว</p>
+    </div>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+├── prisma/schema.prisma            (prisma init สร้างให้)
+├── prisma7.config.ts               (prisma init สร้างให้)
+└── src/
+    ├── prisma/
+    │   ├── prisma.service.ts       (สร้างใหม่)
+    │   └── prisma.module.ts        (สร้างใหม่)
+    └── app.module.ts               (แก้ไข)</code></pre>
+    <ul>
+      <li><strong><code>src/prisma/prisma.service.ts</code></strong> — สัญญา: ต้อง <code>extends PrismaClient</code> ที่ import จาก <code>'../generated/prisma/client.js'</code> และส่ง <code>adapter</code> เข้า <code>super()</code> / ต้องไม่ import <code>dotenv</code> และต้องไม่ import จาก <code>@prisma/client</code></li>
+      <li><strong><code>src/prisma/prisma.module.ts</code></strong> — สัญญา: ต้องเป็น <code>@Global()</code> และ <code>exports: [PrismaService]</code> / ต้องไม่มี <code>controllers</code></li>
+      <li><strong><code>src/app.module.ts</code></strong> — สัญญา: ต้องมี <code>ConfigModule.forRoot({ isGlobal: true })</code> เป็นรายการแรกแล้วตามด้วย <code>PrismaModule</code> / ต้องไม่ลบ <code>AppController</code> กับ <code>AppService</code></li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ติดตั้ง Prisma แล้วให้ Cursor ต่อสายเข้า Nest</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent แต่ก่อนจะส่ง prompt ให้ติดตั้งแพ็กเกจและรัน <code>prisma init</code> ด้วยมือเอง เพราะเราอยากเห็นไฟล์ที่ CLI สร้างด้วยตาตัวเอง (และ prompt จะอ้างอิงไฟล์เหล่านั้น)</p>
+      <div class="prompt-example"><code>npm install @prisma/client@7.10.0 @prisma/adapter-pg@7.10.0 dotenv @nestjs/config
+npm install -D prisma@7.10.0 tsx
+npx prisma init --no-skills</code></div>
+      <p>ผลลัพธ์ของ <code>prisma init --no-skills</code> ที่ควรเห็น</p>
+      <pre><code>Initialized Prisma in your project
+
+  prisma/
+    schema.prisma
+  prisma7.config.ts
+
+warn Prisma would have added DATABASE_URL but it already exists in .env.
+warn You already have a .gitignore file. Don't forget to add .env in it to not commit any private information.</code></pre>
+      <p>คำเตือนสองบรรทัดนี้ปกติ: บรรทัดแรกบอกว่ามันเจอ <code>DATABASE_URL</code> ใน <code>.env</code> ของบทที่ 5 แล้วจึง<strong>ไม่</strong>เติมบรรทัดซ้ำให้ (เปิด <code>.env</code> ดูก็ยังมีสี่บรรทัดเดิม — ถ้า CLI ของคุณเผลอเติมบรรทัด <code>DATABASE_URL</code> ตัวอย่างเข้ามา ให้ลบออกจนเหลือสี่บรรทัด) บรรทัดที่สองเป็นคำเตือนแบบเหมารวม ทั้งที่ <code>.env</code> ถูก ignore อยู่แล้ว ส่วนสิ่งที่ <code>prisma init</code> <em>แก้จริง</em> ใน <code>.gitignore</code> คือเติมบรรทัด <code>/src/generated/prisma</code> ต่อท้าย — ตั้งใจให้เป็นอย่างนั้น เพราะโค้ดที่ generate ได้ไม่ควรเข้า git</p>
+      <div class="note">
+        <p>ถ้า <code>npm install</code> ขึ้นข้อความว่า <code>N packages have install scripts not yet covered by allowScripts</code> แปลว่า npm ของคุณกัน install script ไว้ ซึ่งจะทำให้ Prisma ไม่ได้ติดตั้ง engine ของตัวเอง ให้อนุญาตเฉพาะแพ็กเกจที่ต้องใช้แล้ว rebuild <strong>ก่อน</strong> รัน <code>prisma generate</code> ด้วย <code>npm install-scripts approve @prisma/engines esbuild prisma fsevents</code> ตามด้วย <code>npm rebuild</code> หลังทำแล้ว <code>package.json</code> จะมีบล็อก <code>allowScripts</code> เพิ่มขึ้นมา — เป็นผลที่ถูกต้อง ไม่ต้องลบออก</p>
+      </div>
+      <p>เมื่อไฟล์จาก <code>prisma init</code> อยู่ครบแล้ว ส่ง prompt นี้ทั้งก้อน</p>
+      <div class="cursor-prompt"><code>สร้าง PrismaModule กับ PrismaService แบบ global และเปิดใช้ ConfigModule ใน AppModule
+
+บริบท: @src/app.module.ts @src/main.ts @prisma/schema.prisma @prisma7.config.ts @.env @.cursor/rules/project.mdc
+ติดตั้งแล้ว: @prisma/client@7.10.0, @prisma/adapter-pg@7.10.0, dotenv, @nestjs/config และ prisma@7.10.0 (devDependency)
+npx prisma init สร้าง prisma/schema.prisma (generator prisma-client, output ../src/generated/prisma) และ prisma7.config.ts ไว้แล้ว
+schema ยังไม่มี model ใด ๆ และยังไม่ได้ generate — ห้ามเพิ่ม model ในรอบนี้
+Prisma 7 ต้องสร้าง PrismaClient พร้อม driver adapter เสมอ: new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
+Prisma Client ที่ generate จะอยู่ที่ src/generated/prisma/client.ts จึง import จาก '../generated/prisma/client.js'
+โปรเจกต์เป็น ES module ทุก import ไฟล์ในโปรเจกต์ต้องลงท้าย .js
+
+โครงสร้าง: สร้าง/แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- src/prisma/prisma.service.ts (สร้างใหม่)
+- src/prisma/prisma.module.ts (สร้างใหม่)
+- src/app.module.ts (แก้ไข)
+
+ข้อกำหนดทางเทคนิค:
+- prisma.service.ts: import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
+  import { PrismaPg } from '@prisma/adapter-pg' และ import { PrismaClient } from '../generated/prisma/client.js'
+  @Injectable() export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy
+  constructor เรียก super({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) })
+  onModuleInit เรียก await this.$connect() และ onModuleDestroy เรียก await this.$disconnect()
+  ห้าม import dotenv ในไฟล์นี้
+- prisma.module.ts: @Global() @Module({ providers: [PrismaService], exports: [PrismaService] }) export class PrismaModule
+- app.module.ts: เพิ่ม ConfigModule.forRoot({ isGlobal: true }) เป็นรายการแรกของ imports ตามด้วย PrismaModule
+  คง AppController และ AppService ไว้ตามเดิม
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ main.ts, schema.prisma, prisma7.config.ts หรือ .env
+- ห้ามสร้าง index.ts / barrel
+- ห้ามรัน prisma generate หรือ migrate ให้ผมรันเอง
+- ยังไม่ต้องสร้าง model, service หรือ controller ของสินค้า</code></div>
+      <p>รีวิวโค้ดตามหัวข้อถัดไปให้จบก่อน แล้วจึงรันสองคำสั่งนี้เอง (prompt สั่งห้าม Agent รันให้)</p>
+      <div class="prompt-example"><code>npx prisma generate
+npm run start:dev</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li><code>prisma.module.ts</code> มี <code>@Global()</code> อยู่เหนือ <code>@Module()</code> — ขาดไปแล้วบทที่ 10 จะ inject <code>PrismaService</code> ไม่ได้</li>
+        <li><code>prisma.service.ts</code> import <code>PrismaClient</code> จาก <code>'../generated/prisma/client.js'</code> — ต้องมี <code>.js</code> ต่อท้าย และต้องมาจาก <code>src/generated</code> ไม่ใช่ <code>@prisma/client</code></li>
+        <li><code>super()</code> ได้รับ <code>{ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) }</code> จริง ไม่ใช่ <code>super()</code> เปล่า</li>
+        <li><code>app.module.ts</code> มี <code>ConfigModule.forRoot({ isGlobal: true })</code> เป็นรายการ<strong>แรก</strong> ตามด้วย <code>PrismaModule</code> และ <code>AppController</code>/<code>AppService</code> ยังอยู่</li>
+        <li>ไม่มี <code>import 'dotenv/config'</code> หรือ <code>import dotenv</code> ที่ไหนเลยใน <code>src/</code> — ตรวจได้ด้วย <code>grep -r dotenv src/</code> ต้องไม่มีผลลัพธ์</li>
+        <li>import ไฟล์ในโปรเจกต์ทุกบรรทัดลงท้าย <code>.js</code> (<code>'./prisma.service.js'</code>, <code>'./prisma/prisma.module.js'</code>)</li>
+        <li>ไม่มีไฟล์เกินมา เช่น <code>src/prisma/index.ts</code> หรือการแก้ <code>main.ts</code>, <code>schema.prisma</code>, <code>.env</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> import <code>PrismaClient</code> จาก <code>'@prisma/client'</code> (ถูกต้องสำหรับ Prisma 5 แต่ที่นี่จะพังตอนรันด้วย error ว่าต้องมี adapter) หรือลืม <code>.js</code> ท้าย path ทำให้โปรเจกต์ ES module หาไฟล์ไม่เจอตอนรัน อีกท่าที่เจอคือแอบเติม <code>import 'dotenv/config'</code> ใน <code>main.ts</code> ซึ่งซ้ำซ้อนกับ <code>ConfigModule</code></p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <pre><code>// src/prisma/prisma.service.ts
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../generated/prisma/client.js';
+
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  constructor() {
+    super({
+      adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+    });
+  }
+
+  async onModuleInit() {
+    await this.$connect();
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
+}</code></pre>
+      <pre><code>// src/prisma/prisma.module.ts
+import { Global, Module } from '@nestjs/common';
+import { PrismaService } from './prisma.service.js';
+
+@Global()
+@Module({
+  providers: [PrismaService],
+  exports: [PrismaService],
+})
+export class PrismaModule {}</code></pre>
+      <pre><code>// src/app.module.ts
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { PrismaModule } from './prisma/prisma.module.js';
+
+@Module({
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>เวอร์ชันที่ติดตั้งได้ตอนตรวจทานคอร์สนี้: <code>@prisma/client</code> 7.10.0, <code>@prisma/adapter-pg</code> 7.10.0, <code>prisma</code> (CLI) 7.10.0, <code>@nestjs/config</code> 12.0.0, <code>dotenv</code> 17.4.2 และ <code>tsx</code> 4.23.13 — ตรวจของคุณด้วย <code>npm ls @prisma/client @prisma/adapter-pg prisma @nestjs/config tsx</code></p>
+      <p><code>npx prisma generate</code> จะสำเร็จแม้ schema ยังไม่มี model เลย</p>
+      <pre><code>Loaded Prisma config from prisma7.config.ts.
+Prisma schema loaded from prisma/schema.prisma.
+✔ Generated Prisma Client (7.10.0) to ./src/generated/prisma in 5ms</code></pre>
+      <p>แล้ว <code>npm run start:dev</code> จะ boot ผ่านตามปกติ โดยมีสองบรรทัดใหม่ใน log ที่ไม่เคยมีในบทก่อน ๆ</p>
+      <pre><code>[Nest] LOG [InstanceLoader] PrismaModule dependencies initialized +3ms
+[Nest] LOG [InstanceLoader] ConfigHostModule dependencies initialized +0ms
+[Nest] LOG [InstanceLoader] AppModule dependencies initialized +0ms
+[Nest] LOG [InstanceLoader] ConfigModule dependencies initialized +0ms
+[Nest] LOG [RoutesResolver] AppController {/}: +1ms
+[Nest] LOG [RouterExplorer] Mapped {/, GET} route +1ms
+[Nest] LOG [NestApplication] Nest application successfully started +22ms</code></pre>
+      <div class="warning">
+        <p>ถ้าลืมรัน <code>npx prisma generate</code> ก่อน <code>start:dev</code> จะได้ error ตอน compile ว่าหาโมดูล <code>../generated/prisma/client.js</code> ไม่เจอ — เพราะ Prisma 7 <strong>ไม่</strong> generate client ให้อัตโนมัติ ต้องสั่งเอง (และต้องสั่งซ้ำทุกครั้งที่แก้ <code>schema.prisma</code>)</p>
+      </div>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>ls src/generated/prisma</code> เห็น <code>client.ts</code> (พร้อม <code>models.ts</code>, <code>enums.ts</code> และโฟลเดอร์ <code>models/</code>) — นี่คือ client ที่ generate ออกมาเป็นโค้ดในโปรเจกต์เราจริง ๆ</li>
+        <li><code>grep -r dotenv src/</code> ไม่มีผลลัพธ์ — ยืนยันว่า <code>.env</code> ถูกโหลดโดย <code>ConfigModule</code> ไม่ใช่โดยมือเรา</li>
+        <li><code>npm run build</code> และ <code>npm run lint</code> ผ่านแบบไม่มี output</li>
+        <li><code>curl -s http://localhost:3000</code> ยังได้ <code>Hello World!</code> — โมดูลใหม่ไม่ทำให้ route เดิมพัง</li>
+        <li>commit ด้วย <code>git add -A &amp;&amp; git commit -m "feat: prisma service and config module"</code> แล้วเช็คว่า <code>src/generated/</code> ไม่ติดไปใน commit</li>
+      </ul>
+      <div class="note">
+        <p><strong>อย่าใช้การปิดฐานข้อมูลเป็นวิธีทดสอบในบทนี้</strong> ถ้าคุณลอง <code>docker compose stop db</code> แล้ว start แอปใหม่ คุณจะพบว่ามัน boot ผ่านและตอบ <code>Hello World!</code> ได้เหมือนเดิม โดยไม่มี error ใน log เลย นั่นไม่ใช่ความผิดพลาดของโค้ด: driver adapter ต่อฐานข้อมูลแบบ lazy — <code>$connect()</code> ยังไม่เปิด socket จริงจนกว่าจะมี query แรกเกิดขึ้น และตอนนี้ schema ยังไม่มี model ใด ๆ ให้ query <code>DATABASE_URL</code> ที่ผิดจะโผล่เป็น error ตอนบทที่ 8 (CLI รัน <code>migrate dev</code>) และตอนบทที่ 10 (แอปยิง query แรก) ต่างหาก</p>
+      </div>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/recipes/prisma">Prisma Recipe (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/configuration">Configuration: ConfigModule (NestJS Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/overview/databases/postgresql">PostgreSQL connector (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/reference/prisma-cli-reference">Prisma CLI reference (Prisma Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="05_running-postgresql.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="07_modeling-products-in-prisma.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

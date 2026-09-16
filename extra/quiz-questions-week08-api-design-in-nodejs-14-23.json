@@ -1,0 +1,309 @@
+{
+  "questions": [
+    {
+      "prompt": "เมื่อ User หนึ่งคนมี Habit ได้หลายอัน แต่ Habit แต่ละอันมีเจ้าของคนเดียว ควรวาง Foreign Key ไว้ที่ใด?",
+      "choices": [
+        "เก็บ userId ไว้บน Habit ซึ่งเป็นฝั่ง Many",
+        "เก็บ habitId ค่าเดียวไว้บน User ซึ่งเป็นฝั่ง One",
+        "ใช้ชื่อ Habit เป็น Primary Key ของ User"
+      ],
+      "correctChoice": 1,
+      "explanation": "ความสัมพันธ์นี้เป็น One-to-Many โดย Habit แต่ละแถวเก็บ Foreign Key ที่ชี้ไปยัง User เจ้าของ ทำให้ User คนเดียวถูกอ้างถึงจากหลาย Habit ได้"
+    },
+    {
+      "prompt": "include: { habits: true } ใน Query นี้มีหน้าที่อะไร?",
+      "body": "<pre><code>const user = await prisma.user.findFirst({\n  where: { id: userId },\n  include: { habits: true },\n})</code></pre>",
+      "choices": [
+        "สร้าง Habit ใหม่ให้ User ทุกครั้งที่ Query",
+        "กรองให้คืนเฉพาะ User ที่มี Habit อย่างน้อยหนึ่งอัน",
+        "ขอข้อมูล Habit ที่สัมพันธ์กับ User กลับมาด้วย"
+      ],
+      "correctChoice": 3,
+      "explanation": "include ใช้ขอข้อมูลที่สัมพันธ์กันเพิ่มเติม ในตัวอย่างนี้ผลลัพธ์ของ User ที่พบจะมี habits ให้ใช้งานด้วย โดยไม่ได้สร้าง Habit ใหม่"
+    },
+    {
+      "prompt": "ข้อใดอธิบายแนวทางของ Prisma ที่บทเรียนเปรียบเทียบกับ Drizzle ได้ถูกต้อง?",
+      "choices": [
+        "Prisma กำหนด Schema ด้วยไฟล์ SQL เท่านั้น และไม่มีขั้นตอนสร้าง Client",
+        "Prisma ใช้ภาษาเฉพาะใน schema.prisma แล้ว Generate Client ส่วน Drizzle เขียน Schema ด้วย TypeScript",
+        "Prisma ใช้ได้เฉพาะข้อมูลที่ไม่มีความสัมพันธ์ ส่วน Drizzle ใช้กับ Relational Database"
+      ],
+      "correctChoice": 2,
+      "explanation": "Prisma ใช้ DSL สำหรับประกาศ Schema แล้วสร้าง Client พร้อม Type จาก Schema นั้น ส่วนตัวอย่างของ Drizzle ประกาศ Schema เป็น TypeScript โดยตรง"
+    },
+    {
+      "prompt": "ข้อใดเป็น Data Migration ในขั้นตอนเปลี่ยนโครงสร้างตาราง habits?",
+      "choices": [
+        "เพิ่มคอลัมน์ frequency แบบ Optional",
+        "เติมค่า frequency ให้แถวเดิมโดยคำนวณจาก target_days_per_week",
+        "เพิ่ม Constraint ให้ frequency ห้ามเป็น NULL"
+      ],
+      "correctChoice": 2,
+      "explanation": "Data Migration เปลี่ยนข้อมูลเดิมให้เข้ากับโครงสร้างใหม่ ส่วนการเพิ่มคอลัมน์และการเปลี่ยน Constraint เป็น Schema Migration"
+    },
+    {
+      "prompt": "หากต้องเปลี่ยนชื่อคอลัมน์ที่โค้ดบน Production ยังใช้อยู่ แนวทางใดช่วยลดความเสี่ยงต่อโค้ดเดิม?",
+      "choices": [
+        "เพิ่มคอลัมน์ใหม่แบบ Optional ก่อน แล้วทยอยย้ายข้อมูลและโค้ดให้พร้อมก่อนเลิกใช้คอลัมน์เดิม",
+        "ลบคอลัมน์เดิมทันที แล้วค่อยแก้โค้ดเมื่อมี Error",
+        "แก้ชื่อ Field ใน TypeScript อย่างเดียว โดยไม่ปรับฐานข้อมูลหรือ Mapping"
+      ],
+      "correctChoice": 1,
+      "explanation": "การแบ่งการเปลี่ยนแปลงเป็นช่วงช่วยให้โค้ดที่ยังใช้คอลัมน์เดิมทำงานต่อได้ ระหว่างนั้นต้องย้ายข้อมูลและปรับโค้ดให้รองรับก่อนนำคอลัมน์เดิมออก"
+    },
+    {
+      "prompt": "prisma db push ต่างจากเวิร์กโฟลว์ Migration อย่างไร?",
+      "choices": [
+        "db push สร้างประวัติ SQL ทุกครั้ง ส่วน Migration ไม่เก็บประวัติ",
+        "db push เพิ่มข้อมูลตัวอย่าง ส่วน Migration สร้าง Prisma Client เท่านั้น",
+        "db push ปรับฐานข้อมูลให้ตรงกับ Schema โดยไม่สร้างไฟล์ Migration ส่วน Migration เก็บการเปลี่ยนแปลงเป็นไฟล์ที่รีวิวและ Commit ได้"
+      ],
+      "correctChoice": 3,
+      "explanation": "บทเรียนใช้ db push ระหว่างพัฒนาบนฐานข้อมูลส่วนตัว ส่วนไฟล์ Migration ใช้เก็บประวัติการเปลี่ยน Schema และนำไปใช้กับสภาพแวดล้อมอื่นอย่างเป็นระบบ"
+    },
+    {
+      "prompt": "จาก Schema นี้ ข้อใดอธิบาย firstName ได้ถูกต้อง?",
+      "body": "<pre><code>model User {\n  id        String  @id @default(uuid()) @db.Uuid\n  firstName String? @map(\"first_name\") @db.VarChar(50)\n\n  @@map(\"users\")\n}</code></pre>",
+      "choices": [
+        "โค้ดใช้ชื่อ firstName แต่คอลัมน์จริงชื่อ first_name และคอลัมน์นี้รับ NULL ได้",
+        "โค้ดต้องใช้ชื่อ first_name และต้องส่งค่าทุกครั้งเพราะมี @map",
+        "Prisma สร้างสองคอลัมน์ชื่อ firstName กับ first_name เพื่อเก็บค่าเดียวกัน"
+      ],
+      "correctChoice": 1,
+      "explanation": "@map กำหนดชื่อคอลัมน์จริงให้ต่างจากชื่อ Field ใน Prisma ส่วน String? หมายถึง Field ที่เป็น Nullable และ @@map กำหนดชื่อตารางจริง"
+    },
+    {
+      "prompt": "ในความสัมพันธ์นี้ userId กับ user ต่างกันอย่างไร?",
+      "body": "<pre><code>userId String @map(\"user_id\") @db.Uuid\nuser   User   @relation(fields: [userId], references: [id], onDelete: Cascade)</code></pre>",
+      "choices": [
+        "ทั้งสอง Field เป็นคอลัมน์ UUID จริงที่เก็บค่าเหมือนกัน",
+        "userId เป็นคอลัมน์ Foreign Key ส่วน user เป็น Relation Field ที่ Prisma ใช้เข้าถึง User ที่สัมพันธ์กัน",
+        "user เก็บ User ทั้ง Object เป็น JSON ส่วน userId ใช้เฉพาะใน TypeScript"
+      ],
+      "correctChoice": 2,
+      "explanation": "ในตารางจริงมีคอลัมน์ user_id ส่วน user เป็น Relation Field ฝั่ง Prisma การประกาศ @relation ระบุว่า userId อ้างถึง id ของ User"
+    },
+    {
+      "prompt": "เมื่อ Habit อ้างถึง User ด้วย onDelete: Cascade แล้ว User เจ้าของถูกลบ จะเกิดอะไรขึ้นกับ Habit ที่อ้างถึง User นั้น?",
+      "choices": [
+        "Habit ถูกย้ายไปให้ User คนถัดไปโดยอัตโนมัติ",
+        "Habit ยังคงอยู่และ userId กลายเป็นข้อความว่าง",
+        "Habit ที่อ้างถึง User นั้นถูกลบตาม"
+      ],
+      "correctChoice": 3,
+      "explanation": "onDelete: Cascade กำหนดให้ลบแถวลูกตามเมื่อแถวแม่ที่ถูกอ้างถึงถูกลบ ในกรณีนี้ Habit เป็นแถวลูกของ User"
+    },
+    {
+      "prompt": "หลังแก้ schema.prisma การรัน npx prisma generate ทำอะไร?",
+      "choices": [
+        "ย้ายข้อมูลเก่าทั้งหมดให้เข้ากับ Schema ใหม่",
+        "สร้าง Client และ Type ใหม่จาก Schema โดยไม่ได้ปรับโครงสร้างฐานข้อมูล",
+        "ล้างฐานข้อมูลแล้วเติมข้อมูล Seed ชุดใหม่"
+      ],
+      "correctChoice": 2,
+      "explanation": "generate อ่าน Schema แล้วสร้างโค้ด Client และ Type การปรับโครงสร้างฐานข้อมูลเป็นงานของคำสั่งอย่าง db push หรือ Migration ซึ่งแยกจากการ Generate"
+    },
+    {
+      "prompt": "เหตุใดจึงยังต้องใช้ Zod ตรวจ Request Body แม้มี TypeScript Type ที่ Generate จาก Prisma แล้ว?",
+      "choices": [
+        "TypeScript Type ไม่ได้ตรวจค่าที่รับเข้ามาตอน Runtime แต่ Zod ตรวจข้อมูลจริงได้",
+        "Zod มีหน้าที่สร้าง Primary Key ซึ่ง TypeScript ทำไม่ได้",
+        "Prisma Client จะเชื่อมต่อฐานข้อมูลได้ก็ต่อเมื่อทุก Query ถูกห่อด้วย Zod"
+      ],
+      "correctChoice": 1,
+      "explanation": "Type ช่วยตรวจระหว่างพัฒนา แต่ไม่ได้รับประกันว่าข้อมูลจาก Client จะตรงตามที่ประกาศ จึงต้องตรวจข้อมูลจริงด้วย Runtime Validation ก่อนส่งต่อให้ Controller"
+    },
+    {
+      "prompt": "หาก Server เป็นผู้เติม userId ของ Habit จากตัวตนที่ตรวจสอบแล้ว Schema สำหรับตรวจ Request Body ควรทำอย่างไร?",
+      "choices": [
+        "บังคับให้ Client ส่ง userId ของใครก็ได้เพื่อให้ครบตามตาราง",
+        "ลบ Foreign Key userId ออกจากฐานข้อมูลเพื่อให้ Body ผ่าน Validation",
+        "ตรวจเฉพาะ Field ที่ Client ต้องส่ง และให้ Server เติม userId ก่อนบันทึก"
+      ],
+      "correctChoice": 3,
+      "explanation": "Schema ของ Request Body ไม่จำเป็นต้องมีทุก Field ของตาราง เพราะบางค่าเป็นหน้าที่ของ Server ถ้าบังคับ userId ใน Body จะปฏิเสธ Request ที่ถูกต้องซึ่งไม่ได้ส่งค่านี้มา"
+    },
+    {
+      "prompt": "Connection Pool ช่วยการเชื่อมต่อ PostgreSQL ของ API อย่างไร?",
+      "choices": [
+        "นำ Connection ที่เปิดไว้กลับมาใช้ซ้ำ เพื่อลดต้นทุนการเปิด Connection ใหม่ทุก Request",
+        "เก็บผลลัพธ์ของทุก Query ถาวร ทำให้ไม่ต้องติดต่อฐานข้อมูลอีก",
+        "เพิ่มจำนวน Connection ที่ฐานข้อมูลรับได้ให้ไม่จำกัด"
+      ],
+      "correctChoice": 1,
+      "explanation": "Pool จัดการ Connection กลุ่มหนึ่งให้ยืมและคืนกลับมาใช้ต่อ จึงลดงานเปิดการเชื่อมต่อและยืนยันตัวตนซ้ำ แต่ไม่ได้ทำให้ขีดจำกัด Connection หายไป"
+    },
+    {
+      "prompt": "ใน connection.ts ของบทเรียน PrismaPg ทำหน้าที่อะไร?",
+      "choices": [
+        "แปลง Request Body เป็น Zod Schema ก่อนเข้า Controller",
+        "เป็น Adapter ที่เชื่อม Prisma กับ Driver PostgreSQL และจัดการ Pool ภายใน",
+        "สร้าง JWT จาก DATABASE_URL เพื่อยืนยันตัวตนของผู้ใช้"
+      ],
+      "correctChoice": 2,
+      "explanation": "PrismaPg รับการตั้งค่า Connection ของ PostgreSQL แล้วถูกส่งให้ PrismaClient ผ่านตัวเลือก adapter เพื่อให้ ORM ติดต่อฐานข้อมูลผ่าน Driver ได้"
+    },
+    {
+      "prompt": "ตาม Scripts ในบทเรียน คำสั่งใดใช้รันไฟล์ Migration ที่ยังค้างอยู่บน Production โดยไม่สร้าง Migration ใหม่?",
+      "choices": [
+        "npm run db:generate ซึ่งเรียก prisma generate",
+        "npm run db:studio ซึ่งเรียก prisma studio",
+        "npm run db:deploy ซึ่งเรียก prisma migrate deploy"
+      ],
+      "correctChoice": 3,
+      "explanation": "db:deploy เรียก migrate deploy เพื่อนำไฟล์ Migration ที่มีอยู่ไปใช้ ส่วน db:generate สร้าง Client และ db:studio เปิดเครื่องมือดูข้อมูล"
+    },
+    {
+      "prompt": "เหตุใด Seed Script ในบทเรียนจึงล้างข้อมูลเดิมก่อนสร้างข้อมูลตัวอย่าง?",
+      "choices": [
+        "เพื่อให้ Primary Key ทุกแถวเป็นค่าเดิมเสมอ",
+        "เพื่อให้รันซ้ำแล้วไม่สะสมข้อมูลตัวอย่างหลายชุดหรือชนค่าที่ต้อง Unique",
+        "เพราะ Prisma ไม่อนุญาตให้เพิ่มข้อมูลลงตารางที่มีข้อมูลอยู่แล้ว"
+      ],
+      "correctChoice": 2,
+      "explanation": "การล้างข้อมูลช่วยให้เริ่มจากชุดข้อมูลว่างก่อนสร้างตัวอย่างใหม่ จำนวนข้อมูลจึงไม่เพิ่มซ้ำตามจำนวนครั้งที่รัน ทั้งนี้ ID ที่สุ่มและเวลาอาจเปลี่ยนได้ และ Script นี้ใช้กับฐานข้อมูลพัฒนา"
+    },
+    {
+      "prompt": "โค้ด Seed นี้สร้างความสัมพันธ์ใด?",
+      "body": "<pre><code>await prisma.habitTag.create({\n  data: {\n    habitId: exerciseHabit.id,\n    tagId: healthTag.id,\n  },\n})</code></pre>",
+      "choices": [
+        "เพิ่มแถวในตารางกลางเพื่อเชื่อม Habit ที่มีอยู่กับ Tag ที่มีอยู่",
+        "สร้าง User ใหม่ที่เป็นเจ้าของทั้ง Habit และ Tag",
+        "สร้างสำเนา Habit ใหม่โดยใช้ชื่อของ Tag"
+      ],
+      "correctChoice": 1,
+      "explanation": "habitTag เป็น Model ของตารางกลางที่เก็บ ID ทั้งสองฝั่งเป็นคู่กัน แถวนี้จึงเชื่อม Exercise กับ Health โดยไม่สร้าง Habit หรือ Tag ใหม่"
+    },
+    {
+      "prompt": "เหตุใด Seed Script จึงตรวจว่าไฟล์ถูกเรียกโดยตรงก่อนสั่ง seed() แทนการเรียกทันทีที่โหลด Module?",
+      "choices": [
+        "เพื่อเปลี่ยนทุก Import ให้กลายเป็น CommonJS",
+        "เพื่อบังคับให้ Script ทำงานได้เฉพาะเมื่อเปิด Prisma Studio",
+        "เพื่อให้ไฟล์อื่น Import ฟังก์ชันไปใช้ได้โดยไม่ล้างและ Seed ฐานข้อมูลทันที"
+      ],
+      "correctChoice": 3,
+      "explanation": "การแยกกรณีรันโดยตรงออกจากการ Import ช่วยควบคุมผลข้างเคียง เช่นไฟล์ Test สามารถ Import ฟังก์ชันแล้วเลือกจังหวะเรียกเองได้"
+    },
+    {
+      "prompt": "ระบบยืนยันตัวตนของผู้ใช้แล้ว จากนั้นตรวจว่า Habit ที่ขอแก้ไขเป็นของผู้ใช้คนนี้หรือไม่ ขั้นตอนหลังเรียกว่าอะไร?",
+      "choices": [
+        "Authorization เพราะกำลังตรวจสิทธิ์ต่อ Resource",
+        "Identification เพราะกำลังรับคำอ้างว่าเป็นใคร",
+        "Authentication เพราะกำลัง Hash รหัสผ่านใหม่"
+      ],
+      "correctChoice": 1,
+      "explanation": "Authentication พิสูจน์ตัวตน ส่วน Authorization ตรวจว่าตัวตนนั้นมีสิทธิ์ทำสิ่งที่ขอหรือไม่ การตรวจเจ้าของ Habit เป็นการตรวจสิทธิ์แบบ Resource-Based"
+    },
+    {
+      "prompt": "ข้อใดเป็นข้อจำกัดของ JWT แบบ Stateless ที่ไม่มีระบบเก็บสถานะการเพิกถอน Token เพิ่มเติม?",
+      "choices": [
+        "ต้องสร้าง Session ใน Redis ให้ทุก Token เสมอ",
+        "Server ไม่สามารถลบ Session เพื่อยกเลิก JWT รายใบได้ทันที เพราะไม่ได้เก็บ Session ของ Token นั้นไว้",
+        "JWT ใช้ส่งตัวตนได้เฉพาะ Request แรก หลังจากนั้นต้องส่งรหัสผ่านทุกครั้ง"
+      ],
+      "correctChoice": 2,
+      "explanation": "ในรูปแบบ Stateless ของบทเรียน Server ตรวจ Token โดยไม่เก็บ Session รายใบ จึงต้องคำนึงถึงอายุ Token และหากต้องการเพิกถอนรายใบต้องมีกลไกเพิ่มเติม"
+    },
+    {
+      "prompt": "bcrypt และ JWT มีหน้าที่สัมพันธ์กันอย่างไรในระบบของบทเรียน?",
+      "choices": [
+        "bcrypt สร้าง Token ส่วน JWT ใช้ Hash รหัสผ่านลงฐานข้อมูล",
+        "ทั้งคู่ทำหน้าที่เดียวกัน จึงเลือกใช้อย่างใดอย่างหนึ่งได้",
+        "bcrypt ใช้ Hash และเปรียบเทียบรหัสผ่าน ส่วน JWT ใช้ส่งหลักฐานตัวตนสำหรับ Request ถัดไป"
+      ],
+      "correctChoice": 3,
+      "explanation": "bcrypt ใช้ในขั้นตอนจัดการรหัสผ่านตอนสมัครและล็อกอิน เมื่อยืนยันตัวตนผ่านแล้ว Server ออก JWT ให้ Client แนบมาในการเรียก API ต่อไป"
+    },
+    {
+      "prompt": "หาก req.body มี password เป็นข้อความดิบ โค้ดนี้มีข้อผิดพลาดอะไร?",
+      "body": "<pre><code>const hashedPassword = await hashPassword(req.body.password)\n\nconst data = {\n  password: hashedPassword,\n  ...req.body,\n}</code></pre>",
+      "choices": [
+        "Spread จะลบ Field password ออกจาก Object เสมอ",
+        "password จาก req.body ที่ Spread ทีหลังจะทับค่าที่ Hash แล้ว",
+        "hashedPassword จะถูก Hash ซ้ำอัตโนมัติเมื่อสร้าง Object"
+      ],
+      "correctChoice": 2,
+      "explanation": "เมื่อ Object มี Key ซ้ำ ค่าที่กำหนดทีหลังจะชนะ จึงต้องวาง ...req.body ก่อน แล้วกำหนด password: hashedPassword ทีหลังเพื่อเก็บ Hash แทนข้อความดิบ"
+    },
+    {
+      "prompt": "omit: { password: true } ใน prisma.user.create() ของ Controller สมัครสมาชิกมีผลอย่างไร?",
+      "choices": [
+        "ตัด password ออกจากผลลัพธ์ที่คืนมา แต่ยังบันทึกค่า password ที่ส่งใน data",
+        "ยกเลิกการบันทึกรหัสผ่าน ทำให้ User ไม่มีรหัสผ่านในฐานข้อมูล",
+        "เปลี่ยน Hash กลับเป็นข้อความดิบก่อนส่งให้ Client"
+      ],
+      "correctChoice": 1,
+      "explanation": "omit ควบคุม Field ในผลลัพธ์ ไม่ได้ตัด Field จาก data ที่ใช้สร้างแถว จึงบันทึก Hash ได้พร้อมกับป้องกันไม่ให้ผลลัพธ์ User ที่ส่งต่อไปยัง Client มี password"
+    },
+    {
+      "prompt": "เหตุใด Controller สมัครสมาชิกจึงใช้ await bcrypt.hash() แทน bcrypt.hashSync()?",
+      "choices": [
+        "เพราะ hashSync ไม่สามารถสร้าง Salt ได้",
+        "เพราะ await ทำให้ไม่ต้องบันทึก Hash ลงฐานข้อมูล",
+        "เพื่อไม่ให้การ Hash แบบ Synchronous บล็อก Event Loop ขณะ Server รับ Request อื่น"
+      ],
+      "correctChoice": 3,
+      "explanation": "การ Hash ใช้เวลาคำนวณ การใช้ API แบบ Async ช่วยให้ Event Loop ไม่ต้องหยุดรอการคำนวณแบบ Synchronous และ await ช่วยให้ได้ Hash ก่อนนำไปบันทึก"
+    },
+    {
+      "prompt": "เหตุใดจึงไม่ควรใส่รหัสผ่านหรือข้อมูลลับลงใน Payload ของ JWT แบบลงลายเซ็นที่ใช้ในบทเรียน?",
+      "choices": [
+        "Payload ถูก Encode และผู้ที่มี Token อ่านได้ ส่วน Signature ใช้ตรวจการแก้ไขข้อมูล",
+        "Payload ถูกส่งไปเก็บในตาราง users โดยอัตโนมัติ",
+        "JWT รองรับเฉพาะตัวเลข จึงใส่ข้อความที่เป็นข้อมูลลับไม่ได้"
+      ],
+      "correctChoice": 1,
+      "explanation": "การลงลายเซ็นไม่ได้ทำให้ Payload เป็นความลับ Header และ Payload อ่านได้จาก Token ส่วน Signature ช่วยตรวจความถูกต้องของข้อมูลเมื่อ Verify ด้วย Key ที่เหมาะสม"
+    },
+    {
+      "prompt": "setIssuedAt() และ setExpirationTime() ใน generateToken มีหน้าที่อะไรตามลำดับ?",
+      "choices": [
+        "กำหนด ID ของผู้ใช้ และเปลี่ยน JWT_SECRET เมื่อ Token หมดอายุ",
+        "เพิ่ม iat ซึ่งบอกเวลาที่ออก Token และ exp ซึ่งบอกเวลาหมดอายุ",
+        "สร้าง Session ในฐานข้อมูล และลบ Session เมื่อผู้ใช้ปิด Browser"
+      ],
+      "correctChoice": 2,
+      "explanation": "iat และ exp เป็น Claims เกี่ยวกับเวลา โดย exp ระบุขอบเขตอายุ Token ที่ฝั่งตรวจสอบต้องบังคับใช้ ไม่ได้สร้างหรือลบ Session ในฐานข้อมูล"
+    },
+    {
+      "prompt": "เหตุใด JWT_SECRET ที่ใช้กับ HS256 จึงต้องเก็บไว้เฉพาะฝั่ง Server?",
+      "choices": [
+        "เพราะ Client ต้องใช้ Secret นี้เป็นรหัสผ่านสำหรับล็อกอิน",
+        "เพราะ Secret ใช้ซ่อนชื่อ Field ของ JSON Response เท่านั้น",
+        "เพราะผู้ที่รู้ Secret สามารถสร้าง Token พร้อมลายเซ็นที่ผ่านการตรวจสอบของระบบได้"
+      ],
+      "correctChoice": 3,
+      "explanation": "HS256 ใช้ Secret ร่วมสำหรับสร้างและตรวจลายเซ็น หาก Secret รั่ว ผู้โจมตีสามารถสร้าง Payload ที่อ้างตัวตนอื่นแล้วเซ็นให้ถูกต้องได้ จึงต้องไม่ฝัง Secret ใน Frontend หรือส่งกลับใน Response"
+    },
+    {
+      "prompt": "หาก password คือข้อความที่ผู้ใช้กรอก และ user.password คือ bcrypt Hash จากฐานข้อมูล ควรตรวจรหัสผ่านอย่างไร?",
+      "choices": [
+        "await bcrypt.hash(password, 12) === user.password",
+        "await bcrypt.compare(password, user.password)",
+        "password === user.password"
+      ],
+      "correctChoice": 2,
+      "explanation": "compare รับข้อความดิบก่อนและ Hash ที่เก็บไว้เป็น Argument ที่สอง โดยใช้ Salt และ Cost ที่อยู่ใน Hash เพื่อตรวจรหัสผ่าน การ Hash ใหม่ด้วย Salt สุ่มแล้วเทียบ String จึงไม่ใช่วิธีตรวจที่ถูกต้อง"
+    },
+    {
+      "prompt": "เหตุใด Controller login จึงตอบ 401 พร้อมข้อความ Invalid credentials ทั้งเมื่อไม่พบ Email และเมื่อรหัสผ่านผิด?",
+      "choices": [
+        "เพื่อลดการเปิดเผยผ่านข้อความตอบกลับว่า Email ใดมีบัญชีอยู่ในระบบ",
+        "เพื่อให้ Client ทราบแน่ชัดว่าเป็น Email ผิดหรือรหัสผ่านผิด",
+        "เพราะ 401 หมายถึงเชื่อมต่อฐานข้อมูลไม่ได้เท่านั้น"
+      ],
+      "correctChoice": 1,
+      "explanation": "การใช้ข้อความเดียวกันช่วยลด User Enumeration ผ่าน Response โดยไม่บอกว่าขั้นตอนไหนผิด ทั้งสองกรณียังไม่ผ่านการยืนยันตัวตนจึงตอบ 401"
+    },
+    {
+      "prompt": "เหตุใด loginSchema ในบทเรียนจึงตรวจ password เพียงว่ามีค่า แทนการบังคับเกณฑ์ความแข็งแรงแบบตอนสมัครสมาชิก?",
+      "choices": [
+        "เพราะ bcrypt.compare รับรหัสผ่านได้เฉพาะหนึ่งตัวอักษร",
+        "เพราะผู้ใช้ที่ส่ง Email ถูกต้องไม่จำเป็นต้องตรวจรหัสผ่านอีก",
+        "เพื่อให้ผู้ใช้เดิมที่มีรหัสผ่านถูกต้องยังล็อกอินได้ แม้เกณฑ์รหัสผ่านสำหรับสมัครใหม่จะเข้มขึ้น"
+      ],
+      "correctChoice": 3,
+      "explanation": "ความแข็งแรงของรหัสผ่านเป็นกฎตอนตั้งรหัสผ่าน ส่วนตอนล็อกอินต้องตรวจว่ารหัสผ่านตรงกับ Hash ที่เก็บไว้หรือไม่ การนำเกณฑ์ใหม่มาบังคับอาจปฏิเสธผู้ใช้เดิมก่อนถึงขั้น compare"
+    }
+  ]
+}

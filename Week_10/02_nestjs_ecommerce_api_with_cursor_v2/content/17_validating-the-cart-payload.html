@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง DTO สามชั้นด้วย class-validator ให้ ValidationPipe ตรวจ body ของ POST /carts/add ได้ถึงระดับ nested object และ array" />
+  <title>Validate Payload ของ POST /carts/add</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 17 จาก 24</p>
+    <h1>Validate Payload ของ POST /carts/add</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เขียน DTO ที่มี object และ array ซ้อนอยู่ข้างใน ให้ <code>ValidationPipe</code> ตรวจได้จริงทุกชั้น</li>
+        <li>อธิบายได้ว่าทำไม nested object ต้องมีทั้ง <code>@ValidateNested()</code> และ <code>@Type(() =&gt; Class)</code></li>
+        <li>เทียบ zod schema ฝั่ง React กับ DTO ฝั่ง API และบอกได้ว่าทำไมต้องตรวจซ้ำทั้งสองฝั่ง</li>
+      </ul>
+    </section>
+
+    <h2>ทวนของเดิม: DTO + whitelist</h2>
+    <p>บทที่ 15–17 ของคอร์ส NestJS Fundamentals วางกติกาไว้แล้วว่า body ที่เข้ามาต้องผ่าน DTO ที่เป็น <strong>class</strong> ไม่ใช่ <code>interface</code> เพราะ decorator ของ class-validator ต้องเกาะอยู่กับ metadata ของ class จริงตอน runtime ส่วน <code>interface</code> หายไปหมดตอน compile และตั้งแต่บทที่ 13 ของคอร์สนี้ <code>src/main.ts</code> ก็เปิด <code>ValidationPipe</code> แบบ global ไว้แล้ว</p>
+    <pre><code>app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+    transformOptions: { enableImplicitConversion: true },
+  }),
+);</code></pre>
+    <p>สามตัวเลือกนี้มีผลกับบทนี้ตรง ๆ: <code>whitelist: true</code> ตัด field ที่ไม่มี decorator ออกจาก body ทิ้งเงียบ ๆ (client แนบ <code>isAdmin: true</code> มาก็ไม่มีทางไหลเข้า service), <code>transform: true</code> สั่งให้ pipe แปลง body ดิบเป็น instance ของ DTO และ <code>enableImplicitConversion</code> แปลง string เป็น number ตามชนิดที่ประกาศไว้ให้ — สะดวกกับ query string ในบทที่ 13 แต่ body ของบทนี้เป็น JSON ที่มีชนิดข้อมูลมาถูกต้องแล้ว</p>
+
+    <h2>nested object ไม่ถูกตรวจเอง</h2>
+    <p>กับดักใหญ่ที่สุดของ DTO ซ้อนชั้นคือ: <code>class-validator</code> ตรวจได้เฉพาะ <strong>instance ของ class</strong> เท่านั้น แต่ <code>JSON.parse</code> คืน plain object ธรรมดาที่ไม่มี constructor ผูกอยู่ ดังนั้นถึงเราประกาศชนิดว่า <code>address: AddressDto</code> ตัว pipe ก็ยังไม่รู้ว่าจะต้องเอา rule ของ class ไหนไปตรวจ object ก้อนนั้น เพราะ type annotation ของ TypeScript หายไปตอน compile</p>
+    <p>จึงต้องใช้สอง decorator คู่กัน</p>
+    <div class="comparison" role="region" aria-label="หน้าที่ของ decorator สำหรับ nested DTO" tabindex="0">
+      <table>
+        <thead><tr><th>Decorator</th><th>มาจาก</th><th>ทำอะไร</th></tr></thead>
+        <tbody>
+          <tr><td><code>@Type(() =&gt; AddressDto)</code></td><td><code>class-transformer</code></td><td>บอกว่าจะ <em>สร้าง</em> ก้อน JSON นี้เป็น instance ของ class ไหน ถ้าไม่มีบรรทัดนี้ object จะยังเป็น plain object</td></tr>
+          <tr><td><code>@ValidateNested()</code></td><td><code>class-validator</code></td><td>บอกว่าให้ไล่ตรวจ rule ข้าง<em>ใน</em> instance นั้นต่อ ไม่ใช่ตรวจแค่ว่ามี field นี้</td></tr>
+          <tr><td><code>@ValidateNested({ each: true })</code></td><td><code>class-validator</code></td><td>รูปแบบสำหรับ array — ไล่ตรวจทุกสมาชิก ไม่ใช่ตรวจตัว array เป็นก้อนเดียว</td></tr>
+          <tr><td><code>@ArrayMinSize(1)</code></td><td><code>class-validator</code></td><td>ตะกร้าว่างต้องไม่กลายเป็นคำสั่งซื้อ — <code>products: []</code> ต้องได้ 400 ไม่ใช่ order ยอด 0 บาท</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning"><p>ถ้าลืม <code>@Type(() =&gt; AddressDto)</code> จะไม่มี error อะไรเลย แต่ validation ของ <code>address</code> จะ<strong>ผ่านทุกอย่าง</strong> — ส่ง <code>{"address": {}}</code> ก็ผ่าน นี่คือความพลาดที่อันตรายที่สุดในบทนี้ เพราะเงียบสนิทจนกว่าจะมีข้อมูลเสียลงฐานข้อมูล</p></div>
+    <p>เราเรียง class เล็กไปใหญ่เพื่ออ่านง่าย: <code>CartProductDto</code> → <code>AddressDto</code> → <code>AddCartDto</code> — arrow function ใน <code>@Type(() =&gt; CartProductDto)</code> ถูกเรียกตอน class-transformer แปลง payload จริง (คือตอนมี request เข้ามา) ไม่ใช่ตอนประกาศ class จึงไม่ผูกกับลำดับการประกาศ นั่นคือเหตุผลที่ <code>@Type</code> รับ function ไม่ใช่รับ class ตรง ๆ</p>
+
+    <h2>ตรวจสองฝั่งไม่ใช่ความซ้ำซ้อน</h2>
+    <p>ฝั่ง React app ตรวจ address ด้วย zod อยู่แล้ว (<code>src/features/checkout/schema.ts</code>)</p>
+    <pre><code>export const checkoutAddressSchema = z.object({
+  address: z.string().min(1, "Address is required"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .pipe(z.email("Enter a valid email address")),
+  phone: z.string().min(1, "Phone number is required"),
+});</code></pre>
+    <p>DTO ของเราจะสะท้อนกฎเดียวกันทีละข้อ: <code>address</code> ไม่ว่าง → <code>@IsString() @IsNotEmpty()</code>, <code>email</code> ต้องเป็นอีเมล → <code>@IsEmail()</code>, <code>phone</code> ไม่ว่าง → <code>@IsString() @IsNotEmpty()</code> ที่ต้องตรวจซ้ำเพราะ validation ฝั่ง client เป็นเรื่องของ <em>ประสบการณ์ผู้ใช้</em> ไม่ใช่ความปลอดภัย — ใครก็ยิง <code>curl</code> ตรงเข้า API ข้าม React ไปได้ กฎง่าย ๆ คือข้อมูลจากภายนอกไม่เชื่อถือได้เลย จนกว่า API จะตรวจเอง</p>
+    <p>ส่วนรูปแบบ error ที่ตอบออกไปจะไม่เหมือน dummyjson: dummyjson ตอบ <code>400</code> พร้อม <code>{"message": "User id is required"}</code> เป็น string เดี่ยว ของเราตอบตามมาตรฐาน Nest คือ <code>message</code> เป็น array ของทุกข้อที่ผิด นี่เป็นความต่างที่เรา<strong>ยอมรับ</strong> เพราะ <code>ApiError</code> ของ React app อ่านค่าจาก <code>data.message</code> ได้ทั้งสองแบบ และการบอกครบทุกข้อในรอบเดียวมีประโยชน์กับคนใช้ API มากกว่า</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+└── src/
+    └── orders/
+        └── dto/
+            └── add-cart.dto.ts   (สร้างใหม่)</code></pre>
+    <ul>
+      <li><strong><code>src/orders/dto/add-cart.dto.ts</code></strong> — สัญญา: ต้อง <code>export</code> class สามตัวในไฟล์เดียว เรียง <code>CartProductDto</code> → <code>AddressDto</code> → <code>AddCartDto</code>, ทุก field มี decorator, <code>products</code> มีทั้ง <code>@IsArray()</code>, <code>@ArrayMinSize(1)</code>, <code>@ValidateNested({ each: true })</code> และ <code>@Type()</code> · ต้องไม่มี field ที่เป็น optional, ไม่มีค่า default, ไม่ติดตั้ง package ใหม่ (class-validator และ class-transformer ติดตั้งไว้แล้วตั้งแต่บทที่ 13)</li>
+      <li>ยังไม่มี controller ในบทนี้ — DTO ตัวนี้จะถูกใช้ครั้งแรกในบทที่ 18 (service) และผูกเข้า route ในบทที่ 19</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor เขียน DTO ของ POST /carts/add</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before add-cart dto"</code>) — prompt ให้ <code>@src/products/dto/pagination-query.dto.ts</code> เป็นตัวอย่างสไตล์ DTO ของโปรเจกต์ และให้ <code>@src/main.ts</code> เพื่อให้ AI เห็นว่า <code>ValidationPipe</code> ตั้งค่าไว้แบบไหนแล้ว</p>
+      <p>ก่อนส่ง อ่าน<a href="01_what-well-be-building.html">กติกาของคอร์ส</a>อีกครั้ง: AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้ — ถ้าอธิบายไม่ได้ แปลว่ายังไม่ผ่านบทนี้</p>
+      <div class="cursor-prompt"><code>สร้าง DTO สำหรับ validate body ของ POST /carts/add ตามที่ React app ส่งมา
+
+บริบท: @src/products/dto/pagination-query.dto.ts @src/main.ts @docs/contract/cart-add.txt @.cursor/rules/project.mdc
+ValidationPipe แบบ global เปิด whitelist และ transform อยู่แล้ว (ดูใน main.ts)
+React app ส่ง body รูปนี้เสมอ:
+  { "userId": 1, "products": [{ "id": 1, "quantity": 2 }], "address": { "address": "...", "email": "...", "phone": "..." } }
+address ฝั่ง React ถูก validate ด้วย zod: address ต้องไม่ว่าง, email ต้องเป็นอีเมล, phone ต้องไม่ว่าง — ฝั่ง API ต้องตรวจซ้ำ
+dummyjson ตอบ 400 { "message": "User id is required" } เมื่อไม่มี userId ของเราให้ ValidationPipe ตอบ 400 ตามรูปแบบมาตรฐานของ Nest ได้เลย
+
+โครงสร้าง: สร้างไฟล์เดียว
+- src/orders/dto/add-cart.dto.ts (สร้างใหม่)
+
+ข้อกำหนดทางเทคนิค:
+- export class สามตัวในไฟล์เดียว เรียงตามลำดับนี้
+  CartProductDto: @IsInt() @Min(1) id: number และ @IsInt() @Min(1) quantity: number
+  AddressDto: @IsString() @IsNotEmpty() address: string, @IsEmail() email: string, @IsString() @IsNotEmpty() phone: string
+  AddCartDto: @IsInt() @Min(1) userId: number,
+    @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() =&gt; CartProductDto) products: CartProductDto[],
+    @ValidateNested() @Type(() =&gt; AddressDto) address: AddressDto
+- @Type มาจาก class-transformer ที่เหลือมาจาก class-validator
+- ไม่มี field ใดเป็น optional ไม่มี default
+- ห้ามใช้ interface สำหรับ body เพราะ ValidationPipe ต้องการ class
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์อื่น
+- ยังไม่ต้องสร้าง service, controller หรือ module ของ orders</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>ลำดับ class ในไฟล์คือ <code>CartProductDto</code>, <code>AddressDto</code> แล้วค่อย <code>AddCartDto</code> — เป็นเรื่องความอ่านง่าย ไม่ใช่ข้อบังคับทางเทคนิค (thunk ใน <code>@Type()</code> ทำให้ลำดับไม่สำคัญ) แต่ให้จัดให้ตรงกันเพื่อเทียบกับโค้ดอ้างอิงทีละบรรทัดได้</li>
+        <li><code>@Type()</code> ปรากฏ <strong>สองครั้ง</strong> คือที่ <code>products</code> และที่ <code>address</code> (ค้นด้วย <code>grep -c "@Type" src/orders/dto/add-cart.dto.ts</code> ต้องได้ 2)</li>
+        <li><code>Type</code> import มาจาก <code>class-transformer</code> ส่วน decorator ที่เหลือมาจาก <code>class-validator</code> — สอง package ไม่ปนกัน</li>
+        <li><code>products</code> มี <code>@ArrayMinSize(1)</code> และ <code>@ValidateNested({ each: true })</code> ครบ</li>
+        <li><code>email</code> ใช้ <code>@IsEmail()</code> ไม่ใช่ <code>@IsString()</code> เปล่า ๆ และไม่มี regex เขียนเองมาแทน</li>
+        <li>ไม่มี <code>@IsOptional()</code>, ไม่มีค่า default, ไม่มี <code>?</code> หลังชื่อ field ตัวใดเลย</li>
+        <li><code>id</code>, <code>quantity</code>, <code>userId</code> ใช้ <code>@IsInt()</code> คู่กับ <code>@Min(1)</code> — id 0 หรือจำนวน 0 ชิ้นไม่ใช่ค่าที่ถูกต้อง</li>
+        <li>ไม่มีไฟล์อื่นถูกแก้ (<code>git status</code> เห็นไฟล์ใหม่ไฟล์เดียว) และ <code>package.json</code> ไม่เปลี่ยน</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ลืม <code>@Type(() =&gt; AddressDto)</code> ที่ field <code>address</code> เพราะมันดู "ไม่ใช่ array" จึงรู้สึกว่าไม่ต้องมี ผลคือ <code>address</code> กลายเป็น plain object ที่ validation ผ่านทุกค่า รวมถึง object ว่าง ตรวจง่าย ๆ ด้วยการนับจำนวน <code>@Type</code> ในไฟล์ว่าได้ 2 จริง อีกกรณีคือใส่ <code>@IsObject()</code> แทน <code>@ValidateNested()</code> ซึ่งตรวจแค่ว่า "เป็น object" แล้วจบ</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <pre><code>// src/orders/dto/add-cart.dto.ts
+import { Type } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsEmail,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+
+export class CartProductDto {
+  @IsInt()
+  @Min(1)
+  id: number;
+
+  @IsInt()
+  @Min(1)
+  quantity: number;
+}
+
+export class AddressDto {
+  @IsString()
+  @IsNotEmpty()
+  address: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+}
+
+export class AddCartDto {
+  @IsInt()
+  @Min(1)
+  userId: number;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() =&gt; CartProductDto)
+  products: CartProductDto[];
+
+  @ValidateNested()
+  @Type(() =&gt; AddressDto)
+  address: AddressDto;
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ได้ไฟล์ใหม่ไฟล์เดียวคือ <code>src/orders/dto/add-cart.dto.ts</code> และ <code>npm run build</code> ผ่านโดยไม่มี error — โฟลเดอร์ <code>src/orders/</code> ยังไม่มี module ลงทะเบียนใน <code>AppModule</code> ดังนั้นการ build จะแค่ compile ไฟล์นี้ผ่าน type check ไม่มี route ใหม่โผล่ใน log ของ <code>npm run start:dev</code> และยังไม่มีอะไรให้ <code>curl</code> ทดสอบในบทนี้</p>
+      <p>ข้อความ error ที่ DTO ชุดนี้จะผลิตออกมา จะได้เห็นของจริงในบทที่ 19 — เช่น <code>userId</code> ที่ไม่ได้ส่งมาให้ <code>{"message":["userId must not be less than 1","userId must be an integer number"],"error":"Bad Request","statusCode":400}</code> และ email ผิดรูปให้ <code>{"message":["address.email must be an email"],"error":"Bad Request","statusCode":400}</code> สังเกตคำนำหน้า <code>address.</code> — นั่นคือหลักฐานว่า <code>@ValidateNested()</code> ไล่ตรวจเข้าไปข้างในจริง</p>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>npm run build</code> ผ่าน ไม่มี error</li>
+        <li><code>npm run lint</code> ผ่าน (oxlint ดู <code>src/</code> จึงครอบไฟล์นี้แล้ว)</li>
+        <li><code>grep -c "@Type" src/orders/dto/add-cart.dto.ts</code> ได้ <code>2</code></li>
+        <li><code>grep -n "IsOptional\|?:" src/orders/dto/add-cart.dto.ts</code> ไม่เจออะไรเลย — ยืนยันว่าไม่มี field optional หลุดมา</li>
+        <li><code>git diff --stat HEAD</code> เห็นไฟล์เดียว และ <code>package.json</code> กับ <code>package-lock.json</code> ไม่อยู่ในรายการ</li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: add-cart dto"</code></li>
+      </ul>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation: ValidationPipe และ nested objects (NestJS Docs)</a></li>
+      <li><a href="https://github.com/typestack/class-validator">class-validator: decorators reference (GitHub)</a></li>
+      <li><a href="https://docs.nestjs.com/pipes">Pipes (NestJS Docs)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="16_modeling-orders.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="18_creating-orders-in-a-transaction.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

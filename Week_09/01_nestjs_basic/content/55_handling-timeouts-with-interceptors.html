@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง TimeoutInterceptor ใน NestJS ที่ใช้ RxJS timeout/catchError ตัด request ที่ช้าเกินกำหนดแล้วตอบ 408 Request Timeout" />
+  <title>จัดการ Timeout ด้วย Interceptors</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 55 จาก 77</p>
+    <h1>จัดการ Timeout ด้วย Interceptors</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ใช้ RxJS operator (<code>timeout</code>, <code>catchError</code>) ขยายพฤติกรรมของ response stream ใน interceptor</li>
+        <li>ตัด request ที่ไม่ตอบภายในเวลากำหนด แล้วแปลงเป็น <code>RequestTimeoutException</code></li>
+        <li>ผูก interceptor หลายตัวแบบ global พร้อมกันและเข้าใจลำดับการทำงาน</li>
+      </ul>
+    </section>
+
+    <h2>ขยาย response stream ด้วย RxJS operators</h2>
+    <p>อีกเทคนิคที่ทรงพลังของ interceptor คือการต่อ RxJS operator เข้ากับ response stream เพื่อขยายพฤติกรรมพื้นฐานของ method ลองนึกภาพว่าเราต้องจัดการ timeout ให้กับ<em>ทุก</em> route: เมื่อ endpoint ไหนไม่ตอบภายในเวลาที่กำหนด เราต้องยุติ request นั้นและส่ง error message กลับไป แทนที่จะปล่อยให้ client ค้างรอไปเรื่อย ๆ — งานแบบนี้เขียนครั้งเดียวใน interceptor ตัวเดียวแล้วมีผลทั้งแอป</p>
+    <pre><code>nest g interceptor common/interceptors/timeout</code></pre>
+
+    <h2>TimeoutInterceptor: timeout + catchError</h2>
+    <pre><code>import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+  RequestTimeoutException,
+} from '@nestjs/common';
+import { Observable, throwError, TimeoutError } from 'rxjs';
+import { catchError, timeout } from 'rxjs/operators';
+
+@Injectable()
+export class TimeoutInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable&lt;any&gt; {
+    return next.handle().pipe(
+      timeout(3000),
+      catchError(err =&gt; {
+        if (err instanceof TimeoutError) {
+          return throwError(new RequestTimeoutException());
+        }
+        return throwError(err);
+      }),
+    );
+  }
+}</code></pre>
+    <p>pipeline อ่านตรงตัว: <code>timeout(3000)</code> จะโยน <code>TimeoutError</code> ของ RxJS ถ้า handler ไม่ emit ค่าภายใน 3 วินาที จากนั้น <code>catchError</code> ดักทุก error ในสาย — ถ้าเป็น <code>TimeoutError</code> ก็แปลงเป็น <code>RequestTimeoutException</code> ของ NestJS (HTTP 408) เพื่อให้เข้าระบบ exception layer และ <code>HttpExceptionFilter</code> ของเราตามปกติ ส่วน error ชนิดอื่นถูกโยนต่อไม่แตะต้อง</p>
+
+    <h2>ผูกหลาย interceptor พร้อมกัน</h2>
+    <p><code>useGlobalInterceptors</code> รับได้หลายตัวเรียงตามลำดับ — request ไหลผ่านจากซ้ายไปขวาขาเข้า และย้อนกลับขาออก</p>
+    <pre><code>app.useGlobalInterceptors(
+  new WrapResponseInterceptor(),
+  new TimeoutInterceptor(),
+);</code></pre>
+    <p>ระหว่างทดสอบ เราบังคับให้ endpoint ช้าเกิน 3 วินาทีด้วยการหน่วงชั่วคราวใน handler เช่นใน <code>findAll()</code> ของ <code>CoffeesController</code></p>
+    <pre><code>await new Promise(resolve =&gt; setTimeout(resolve, 5000));</code></pre>
+    <div class="warning"><p>อย่าลืมลบบรรทัดหน่วงเวลานี้ออกหลังทดสอบเสร็จ — มันมีไว้เพียงเพื่อพิสูจน์ว่า interceptor ทำงาน ถ้าติดไปกับโค้ดจริงทุก request จะโดนตัดที่ 3 วินาทีทั้งหมด นอกจากนี้ <code>throwError(value)</code> เป็นรูปแบบเก่าของ RxJS — เวอร์ชันปัจจุบันแนะนำ <code>throwError(() =&gt; new RequestTimeoutException())</code></p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">บังคับ timeout ให้เกิดจริงใน iluvcoffee</h2>
+      <p>สร้าง <code>TimeoutInterceptor</code> ผูกต่อจาก <code>WrapResponseInterceptor</code> ใน <code>main.ts</code> แล้วหน่วง <code>findAll()</code> 5 วินาทีเพื่อดู 408 ด้วยตาตัวเอง</p>
+      <div class="prompt-example"><code>nest g interceptor common/interceptors/timeout
+
+# coffees.controller.ts — ใน findAll() (ชั่วคราว)
+await new Promise(resolve =&gt; setTimeout(resolve, 5000));
+
+# ทดสอบ
+curl -i http://localhost:3000/coffees</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>request ค้างประมาณ 3 วินาที (ไม่ใช่ 5) แล้วได้ <code>408 Request Timeout</code> พร้อม body รูปแบบกลางจาก filter เช่น <code>{ "statusCode": 408, "message": "Request Timeout", "timestamp": "..." }</code> เมื่อลบบรรทัดหน่วงออก endpoint กลับมาตอบปกติ</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>จับเวลา request ที่หน่วงไว้ — ต้องถูกตัดที่ ~3 วินาทีตามค่า <code>timeout(3000)</code> ไม่ใช่รอครบ 5 วินาที</li>
+        <li>ตรวจ status code ว่าเป็น 408 และ body มี <code>timestamp</code> จาก <code>HttpExceptionFilter</code></li>
+        <li>ลบบรรทัดหน่วงเวลาแล้วยิงซ้ำ — ต้องได้ 200 พร้อม response ที่ยังห่อใน <code>data</code> จาก interceptor ตัวแรก</li>
+        <li>ลองเปลี่ยนค่า timeout เป็น 100 ms เพื่อยืนยันว่า endpoint จริง ๆ ก็โดนตัดได้ แล้วปรับกลับ</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/interceptors">Interceptors: การใช้ RxJS operators (NestJS docs)</a></li>
+      <li><a href="https://docs.nestjs.com/exception-filters">Exception filters (NestJS docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="54_add-pointcuts-with-interceptors.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="56_creating-custom-pipes.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

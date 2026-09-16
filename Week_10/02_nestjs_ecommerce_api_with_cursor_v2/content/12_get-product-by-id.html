@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ต่อ endpoint GET /products/:id เข้ากับ mapper ให้ตอบสินค้าหนึ่งชิ้นตรงกับ contract ทุกไบต์ และตอบ 404 ด้วยข้อความเดียวกับ dummyjson พร้อมเข้าใจว่าทำไมลำดับของ route สำคัญ" />
+  <title>GET /products/:id</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 12 จาก 24</p>
+    <h1>GET /products/:id</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>รับ route parameter ด้วย <code>@Param('id', ParseIntPipe)</code> แล้วส่งต่อเป็น <code>number</code> ให้ service</li>
+        <li>อธิบายว่าทำไม <code>@Get('categories')</code> ต้องประกาศไว้ก่อน <code>@Get(':id')</code> เสมอ</li>
+        <li>พิสูจน์ด้วย <code>diff</code> ว่า response ของสินค้าชิ้นที่ 1 ตรงกับ contract ทุกคีย์ และข้อความใน <code>NotFoundException</code> ตรงตัวอักษรต่ออักษรกับ dummyjson</li>
+      </ul>
+    </section>
+
+    <h2>บทนี้คือบทที่ mapper ได้ทำงานจริง</h2>
+    <p>บทที่ 11 เขียน <code>toProductResponse</code> ไว้แต่ยังไม่มีใครเรียก บทนี้เราต่อสายให้ครบ: controller รับ id → service query สินค้าพร้อม relation → ส่งแถวเข้า mapper → คืน JSON ที่ตรงกับ <code>docs/contract/product-1.json</code></p>
+    <p>รูปแบบการรับ parameter เป็นแบบเดียวกับ Week_09 บทที่ 7 (route parameters) และการโยน error เป็นแบบเดียวกับบทที่ 13 (ข้อความ error ที่อ่านรู้เรื่อง) ต่างกันที่คราวนี้ข้อความไม่ใช่เรื่องรสนิยม — มันคือส่วนหนึ่งของสัญญา</p>
+
+    <h2>ข้อความ 404 คือสัญญา ไม่ใช่ข้อความประกอบ</h2>
+    <p>เปิด <code>docs/contract/product-not-found.txt</code> ที่วางไว้ในบทที่ 3 dummyjson ตอบ status 404 พร้อม body</p>
+    <pre><code>{ "message": "Product with id '9999' not found" }</code></pre>
+    <p>React app ที่เราจะต่อในบทที่ 23 อ่าน <code>data.message</code> มาโชว์ให้ผู้ใช้เห็นตรง ๆ ผ่าน <code>ApiError</code> ของมัน ถ้าเราเขียนเป็น <code>Product #9999 not found</code> แบบที่เคยทำใน Week_09 หน้าเว็บก็ยังไม่พัง แต่ข้อความที่ผู้ใช้เห็นจะเปลี่ยนไป และ script ตรวจสัญญาในบทที่ 15 จะจับได้ทันที จุดที่ต้องระวังเป็นพิเศษคือ <strong>single quote ครอบตัวเลข</strong> — ไม่ใช่ double quote ไม่ใช่ backtick ไม่ใช่ไม่มีเลย</p>
+    <pre><code>throw new NotFoundException(`Product with id '${id}' not found`);</code></pre>
+    <p>backtick ด้านนอกคือ template literal ของ JavaScript ส่วน single quote ด้านในเป็นตัวอักษรจริงที่จะโผล่ใน JSON</p>
+
+    <h2><code>include</code> และเหตุผลที่ต้องสั่ง <code>orderBy</code> ให้ reviews</h2>
+    <p>แถว <code>Product</code> เปล่า ๆ ไม่มี <code>category</code> และไม่มี <code>reviews</code> ติดมา เราจึงต้องสั่ง <code>include</code> (ทบทวน Week_09 บทที่ 26 เรื่องดึง model พร้อม relation)</p>
+    <pre><code>include: { category: true, reviews: { orderBy: { id: 'asc' } } }</code></pre>
+    <p>ทำไมต้องมี <code>orderBy</code> ให้ reviews ด้วย? เพราะ array ที่ลำดับไม่ตรงกันคือ <code>diff</code> ที่ไม่ผ่าน และ Postgres ไม่รับประกันลำดับของแถวที่คืนมาถ้าไม่มี <code>ORDER BY</code> — มันจะเรียงตามที่สะดวกที่สุดในแผนการ query นั้น ๆ ซึ่งอาจเปลี่ยนเมื่อข้อมูลโตขึ้นหรือมี index ใหม่ seed ในบทที่ 9 ใส่ review ตามลำดับที่ dummyjson ส่งมาใน <code>products[].reviews</code> ดังนั้น <code>id</code> น้อยไปมากคือลำดับเดียวกับ dummyjson</p>
+
+    <h2>ลำดับการประกาศ route คือลำดับที่ Nest ลองจับ</h2>
+    <p>Nest ลงทะเบียน handler ตามลำดับที่ประกาศไว้ใน class และ router จะจับ pattern แรกที่ตรง ถ้าเราเผลอวาง <code>@Get(':id')</code> ไว้ก่อน</p>
+    <pre><code>GET /products/categories
+  → ตรงกับ pattern /products/:id  (id = "categories")
+  → ParseIntPipe แปลง "categories" ไม่ได้
+  → 400 Bad Request</code></pre>
+    <p>endpoint ที่เคยทำงานในบทที่ 10 จะตายเงียบ ๆ ทั้งที่เราไม่ได้แตะโค้ดของมันเลย กฎง่าย ๆ คือ <strong>route ที่เป็นคำตายตัวต้องมาก่อน route ที่มี parameter เสมอ</strong> ดังนั้นใน <code>ProductsController</code> เราวาง <code>findOne</code> เป็น handler สุดท้ายของ class ตั้งแต่วันนี้ แล้วบทที่ 13 และ 14 จะแทรก handler ใหม่ไว้<em>ก่อน</em>มันทุกครั้ง</p>
+
+    <h2>ความต่างหนึ่งข้อที่เรายอมรับ</h2>
+    <p>ถ้ายิง <code>GET /products/abc</code> dummyjson ตอบ 404 แต่ของเราตอบ 400 พร้อมข้อความ <code>Validation failed (numeric string is expected)</code> เพราะ <code>ParseIntPipe</code> ดักไว้ก่อนที่ handler จะทำงาน</p>
+    <p>เรา<em>เลือก</em>ที่จะไม่แก้ เพราะ React app ไม่เคยยิง id ที่ไม่ใช่ตัวเลข (มันได้ id มาจาก list ที่ API ตอบไป) และ 400 เป็นคำตอบที่ตรงความจริงกว่า: request นั้นผิดรูป ไม่ใช่ resource ไม่มีอยู่ ความต่างข้อนี้จะถูกบันทึกไว้ในตารางของบทที่ 15 พร้อมเหตุผล — การ<strong>รู้และเขียนไว้</strong>ว่าต่างที่ไหน ต่างจากการไม่รู้ว่าต่าง</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>src/products/
+├── products.controller.ts            (แก้ไข: เพิ่ม handler)
+└── products.service.ts               (แก้ไข: เพิ่ม method)</code></pre>
+    <ul>
+      <li><strong><code>src/products/products.service.ts</code></strong> — สัญญา: ต้องมี <code>async findOne(id: number): Promise&lt;ProductResponseDto&gt;</code> ที่ใช้ <code>findUnique</code> + <code>include</code> แล้วคืน <code>toProductResponse(product)</code> / ต้องไม่แก้ <code>findCategories</code> และต้องไม่คืน <code>null</code> ออกไปให้ controller จัดการ</li>
+      <li><strong><code>src/products/products.controller.ts</code></strong> — สัญญา: ต้องเพิ่ม <code>@Get(':id')</code> เป็น handler สุดท้ายของ class โดยมี <code>ParseIntPipe</code> ที่ parameter / ต้องไม่แปลง id เองด้วย <code>+id</code> หรือ <code>Number(id)</code></li>
+    </ul>
+    <p>บทนี้ไม่แตะ <code>product.mapper.ts</code> และไม่แตะ DTO เลย</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor ต่อ endpoint สินค้าหนึ่งชิ้น</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before product by id"</code>) จากนั้นส่ง prompt นี้</p>
+      <div class="cursor-prompt"><code>เพิ่ม endpoint GET /products/:id ที่ตอบสินค้าหนึ่งชิ้นตามรูปทรง dummyjson และ 404 ด้วยข้อความเดียวกัน
+
+บริบท: @src/products/products.controller.ts @src/products/products.service.ts @src/products/product.mapper.ts @src/products/dto/product-response.dto.ts @docs/contract/product-1.json @docs/contract/product-not-found.txt @.cursor/rules/project.mdc
+มี toProductResponse(product: ProductWithRelations) ที่รับแถวสินค้าพร้อม category และ reviews แล้วคืน ProductResponseDto
+docs/contract/product-not-found.txt คือ response จริงของ GET /products/9999: status 404 body { "message": "Product with id '9999' not found" }
+reviews ต้องเรียงตามลำดับที่ seed (id น้อยไปมาก) เพื่อให้ตรงกับ dummyjson
+controller มี route GET /products/categories อยู่แล้ว route ใหม่ที่มี parameter ต้องประกาศไว้หลัง route ที่เป็นคำตายตัวเสมอ
+
+โครงสร้าง: แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- src/products/products.service.ts (แก้ไข: เพิ่ม method)
+- src/products/products.controller.ts (แก้ไข: เพิ่ม handler)
+
+ข้อกำหนดทางเทคนิค:
+- service: async findOne(id: number): Promise&lt;ProductResponseDto&gt;
+  ใช้ this.prisma.product.findUnique({ where: { id }, include: { category: true, reviews: { orderBy: { id: 'asc' } } } })
+  ถ้าได้ null ให้ throw new NotFoundException(`Product with id '${id}' not found`) ข้อความต้องตรงตัวอักษรต่ออักษรรวม single quote
+  คืน toProductResponse(product)
+- controller: handler @Get(':id') findOne(@Param('id', ParseIntPipe) id: number) วางไว้เป็น handler สุดท้ายของ class ต่อจาก findCategories
+- ห้ามแก้ findCategories ห้ามแตะ mapper
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์อื่นนอกจากที่ระบุ
+- ยังไม่ต้องทำ GET /products (list) หรือ pagination</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>controller ใช้ <code>@Param('id', ParseIntPipe) id: number</code> — ไม่ใช่ <code>@Param('id') id: string</code> แล้วแปลงเองในภายหลัง</li>
+        <li>service ใช้ <code>findUnique</code> และมี <code>include: { category: true, reviews: { orderBy: { id: 'asc' } } }</code> ครบทั้งสองส่วน</li>
+        <li>ข้อความ error ตรงตัวอักษรต่ออักษร: <code>Product with id '9999' not found</code> — single quote ครอบตัวเลข</li>
+        <li><code>findOne</code> เป็น handler <em>สุดท้าย</em> ของ class อยู่ใต้ <code>findCategories</code></li>
+        <li>return type ของ service เขียนไว้ชัดเป็น <code>Promise&lt;ProductResponseDto&gt;</code></li>
+        <li><code>findCategories</code> เดิมไม่ถูกแก้ และไฟล์ mapper/DTO ไม่มีการเปลี่ยนแปลง (<code>git diff --stat</code> ต้องเห็นแค่สองไฟล์)</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> เขียนข้อความเป็น <code>Product #9999 not found</code> ตามสไตล์ที่เคยเห็นใน Week_09 (ซึ่งเป็นข้อความที่ถูกต้องใน<em>คอร์สนั้น</em> แต่ผิดสัญญาในคอร์สนี้) อีกแบบคือใช้ <code>findFirst({ where: { id } })</code> โดยลืม <code>include</code> ทั้งก้อน — TypeScript จะฟ้องเมื่อส่งเข้า <code>toProductResponse</code> เพราะ type <code>ProductWithRelations</code> ไม่ยอม แต่บางครั้ง Cursor จะแก้ปัญหาด้วยการเติม <code>as</code> เข้าไปกลบ ให้ค้นคำว่า <code>as </code> ในไฟล์แล้วลบออก แก้ที่ <code>include</code> แทน</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <p><code>src/products/products.service.ts</code></p>
+      <pre><code>import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { toProductResponse } from './product.mapper.js';
+import { ProductResponseDto } from './dto/product-response.dto.js';
+
+@Injectable()
+export class ProductsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
+
+  async findCategories() {
+    const appUrl = this.config.getOrThrow&lt;string&gt;('APP_URL');
+    const categories = await this.prisma.category.findMany({ orderBy: { id: 'asc' } });
+    return categories.map(({ slug, name }) =&gt; ({
+      slug,
+      name,
+      url: `${appUrl}/products/category/${slug}`,
+    }));
+  }
+
+  async findOne(id: number): Promise&lt;ProductResponseDto&gt; {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      include: { category: true, reviews: { orderBy: { id: 'asc' } } },
+    });
+    if (!product) {
+      throw new NotFoundException(`Product with id '${id}' not found`);
+    }
+    return toProductResponse(product);
+  }
+}</code></pre>
+      <p><code>src/products/products.controller.ts</code></p>
+      <pre><code>import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { ProductsService } from './products.service.js';
+
+@Controller('products')
+export class ProductsController {
+  constructor(private readonly productsService: ProductsService) {}
+
+  @Get('categories')
+  findCategories() {
+    return this.productsService.findCategories();
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.findOne(id);
+  }
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>log ตอน start มีสองบรรทัดนี้ <em>ตามลำดับนี้</em></p>
+      <pre><code>[RouterExplorer] Mapped {/products/categories, GET} route
+[RouterExplorer] Mapped {/products/:id, GET} route</code></pre>
+      <p><code>GET /products/1</code> ตอบ 200 พร้อมสินค้าครบ 22 คีย์รวม <code>dimensions</code>, <code>meta</code> และ array <code>reviews</code> ส่วน <code>GET /products/9999</code> ตอบ</p>
+      <pre><code>HTTP/1.1 404 Not Found
+{"message":"Product with id '9999' not found","error":"Not Found","statusCode":404}</code></pre>
+      <p>สังเกตว่า body ของเรามีคีย์ <code>error</code> และ <code>statusCode</code> เพิ่มจาก dummyjson — นี่คือรูปแบบมาตรฐานของ <code>HttpException</code> ใน Nest และเป็นความต่างอีกข้อที่เราบันทึกไว้ยอมรับ เพราะ client อ่านแค่ <code>message</code></p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>เทียบสินค้าชิ้นที่ 1 กับ contract โดยเรียงคีย์ทั้งสองฝั่งให้เหมือนกันก่อน — ต้องได้ <code>IDENTICAL</code>
+          <pre><code>curl -s http://localhost:3000/products/1 \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log(JSON.stringify(JSON.parse(d),Object.keys(JSON.parse(d)).sort())))" &gt; /tmp/actual.json
+node -e "const d=require('./docs/contract/product-1.json');console.log(JSON.stringify(d,Object.keys(d).sort()))" &gt; /tmp/expected.json
+diff /tmp/actual.json /tmp/expected.json &amp;&amp; echo IDENTICAL</code></pre>
+          <p>(คำสั่ง <code>node -e</code> ใช้ <code>require</code> ได้ ทั้งที่โปรเจกต์เป็น <code>"type": "module"</code> เพราะสคริปต์ที่ส่งผ่าน <code>-e</code> ถูกรันเป็น CommonJS โดยปริยาย)</p>
+        </li>
+        <li><code>curl -i http://localhost:3000/products/9999</code> ได้ 404 พร้อม <code>"message":"Product with id '9999' not found"</code> ตรงตัวอักษร</li>
+        <li><code>curl -s http://localhost:3000/products/categories</code> ยังตอบ array 24 ก้อนเหมือนบทที่ 10 — พิสูจน์ว่าลำดับ route ถูก (ถ้าได้ 400 แปลว่า <code>@Get(':id')</code> ไปอยู่ข้างบน)</li>
+        <li>หาสินค้าที่ไม่มีแบรนด์แล้วยืนยันว่าคีย์ <code>brand</code> หายไปทั้งคีย์ — ในฐานข้อมูลที่ seed มา สินค้า id <code>16</code> คือตัวหนึ่งที่ <code>brand</code> เป็น <code>null</code>
+          <pre><code>curl -s http://localhost:3000/products/16 \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log('brand' in JSON.parse(d)))"
+# ต้องพิมพ์ false</code></pre>
+        </li>
+        <li><code>curl -i http://localhost:3000/products/abc</code> ได้ 400 พร้อม <code>Validation failed (numeric string is expected)</code> — ความต่างที่เรายอมรับ ไม่ใช่ bug</li>
+        <li>commit ผลงานด้วย <code>git add -A &amp;&amp; git commit -m "feat: GET /products/:id"</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/controllers">Controllers: route parameters (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/pipes">Pipes: ParseIntPipe (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/exception-filters">Exception filters: NotFoundException (NestJS Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries">Relation queries: include (Prisma Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="11_mapping-rows-to-the-contract.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="13_get-products-with-pagination.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

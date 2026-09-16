@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เทคนิคการ bind building blocks ของ NestJS ทั้งสี่ระดับ: global, controller, method และ param scope พร้อมวิธีใช้ APP_PIPE เพื่อให้ global pipe รับ dependency injection ได้" />
+  <title>เข้าใจเทคนิคการ Bind</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 50 จาก 77</p>
+    <h1>เข้าใจเทคนิคการ Bind</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>Bind building block ได้ทั้งสี่ระดับ: globally, controller, method และ param scope</li>
+        <li>เลือกระหว่าง <code>useGlobalPipes()</code> กับ provider token <code>APP_PIPE</code> ได้ถูกสถานการณ์</li>
+        <li>อธิบายได้ว่าทำไม param-scoped จึงมีเฉพาะกับ pipes</li>
+      </ul>
+    </section>
+
+    <h2>สี่ระดับของการ bind</h2>
+    <p>Building blocks ของ Nest (filters, guards, interceptors, pipes) ผูกเข้ากับแอปได้หลายระดับ ยิ่งแคบยิ่งควบคุมได้ละเอียด:</p>
+    <div class="comparison" role="region" aria-label="ระดับการ bind building blocks" tabindex="0">
+      <table>
+        <thead><tr><th>ระดับ</th><th>วิธีเขียน</th><th>มีผลกับ</th></tr></thead>
+        <tbody>
+          <tr><td>Globally-scoped</td><td><code>app.useGlobalPipes(new ValidationPipe())</code> หรือ provider <code>APP_PIPE</code></td><td>ทุก route ทั้งแอป</td></tr>
+          <tr><td>Controller-scoped</td><td><code>@UsePipes(ValidationPipe)</code> เหนือ class</td><td>ทุก handler ใน controller นั้น</td></tr>
+          <tr><td>Method-scoped</td><td><code>@UsePipes(ValidationPipe)</code> เหนือ method</td><td>handler เดียว</td></tr>
+          <tr><td>Param-scoped (pipes เท่านั้น)</td><td><code>@Param('id', ParseIntPipe)</code></td><td>parameter ตัวเดียว</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Param-scoped เป็นของแถมที่มีเฉพาะ pipes เพราะ pipe ทำงานกับ <em>ค่า input ทีละตัว</em> โดยธรรมชาติ ส่วน guards/interceptors/filters ทำงานกับ request ทั้งก้อน จึงจบที่ระดับ method เป็นอย่างแคบสุด</p>
+    <pre><code>// Controller-scoped
+@UsePipes(ValidationPipe)
+@Controller('coffees')
+export class CoffeesController {}
+
+// Method-scoped
+@Post()
+@UsePipes(ValidationPipe)
+create(@Body() createCoffeeDto: CreateCoffeeDto) {}
+
+// Param-scoped — เจาะจงที่ parameter เดียว
+@Get(':id')
+findOne(@Param('id', ParseIntPipe) id: number) {}</code></pre>
+    <div class="note">
+      <p>ส่ง <em>class</em> (<code>ValidationPipe</code>) แทน instance (<code>new ValidationPipe()</code>) ได้เมื่อไม่ต้อง config — Nest จะสร้างและ reuse instance ให้เอง ลด memory ที่ใช้</p>
+    </div>
+
+    <h2>Global bind สองแบบ: main.ts กับ APP_PIPE</h2>
+    <p><code>app.useGlobalPipes()</code> ใน <code>main.ts</code> ตรงไปตรงมา แต่มีข้อจำกัดใหญ่: instance ที่เราสร้างเองด้วย <code>new</code> อยู่นอก dependency injection container จึง inject dependency ใด ๆ เข้า pipe ไม่ได้ ทางเลือกคือประกาศผ่าน provider token พิเศษ <code>APP_PIPE</code> ใน module ใดก็ได้ — Nest จะสร้าง instance ให้จากภายใน DI system</p>
+    <pre><code>// app.module.ts
+import { APP_PIPE } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+
+@Module({
+  providers: [
+    {
+      provide: APP_PIPE,
+      useFactory: () =>
+        new ValidationPipe({
+          whitelist: true,
+          transform: true,
+          forbidNonWhitelisted: true,
+          transformOptions: {
+            enableImplicitConversion: true,
+          },
+        }),
+    },
+  ],
+})
+export class AppModule {}</code></pre>
+    <div class="warning"><p><code>{ provide: APP_PIPE, useClass: ValidationPipe }</code> (ไม่มี options) เป็นกับดักที่พบบ่อย — <code>useClass</code> แค่สั่ง <code>new ValidationPipe()</code> เปล่า ๆ ให้ ทำให้ <code>whitelist</code>, <code>forbidNonWhitelisted</code>, <code>transform</code> และ <code>enableImplicitConversion</code> ที่ตั้งไว้ใน <code>main.ts</code> (บทที่ 16–18, 28) หายไปทั้งหมดแบบเงียบ ๆ — mass assignment กลับมาหลุดผ่าน และ query string อย่าง <code>limit</code>/<code>offset</code> จะไม่ถูกแปลงเป็น number ให้อัตโนมัติอีก ถ้าต้องการ config ให้ใช้ <code>useFactory</code> ตามตัวอย่างด้านบนเสมอ</p></div>
+    <p>Token คู่กันมีครบทั้งสี่: <code>APP_PIPE</code>, <code>APP_GUARD</code>, <code>APP_INTERCEPTOR</code> และ <code>APP_FILTER</code> — จำแพทเทิร์นเดียวใช้ได้ทั้งตระกูล</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ย้าย ValidationPipe จาก main.ts ไป APP_PIPE</h2>
+      <p>ใน <code>iluvcoffee</code> ลองย้ายการ bind <code>ValidationPipe</code> จาก <code>app.useGlobalPipes()</code> ใน <code>main.ts</code> ไปเป็น provider <code>APP_PIPE</code> ใน <code>AppModule</code> แล้วยืนยันว่า validation ยังทำงานครบ — ใช้ <code>useFactory</code> พร้อม options เดิมทั้งหมด อย่าใช้ <code>useClass: ValidationPipe</code> เฉย ๆ เพราะ options จะหายไป (ดูคำเตือนด้านบน)</p>
+      <div class="prompt-example"><code>// 1) ลบ/คอมเมนต์ app.useGlobalPipes(...) ใน main.ts
+// 2) เพิ่ม provider ใน app.module.ts:
+{
+  provide: APP_PIPE,
+  useFactory: () =>
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+}
+
+// 3) ทดสอบว่า validation ยังจับ payload ผิดรูป
+curl -X POST http://localhost:3000/coffees \
+  -H "Content-Type: application/json" \
+  -d '{"name": 123}'
+
+# 4) ทดสอบว่า mass assignment ยังถูกปัดตก (forbidNonWhitelisted)
+curl -X POST http://localhost:3000/coffees \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Test", "brand": "Test", "flavors": [], "id": 999}'
+
+# 5) ทดสอบว่า pagination ยังแปลง query string เป็น number อัตโนมัติ (enableImplicitConversion)
+curl "http://localhost:3000/coffees?limit=2&offset=0"</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>คำขอ payload ผิดรูปยังถูกปฏิเสธด้วย <code>400 Bad Request</code> พร้อมรายละเอียด validation error เหมือนก่อนย้าย, payload ที่มี field แปลกปลอมอย่าง <code>id</code> ยังถูกปัดตกด้วย <code>400</code> (ไม่ใช่หลุดไปถึง Prisma แล้วได้ 500), และ pagination ด้วย query string ยังทำงานถูกต้อง — ตอนนี้ pipe ถูกสร้างจากใน DI container แล้ว พร้อมรับ dependency ในอนาคต โดย behavior เดิมไม่มีอะไรหายไป</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>POST /coffees</code> ด้วย field เกินหรือชนิดผิด ยังได้ <code>400</code> พร้อมข้อความ validation</li>
+        <li><code>POST /coffees</code> ด้วย payload ถูกต้อง ยังสร้างข้อมูลได้ <code>201</code></li>
+        <li><code>POST /coffees</code> ด้วย field แปลกปลอมเพิ่มเข้ามา (เช่น <code>id</code>) ยังได้ <code>400</code> จาก <code>forbidNonWhitelisted</code> ไม่ใช่ 500 จาก Prisma</li>
+        <li><code>GET /coffees?limit=2&amp;offset=0</code> ยังทำงานปกติ — ยืนยันว่า <code>enableImplicitConversion</code> ยังอยู่</li>
+        <li><code>main.ts</code> ไม่เหลือ <code>useGlobalPipes</code> ที่ซ้ำซ้อนกับ <code>APP_PIPE</code> (bind ซ้ำ = รันสองรอบ)</li>
+        <li>อธิบายได้ว่าจะเลือก bind ระดับใดถ้า validation ต้องใช้กับ endpoint เดียวเท่านั้น</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/pipes">Pipes: binding pipes (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/guards">Guards: binding guards (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/interceptors">Interceptors: binding interceptors (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/exception-filters">Exception filters: binding filters (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="49_introducing-more-building-blocks.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="51_catch-exceptions-with-filters.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง async provider ใน NestJS ด้วย useFactory แบบ async/await เพื่อรอค่าอย่างผลจากฐานข้อมูลก่อนแอปเริ่มรับ request" />
+  <title>ใช้ Async Providers</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 38 จาก 77</p>
+    <h1>ใช้ Async Providers</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เขียน factory แบบ <code>async</code> ที่ return <code>Promise</code> และให้ Nest รอจน resolve</li>
+        <li>ผสม <code>inject</code> กับ async factory เพื่อดึงข้อมูลจริง (เช่น query ฐานข้อมูล) มาเป็นค่า provider</li>
+        <li>อธิบายผลของ async provider ต่อจังหวะ bootstrap ของแอป</li>
+      </ul>
+    </section>
+
+    <h2>เมื่อค่า provider ต้องรอของจริงจากภายนอก</h2>
+    <p>factory ในบทที่แล้วเป็น synchronous ทั้งหมด แต่ค่าจำนวนมากในชีวิตจริงต้อง <em>await</em>: ผล query จากฐานข้อมูล, การเรียก API ภายนอก, การเปิด connection ฯลฯ NestJS รองรับตรง ๆ — เพียงทำให้ factory เป็น <code>async</code> function แล้ว Nest จะรอ Promise resolve ก่อนถือว่า provider ตัวนี้พร้อม และก่อนที่แอปจะเริ่มรับ request</p>
+    <pre><code>// Asynchronous "useFactory" (ตัวอย่าง async provider)
+{
+  provide: 'COFFEE_BRANDS',
+  // สังเกต "async" และการ await ภายใน factory
+  // ของจริงอาจเป็น database connection / API call ฯลฯ
+  // ที่นี่เรา mock เหตุการณ์นั้นด้วย Promise
+  useFactory: async (prisma: PrismaService): Promise&lt;string[]&gt; =&gt; {
+    // ของจริง: const rows = await prisma.coffee.findMany({
+    //   select: { brand: true }, distinct: ['brand'],
+    // });
+    const coffeeBrands = await Promise.resolve(['buddy brew', 'nescafe']);
+    return coffeeBrands;
+  },
+  inject: [PrismaService],
+},</code></pre>
+    <p>ตัวอย่างนี้รวมทุกอย่างที่เรียนมา: token เป็น string (บทที่ 35), ค่ามาจาก factory (บทที่ 37), factory ขอ inject <code>PrismaService</code> แล้วในสถานการณ์จริงจะใช้มัน query แบรนด์ที่ไม่ซ้ำกันจากตาราง <code>coffee</code> — โค้ดสาธิต mock ขั้นตอนนั้นด้วย <code>Promise.resolve</code></p>
+    <div class="note"><p>ทุก class ที่ inject <code>'COFFEE_BRANDS'</code> ไม่ต้องรู้เลยว่าค่านี้มาแบบ async — ตอนที่ <code>CoffeesService</code> ถูกสร้าง ค่าถูก resolve เสร็จแล้วเรียบร้อย ความซับซ้อนเรื่องเวลาถูกเก็บไว้ใน container ทั้งหมด</p></div>
+    <div class="note"><p><code>PrismaService</code> inject ได้จากทุก module โดยไม่ต้อง import อะไรเพิ่ม เพราะ <code>PrismaModule</code> ที่เราสร้างในบทที่ 22 ติด <code>@Global()</code> ไว้ — และเพราะ <code>PrismaService</code> เชื่อมต่อฐานข้อมูลใน <code>onModuleInit</code> factory นี้จึงเรียก query ได้ทันทีที่ถูกเรียก</p></div>
+
+    <h2>ผลต่อจังหวะ bootstrap</h2>
+    <p>Nest สร้าง dependency graph แล้ว resolve ตามลำดับ ใครที่พึ่ง async provider จะถูกสร้าง<em>หลัง</em> Promise resolve เสมอ ข้อดีคือแอปไม่มีสภาวะ "start แล้วแต่ข้อมูลยังไม่พร้อม" ข้อแลกคือถ้า Promise ช้า แอปทั้งแอปจะ start ช้าตาม และถ้า reject แอปจะไม่ start เลย — จึงควรมี timeout หรือ error handling ในการเชื่อมต่อของจริง</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ทำ COFFEE_BRANDS ให้เป็น async</h2>
+      <p>อัปเกรด provider <code>COFFEE_BRANDS</code> จากบทที่แล้วให้เป็น async factory ตามตัวอย่าง แล้วพิสูจน์จังหวะเวลาด้วยการหน่วง Promise สักสองวินาทีและ log ก่อน/หลัง await เทียบกับ log ใน constructor ของ <code>CoffeesService</code></p>
+      <div class="prompt-example"><code>{
+  provide: COFFEE_BRANDS,
+  useFactory: async (): Promise&lt;string[]&gt; =&gt; {
+    console.log('factory: start');
+    const brands = await new Promise&lt;string[]&gt;((resolve) =&gt;
+      setTimeout(() =&gt; resolve(['buddy brew', 'nescafe']), 2000),
+    );
+    console.log('factory: resolved');
+    return brands;
+  },
+}
+
+npm run start:dev</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ลำดับ log ตอน start คือ <code>factory: start</code> → (หน่วง ~2 วินาที) → <code>factory: resolved</code> → log จาก constructor ของ <code>CoffeesService</code> ที่พิมพ์ array แบรนด์ จากนั้นแอปจึงขึ้นข้อความพร้อมรับ request — ยืนยันว่า Nest รอ async provider ก่อนสร้างผู้บริโภคและก่อนเปิดพอร์ต</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>เห็นแอป start ช้าลงประมาณเท่า delay ที่ใส่ และลำดับ log ตรงตามคาด</li>
+        <li>ยิง <code>GET /coffees</code> ระหว่างสองวินาทีแรก — ต้อง connect ไม่ได้ เพราะแอปยังไม่เปิดรับ</li>
+        <li>ลองให้ Promise <code>reject</code> — แอปต้องไม่ start และแสดง error ชัดเจน</li>
+        <li>ถอด delay ทดลองออกเมื่อเสร็จ เพื่อไม่ให้บทถัดไปช้าโดยไม่จำเป็น</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/fundamentals/async-providers">Asynchronous providers — NestJS Docs</a></li>
+      <li><a href="https://docs.nestjs.com/fundamentals/custom-providers">Custom providers — NestJS Docs</a></li>
+      <li><a href="https://docs.nestjs.com/recipes/prisma">Prisma recipe — NestJS Docs</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="37_factory-providers.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="39_create-a-dynamic-module.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

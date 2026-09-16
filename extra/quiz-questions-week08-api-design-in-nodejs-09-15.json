@@ -1,0 +1,148 @@
+{
+  "questions": [
+    {
+      "prompt": "จากลำดับ Route ด้านล่าง เมื่อส่ง GET /profile จะเกิดอะไรขึ้น?",
+      "body": "<pre><code>router.get('/:id', getUser)\nrouter.get('/profile', getProfile)</code></pre>",
+      "choices": [
+        "Express เรียก getProfile เพราะ /profile เป็น Route ที่เจาะจงกว่า",
+        "Express เรียก getUser โดยมองคำว่า profile เป็นค่า id เพราะ Route ที่ลงทะเบียนก่อนชนะ",
+        "Express เรียกทั้ง getUser และ getProfile ตามลำดับเสมอ"
+      ],
+      "correctChoice": 2,
+      "explanation": "Express จับคู่ Route ตามลำดับที่ลงทะเบียน โดย /:id จับข้อความใด ๆ หลัง Slash รวมถึง profile ด้วย จึงต้องวาง /profile ซึ่งเจาะจงกว่าไว้ก่อน /:id"
+    },
+    {
+      "prompt": "หาก Router ลูกที่ Mount ใต้ /:userId/habits ต้องอ่าน req.params.userId จาก Router แม่ ควรสร้าง Router ลูกอย่างไร?",
+      "choices": [
+        "Router({ mergeParams: true })",
+        "Router({ inheritPath: true })",
+        "Router({ globalParams: true })"
+      ],
+      "correctChoice": 1,
+      "explanation": "โดยปกติ Router ลูกอ่าน Parameter ของ Router แม่ไม่เห็น การเปิด mergeParams: true จะรวม Parameter จาก Path ของ Router แม่เข้ามาให้ Router ลูกใช้งานได้"
+    },
+    {
+      "prompt": "Middleware นี้จะส่งผลอย่างไรต่อ Request ที่วิ่งผ่านมัน?",
+      "body": "<pre><code>const audit = (req, res, next) =&gt; {\n  console.log(req.path)\n}</code></pre>",
+      "choices": [
+        "Express ส่ง 204 No Content ให้อัตโนมัติ",
+        "Express ข้ามไปเรียก Handler ถัดไปเมื่อ Function จบ",
+        "Request ค้าง เพราะ Middleware ไม่ได้ตอบ Response, โยน Error หรือเรียก next()"
+      ],
+      "correctChoice": 3,
+      "explanation": "Express รอให้ Middleware เลือกว่าจะตอบกลับ ส่ง Error หรือส่งต่อด้วย next() การจบ Function เฉย ๆ ไม่ได้สั่งให้ Request เดินหน้าหรือจบลง"
+    },
+    {
+      "prompt": "เมื่อ Middleware เรียก next(error) Express จะทำอะไร?",
+      "choices": [
+        "แปลง Error เป็น Response 200 แล้วทำงานต่อ",
+        "ข้าม Middleware และ Handler ปกติที่เหลือ แล้วส่ง Error ไปยัง Error-handling Middleware",
+        "เรียก Middleware ตัวถัดไปตามปกติพร้อมเก็บ Error ไว้ใน req.body"
+      ],
+      "correctChoice": 2,
+      "explanation": "Argument ใด ๆ ที่ส่งให้ next() จะถูกมองเป็น Error ทำให้ Express ข้าม Stack ปกติและมองหา Error-handling Middleware เพื่อจัดการต่อ"
+    },
+    {
+      "prompt": "เหตุใด express.json() จึงควรถูกลงทะเบียนก่อน Routes ที่ต้องอ่าน JSON Body?",
+      "choices": [
+        "เพราะ Middleware ทำงานตามลำดับ และ express.json() ต้อง Parse Payload เพื่อสร้าง req.body ก่อน Route ใช้งาน",
+        "เพราะ express.json() มีหน้าที่เข้ารหัส Response ทุก Route เป็น JSON Web Token",
+        "เพราะ Express ไม่อนุญาตให้เรียก app.use() หลังจากลงทะเบียน Route แรก"
+      ],
+      "correctChoice": 1,
+      "explanation": "Middleware ทำงานตามลำดับที่ลงทะเบียน หาก Route ทำงานก่อน express.json() Payload ยังไม่ถูก Parse และ Route จะอ่าน req.body ไม่ได้ตามที่คาดหวัง"
+    },
+    {
+      "prompt": "เหตุใด API เดียวกันอาจเรียกผ่าน Postman ได้ แต่ถูก Browser บล็อกด้วย CORS?",
+      "choices": [
+        "Postman เปลี่ยน Cross-origin Request ทุกตัวให้เป็น Same-origin โดยอัตโนมัติ",
+        "Browser ไม่รองรับ Method OPTIONS แต่ Postman รองรับ",
+        "CORS เป็นนโยบายที่ Browser บังคับใช้ และ Browser อาจส่ง OPTIONS Preflight ก่อน Request จริง ส่วน Postman ไม่อยู่ใต้ข้อจำกัดนี้"
+      ],
+      "correctChoice": 3,
+      "explanation": "CORS ปกป้องผู้ใช้ในสภาพแวดล้อม Browser จึงอาจมี OPTIONS Preflight เพื่อตรวจ Policy ก่อนส่ง Request จริง ขณะที่ Postman และ curl ไม่ได้บังคับใช้ CORS"
+    },
+    {
+      "prompt": "เหตุใด validateBody จึงควรนำผลจาก schema.parse(req.body) กลับไปกำหนดให้ req.body?",
+      "choices": [
+        "เพื่อให้ Zod บันทึก Payload ลง Database โดยอัตโนมัติ",
+        "เพื่อให้ Handler ได้ค่าที่ผ่านการแปลงชนิดและเติม Default ตาม Schema แล้ว",
+        "เพื่อเปลี่ยน Validation Error ทุกชนิดให้เป็น Status 500"
+      ],
+      "correctChoice": 2,
+      "explanation": "ผลลัพธ์จาก parse() อาจต่างจาก Input เดิมเพราะ Schema สามารถ Coerce ชนิดข้อมูลหรือเติมค่า Default ได้ การเขียนค่ากลับทำให้ Handler ได้ข้อมูลที่ผ่านการปรับแล้วจริง ๆ"
+    },
+    {
+      "prompt": "ลำดับใดเหมาะสมสำหรับ Route ที่ต้องตรวจทั้ง Path Parameter และ Request Body ก่อนทำงาน?",
+      "body": "<pre><code>router.post(\n  '/:id/complete',\n  /* ใส่ Middleware และ Handler ตรงนี้ */\n)</code></pre>",
+      "choices": [
+        "validateParams(paramsSchema), validateBody(bodySchema), handler",
+        "handler, validateParams(paramsSchema), validateBody(bodySchema)",
+        "validateBody(bodySchema), handler, validateParams(paramsSchema)"
+      ],
+      "correctChoice": 1,
+      "explanation": "Middleware ตรวจข้อมูลต้องอยู่ก่อน Handler เพื่อหยุด Request ที่ไม่ผ่าน Validation ได้ ตัวอย่างในบทเรียนตรวจ Params แล้วตรวจ Body ก่อนส่งต่อไปยัง Handler"
+    },
+    {
+      "prompt": "ข้อใดอธิบายการจัดการ Error ของ Async Middleware ใน Express 5 ได้ถูกต้อง?",
+      "choices": [
+        "Express 5 ไม่รองรับ Async Middleware จึงต้องห้ามใช้ async/await",
+        "Express 5 จับ Error ได้แม้เป็น Promise ที่ถูกสร้างทิ้งไว้โดยไม่ได้ await",
+        "Express 5 ส่ง Rejected Promise ที่คืนจาก Middleware ไปยัง Error Handler อัตโนมัติ แต่ Promise ที่ปล่อยไว้โดยไม่ await ยังอาจหลุดได้"
+      ],
+      "correctChoice": 3,
+      "explanation": "Express 5 รองรับ Promise ที่ Reject ออกจาก Handler หรือ Middleware โดยตรงและส่งต่อเหมือน next(error) แต่ถ้าสร้าง Promise แล้วไม่ await หรือไม่คืนมัน Express จะติดตาม Error นั้นไม่ได้"
+    },
+    {
+      "prompt": "ปัญหาหลักของ Middleware ด้านล่างคืออะไร?",
+      "body": "<pre><code>res.json({ message: 'done' })\nnext()</code></pre>",
+      "choices": [
+        "next() จะลบ Response Body ที่ส่งไปแล้ว",
+        "โค้ดตอบ Response แล้วแต่ยังส่งต่อ Stack ซึ่งอาจพยายามส่ง Header หรือ Response ซ้ำ",
+        "res.json() ใช้ได้เฉพาะหลังเรียก next() เท่านั้น"
+      ],
+      "correctChoice": 2,
+      "explanation": "เมื่อส่ง Response แล้วควรจบ Flow เช่น return res.json(...) ไม่ควรเรียก next() ต่อ เพราะ Middleware หรือ Handler ถัดไปอาจแตะ Response อีกและเกิด Error ว่าส่ง Header ไปแล้ว"
+    },
+    {
+      "prompt": "ในความสัมพันธ์ที่ User หนึ่งคนมี Habit ได้หลายรายการ Foreign Key ควรอยู่ที่ใด?",
+      "choices": [
+        "เก็บ user_id ไว้ในแต่ละ Row ของตาราง habits เพราะ Foreign Key ของ One-to-Many อยู่ฝั่ง Many",
+        "เก็บ habit_id เพียงค่าเดียวไว้ในตาราง users เพราะ Foreign Key ต้องอยู่ฝั่ง One",
+        "ไม่ต้องมี Foreign Key เพราะ ORM สร้างความสัมพันธ์จากชื่อตารางได้เอง"
+      ],
+      "correctChoice": 1,
+      "explanation": "Habit เป็นฝั่ง Many และ Habit แต่ละรายการเป็นของ User หนึ่งคน จึงเก็บ user_id ไว้บนตาราง habits เพื่อชี้กลับไปยังเจ้าของ"
+    },
+    {
+      "prompt": "ข้อใดเปรียบเทียบแนวทางเขียน Schema ของ Prisma และ Drizzle ได้ถูกต้อง?",
+      "choices": [
+        "ทั้ง Prisma และ Drizzle บังคับให้เขียน Schema ด้วย SQL ดิบเท่านั้น",
+        "Prisma ใช้ TypeScript ล้วน ส่วน Drizzle ใช้ไฟล์ schema.prisma และ Code Generation",
+        "Prisma ใช้ DSL ใน schema.prisma แล้ว Generate Client ส่วน Drizzle นิยาม Schema ด้วย TypeScript"
+      ],
+      "correctChoice": 3,
+      "explanation": "Prisma มีภาษา Schema เฉพาะและขั้นตอน Generate Client ที่มี Type ขณะที่ Drizzle ใช้ TypeScript โดยตรงและมี API ที่ใกล้เคียง SQL มากกว่า"
+    },
+    {
+      "prompt": "หากต้องเปลี่ยนชื่อคอลัมน์ที่ Production ใช้งานอยู่ วิธีใดลดความเสี่ยงและหลีกเลี่ยง Downtime ได้ดีที่สุด?",
+      "choices": [
+        "ลบคอลัมน์เดิมแล้วสร้างคอลัมน์ใหม่แบบ Required ใน Migration เดียว",
+        "เพิ่มคอลัมน์ใหม่แบบ Optional ก่อน จากนั้นย้ายโค้ดและข้อมูลไปใช้คอลัมน์ใหม่ แล้วค่อยลบคอลัมน์เดิมในภายหลัง",
+        "เปลี่ยนชื่อเฉพาะใน Application Code โดยไม่แก้ Database"
+      ],
+      "correctChoice": 2,
+      "explanation": "การเปลี่ยนชื่อโดยตรงมีผลเหมือนลบของเดิมแล้วสร้างของใหม่ แนวทางแบบหลายขั้นเริ่มจากการเพิ่มของที่ไม่บังคับ จากนั้นย้าย Code และ Data ก่อนทิ้งคอลัมน์เก่า จึงปลอดภัยกว่า"
+    },
+    {
+      "prompt": "ข้อใดอธิบายความต่างระหว่าง prisma db push และ prisma migrate dev ตาม Workflow ในบทเรียน?",
+      "choices": [
+        "db push ทำให้ Database ฝั่ง Development ตรงกับ Schema โดยไม่สร้างประวัติ Migration ส่วน migrate dev สร้างไฟล์ SQL ที่ Review และ Commit เข้า Git ได้",
+        "db push สร้าง Migration สำหรับ Production ส่วน migrate dev ใช้ได้เฉพาะ Database ชั่วคราวและไม่สร้างไฟล์",
+        "ทั้งสองคำสั่งสร้างไฟล์ Migration แบบเดียวกัน ต่างกันเฉพาะชื่อคำสั่ง"
+      ],
+      "correctChoice": 1,
+      "explanation": "db push เหมาะกับการปรับ Database ส่วนตัวระหว่างพัฒนาอย่างรวดเร็วและไม่ทิ้งไฟล์ Migration ส่วน migrate dev สร้างประวัติ SQL ที่ทีมตรวจสอบและเก็บร่วมกับโค้ดได้"
+    }
+  ]
+}

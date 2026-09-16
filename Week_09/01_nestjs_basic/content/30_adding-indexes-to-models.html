@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เร่งความเร็ว query ที่ค้นจากคอลัมน์ที่ไม่ใช่ primary key ด้วย @@index ใน schema.prisma ทั้งแบบคอลัมน์เดียวและ composite index" />
+  <title>เพิ่ม Indexes ให้ Models</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 30 จาก 77</p>
+    <h1>เพิ่ม Indexes ให้ Models</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่า index ช่วยให้ query เร็วขึ้นอย่างไร และต้องแลกกับอะไร</li>
+        <li>ประกาศ <code>@@index([...])</code> บนคอลัมน์เดียวที่ถูกใช้ค้นหาบ่อย</li>
+        <li>สร้าง composite index หลายคอลัมน์เมื่อ query ค้นด้วยหลายเงื่อนไขพร้อมกัน และแยกความต่างจาก <code>@unique</code></li>
+      </ul>
+    </section>
+
+    <h2>Index คือสารบัญของตาราง</h2>
+    <p>เวลา query ค้นหาจากคอลัมน์ที่ไม่มี index ฐานข้อมูลต้องไล่สแกนทุกแถว (full table scan) ซึ่งช้าลงเรื่อย ๆ ตามขนาดตาราง <strong>Index</strong> คือโครงสร้างข้อมูลเสริมที่ทำหน้าที่เหมือนสารบัญหนังสือ: แทนที่จะพลิกทุกหน้า ฐานข้อมูลกระโดดไปยังแถวที่ต้องการได้ทันที primary key อย่าง <code>id</code> (<code>@id</code>) ได้ index อัตโนมัติอยู่แล้ว และ <code>@unique</code> ที่เราติดให้ <code>Flavor.name</code> ในบทที่ 25 ก็สร้าง unique index ให้เช่นกัน แต่คอลัมน์อื่นที่เราค้นบ่อย — เช่น <code>name</code> ของ <code>Event</code> ที่ระบบ analytics ต้อง filter ตลอดเวลา — ต้องประกาศเอง</p>
+    <p>ใน Prisma index ประกาศที่ท้าย block ของ model ด้วย attribute ระดับ model (ขึ้นต้นด้วย <code>@@</code>) โดยส่ง array ของชื่อฟิลด์</p>
+    <pre><code>model Event {
+  id      Int    @id @default(autoincrement())
+  type    String
+  name    String
+  payload Json
+
+  @@index([name]) // สร้าง index ให้คอลัมน์ name
+  @@map("event")
+}</code></pre>
+
+    <h2>Composite index เมื่อค้นหลายคอลัมน์พร้อมกัน</h2>
+    <p>ถ้า query ของเรามักค้นด้วยสองเงื่อนไขคู่กัน เช่น <code>WHERE name = ... AND type = ...</code> การมี index แยกสองอันยังไม่ optimal เท่า <strong>composite index</strong> ที่ครอบทั้งสองคอลัมน์ในโครงสร้างเดียว ซึ่งประกาศด้วย syntax เดิม เพียงใส่หลายฟิลด์ใน array</p>
+    <pre><code>model Event {
+  id      Int    @id @default(autoincrement())
+  type    String
+  name    String
+  payload Json
+
+  @@index([name])
+  @@index([name, type]) // composite index ครอบสองคอลัมน์
+  @@map("event")
+}</code></pre>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ attribute ที่สร้าง index ใน Prisma" tabindex="0">
+      <table>
+        <thead><tr><th>Attribute</th><th>สิ่งที่สร้าง</th><th>เหมาะกับ</th></tr></thead>
+        <tbody>
+          <tr><td><code>@@index([a])</code></td><td>index ธรรมดาบนคอลัมน์เดียว</td><td>query ที่ filter จากคอลัมน์นั้นเดี่ยว ๆ บ่อย</td></tr>
+          <tr><td><code>@@index([a, b])</code></td><td>composite index ครอบหลายคอลัมน์ (ลำดับมีผล)</td><td>query ที่ filter สองคอลัมน์นั้นร่วมกันเป็นประจำ</td></tr>
+          <tr><td><code>@unique</code> บนฟิลด์</td><td>unique index + constraint ห้ามค่าซ้ำ</td><td>คอลัมน์ที่ต้องไม่ซ้ำ เช่น <code>Flavor.name</code>, อีเมล</td></tr>
+          <tr><td><code>@@unique([a, b])</code></td><td>unique index บน<em>คู่</em>ของคอลัมน์</td><td>ห้ามซ้ำเฉพาะเมื่อทั้งคู่เหมือนกัน เช่น (userId, name)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning"><p>Index ไม่ใช่ของฟรี: ทุก insert/update ต้องอัปเดต index ด้วย และแต่ละ index กินพื้นที่จัดเก็บเพิ่ม จึงควรเพิ่มเฉพาะคอลัมน์ที่มี query pattern รองรับจริง ไม่ใช่ติดทุกคอลัมน์กันเหนียว</p></div>
+    <div class="note"><p>Prisma ตั้งชื่อ index ให้เองตามรูปแบบ <code>&lt;ตาราง&gt;_&lt;คอลัมน์&gt;_idx</code> (เช่น <code>event_name_type_idx</code>) ถ้าต้องการชื่อเองให้ระบุ <code>@@index([name], name: "event_name_idx")</code> — บนเครื่อง dev <code>db push</code> จะสร้าง index ให้ทันที ส่วนใน production การเพิ่ม index คือการเปลี่ยน schema ที่ต้องทำผ่าน migration — บทถัดไปพอดี</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ทำให้การค้น event เร็วขึ้น</h2>
+      <p>เพิ่ม <code>@@index([name])</code> และ composite index <code>@@index([name, type])</code> ให้ <code>Event</code> model ใน <code>schema.prisma</code> แล้ว push ขึ้นฐานข้อมูล จากนั้นไปดู index ที่เกิดขึ้นจริง</p>
+      <div class="prompt-example"><code>npx prisma db push
+
+# ดู index ใน pgAdmin Query Tool
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename = 'event';</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ผลของ query แสดง index ของตาราง <code>event</code> อย่างน้อย 3 รายการ: <code>event_pkey</code> ของ <code>id</code>, <code>event_name_idx</code> ของ <code>name</code> และ composite index <code>event_name_type_idx</code> ที่ครอบ <code>name</code> กับ <code>type</code> — ทั้งหมดถูกสร้างจาก attribute ใน <code>schema.prisma</code> โดยตรง</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>pg_indexes</code> ของตาราง <code>event</code> มี index ใหม่ปรากฏหลัง <code>db push</code></li>
+        <li><code>indexdef</code> ของ composite index ระบุทั้งสองคอลัมน์ <code>(name, type)</code></li>
+        <li>ลองรัน <code>EXPLAIN SELECT * FROM event WHERE name = 'recommend_coffee';</code> — plan ควรอ้างถึง index scan เมื่อตารางมีข้อมูลมากพอ</li>
+        <li>แอปยัง start และ CRUD ได้ตามปกติ ไม่มี error จากการประกาศ index</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/indexes">Indexes (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/recipes/prisma">Prisma recipe (NestJS Docs)</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="29_use-transactions.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="31_setting-up-migrations.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

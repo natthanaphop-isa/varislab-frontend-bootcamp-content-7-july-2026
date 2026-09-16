@@ -1,0 +1,23 @@
+HTTP/2 404 
+date: Sat, 12 Sep 2026 17:53:09 GMT
+content-type: application/json; charset=utf-8
+content-length: 46
+access-control-allow-credentials: true
+etag: W/"2e-aAyi0L16NPwZIfZx0JFalAd4Tew"
+strict-transport-security: max-age=15552000; includeSubDomains
+vary: Origin, Accept-Encoding
+x-content-type-options: nosniff
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-frame-options: SAMEORIGIN
+x-ratelimit-limit: 100
+x-ratelimit-remaining: 97
+x-ratelimit-reset: 1789235591
+x-xss-protection: 1; mode=block
+cf-cache-status: DYNAMIC
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=aYCGccWZV5zlhiwv6MhS1p%2BzV%2BA0kj2gRzoWHswfZJoyQGs0gS2IFkrmiKxNmFlcVu6YZKhu2SCLU3meF962rQ2DWokmKQXcRhWL4sm1goDgsrMCARuf10EQvpUy%2FtRiWSI3mtdaJj%2FTgmu2"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a3a0c51f7c32aad7-BKK
+
+{"message":"Product with id '9999' not found"}

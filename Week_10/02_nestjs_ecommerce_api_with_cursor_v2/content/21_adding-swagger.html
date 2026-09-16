@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ติดตั้ง @nestjs/swagger เปิด Swagger UI ที่ /api และเปิด CLI plugin ใน nest-cli.json แล้วอ่านเอกสารดิบที่ /api-json" />
+  <title>เพิ่มเอกสาร API ด้วย Swagger</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 21 จาก 24</p>
+    <h1>เพิ่มเอกสาร API ด้วย Swagger</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายหน้าที่ของ <code>DocumentBuilder</code>, <code>SwaggerModule.createDocument</code> และ <code>SwaggerModule.setup</code> แยกกันได้</li>
+        <li>เปิด CLI plugin ของ <code>@nestjs/swagger</code> ใน <code>nest-cli.json</code> และบอกได้ว่าทำไมต้อง restart <code>start:dev</code></li>
+        <li>อ่าน <code>/api-json</code> แล้วแยกได้ว่าอะไรอยู่ใน <code>paths</code> อะไรอยู่ใน <code>components.schemas</code> และอะไรกลายเป็น query <code>parameters</code></li>
+      </ul>
+    </section>
+
+    <h2>Swagger ประกอบจากสามชิ้น</h2>
+    <p>เราเคยทำเรื่องนี้มาแล้วใน Week_09 บทที่ 59–60 บทนี้จึงเป็นการเอาของเดิมมาวางในโปรเจกต์ใหม่ ไม่ใช่ของใหม่ทั้งหมด ชิ้นแรกคือ <strong><code>DocumentBuilder</code></strong> — ตัวสร้าง metadata ของเอกสาร (ชื่อ, คำอธิบาย, เวอร์ชัน) ด้วย chain ที่ปิดท้ายด้วย <code>.build()</code> ชิ้นที่สองคือ <strong><code>SwaggerModule.createDocument(app, config)</code></strong> ซึ่งเดินดู controller ทุกตัวใน app ที่ประกอบเสร็จแล้ว อ่าน decorator ที่เจอ แล้วประกอบเป็น OpenAPI document ขึ้นมาในหน่วยความจำ ชิ้นที่สามคือ <strong><code>SwaggerModule.setup('api', app, document)</code></strong> ซึ่งเสิร์ฟเอกสารนั้นออกมาสองหน้า: UI แบบกดเล่นได้ที่ <code>/api</code> และ JSON ดิบที่ <code>/api-json</code></p>
+    <p>ลำดับสำคัญ: <code>createDocument</code> ต้องถูกเรียกหลัง app ประกอบ module เสร็จ และ <code>setup</code> ต้องถูกเรียก<strong>ก่อน</strong> <code>await app.listen(...)</code> เพราะ <code>listen</code> คือจุดที่เปิดรับ request — route ของ Swagger ต้องถูกลงทะเบียนไว้ก่อนหน้านั้น</p>
+
+    <h2>CLI plugin อ่าน <code>.dto.ts</code> ให้เราเอง</h2>
+    <p>ปัญหาคลาสสิกของ OpenAPI ใน TypeScript คือ type ของ field หายไปตอน compile — ตอน runtime <code>price: number</code> ไม่เหลือร่องรอยให้ Swagger อ่าน วิธีดั้งเดิมคือใส่ <code>@ApiProperty()</code> ทุก field ซึ่งกลายเป็นโค้ดยาวเหยียดที่ไม่ได้ให้ข้อมูลอะไรใหม่ <strong>CLI plugin</strong> ของ <code>@nestjs/swagger</code> แก้ปัญหานี้ด้วยการทำงานตอน compile: มันอ่าน class ในไฟล์ที่ลงท้ายด้วย <code>.dto.ts</code> (ค่าเริ่มต้นของ option <code>dtoFileNameSuffix</code> ซึ่งตรงกับชื่อไฟล์ DTO ทั้งหมดในโปรเจกต์เราพอดี) แล้วแทรก metadata ของ type ให้อัตโนมัติ เราจึงใส่ decorator เฉพาะที่ต้องการอธิบายเพิ่มจริง ๆ</p>
+    <p>ผลพลอยได้ที่ต้องจำ: เพราะ plugin ทำงานตอน compile ไม่ใช่ตอน runtime การแก้ <code>nest-cli.json</code> ระหว่างที่ watch mode รันอยู่จะ<strong>ไม่</strong>มีผล — watch จะ recompile แค่ไฟล์ที่เปลี่ยน (<code>main.ts</code>) ส่วนไฟล์ DTO ที่ compile ไว้ก่อนหน้ายังเป็นของเก่าที่ไม่มี metadata ต้องหยุด <code>start:dev</code> แล้วสั่งใหม่ให้ compile รอบเต็มหนึ่งครั้ง</p>
+
+    <h2>ติดตั้งด้วยมือก่อนสั่ง Cursor</h2>
+    <p>prompt ของบทนี้เขียนไว้ว่า <q>ติดตั้ง @nestjs/swagger แล้ว</q> ดังนั้นทำขั้นนี้เองก่อน แล้วจด version ที่ได้ไว้</p>
+    <pre><code>npm install @nestjs/swagger
+npm ls @nestjs/swagger</code></pre>
+    <p>ตอนตรวจของจริงได้ <code>@nestjs/swagger@12.0.1</code> คู่กับ <code>@nestjs/common@12.0.1</code> ที่ใช้อยู่</p>
+    <div class="note">
+      <p>npm 11.19 ที่มาพร้อม Node 26 กั้น install script ไว้เหมือนตอนบทที่ 6 รอบนี้จะเจอข้อความ <code>npm warn install-scripts 1 package has install scripts not yet covered by allowScripts: @scarf/scarf@1.4.0 (postinstall: node ./report.js)</code> ให้อนุมัติแล้ว rebuild ตามนี้ <code>npm install-scripts approve @scarf/scarf@1.4.0</code> แล้วต่อด้วย <code>npm rebuild</code> — <code>package.json</code> จะมีรายการเพิ่มในบล็อก <code>allowScripts</code> ซึ่งเป็นเรื่องปกติ อย่าลบออก ถ้า npm ของคุณไม่มีการกั้นนี้ ก็จะไม่เห็นข้อความดังกล่าวและข้ามขั้นนี้ไปได้เลย</p>
+    </div>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+├── nest-cli.json      (แก้ไข)
+└── src/
+    └── main.ts        (แก้ไข)</code></pre>
+    <ul>
+      <li><strong><code>src/main.ts</code></strong> — สัญญา: ต้องสร้าง config ด้วย <code>DocumentBuilder</code> แล้วเรียก <code>SwaggerModule.setup('api', ...)</code> หลัง <code>enableCors</code> และก่อน <code>app.listen</code> / ต้องไม่ย้ายหรือแก้ <code>ValidationPipe</code> และ <code>enableCors</code> ที่มีอยู่</li>
+      <li><strong><code>nest-cli.json</code></strong> — สัญญา: ต้องเพิ่ม <code>"plugins": ["@nestjs/swagger/plugin"]</code> ไว้<strong>ใน</strong> <code>compilerOptions</code> / ต้องไม่ลบ <code>deleteOutDir</code>, <code>sourceRoot</code>, <code>collection</code> หรือ <code>$schema</code> ที่มีอยู่</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor ตั้งค่า Swagger และเปิด plugin</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: install swagger"</code>) จากนั้นส่ง prompt นี้ — <a href="01_what-well-be-building.html">กติกาเดิม</a>: AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้</p>
+      <div class="cursor-prompt"><code>ตั้งค่า Swagger UI ที่ /api และเปิดใช้ CLI plugin ของ @nestjs/swagger
+
+บริบท: @src/main.ts @nest-cli.json @package.json @.cursor/rules/project.mdc
+ติดตั้ง @nestjs/swagger แล้ว
+main.ts มี ValidationPipe, enableCors และ app.listen อยู่แล้ว
+DTO ทุกไฟล์ในโปรเจกต์ลงท้าย .dto.ts ซึ่งตรงกับค่าเริ่มต้นของ plugin
+
+โครงสร้าง: แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- src/main.ts (แก้ไข)
+- nest-cli.json (แก้ไข)
+
+ข้อกำหนดทางเทคนิค:
+- main.ts: import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+  หลัง enableCors และก่อน app.listen สร้าง config ด้วย new DocumentBuilder().setTitle('E-commerce API').setDescription('Drop-in replacement for dummyjson.com used by the React e-commerce app').setVersion('1.0').build()
+  แล้ว SwaggerModule.setup('api', app, SwaggerModule.createDocument(app, config))
+- nest-cli.json: ใน compilerOptions เพิ่ม "plugins": ["@nestjs/swagger/plugin"] คงค่าอื่นไว้ทั้งหมด
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์อื่น ห้ามใส่ decorator ของ swagger ใน controller หรือ DTO ในรอบนี้</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li><code>SwaggerModule.setup('api', app, ...)</code> อยู่หลัง <code>app.enableCors(...)</code> และก่อน <code>await app.listen(...)</code></li>
+        <li>chain ของ <code>DocumentBuilder</code> ครบสี่ขั้น: <code>setTitle</code>, <code>setDescription</code>, <code>setVersion</code>, <code>build</code> — ถ้าลืม <code>.build()</code> จะได้ builder แทน config</li>
+        <li>ใน <code>nest-cli.json</code> คีย์ <code>plugins</code> อยู่<strong>ใน</strong> <code>compilerOptions</code> คู่กับ <code>deleteOutDir</code> ไม่ได้อยู่ระดับบนสุดของไฟล์</li>
+        <li>ยังไม่มี decorator ของ <code>@nestjs/swagger</code> ในไฟล์ controller หรือ DTO เลย (บทหน้าเป็นรอบของมัน)</li>
+        <li><code>git status</code> แสดงเฉพาะ <code>src/main.ts</code>, <code>nest-cli.json</code> และ <code>package.json</code> / <code>package-lock.json</code> ที่เปลี่ยนจากขั้นติดตั้ง</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ใส่ <code>"plugins"</code> ไว้ระดับบนสุดของ <code>nest-cli.json</code> (ข้าง ๆ <code>sourceRoot</code>) แทนที่จะอยู่ใน <code>compilerOptions</code> ซึ่ง Nest CLI จะไม่ร้อง error อะไรเลย — plugin แค่ไม่ทำงานเงียบ ๆ แล้วคุณจะไปเจอผลตอนอ่าน <code>/api-json</code> ว่า schema ของ DTO ว่างเปล่า อีกจุดคือ AI ชอบเพิ่ม <code>.addTag()</code> หรือ <code>.addBearerAuth()</code> ที่เราไม่ได้สั่ง ให้ลบออกให้เหลือเท่าที่ prompt ระบุ</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <pre><code>/* src/main.ts */
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module.js';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
+  app.enableCors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173' });
+
+  const config = new DocumentBuilder()
+    .setTitle('E-commerce API')
+    .setDescription('Drop-in replacement for dummyjson.com used by the React e-commerce app')
+    .setVersion('1.0')
+    .build();
+  SwaggerModule.setup('api', app, SwaggerModule.createDocument(app, config));
+
+  await app.listen(process.env.PORT ?? 3000);
+}
+
+await bootstrap();</code></pre>
+      <pre><code>/* nest-cli.json */
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "plugins": ["@nestjs/swagger/plugin"]
+  }
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>หลัง <strong>หยุดแล้วสั่ง <code>npm run start:dev</code> ใหม่</strong> เปิด <code>http://localhost:3000/api</code> จะได้หน้า Swagger UI ที่ตอบ 200 และลิสต์ endpoint ทั้งห้าตัวของเรา (<code>/products/categories</code>, <code>/products/category/{slug}</code>, <code>/products</code>, <code>/products/{id}</code>, <code>/carts/add</code>) บวก <code>/</code> ที่ติดมากับ <code>AppController</code> ของ scaffold ส่วน <code>/api-json</code> จะคืน OpenAPI document ดิบ ซึ่ง <code>components.schemas</code> มี DTO ที่ plugin อ่านจากไฟล์ <code>.dto.ts</code> ให้แล้ว ทั้งที่เรายังไม่ได้ใส่ decorator แม้แต่ตัวเดียว</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>หยุด <code>start:dev</code> ด้วย <code>Ctrl+C</code> แล้วสั่งใหม่ — ขั้นนี้ข้ามไม่ได้ ตอนตรวจของจริงต้อง restart จริง ๆ plugin จึงจะทำงาน (watch recompile เฉย ๆ ไม่พอ)</li>
+        <li><code>curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3000/api</code> ได้ <code>200</code></li>
+        <li>อ่าน <code>paths</code> และ <code>components.schemas</code> ด้วย one-liner นี้</li>
+      </ul>
+      <pre><code>curl -s http://localhost:3000/api-json | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;{const j=JSON.parse(d);console.log(Object.keys(j.paths));console.log(Object.keys(j.components?.schemas??{}))})"</code></pre>
+      <p>ผลที่ได้ตอนตรวจของจริง</p>
+      <pre><code>[
+  '/',
+  '/products/categories',
+  '/products/category/{slug}',
+  '/products',
+  '/products/{id}',
+  '/carts/add'
+]
+[
+  'ProductDimensionsDto',
+  'ProductReviewDto',
+  'ProductMetaDto',
+  'ProductResponseDto',
+  'ProductListResponseDto',
+  'CartProductDto',
+  'AddressDto',
+  'AddCartDto',
+  'CartProductResponseDto',
+  'CartResponseDto'
+]</code></pre>
+      <ul>
+        <li><code>AddCartDto</code>, <code>CartProductDto</code> และ <code>AddressDto</code> ขึ้นเป็น schema ครบ — พิสูจน์ว่า plugin ทำงาน</li>
+        <li>เปิด <code>/api</code> แล้วกด <q>Try it out</q> ที่ <code>GET /products/categories</code> ได้ผลจริงจากฐานข้อมูล</li>
+        <li>commit งานนี้ด้วย <code>git add -A &amp;&amp; git commit -m "feat: swagger"</code></li>
+      </ul>
+      <div class="note">
+        <p>สังเกตว่าไม่มี <code>PaginationQueryDto</code> ในลิสต์ schema — ไม่ใช่ความผิดพลาด class ที่ใช้ผ่าน <code>@Query()</code> จะถูก OpenAPI <em>กระจาย</em> ออกเป็น query parameter รายตัวบน path นั้นแทนที่จะถูกตีพิมพ์เป็น schema ให้อ้างถึง ตรวจได้ด้วยการเรียก one-liner เดิมแล้วเปลี่ยนไปพิมพ์ <code>j.paths['/products'].get.parameters</code> จะเห็น <code>skip</code> กับ <code>limit</code> เป็นสองรายการแยกกัน ส่วน class ที่ใช้ผ่าน <code>@Body()</code> (<code>AddCartDto</code> และเพื่อน) จึงเป็นพวกที่โผล่ใน <code>components.schemas</code></p>
+      </div>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/openapi/introduction">OpenAPI: Introduction (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/openapi/cli-plugin">OpenAPI: CLI Plugin (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/openapi/types-and-parameters">OpenAPI: Types and Parameters (NestJS Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="20_enabling-cors-and-port-config.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="22_documenting-dtos-and-responses.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

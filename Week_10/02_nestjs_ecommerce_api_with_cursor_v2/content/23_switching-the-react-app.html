@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สลับ base URL ของ React app มาที่ API ที่เราสร้างด้วยการแก้บรรทัดเดียว แล้วไล่ตรวจห้าจุดในเบราว์เซอร์และในฐานข้อมูล" />
+  <title>สลับ React app มาใช้ API ของเรา</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 23 จาก 24</p>
+    <h1>สลับ React app มาใช้ API ของเรา</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>สลับ React app จาก dummyjson มาใช้ API ของคุณด้วยการแก้บรรทัดเดียวใน <code>.env.local</code></li>
+        <li>ไล่ตรวจห้าจุดในเบราว์เซอร์ พร้อมอ่าน Network tab ว่า request วิ่งไปที่ host ไหนและได้สถานะอะไร</li>
+        <li>ยืนยันคำสั่งซื้อที่เพิ่งกดด้วย psql และอธิบายได้ว่าทำไม <code>npm test</code> ของ React app ให้ผลเท่าเดิม</li>
+      </ul>
+    </section>
+
+    <h2>ช่วงเวลาตัดสิน</h2>
+    <p>ยี่สิบสองบทที่ผ่านมาเราทำงานอยู่กับ <code>curl</code>, psql และ script ตรวจสัญญา ซึ่งทั้งหมดเป็นการตรวจว่า API ของเรา <em>เหมือน</em> dummyjson พอไหม บทนี้เป็นบทที่เอาของจริงมาชน: React e-commerce app จาก Week_05_06 ที่เขียนไว้ตั้งแต่ก่อนเราจะมี API — โค้ดของมันไม่รู้เลยว่าเรามีตัวตน ถ้าสัญญาที่เราจับมาตั้งแต่บทที่ 3 ถูกต้องจริง สิ่งที่ต้องเปลี่ยนคือ base URL หนึ่งบรรทัด ไม่ต้องแตะโค้ด ไม่ต้องแก้ type ไม่ต้องแก้ mapper ฝั่ง client</p>
+    <p>แอปตัวนี้อ่าน base URL จาก environment variable ชื่อ <code>VITE_API_BASE_URL</code> — Vite เปิดเผยให้โค้ดฝั่ง client เห็นเฉพาะตัวแปรที่ขึ้นต้นด้วย <code>VITE_</code> และอ่านไฟล์ <code>.env</code> ตระกูลนี้ <strong>ตอนเริ่ม dev server</strong> เท่านั้น (รายละเอียดอยู่ใน <a href="https://vite.dev/guide/env-and-mode.html">คู่มือ Env Variables and Modes ของ Vite</a>) แปลว่าแก้ไฟล์แล้วต้องหยุด <code>npm run dev</code> แล้วสั่งใหม่ ไม่ใช่รอ hot reload</p>
+
+    <h2>เตรียมของให้พร้อมก่อนสลับ</h2>
+    <p>สองอย่างที่ต้องรันอยู่พร้อมกัน: ฐานข้อมูลที่ seed แล้ว กับ API ของเราที่พอร์ต 3000 และอีกอย่างที่ควรทำ<em>ก่อน</em>สลับคือรัน <code>npm test</code> ในโปรเจกต์ React หนึ่งรอบเพื่อเก็บ <strong>baseline</strong> ไว้เทียบ — ถ้าไม่รู้ผลก่อนสลับ ก็เถียงไม่ได้ว่าผลหลังสลับเปลี่ยนหรือไม่เปลี่ยน</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สลับ base URL แล้วเดินดูทีละหน้า</h2>
+      <p>เปิดสอง terminal ค้างไว้ตามนี้ แล้วแก้ <code>.env.local</code> ของโปรเจกต์ React ให้ชี้มาที่ API ของเรา — นี่คือการแก้ไฟล์เดียวบรรทัดเดียวในบทนี้</p>
+      <div class="prompt-example"><code># terminal A — API ของเรา
+cd ecommerce-api
+docker compose up -d
+npm run start:dev
+
+# terminal B — โปรเจกต์ React จาก Week_05_06
+cd react-ecommerce-app
+npm test            # เก็บ baseline ไว้ก่อน แล้วจดผลบรรทัดสุดท้ายไว้
+
+# แก้ (หรือสร้าง) ไฟล์ .env.local ให้มีบรรทัดนี้
+#   VITE_API_BASE_URL=http://localhost:3000
+# แล้วเริ่ม dev server ใหม่ (Vite อ่านไฟล์ env ตอนเริ่มเท่านั้น)
+npm run dev</code></div>
+      <p>เปิด <code>http://localhost:5173</code> แล้วเปิด DevTools ค้างไว้ที่แท็บ Network ทุกครั้งที่เดิน — สิ่งที่เราต้องเห็นคือ request วิ่งไปที่ <code>localhost:3000</code> ไม่ใช่ <code>dummyjson.com</code> แล้วไล่ห้าจุดนี้ตามลำดับ</p>
+      <ol>
+        <li><strong>หน้าแรก <code>/</code></strong> — ส่วน <q>DEALS OF THE DAY</q> ต้องขึ้นสินค้า 5 ชิ้น และเมนูหมวดหมู่ต้องขึ้นครบ 24 หมวด (Beauty, Fragrances, Furniture, Groceries, … , Womens Watches) ใน Network tab จะเห็นสามคำขอตอนโหลดหน้า ได้ 200 ทั้งหมด: <code>GET http://localhost:3000/products?skip=0&amp;limit=5</code>, <code>GET http://localhost:3000/products/categories</code> และ <code>GET http://localhost:3000/products/category/beauty?skip=0&amp;limit=12</code> ลองกดหมวด <q>Fragrances</q> จะมีคำขอใหม่ <code>GET http://localhost:3000/products/category/fragrances?skip=0&amp;limit=12</code> ได้ 200 และ grid เปลี่ยนตาม</li>
+        <li><strong>หน้าหมวดหมู่ <code>/categories</code></strong> — อย่าใช้ Beauty ทดสอบ pagination เพราะข้อมูล seed ของเรามีแค่ 5 ชิ้น จึงมีหน้าเดียวและปุ่มถูก disable (ถูกต้องแล้ว ไม่ใช่บั๊ก) ให้เลือก <strong>Groceries</strong> ที่มี 27 ชิ้นแทน หน้า 1 ขึ้น 20 ชิ้นพร้อมแถบ <code>1 | 2 | Next</code> และคำขอ <code>GET http://localhost:3000/products/category/groceries?skip=0&amp;limit=20</code> เมื่อกดหน้า 2 จะได้คำขอ <code>GET http://localhost:3000/products/category/groceries?skip=20&amp;limit=20</code> คืนสินค้าอีก 7 ชิ้นที่ไม่ซ้ำกับหน้าแรกเลย (Protein Powder, Red Onions, Rice, Soft Drinks, Strawberry, Tissue Paper Box, Water)</li>
+        <li><strong>หน้าสินค้า <code>/products/1</code></strong> — ต้องขึ้นชื่อ <q>Essence Mascara Lash Princess</q> แบรนด์ <q>Essence</q> ราคา <code>$9.99</code> (จากราคาเต็ม <code>$11.16</code> ลด 10.48%) และรีวิวครบ 3 รายการพร้อมชื่อผู้รีวิว วันที่ และคอมเมนต์ กด <q>Add To Cart</q> แล้วต้องเด้ง modal <q>Product Added to Cart</q> พร้อมตัวเลขบนไอคอนตะกร้าขึ้นเป็น <code>1</code></li>
+        <li><strong><code>/cart</code> → <code>/checkout</code> → <code>/order/success</code></strong> — ที่หน้า <code>/cart</code> ต้องเห็นสินค้าที่เพิ่งเพิ่ม 1 รายการพร้อมยอดรวม กด Checkout แล้วกรอกที่อยู่ อีเมล เบอร์โทร (ฟอร์มที่อยู่มีปุ่ม Submit ของตัวเอง ต้องกดก่อนปุ่ม <q>Place Order</q> จึงจะกดได้) เลือก delivery/payment ตามค่าเริ่มต้นได้ แล้วกด <q>Place Order</q> จะไปหน้า <code>/order/success</code> ขึ้นหัวข้อ <q>Order Placed Successfully!</q> และตัวเลขบนตะกร้าหายไป ใน Network tab ต้องเห็น <code>POST http://localhost:3000/carts/add</code> ได้ <code>201 Created</code></li>
+        <li><strong>ตรวจในฐานข้อมูล</strong> — คำสั่งซื้อที่เพิ่งกดต้องมีอยู่จริงในตาราง <code>Order</code> ไม่ใช่แค่หน้าจอสวย ใช้คำสั่ง psql ด้านล่าง</li>
+      </ol>
+      <div class="prompt-example"><code>docker compose exec db psql -U postgres -d ecommerce \
+  -c 'SELECT id, email, "totalQuantity" FROM "Order" ORDER BY id DESC LIMIT 1;'</code></div>
+      <p>ตอนตรวจของจริงได้แถวนี้ (อีเมลและจำนวนตรงกับที่กรอกและใส่ตะกร้าไว้ ส่วนเลข <code>id</code> ของคุณจะต่างออกไปตามจำนวนคำสั่งซื้อที่เคยสร้าง)</p>
+      <pre><code> id |           email           | totalQuantity
+----+---------------------------+---------------
+  2 | task11-verify@example.com |             1</code></pre>
+    </section>
+
+    <h2>ทำไม <code>npm test</code> ของ React app ไม่เปลี่ยนผล</h2>
+    <p>คำถามที่ควรค้างอยู่ในหัวคือ <q>สลับ backend แล้วเทสต์ของ frontend ไม่พังเหรอ</q> คำตอบคือไม่ เพราะชุดเทสต์ของแอปนี้ไม่ได้คุยกับ backend จริงเลย ดูบรรทัด <code>test.env</code> ใน <code>vite.config.ts</code> ของโปรเจกต์ React</p>
+    <pre><code>/* vite.config.ts (โปรเจกต์ React — อ่านเท่านั้น ไม่ต้องแก้) */
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.ts',
+    // MSW handlers hardcode the host, so tests must not depend on .env
+    env: { VITE_API_BASE_URL: 'https://dummyjson.com' },
+  },</code></pre>
+    <p>ตอนรันเทสต์ Vitest จะ<em>ตรึง</em> <code>VITE_API_BASE_URL</code> ไว้ที่ <code>https://dummyjson.com</code> ทับค่าจากไฟล์ env ทุกไฟล์ แล้ว MSW (mock server worker) ก็ดักคำขอไปที่ host นั้นตอบด้วยข้อมูลปลอมที่เตรียมไว้ ดังนั้นไม่ว่า <code>.env.local</code> ของคุณจะชี้ไปที่ไหน API ของเราก็เปลี่ยนผลเทสต์ไม่ได้ — ผลหลังสลับต้อง<strong>เท่ากับผลของ baseline ที่คุณรันไว้ก่อนสลับ</strong> ไม่มากไม่น้อยกว่านั้น และนี่คือสิ่งที่บทนี้ให้คุณตรวจ (ไม่ใช่ <q>เทสต์เขียวตลอด</q>)</p>
+    <div class="note">
+      <p>บนเครื่องที่ใช้ตรวจ (Node 26.7 + jsdom 30 + Vitest 4) ชุดเทสต์นี้ <strong>ล้มทั้งหมด</strong> ทั้งก่อนและหลังสลับ: <code>Test Files 12 failed (12)</code> / <code>Tests 34 failed (34)</code> พร้อมข้อความ <code>ExperimentalWarning: localStorage is not available because --localstorage-file was not provided</code> แล้วพังที่ <code>src/test/setup.ts</code> ตรง <code>localStorage.clear()</code> สาเหตุคือ global <code>localStorage</code> แบบ experimental ของ Node บังตัวที่ jsdom เตรียมไว้ — เป็นเรื่องของ Node/jsdom ไม่เกี่ยวกับ API ของเราเลย (พิสูจน์ได้จากไฟล์เทสต์ที่เป็นฟังก์ชันคำนวณราคาล้วน ๆ ก็ล้มเหมือนกัน) ถ้าเครื่องคุณใช้ Node รุ่นอื่นอาจไม่เจอ ประเด็นเดียวที่ต้องยืนยันคือ <em>ผลก่อนและหลังสลับตรงกัน</em></p>
+    </div>
+    <div class="note">
+      <p>อยากกลับไปใช้ dummyjson เมื่อไหร่ก็แก้บรรทัดเดิมกลับ (หรือลบ <code>.env.local</code> ทิ้ง) แล้ว restart <code>npm run dev</code> — การสลับไปกลับได้ในบรรทัดเดียวคือนิยามของคำว่า drop-in replacement ที่เราตั้งเป้าไว้ตั้งแต่บทที่ 1</p>
+    </div>
+
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>React app ทำงานครบวงจรตั้งแต่หน้าแรกไปจนถึงหน้า <q>Order Placed Successfully!</q> โดยข้อมูลทุกชิ้นมาจาก Postgres ของคุณ ไม่ใช่จากอินเทอร์เน็ต: รายการสินค้า, 24 หมวดหมู่, pagination, รีวิว, ราคาและส่วนลด รวมถึงคำสั่งซื้อที่ถูกบันทึกเป็นแถวจริงในตาราง <code>Order</code> สิ่งเดียวที่คุณแก้ในโปรเจกต์ React คือบรรทัด <code>VITE_API_BASE_URL</code> ใน <code>.env.local</code> — ไม่มีไฟล์ <code>.ts</code>/<code>.tsx</code> ถูกแตะแม้บรรทัดเดียว</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ทั้งห้าจุดข้างบนผ่านครบ โดยเฉพาะ pagination หน้า 2 ของ Groceries ที่ต้องคืนสินค้าไม่ซ้ำหน้าแรก</li>
+        <li>ใน Network tab ทุกคำขอมี host เป็น <code>localhost:3000</code> — ไม่เหลือคำขอไปที่ <code>dummyjson.com</code> แม้แต่รายการเดียว (ยกเว้นไฟล์รูปที่ชี้ไป CDN ตามข้อมูล seed)</li>
+        <li><code>POST /carts/add</code> ได้ <code>201</code> และคำสั่ง <code>SELECT … FROM "Order" ORDER BY id DESC LIMIT 1;</code> คืนแถวที่อีเมลกับ <code>totalQuantity</code> ตรงกับที่คุณกรอกและใส่ตะกร้า</li>
+        <li>ไม่มี error CORS ใน Console ของเบราว์เซอร์ — ถ้ามี ให้กลับไปดู <code>CORS_ORIGIN</code> ในบทที่ 20 ว่าตรงกับพอร์ตที่ Vite ใช้จริงหรือไม่</li>
+        <li><code>npm test</code> ในโปรเจกต์ React ให้ผลบรรทัดสุดท้ายเหมือน baseline ที่รันไว้ก่อนสลับทุกตัวเลข</li>
+        <li>ไม่มีไฟล์อื่นในโปรเจกต์ React ถูกแก้: <code>git status</code> ในโปรเจกต์นั้นควรสะอาด (ไฟล์ <code>.env.local</code> ปกติถูก gitignore ไว้)</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://dummyjson.com/docs/products">Products API (DummyJSON Docs)</a></li>
+      <li><a href="https://docs.docker.com/reference/cli/docker/compose/exec/">docker compose exec (Docker Docs)</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS">Cross-Origin Resource Sharing (CORS) — MDN</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="22_documenting-dtos-and-responses.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="24_wrap-up.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

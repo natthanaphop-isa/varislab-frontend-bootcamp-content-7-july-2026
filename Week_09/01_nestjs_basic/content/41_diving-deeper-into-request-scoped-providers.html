@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เข้าใจผลกระทบของ Request-scoped providers ใน NestJS: การ inject Request object, scope bubbling และต้นทุนด้านประสิทธิภาพ" />
+  <title>เจาะลึก Request-scoped Providers</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 41 จาก 77</p>
+    <h1>เจาะลึก Request-scoped Providers</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>Inject <code>Request</code> object ต้นฉบับเข้าไปใน request-scoped provider ได้</li>
+        <li>อธิบายพฤติกรรม <em>scope bubbling</em> ที่ทำให้ consumer ของ provider กลายเป็น request-scoped ตามไปด้วย</li>
+        <li>ชั่งน้ำหนักต้นทุนด้านประสิทธิภาพก่อนเลือกใช้ <code>Scope.REQUEST</code> ในงานจริง</li>
+      </ul>
+    </section>
+
+    <h2>เข้าถึง Request object ต้นฉบับจากภายใน provider</h2>
+    <p>ประโยชน์หลักอย่างหนึ่งของ request-scoped provider คือแต่ละ instance ผูกกับ request เดียว เราจึงสามารถ inject <code>Request</code> object ต้นฉบับเข้ามาดูข้อมูลอย่าง headers, cookies, IP หรือ user ที่ authenticate แล้วได้โดยตรง ผ่าน token พิเศษ <code>REQUEST</code> ที่ export จาก <code>@nestjs/core</code></p>
+    <pre><code>import { Injectable, Inject, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import type { Request } from 'express'; // 👈 ต้องเป็น import type เพราะ Request เป็น interface ที่ใช้ใน constructor ที่มี decorator
+
+@Injectable({ scope: Scope.REQUEST })
+export class CoffeesService {
+  constructor(@Inject(REQUEST) private request: Request) {}
+}</code></pre>
+    <div class="note"><p>ทำไมต้อง <code>import type</code>? tsconfig ของ Nest 12 เปิด <code>isolatedModules</code> คู่กับ <code>emitDecoratorMetadata</code> — type ใด ๆ ที่ปรากฏใน signature ของ constructor/method ที่มี decorator ต้อง import แบบ type-only ไม่อย่างนั้น compiler จะฟ้อง <q>TS1272: A type referenced in a decorated signature must be imported with 'import type'</q> กฎนี้ใช้กับ interface/type ล้วน ๆ (เช่น <code>Request</code> ของ express, <code>ConfigType</code> ของ @nestjs/config) ส่วน class อย่าง <code>ConfigService</code> import ปกติได้</p></div>
+    <p>ลองใส่ <code>console.log(this.request.url)</code> ใน constructor แล้วยิง request ไปที่ <code>/coffees</code> หลาย ๆ ครั้ง จะเห็นว่า constructor ถูกเรียกใหม่ทุกครั้ง เพราะ Nest สร้าง <code>CoffeesService</code> ตัวใหม่ให้ทุก request แทนที่จะ reuse singleton เดิม</p>
+
+    <h2>Scope bubbling: scope ลามขึ้นไปตาม chain ของผู้ใช้งาน</h2>
+    <p>Scope จะ <em>bubble up</em> ตาม injection chain เสมอ: ถ้า <code>CoffeesController</code> inject <code>CoffeesService</code> ที่เป็น request-scoped ตัว controller เองก็จะกลายเป็น request-scoped ไปด้วยโดยอัตโนมัติ เพราะ Nest ต้องสร้าง controller ใหม่เพื่อส่ง service instance ประจำ request นั้นเข้าไป กฎนี้ไล่ขึ้นไปเรื่อย ๆ จนสุดสาย dependency</p>
+    <div class="note">
+      <p>ข้อยกเว้นสำคัญคือ <code>REQUEST</code> token ใช้ไม่ได้ใน standalone application (เช่น microservice ที่ไม่มี HTTP) และใน GraphQL ให้ใช้ <code>CONTEXT</code> จาก <code>@nestjs/graphql</code> แทน</p>
+    </div>
+
+    <h2>ต้นทุนที่ต้องจ่ายเมื่อเลือก Scope.REQUEST</h2>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ singleton กับ request scope" tabindex="0">
+      <table>
+        <thead><tr><th>ประเด็น</th><th><code>Scope.DEFAULT</code> (singleton)</th><th><code>Scope.REQUEST</code></th></tr></thead>
+        <tbody>
+          <tr><td>การสร้าง instance</td><td>ครั้งเดียวตอน bootstrap</td><td>ทุก request — มี overhead ของ GC และเวลาสร้าง</td></tr>
+          <tr><td>การเข้าถึงข้อมูล request</td><td>ต้องส่งผ่าน parameter จาก controller</td><td>inject <code>REQUEST</code> ได้โดยตรง</td></tr>
+          <tr><td>ผลข้างเคียงต่อ consumer</td><td>ไม่มี</td><td>ทุกตัวที่ inject จะกลายเป็น request-scoped ตาม (bubbling)</td></tr>
+          <tr><td>เหมาะกับ</td><td>งานทั่วไป, stateless logic</td><td>multi-tenancy, per-request caching, request tracking</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>สำหรับ API ส่วนใหญ่ latency ที่เพิ่มขึ้นต่อ request นั้นน้อยจนรับได้ แต่ในระบบ throughput สูงควรวัดจริงก่อนตัดสินใจ และพิจารณาทางเลือกอื่นเช่นส่งข้อมูล request ผ่าน argument ของ method ตามปกติ ซึ่งคงความเป็น singleton ไว้ได้</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ทดลอง inject REQUEST แล้วสังเกต scope bubbling</h2>
+      <p>ใน <code>iluvcoffee</code> เปลี่ยน <code>CoffeesService</code> เป็น request-scoped พร้อม inject <code>REQUEST</code> แล้วเพิ่ม <code>console.log</code> ใน constructor ของทั้ง service และ controller เพื่อดูว่าถูกสร้างใหม่ทุก request จริง จากนั้นถอดกลับเป็น singleton เมื่อทดลองเสร็จ</p>
+      <div class="prompt-example"><code>// coffees.service.ts
+@Injectable({ scope: Scope.REQUEST })
+export class CoffeesService {
+  constructor(@Inject(REQUEST) private request: Request) {
+    console.log('CoffeesService created for', request.url);
+  }
+}
+
+// ยิงทดสอบหลายครั้ง
+curl http://localhost:3000/coffees
+curl http://localhost:3000/coffees</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ทุกครั้งที่ยิง request จะเห็น log <q>CoffeesService created for /coffees</q> ใหม่ในเทอร์มินัล และถ้าใส่ log ใน <code>CoffeesController</code> ด้วย จะเห็นว่า controller ถูกสร้างใหม่ตามไปด้วยทั้งที่ไม่ได้ประกาศ scope เอง — นี่คือ scope bubbling ที่ทำงานจริง</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ยิง <code>GET /coffees</code> สองครั้ง แล้วเห็น log การสร้าง instance สองบรรทัด ไม่ใช่บรรทัดเดียว</li>
+        <li><code>this.request.url</code> และ <code>this.request.headers</code> อ่านค่าได้ถูกต้องภายใน service</li>
+        <li>ลบ <code>scope: Scope.REQUEST</code> ออกแล้ว log เหลือครั้งเดียวตอน start — ยืนยันว่ากลับเป็น singleton</li>
+        <li>แอปยัง start ได้ปกติ ไม่มี dependency resolution error</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/fundamentals/injection-scopes">Injection scopes (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/fundamentals/custom-providers">Custom providers (NestJS)</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals course (ต้นฉบับ)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="40_control-providers-scope.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="42_introducing-the-config-module.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="รัน MongoDB บนเครื่องด้วย Docker Compose: เขียนไฟล์ docker-compose.yml เปิดพอร์ต 27017 และสั่ง up/down container อย่างถูกวิธี" />
+  <title>รัน MongoDB ด้วย Docker Compose</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 71 จาก 77</p>
+    <h1>รัน MongoDB ด้วย Docker Compose</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เขียน <code>docker-compose.yml</code> ที่รัน MongoDB container พร้อม expose พอร์ต 27017 ให้แอปเชื่อมต่อได้</li>
+        <li>สั่งเปิด container แบบ detached และปิดลงอย่างสะอาดด้วยคำสั่งเดียว</li>
+        <li>อธิบายความหมายของแต่ละ key ในไฟล์ compose (image, ports, environment, restart) ได้</li>
+      </ul>
+    </section>
+
+    <h2>ทำไมใช้ Docker แทนการติดตั้ง MongoDB ลงเครื่อง</h2>
+    <p>เช่นเดียวกับตอนที่เรารัน PostgreSQL ในเส้นทาง SQL การรันฐานข้อมูลผ่าน <strong>Docker Compose</strong> ทำให้ทุกคนในทีมได้สภาพแวดล้อมเดียวกันด้วยไฟล์ config ไฟล์เดียว: ไม่ต้องติดตั้ง MongoDB ลงเครื่องตรง ๆ, สลับเวอร์ชันได้ง่าย และเมื่อเลิกใช้ก็สั่งปิดทิ้งได้โดยไม่เหลือขยะในระบบ ไฟล์ <code>docker-compose.yml</code> วางไว้ที่ root ของโปรเจกต์ <code>iluvcoffee</code></p>
+    <pre><code>version: "3"
+
+services:
+  db:
+    image: mongo:8.0    # container image ที่ใช้ — pin ที่ Major Release 8.0 (สายที่ได้ long-term support)
+    restart: always
+    ports:              # เปิดพอร์ตรูปแบบ "host:container"
+      - 27017:27017
+    environment:        # ตัวแปรแวดล้อมที่ส่งเข้า container
+      MONGO_INITDB_DATABASE: nest-course</code></pre>
+    <p>ความหมายของแต่ละส่วน: <code>image: mongo:8.0</code> ดึง image ทางการของ MongoDB จาก registry โดยระบุเวอร์ชัน, <code>restart: always</code> ให้ Docker รีสตาร์ต container ให้อัตโนมัติถ้ามันล้ม, <code>ports</code> ผูกพอร์ต 27017 ของเครื่องเรา (host) เข้ากับพอร์ต 27017 ใน container ซึ่งเป็นพอร์ตมาตรฐานของ MongoDB และ <code>environment</code> ส่งตัวแปรแวดล้อมเข้าไปตั้งชื่อฐานข้อมูลเริ่มต้นเป็น <code>nest-course</code> (ต้องใช้ชื่อ <code>MONGO_INITDB_DATABASE</code> ให้ตรงตาม image ทางการเป๊ะ ๆ — ชื่ออื่นเช่น <code>MONGODB_DATABASE</code> จะถูก entrypoint script เพิกเฉยแบบเงียบ ๆ ไม่มี error ใด ๆ)</p>
+    <div class="note"><p><strong>ทำไมต้อง pin เวอร์ชัน:</strong> MongoDB แบ่ง release เป็นสองสาย — <em>Major Release</em> (เช่น 7.0, 8.0) ออกทุกสองปี รองรับนานห้าปี เหมาะกับ production และการเรียนที่ต้องการสภาพแวดล้อมคงที่ กับ <em>Rapid/Minor Release</em> (เช่น 8.2, 8.3) ที่ออกถี่และเลิก patch ทันทีที่มีรุ่นถัดไป ถ้าเขียน <code>image: mongo</code> เฉย ๆ Docker จะดึง tag <code>latest</code> ซึ่งชี้ไปที่ Rapid Release ล่าสุด ทำให้ผู้เรียนแต่ละคนได้เวอร์ชันต่างกัน (และบางรุ่นอาจไม่ยอมสตาร์ตบน Docker Desktop บางเวอร์ชัน) คอร์สนี้จึง pin ที่ <code>mongo:8.0</code> ซึ่งเป็น Major Release ปัจจุบัน ให้ทุกคนได้ MongoDB ตัวเดียวกัน</p></div>
+    <div class="warning"><p><strong>ถ้า container ขึ้นแล้วดับทันที</strong> และ <code>docker logs</code> บอกว่า <q>Linux kernel versions 6.19 and newer has a known incompatibility with this version of MongoDB</q> (MongoDB issue SERVER-121912) แปลว่า Docker Desktop ของคุณใช้ Linux kernel รุ่นที่ MongoDB 8.x ยังไม่รองรับ ทางแก้ชั่วคราวคืออัปเดต Docker Desktop เป็นรุ่นล่าสุด หรือ pin patch เก่ากว่าของสายเดียวกันเป็น <code>image: mongo:8.0.4</code> ซึ่งสตาร์ตได้และเนื้อหาทุกบทในเส้นทางนี้ทดสอบผ่านบนรุ่นนี้แล้ว</p></div>
+    <div class="note"><p>จำชื่อฐานข้อมูล <code>nest-course</code> นี้ไว้ให้ดี — ในบทถัดไป connection string ของ <code>MongooseModule.forRoot()</code> ต้องชี้ไปที่ชื่อเดียวกันนี้ ไม่อย่างนั้นแอปจะต่อฐานข้อมูลคนละก้อนกับที่ตั้งใจ</p></div>
+
+    <h2>คำสั่งเปิด–ปิดที่ใช้ประจำ</h2>
+    <p>คำสั่งหลักมีสองคำสั่ง: <code>docker-compose up -d</code> สตาร์ตทุก service ในไฟล์แบบ <em>detached</em> (รันเบื้องหลัง คืน terminal ให้เราใช้งานต่อ) และ <code>docker-compose down</code> หยุดพร้อมถอด container ออก บน Docker รุ่นใหม่จะพิมพ์แบบเว้นวรรคเป็น <code>docker compose up -d</code> ก็ได้ ให้ผลเหมือนกัน</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สตาร์ต MongoDB สำหรับโปรเจกต์ iluvcoffee</h2>
+      <p>สร้างไฟล์ <code>docker-compose.yml</code> ตามตัวอย่างด้านบนไว้ที่ root ของโปรเจกต์ (บน branch ของ Chapter 2 ที่สลับมาเมื่อบทที่แล้ว) แล้วสั่งรัน container ขึ้นมา</p>
+      <div class="prompt-example"><code># สตาร์ต container แบบ detached/เบื้องหลัง
+docker-compose up -d
+
+# ดูว่า container รันอยู่จริง
+docker ps
+
+# เมื่อต้องการปิด
+docker-compose down</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>docker-compose up -d</code> จบโดยไม่มี error และ <code>docker ps</code> แสดง container จาก image <code>mongo</code> สถานะ <code>Up</code> พร้อม mapping พอร์ต <code>0.0.0.0:27017-&gt;27017/tcp</code> — แปลว่า MongoDB พร้อมรับการเชื่อมต่อจาก NestJS ที่ <code>mongodb://localhost:27017</code> แล้ว</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>docker ps</code> เห็น container ของ <code>mongo</code> สถานะ Up และพอร์ต 27017 ถูก map ออกมา</li>
+        <li><code>docker compose logs db</code> มีบรรทัดทำนอง <q>Waiting for connections</q> โดยไม่มี error ซ้ำ ๆ</li>
+        <li>ทดลอง <code>docker exec -it &lt;container-id&gt; mongosh</code> แล้วเข้า shell ของ MongoDB ได้</li>
+        <li>สั่ง <code>docker-compose down</code> แล้ว <code>docker ps</code> ไม่เหลือ container นี้ ก่อนสตาร์ตขึ้นมาใหม่เพื่อใช้บทถัดไป</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/mongodb">Mongoose integration (NestJS docs)</a></li>
+      <li><a href="https://learn.nestjs.com/">คอร์สต้นฉบับ NestJS Fundamentals</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="70_before-we-get-started-mongodb.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="72_introducing-the-mongoose-module.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

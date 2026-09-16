@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้างโปรเจกต์ ecommerce-api ด้วย Nest CLI 12 บูตดูครั้งแรก แล้ว commit แรกให้เป็นจุดกลับของทุก prompt ในคอร์สนี้" />
+  <title>Scaffold โปรเจกต์ด้วย Nest CLI</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 2 จาก 24</p>
+    <h1>Scaffold โปรเจกต์ด้วย Nest CLI</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>สร้างโปรเจกต์ <code>ecommerce-api</code> ด้วย <code>nest new</code> และยืนยันได้ว่าได้ scaffold แบบ ESM ของ Nest 12 จริง</li>
+        <li>อธิบายได้ว่า <code>"type": "module"</code> ในไฟล์ <code>package.json</code> ส่งผลอะไรกับทุก import ที่เราจะเขียนต่อจากนี้</li>
+        <li>ตั้งนิสัย commit ก่อนส่ง prompt ทุกครั้ง และใช้ <code>git checkout -- .</code> เป็นปุ่ม undo ของงานที่ AI เขียน</li>
+      </ul>
+    </section>
+
+    <h2>บทนี้ไม่สั่ง AI เพราะไม่มีอะไรให้สั่ง</h2>
+    <p>การสร้างโปรเจกต์เป็นคำสั่งเดียวจบ (<code>nest new ecommerce-api -p npm</code>) และผลลัพธ์ของมันคือ <em>ฐาน</em> ที่ prompt ทุกบทหลังจากนี้อ้างอิงอยู่ — ESM, TypeScript strict, Vitest, oxlint ถ้าเราให้ AI สร้างโครงโปรเจกต์เอง มันมีแนวโน้มจะได้ scaffold แบบ CommonJS ของ Nest รุ่นเก่า แล้วกติกาเรื่อง <code>.js</code> ต่อท้าย import ที่เราจะเขียนใน <code>.cursor/rules</code> บทที่ 4 จะกลายเป็นคำสั่งที่ขัดกับความจริงของโปรเจกต์ทันที งานที่ถูกต้องกว่าคือรันคำสั่งเอง แล้วเอาผลลัพธ์ที่เห็นด้วยตาไปเป็นบริบทให้ AI</p>
+
+    <h2>สี่คำสั่งที่ต้องเห็นผลด้วยตา</h2>
+    <p>เริ่มจากตรวจเวอร์ชันของ CLI ก่อน คอร์สนี้ต้องได้เลข 12 ถ้าเครื่องคุณยังเป็น 10 หรือ 11 ให้ติดตั้งใหม่ด้วย <code>npm i -g @nestjs/cli@12</code> (หรือเรียกผ่าน <code>npx @nestjs/cli@12</code> โดยไม่ติดตั้งแบบ global ก็ได้)</p>
+    <pre><code>nest --version
+# 12.0.0
+
+nest new ecommerce-api -p npm</code></pre>
+    <p>flag <code>-p npm</code> บอก CLI ว่าใช้ npm เป็น package manager เลย ไม่ต้องถาม ส่วนเรื่องที่ต้องรู้คือ <code>nest new</code> <strong>รัน <code>git init</code> ให้เองแล้ว</strong> พร้อมสร้าง <code>.gitignore</code> มาให้ — เราจึงไม่ต้อง init ซ้ำ แต่ยังต้อง commit แรกด้วยมือ (CLI ไม่ commit ให้)</p>
+
+    <h2>ข้างใน scaffold มีอะไร และอะไรที่ต่างจาก Week_09</h2>
+    <p>รายละเอียดของแต่ละไฟล์ในโปรเจกต์ Nest เราดูกันไปแล้วใน <a href="../../../Week_09/01_nestjs_basic/content/02_whats-inside-a-nestjs-application.html">Week_09 บทที่ 2</a> บทนี้ขอเน้นเฉพาะสามจุดที่กำหนดวิธีเขียนโค้ดของเราไปทั้งคอร์ส</p>
+    <ul>
+      <li><strong><code>"type": "module"</code></strong> ใน <code>package.json</code> — โปรเจกต์นี้เป็น ES module ล้วน ผลตรง ๆ คือ <em>ทุก import ที่ชี้ไฟล์ในโปรเจกต์ต้องลงท้ายด้วย <code>.js</code></em> แม้ไฟล์จริงจะเป็น <code>.ts</code> (เห็นได้จาก <code>./app.module.js</code> ด้านล่าง) นี่เป็นข้อผิดพลาดอันดับหนึ่งที่ AI ทำในคอร์สนี้ เราจึงเขียนเป็นกฎถาวรในบทที่ 4</li>
+      <li><strong>top-level <code>await</code></strong> — ไฟล์ <code>src/main.ts</code> ปิดท้ายด้วย <code>await bootstrap();</code> เฉย ๆ ไม่มี <code>.catch()</code> ห่อ เพราะ ESM ให้ใช้ <code>await</code> ที่ระดับบนสุดของไฟล์ได้</li>
+      <li><strong>Vitest และ oxlint</strong> — scaffold ของ Nest 12 มาพร้อม <code>vitest.config.ts</code> (ไม่มี Jest) และใช้ <strong>oxlint</strong> เป็น linter โดย script <code>lint</code> คือ <code>oxlint src/ test/</code> คอร์สนี้ไม่เขียนเทสต์เพิ่ม แต่จะเรียก <code>npm run lint</code> ทุกครั้งหลัง AI แก้โค้ด จึงควรรู้ว่ามันคือ oxlint ไม่ใช่ ESLint</li>
+    </ul>
+    <pre><code>/* src/main.ts ที่ CLI สร้างให้ */
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module.js';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  await app.listen(process.env.PORT ?? 3000);
+}
+await bootstrap();</code></pre>
+    <div class="note">
+      <p><code>process.env.PORT ?? 3000</code> ที่ CLI ใส่มาให้จะกลายเป็นของจริงในบทที่ 20 ตอนที่เราอ่านค่า <code>PORT</code> จาก <code>.env</code> ผ่าน <code>ConfigService</code> ตอนนี้ปล่อยไว้ตามเดิม แอปจึงรันที่ port 3000</p>
+    </div>
+
+    <h2>นิสัยสำคัญที่สุดของคอร์สนี้: commit ก่อนทุก prompt</h2>
+    <p>ตั้งแต่บทที่ 5 เป็นต้นไป ทุกบทจะจบด้วยการที่ Cursor แก้ไฟล์หลายไฟล์ในคราวเดียว วิธีเดียวที่จะตรวจงานได้จริงคือให้ <code>git status</code> สะอาด <strong>ก่อน</strong> ส่ง prompt เพราะเมื่อนั้นทุกบรรทัดที่เปลี่ยนไปคือฝีมือของ AI ทั้งหมด และ <code>git diff</code> ก็จะเป็น checklist ให้เราอ่านทีละบรรทัดได้พอดี</p>
+    <p>ถ้าผลลัพธ์ไม่เข้าท่า คุณมีปุ่ม undo ที่ไม่ต้องพึ่ง AI: <code>git checkout -- .</code> ย้อนไฟล์ที่ถูกแก้กลับสู่ commit ล่าสุด แล้วเริ่ม prompt ใหม่ได้เลย (ถ้ามีไฟล์ใหม่ที่ AI สร้างค้างอยู่ ใช้ <code>git clean -fd</code> เก็บกวาดต่อ) commit แรกของโปรเจกต์จึงสำคัญกว่าที่คิด — มันคือจุดกลับแรกของเรา</p>
+    <pre><code>git status
+# On branch main
+# No commits yet   ← nest new รัน git init ให้แล้ว แต่ยังไม่มี commit
+
+git add -A
+git commit -m "chore: scaffold ecommerce-api"</code></pre>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สร้างโปรเจกต์ บูตหนึ่งครั้ง แล้ว commit</h2>
+      <p>เปิด terminal ที่โฟลเดอร์ที่คุณเก็บโปรเจกต์ แล้วรันตามลำดับนี้ด้วยมือทั้งหมด (เปิด terminal ที่สองไว้ยิง <code>curl</code> ขณะที่ <code>start:dev</code> ยังรันอยู่)</p>
+      <div class="prompt-example"><code>nest --version
+nest new ecommerce-api -p npm
+cd ecommerce-api
+npm run start:dev
+
+# terminal ที่สอง
+curl -i http://localhost:3000
+
+# กลับมา terminal แรก กด Ctrl+C หยุด dev server แล้ว commit
+git add -A
+git commit -m "chore: scaffold ecommerce-api"</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>log ของ <code>npm run start:dev</code> จบด้วยบรรทัด <code>Nest application successfully started</code> และ <code>curl -i http://localhost:3000</code> ตอบ 200 พร้อม body <code>Hello World!</code> (12 ไบต์)</p>
+      <pre><code>HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: text/html; charset=utf-8
+Content-Length: 12
+ETag: W/"c-Lve95gjOVATpfV8EL5X4nxwjKHE"
+
+Hello World!</code></pre>
+      <p>ส่วน <code>git commit</code> รายงานว่ามีไฟล์ถูกเพิ่มประมาณ 17 ไฟล์ — ถ้าตัวเลขเป็นหมื่น แปลว่า <code>node_modules</code> หลุดเข้าไปด้วยเพราะ <code>.gitignore</code> หาย ให้ลบ commit นั้นแล้วตรวจว่ามีไฟล์ <code>.gitignore</code> ที่ CLI สร้างให้อยู่จริงก่อน commit ใหม่</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>nest --version</code> ขึ้นต้นด้วย <code>12.</code></li>
+        <li><code>git log --oneline</code> แสดง commit เดียวคือ <code>chore: scaffold ecommerce-api</code></li>
+        <li><code>cat package.json | grep '"type"'</code> ได้ <code>"type": "module",</code></li>
+        <li><code>ls vitest.config.ts</code> พบไฟล์ และ <code>grep '"lint"' package.json</code> ได้ <code>"lint": "oxlint src/ test/"</code></li>
+        <li>บรรทัดสุดท้ายของ <code>src/main.ts</code> คือ <code>await bootstrap();</code> และ import ของ <code>AppModule</code> ลงท้ายด้วย <code>.js</code></li>
+        <li><code>git status</code> ตอบ <code>nothing to commit, working tree clean</code> — พร้อมสำหรับบทต่อไป</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/first-steps">First steps (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/cli/overview">CLI overview: nest new (NestJS Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="01_what-well-be-building.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="03_capturing-the-dummyjson-contract.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เขียน OrdersService ที่อ่านสินค้าและบันทึกคำสั่งซื้อใน transaction เดียว พร้อมคำนวณยอดให้ตรงกับสัญญาของ dummyjson ทุกหลัก" />
+  <title>สร้างคำสั่งซื้อใน Transaction</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 18 จาก 24</p>
+    <h1>สร้างคำสั่งซื้อใน Transaction</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>คำนวณ <code>total</code>, <code>discountedPrice</code> และ <code>discountedTotal</code> ให้ตรงกับ dummyjson ทุกหลัก</li>
+        <li>ใช้ interactive transaction อ่านสินค้าและเขียนคำสั่งซื้อในก้อนเดียว และอธิบายได้ว่า rollback เกิดตอนไหน</li>
+        <li>เขียน mapper แปลง <code>Order</code> + <code>OrderItem</code> เป็น response ตามสัญญา โดยไม่ปล่อยข้อมูลส่วนตัวหลุดออกไป</li>
+      </ul>
+    </section>
+
+    <h2>เลขทุกตัวใน response มาจากไหน</h2>
+    <p>ก่อนเขียนโค้ด ต้องถอดสูตรจาก <code>docs/contract/cart-add.txt</code> ให้ครบก่อน ตัวอย่างจริงที่เราจับมาคือสินค้า id 1 ราคา <code>9.99</code> ส่วนลด <code>10.48</code> เปอร์เซ็นต์ จำนวน <code>2</code> ชิ้น</p>
+    <div class="comparison" role="region" aria-label="สูตรคำนวณยอดของคำสั่งซื้อ" tabindex="0">
+      <table>
+        <thead><tr><th>Field</th><th>สูตร</th><th>ตัวอย่างจาก cart-add.txt</th></tr></thead>
+        <tbody>
+          <tr><td><code>products[].total</code></td><td><code>price × quantity</code> ปัด 2 ตำแหน่ง</td><td><code>9.99 × 2 = 19.98</code></td></tr>
+          <tr><td><code>products[].discountedPrice</code></td><td><code>Math.round(total × (1 − discountPercentage / 100))</code></td><td><code>19.98 × 0.8952 = 17.886</code> → <code>18</code></td></tr>
+          <tr><td><code>total</code></td><td>ผลรวม <code>total</code> ของทุกรายการ ปัด 2 ตำแหน่ง</td><td><code>19.98</code></td></tr>
+          <tr><td><code>discountedTotal</code></td><td>ผลรวม <code>discountedPrice</code> ของทุกรายการ</td><td><code>18</code></td></tr>
+          <tr><td><code>totalProducts</code></td><td>จำนวน<em>รายการ</em> ใน <code>products[]</code></td><td><code>1</code></td></tr>
+          <tr><td><code>totalQuantity</code></td><td>ผลรวม <code>quantity</code> ของทุกรายการ</td><td><code>2</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>จุดที่ต้องระวังที่สุดคือบรรทัดที่สอง: <code>discountedPrice</code> ถูกปัดเป็น <strong>จำนวนเต็ม</strong> ไม่ใช่ทศนิยมสองตำแหน่ง ค่าที่ถูกคือ <code>18</code> ไม่ใช่ <code>17.89</code> ถ้าเราทำเป็นทศนิยม ตัวเลขบนหน้า checkout ของ React app จะไม่ตรงกับตอนที่ยังใช้ dummyjson ทันที เราไม่ได้กำลังออกแบบสูตรคิดเงินที่ดีที่สุด เรากำลัง<em>เลียนแบบสัญญาเดิมให้เป๊ะ</em> — นั่นคือทั้งหมดของงานนี้</p>
+    <p>ส่วน <code>total</code> ใช้การปัดสองตำแหน่งผ่าน helper <code>round2</code> เพราะเลขทศนิยมแบบ floating point ทำให้การบวกราคาสะสมเพี้ยนได้ (เช่น <code>0.1 + 0.2</code> ได้ <code>0.30000000000000004</code>) และ <code>totalProducts</code> นับ<em>จำนวนบรรทัด</em> ไม่ใช่จำนวนชิ้น — สั่งสินค้าตัวเดียว 2 ชิ้นจะได้ <code>totalProducts: 1</code> กับ <code>totalQuantity: 2</code></p>
+
+    <h2>อ่านและเขียนในก้อนเดียวด้วย interactive transaction</h2>
+    <p>การสร้างคำสั่งซื้อต้องทำสองอย่าง: อ่านราคาสินค้าจากตาราง <code>Product</code> แล้วเขียน <code>Order</code> พร้อมรายการลงไป ถ้าปล่อยสองอย่างนี้อยู่นอก transaction จะเกิดปัญหาสองแบบ — ราคาถูกแก้ระหว่างที่เราอ่านเสร็จแต่ยังไม่เขียน (ใบเสร็จได้ราคาผีที่ไม่มีอยู่จริงในช่วงเวลาใดเลย) และถ้าการเขียนพังกลางทางก็จะเหลือข้อมูลค้างครึ่ง ๆ</p>
+    <p>คำตอบคือ <strong>interactive transaction</strong> แบบเดียวกับบทที่ 29 ของคอร์ส NestJS Fundamentals: <code>this.prisma.$transaction(async (tx) =&gt; { … })</code> ทุก query ข้างในต้องเรียกผ่าน <code>tx</code> ไม่ใช่ <code>this.prisma</code> ไม่งั้น query นั้นจะหลุดออกไปอยู่นอก transaction เงียบ ๆ</p>
+    <p>สิ่งที่ทำให้ pattern นี้สวยคือการจัดการ error: ถ้ามี id สินค้าที่ไม่มีจริง เรา <code>throw new NotFoundException(...)</code> ข้างใน callback ได้เลย Prisma จะ rollback ทุกอย่างให้อัตโนมัติเพราะ callback reject และ Nest จะแปลง exception ตัวนั้นเป็น response <code>404</code> ให้เอง เราจึงไม่ต้องเขียนโค้ดลบข้อมูลที่เพิ่งสร้างเลยแม้แต่บรรทัดเดียว</p>
+    <p>การเขียน <code>Order</code> กับ <code>OrderItem</code> ใช้ nested write (บทที่ 27 ของคอร์ส NestJS Fundamentals) คือ <code>items: { create: items }</code> ข้างใน <code>tx.order.create()</code> — Prisma ออก INSERT ให้ทั้งใบและทุกบรรทัดในคำสั่งเดียว โดยเติม <code>orderId</code> ให้เองหลังได้ id ของ <code>Order</code> ส่วน <code>include: { items: { orderBy: { id: 'asc' } } }</code> ทำให้ได้รายการกลับมาพร้อมกันในลำดับที่เขียนลงไป — ไม่ต้อง query ซ้ำ และ <code>products[]</code> ใน response เรียงตรงกับที่ client ส่งมา</p>
+    <div class="note"><p>เราอ่านสินค้าทั้งหมดด้วย <code>findMany({ where: { id: { in: ids } } })</code> ครั้งเดียวแล้วทำ <code>Map</code> จาก id ไปหา product ไม่ใช่ loop <code>findUnique</code> ทีละตัว — ตะกร้า 10 รายการจึงเป็น 1 query ไม่ใช่ 10 query ส่วนการวน <code>dto.products.map(...)</code> ต่อจากนั้นทำให้ลำดับของ response ตรงกับลำดับที่ client ส่งมาเสมอ ไม่ใช่ลำดับที่ฐานข้อมูลคืนแถวมา</p></div>
+    <p>อีกเรื่องที่ตั้งใจ<strong>ไม่</strong>ทำ: เราไม่ลด <code>stock</code> ของสินค้า เพราะ dummyjson ก็ไม่ลด และ React app อ่าน stock จาก <code>GET /products/:id</code> ใหม่ทุกครั้งที่เปิดหน้าสินค้า ถ้าเราลด stock ขึ้นมาเอง พฤติกรรมของแอปจะเปลี่ยนไปจากเดิมทันทีทั้งที่เราไม่ได้แก้ frontend — ขัดกับเป้าหมายของคอร์สนี้</p>
+
+    <h2>mapper กันข้อมูลส่วนตัวหลุด</h2>
+    <p>แถวที่ Prisma คืนมามีมากกว่าที่สัญญาอนุญาตให้ส่งออก: <code>Order</code> มี <code>address</code>, <code>email</code>, <code>phone</code>, <code>createdAt</code> ที่ response ของ dummyjson ไม่มี และ <code>OrderItem</code> มี <code>id</code> ของตัวเองซึ่ง<strong>ไม่ใช่</strong> <code>products[].id</code> ที่ client ต้องการ — client ต้องการ <code>productId</code> เพราะมันใช้ค่านั้นลิงก์ไปหน้าสินค้า</p>
+    <p>เราจึงใช้ mapper แบบเดียวกับบทที่ 11 คือฟังก์ชันบริสุทธิ์ที่แปลงแถวเป็น response DTO ทีละ field อย่างชัดเจน ข้อดีคือ field ที่เพิ่มใน schema วันหลังจะไม่รั่วออก API เอง เพราะถ้าไม่เขียนไว้ใน mapper มันก็ไม่ถูกส่ง</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+└── src/
+    └── orders/
+        ├── cart.mapper.ts              (สร้างใหม่)
+        ├── orders.service.ts           (สร้างใหม่)
+        └── dto/
+            └── cart-response.dto.ts    (สร้างใหม่)</code></pre>
+    <ul>
+      <li><strong><code>src/orders/dto/cart-response.dto.ts</code></strong> — สัญญา: ต้องมีแค่ชนิดข้อมูลของ response ตามสัญญา (<code>CartProductResponseDto</code>, <code>CartResponseDto</code>) · ต้องไม่มี decorator และไม่มี method</li>
+      <li><strong><code>src/orders/cart.mapper.ts</code></strong> — สัญญา: ต้อง export <code>toCartResponse()</code> ที่ map <code>products[].id</code> จาก <code>item.productId</code> · ต้องไม่ส่ง <code>address</code>, <code>email</code>, <code>phone</code>, <code>createdAt</code> ออกไป และไม่แตะฐานข้อมูล</li>
+      <li><strong><code>src/orders/orders.service.ts</code></strong> — สัญญา: ต้องทำทั้งการอ่านสินค้าและการเขียนคำสั่งซื้อใน <code>$transaction</code> เดียว, ต้อง throw <code>NotFoundException</code> ด้วยข้อความเดียวกับ <code>ProductsService</code> · ต้องไม่แก้ <code>stock</code>, ไม่ใช้ <code>any</code>, ไม่ใช้ <code>as</code></li>
+      <li>ยังไม่มี controller และ module ในบทนี้ — service ตัวนี้จึงยังไม่ถูกเรียกจากที่ไหน จนถึงบทที่ 19</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor เขียน OrdersService</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before orders service"</code>) — prompt นี้ยาวที่สุดในคอร์ส เพราะมันต้องบอกทั้งสูตรคำนวณ ทั้งโครงสร้างของ transaction และยกไฟล์ <code>@src/products/products.service.ts</code> กับ <code>@src/products/product.mapper.ts</code> เป็นแบบอย่างของสไตล์โปรเจกต์ ให้ AI ไม่ต้องเดา</p>
+      <p>ก่อนส่ง อ่าน<a href="01_what-well-be-building.html">กติกาของคอร์ส</a>อีกครั้ง: AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้ — ถ้าอธิบายไม่ได้ แปลว่ายังไม่ผ่านบทนี้</p>
+      <div class="cursor-prompt"><code>สร้าง OrdersService ที่บันทึกคำสั่งซื้อใน transaction และคืน cart ตามรูปทรง dummyjson
+
+บริบท: @prisma/schema.prisma @src/orders/dto/add-cart.dto.ts @src/products/products.service.ts @src/products/product.mapper.ts @src/products/dto/product-response.dto.ts @docs/contract/cart-add.txt @.cursor/rules/project.mdc
+schema มี Order และ OrderItem แล้ว (migrate และ generate แล้ว)
+docs/contract/cart-add.txt คือ response จริงของ POST /carts/add ด้วย body { userId: 1, products: [{ id: 1, quantity: 2 }] }:
+  { "id": 209, "products": [{ "id": 1, "title": "Essence Mascara Lash Princess", "price": 9.99, "quantity": 2, "total": 19.98, "discountPercentage": 10.48, "discountedPrice": 18, "thumbnail": "..." }], "total": 19.98, "discountedTotal": 18, "userId": 1, "totalProducts": 1, "totalQuantity": 2 }
+กติกาคำนวณ: total ของรายการ = price × quantity ปัดทศนิยม 2 ตำแหน่ง, discountedPrice = Math.round(total × (1 − discountPercentage / 100)) เป็นจำนวนเต็ม,
+  total ของ cart = ผลรวม total ของทุกรายการปัด 2 ตำแหน่ง, discountedTotal = ผลรวม discountedPrice, totalProducts = จำนวนรายการ, totalQuantity = ผลรวม quantity
+products.service.ts และ product.mapper.ts คือรูปแบบมาตรฐานของ service และ mapper ในโปรเจกต์นี้ ให้ทำตาม
+สินค้าที่ id ไม่มีจริงต้องได้ 404 ข้อความ Product with id '&lt;id&gt;' not found แบบเดียวกับ ProductsService
+
+โครงสร้าง: สร้างไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- src/orders/dto/cart-response.dto.ts (สร้างใหม่)
+- src/orders/cart.mapper.ts (สร้างใหม่)
+- src/orders/orders.service.ts (สร้างใหม่)
+
+ข้อกำหนดทางเทคนิค:
+- cart-response.dto.ts: export class CartProductResponseDto { id, title, price, quantity, total, discountPercentage, discountedPrice, thumbnail } (type ตาม contract) และ
+  export class CartResponseDto { id: number; products: CartProductResponseDto[]; total: number; discountedTotal: number; userId: number; totalProducts: number; totalQuantity: number }
+  ไม่มี decorator ไม่มี method
+- cart.mapper.ts: import type { Order, OrderItem } from '../generated/prisma/client.js'
+  export type OrderWithItems = Order &amp; { items: OrderItem[] }
+  export function toCartResponse(order: OrderWithItems): CartResponseDto โดย products[].id คือ item.productId (ไม่ใช่ id ของ OrderItem) และไม่ส่ง address, email, phone, createdAt ออกไป
+- orders.service.ts: @Injectable() export class OrdersService constructor(private readonly prisma: PrismaService)
+  function round2(value: number): number คืน Math.round(value * 100) / 100 ประกาศระดับไฟล์นอก class
+  async create(dto: AddCartDto): Promise&lt;CartResponseDto&gt; ทำงานทั้งหมดใน this.prisma.$transaction(async (tx) =&gt; { ... }) แล้วคืน toCartResponse(order)
+  ข้างใน transaction: tx.product.findMany({ where: { id: { in: ids } } }) → สร้าง Map จาก id ไป product →
+  map dto.products ตามลำดับที่ส่งมา ถ้าไม่พบ throw new NotFoundException(`Product with id '${id}' not found`) ไม่งั้นสร้าง item { productId, title, thumbnail, price, discountPercentage, quantity, total, discountedPrice } ตามกติกาคำนวณ →
+  return tx.order.create({ data: { userId, address: dto.address.address, email, phone, total, discountedTotal, totalProducts, totalQuantity, items: { create: items } }, include: { items: { orderBy: { id: 'asc' } } } })
+- ห้ามแก้ stock ของสินค้า ห้ามใช้ any ห้ามใช้ as
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์อื่นนอกจากที่ระบุ
+- ยังไม่ต้องสร้าง controller หรือ module</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>ทั้ง <code>tx.product.findMany</code> และ <code>tx.order.create</code> อยู่<strong>ข้างใน</strong> callback ของ <code>$transaction</code> และเรียกผ่าน <code>tx</code> ไม่มี <code>this.prisma.</code> โผล่ข้างในเลย</li>
+        <li><code>discountedPrice</code> ใช้ <code>Math.round(...)</code> ได้จำนวนเต็ม ไม่ใช่ <code>round2(...)</code> — ตรวจว่าตัวอย่าง <code>9.99 × 2</code> ที่ 10.48% ให้ <code>18</code> ไม่ใช่ <code>17.89</code></li>
+        <li><code>round2()</code> ประกาศเป็นฟังก์ชันระดับไฟล์นอก class และถูกใช้กับ <code>total</code> ของรายการและ <code>total</code> ของใบ</li>
+        <li>วนสร้างรายการจาก <code>dto.products.map(...)</code> (ลำดับตาม request) แล้วหา product จาก <code>Map</code> ไม่ใช่วนจากผลลัพธ์ของ <code>findMany</code></li>
+        <li>ข้อความ 404 ตรงกับ <code>ProductsService</code> ทุกตัวอักษร: <code>Product with id '${id}' not found</code></li>
+        <li><code>tx.order.create</code> ใช้ <code>items: { create: items }</code> พร้อม <code>include: { items: { orderBy: { id: 'asc' } } }</code></li>
+        <li><code>address</code> ที่ลงคอลัมน์คือ <code>dto.address.address</code> ส่วน <code>email</code> และ <code>phone</code> มาจาก <code>dto.address.*</code> เช่นกัน (ไม่ใช่เก็บ object ทั้งก้อนเป็น JSON)</li>
+        <li>mapper ใช้ <code>item.productId</code> เป็น <code>id</code> ของ <code>products[]</code> และไม่มี <code>address</code>, <code>email</code>, <code>phone</code>, <code>createdAt</code> ใน object ที่ return</li>
+        <li>ไม่มีคำว่า <code>stock</code>, <code>any</code> หรือ <code>as</code> ในสามไฟล์นี้ และ import ทุกตัวลงท้ายด้วย <code>.js</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> คำนวณ <code>discountedPrice</code> เป็นทศนิยมสองตำแหน่ง (ได้ <code>17.89</code> ทั้งที่ dummyjson ให้ <code>18</code>) เพราะดู "ถูกต้องกว่า" ในแง่คณิตศาสตร์ แต่ทำให้ยอดบนหน้าจอ React เปลี่ยนไปจากเดิม อีกกรณีคือดึงสินค้าด้วย <code>this.prisma.product.findMany</code> ไว้<em>ก่อน</em> เปิด transaction แล้วค่อยเปิด transaction เพื่อ create — แบบนั้นการอ่านไม่ได้อยู่ใน snapshot เดียวกับการเขียน และถ้า throw 404 ก็ไม่มีอะไรต้อง rollback จริง (ดูเหมือนทำงานถูก แต่ผิดเจตนา) กรณีที่สามคือ mapper ส่ง <code>item.id</code> ออกไปเป็น <code>products[].id</code> ซึ่งจะทำให้ลิงก์ไปหน้าสินค้าของ React พาไปสินค้าผิดตัว</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <pre><code>// src/orders/dto/cart-response.dto.ts
+export class CartProductResponseDto {
+  id: number;
+  title: string;
+  price: number;
+  quantity: number;
+  total: number;
+  discountPercentage: number;
+  discountedPrice: number;
+  thumbnail: string;
+}
+
+export class CartResponseDto {
+  id: number;
+  products: CartProductResponseDto[];
+  total: number;
+  discountedTotal: number;
+  userId: number;
+  totalProducts: number;
+  totalQuantity: number;
+}</code></pre>
+      <pre><code>// src/orders/cart.mapper.ts
+import type { Order, OrderItem } from '../generated/prisma/client.js';
+import { CartResponseDto } from './dto/cart-response.dto.js';
+
+export type OrderWithItems = Order &amp; { items: OrderItem[] };
+
+export function toCartResponse(order: OrderWithItems): CartResponseDto {
+  return {
+    id: order.id,
+    products: order.items.map((item) =&gt; ({
+      id: item.productId,
+      title: item.title,
+      price: item.price,
+      quantity: item.quantity,
+      total: item.total,
+      discountPercentage: item.discountPercentage,
+      discountedPrice: item.discountedPrice,
+      thumbnail: item.thumbnail,
+    })),
+    total: order.total,
+    discountedTotal: order.discountedTotal,
+    userId: order.userId,
+    totalProducts: order.totalProducts,
+    totalQuantity: order.totalQuantity,
+  };
+}</code></pre>
+      <pre><code>// src/orders/orders.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { toCartResponse } from './cart.mapper.js';
+import { AddCartDto } from './dto/add-cart.dto.js';
+import { CartResponseDto } from './dto/cart-response.dto.js';
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+@Injectable()
+export class OrdersService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(dto: AddCartDto): Promise&lt;CartResponseDto&gt; {
+    const order = await this.prisma.$transaction(async (tx) =&gt; {
+      const ids = dto.products.map((product) =&gt; product.id);
+      const products = await tx.product.findMany({ where: { id: { in: ids } } });
+      const productById = new Map(products.map((product) =&gt; [product.id, product]));
+
+      const items = dto.products.map(({ id, quantity }) =&gt; {
+        const product = productById.get(id);
+        if (!product) {
+          throw new NotFoundException(`Product with id '${id}' not found`);
+        }
+        const total = round2(product.price * quantity);
+        return {
+          productId: product.id,
+          title: product.title,
+          thumbnail: product.thumbnail,
+          price: product.price,
+          discountPercentage: product.discountPercentage,
+          quantity,
+          total,
+          discountedPrice: Math.round(total * (1 - product.discountPercentage / 100)),
+        };
+      });
+
+      return tx.order.create({
+        data: {
+          userId: dto.userId,
+          address: dto.address.address,
+          email: dto.address.email,
+          phone: dto.address.phone,
+          total: round2(items.reduce((sum, item) =&gt; sum + item.total, 0)),
+          discountedTotal: items.reduce((sum, item) =&gt; sum + item.discountedPrice, 0),
+          totalProducts: items.length,
+          totalQuantity: items.reduce((sum, item) =&gt; sum + item.quantity, 0),
+          items: { create: items },
+        },
+        include: { items: { orderBy: { id: 'asc' } } },
+      });
+    });
+
+    return toCartResponse(order);
+  }
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ได้ไฟล์ใหม่สามไฟล์ใน <code>src/orders/</code> และ <code>npm run build</code> กับ <code>npm run lint</code> ผ่านทั้งคู่โดยไม่มี error หรือ warning ยังไม่มี route ใหม่ใน log ของ dev server และยังไม่มีอะไรให้ <code>curl</code> เพราะ <code>OrdersService</code> ยังไม่ถูกลงทะเบียนใน module ไหน — ถ้า build ผ่านแต่ลืมสิ่งนี้ Nest จะไม่บ่นอะไรเลย มันแค่ไม่มีใครเรียก service ตัวนี้</p>
+      <p>type ที่ <code>tx.order.create</code> คืนมาต้องเข้ากับ <code>OrderWithItems</code> ได้เองโดยไม่ต้อง cast — ถ้า TypeScript บ่นตรงบรรทัดที่เรียก <code>toCartResponse(order)</code> ให้กลับไปดูว่า <code>include: { items: … }</code> หายไปหรือเปล่า นั่นคือกลไกที่ทำให้ <code>include</code> ที่หายไปกลายเป็น compile error ไม่ใช่บั๊กตอน runtime</p>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>npm run build &amp;&amp; npm run lint</code> ผ่านทั้งสองคำสั่ง</li>
+        <li><code>grep -n "Math.round" src/orders/orders.service.ts</code> เจอสองที่: ใน <code>round2</code> และที่ <code>discountedPrice</code></li>
+        <li><code>grep -n "this.prisma" src/orders/orders.service.ts</code> เจอแค่สองบรรทัด คือ constructor และบรรทัดที่เปิด <code>$transaction</code> — ยืนยันว่าไม่มี query หลุดออกนอก transaction</li>
+        <li><code>grep -n "stock\|: any\| as " src/orders/orders.service.ts</code> ไม่เจออะไรเลย</li>
+        <li>คิดเลขตามด้วยมือใน <code>node -e "console.log(Math.round(19.98 * (1 - 10.48 / 100)))"</code> ได้ <code>18</code> ตรงกับ <code>discountedPrice</code> ใน <code>docs/contract/cart-add.txt</code></li>
+        <li><code>git status</code> เห็นเฉพาะสามไฟล์ใหม่ ไม่มี <code>app.module.ts</code> หรือไฟล์ใน <code>src/products/</code> ติดมา</li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: orders service"</code></li>
+      </ul>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/transactions">Transactions: interactive transactions (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries">Relation queries: nested writes (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/exception-filters">Exception filters: built-in HTTP exceptions (NestJS Docs)</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round">Math.round() (MDN)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="17_validating-the-cart-payload.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="19_post-carts-add.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

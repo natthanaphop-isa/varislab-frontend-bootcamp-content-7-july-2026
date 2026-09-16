@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ปรับ ConfigModule ให้อ่าน environment file จาก path อื่นด้วย envFilePath หรือข้ามไฟล์ .env ทั้งหมดด้วย ignoreEnvFile" />
+  <title>กำหนด Path ของ Environment File เอง</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 43 จาก 77</p>
+    <h1>กำหนด Path ของ Environment File เอง</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ชี้ให้ <code>ConfigModule</code> อ่านไฟล์ environment จากชื่อหรือ path ที่กำหนดเองด้วย <code>envFilePath</code></li>
+        <li>ปิดการอ่านไฟล์ <code>.env</code> ด้วย <code>ignoreEnvFile</code> เมื่อ platform เป็นผู้จัดการ environment variables ให้</li>
+        <li>เลือก option ที่เหมาะกับสถานการณ์ deploy ของทีมได้</li>
+      </ul>
+    </section>
+
+    <h2>envFilePath: เมื่อไฟล์ไม่ได้ชื่อ .env</h2>
+    <p>ค่า default ของ <code>ConfigModule.forRoot()</code> คือมองหาไฟล์ <code>.env</code> ที่ root directory แต่บางทีมตั้งชื่อไฟล์ต่างออกไป หรือแยกไฟล์ตาม environment การส่ง options object เข้าไปช่วยให้กำหนดได้เอง — ตัวอย่างนี้ให้มองหาไฟล์ชื่อ <code>.environment</code> แทน</p>
+    <pre><code>ConfigModule.forRoot({
+  envFilePath: '.environment',
+});</code></pre>
+    <div class="note">
+      <p><code>envFilePath</code> รับเป็น array ได้ด้วย เช่น <code>envFilePath: ['.env.development.local', '.env.development']</code> — เมื่อ key ซ้ำกัน ไฟล์ที่อยู่ก่อนใน array ชนะ</p>
+    </div>
+    <div class="warning"><p>การเปลี่ยนชื่อไฟล์มีผลแค่กับฝั่งแอป NestJS เท่านั้น <code>prisma7.config.ts</code> (บทที่ 22) ยังมี <code>import "dotenv/config"</code> ของตัวเองซึ่งมองหาไฟล์ชื่อ <code>.env</code> ตรง ๆ เสมอ ไม่รู้จัก <code>envFilePath</code> ของ <code>ConfigModule</code> เลย — ถ้าเปลี่ยนเป็น <code>.environment</code> แล้วสั่ง <code>npx prisma &lt;command&gt;</code> แบบเปล่า ๆ (เช่น <code>npx prisma studio</code>) ในภายหลัง จะเจอ <code>Error: datasource.url property is required</code> เพราะ <code>DATABASE_URL</code> ไม่มีใครโหลดให้ ถ้าจะเก็บชื่อไฟล์ใหม่ต่อไปให้แก้ <code>prisma7.config.ts</code> เป็น <code>dotenv.config({ path: '.environment' })</code> ด้วย</p></div>
+
+    <h2>ignoreEnvFile: เมื่อ platform จัดการ environment ให้แล้ว</h2>
+    <p>บริการ hosting อย่าง Heroku หรือ platform อื่น ๆ มักมีหน้า UI สำหรับตั้ง environment variables โดยตรง ค่าเหล่านั้นถูก inject เข้า <code>process.env</code> ตอนรันอยู่แล้ว จึงไม่มีไฟล์ <code>.env</code> ในเครื่อง production เลย กรณีนี้สั่งให้ <code>ConfigModule</code> ข้ามการอ่านไฟล์ไปได้</p>
+    <pre><code>ConfigModule.forRoot({
+  ignoreEnvFile: true,
+});</code></pre>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ options ของ ConfigModule" tabindex="0">
+      <table>
+        <thead><tr><th>สถานการณ์</th><th>Option ที่ใช้</th><th>ผล</th></tr></thead>
+        <tbody>
+          <tr><td>ไฟล์ env ชื่อมาตรฐานที่ root</td><td>ไม่ต้องตั้งอะไร</td><td>อ่าน <code>.env</code> อัตโนมัติ</td></tr>
+          <tr><td>ไฟล์ env ชื่อ/ตำแหน่งอื่น หรือหลายไฟล์</td><td><code>envFilePath</code></td><td>อ่านตาม path ที่ระบุ ตามลำดับความสำคัญ</td></tr>
+          <tr><td>Platform ตั้งค่าให้ผ่าน UI (เช่น Heroku)</td><td><code>ignoreEnvFile: true</code></td><td>ใช้เฉพาะ <code>process.env</code> ที่มีอยู่ ไม่แตะไฟล์</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ทดลองย้ายไฟล์ env ไปชื่อใหม่</h2>
+      <p>ใน <code>iluvcoffee</code> เปลี่ยนชื่อ <code>.env</code> เป็น <code>.environment</code> แล้วเพิ่ม <code>envFilePath</code> ให้ <code>ConfigModule</code> ยังอ่านค่าได้ เมื่อยืนยันว่าทำงานแล้วจะย้ายกลับเป็น <code>.env</code> ตามเดิมก็ได้</p>
+      <div class="prompt-example"><code>mv .env .environment
+
+// app.module.ts
+ConfigModule.forRoot({
+  envFilePath: '.environment',
+}),
+
+npm run start:dev</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>แอปยังเชื่อมต่อฐานข้อมูลได้ปกติทั้งที่ไม่มีไฟล์ชื่อ <code>.env</code> แล้ว และถ้าลองลบ option <code>envFilePath</code> ออก แอปจะต่อฐานข้อมูลไม่ได้ เพราะ <code>ConfigModule</code> หาไฟล์ default ไม่เจอ</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>GET /coffees</code> ตอบข้อมูลได้หลังเปลี่ยนไปใช้ <code>.environment</code></li>
+        <li>ลบ <code>envFilePath</code> ชั่วคราวแล้ว restart — การเชื่อมต่อฐานข้อมูลล้มเหลว ยืนยันว่า option มีผลจริง</li>
+        <li><code>.gitignore</code> ยังครอบคลุมชื่อไฟล์ใหม่ (แพทเทิร์น <code>*.env</code> ไม่ครอบ <code>.environment</code> — เพิ่มบรรทัดถ้าจำเป็น)</li>
+        <li>ถ้าทดลอง <code>ignoreEnvFile: true</code> ต้อง export ตัวแปรผ่าน shell เองแล้วแอปจึงต่อฐานข้อมูลได้</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/configuration">Configuration: env file paths (NestJS)</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals course (ต้นฉบับ)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="42_introducing-the-config-module.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="44_schema-validation.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

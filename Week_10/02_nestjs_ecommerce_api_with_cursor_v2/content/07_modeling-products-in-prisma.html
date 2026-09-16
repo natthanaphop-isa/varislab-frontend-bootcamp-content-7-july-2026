@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="แปลง payload จริงของ dummyjson เป็น Prisma model สามตัว Category, Product และ Review พร้อมเหตุผลของทุกการตัดสินใจเรื่องชนิดข้อมูล" />
+  <title>ออกแบบ Prisma Model ของสินค้า</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 7 จาก 24</p>
+    <h1>ออกแบบ Prisma Model ของสินค้า</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อ่าน payload จริงของ dummyjson แล้วแปลงเป็นคอลัมน์ของ Prisma ได้ทีละ field</li>
+        <li>อธิบายได้ว่าทำไมใช้ <code>Float</code> ไม่ใช่ <code>Decimal</code> และทำไม <code>Product.id</code> ไม่มี <code>autoincrement()</code></li>
+        <li>แตก object ซ้อน (<code>dimensions</code>, <code>meta</code>) และ array ของ object (<code>reviews</code>) ออกเป็นคอลัมน์และ relation</li>
+      </ul>
+    </section>
+
+    <h2>ต้นแบบไม่ใช่จินตนาการ แต่เป็นไฟล์ใน docs/contract</h2>
+    <p>บทที่ 3 เราเก็บ response จริงของ dummyjson ไว้ใน <code>docs/contract/</code> แล้ว บทนี้เราจะไม่เดาว่าสินค้า <q>ควร</q> มี field อะไร แต่เปิด <code>docs/contract/product-1.json</code> แล้วไล่ทุก key ที่มันมี — เพราะเป้าหมายของคอร์สนี้คือ API ที่สลับแทน dummyjson ได้โดย React app ไม่รู้ตัว ถ้าฐานข้อมูลเก็บ field ไม่ครบ response ก็จะขาด และ React app จะแสดงผลเพี้ยน</p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ field ของ dummyjson กับ field ของ Prisma" tabindex="0">
+      <table>
+        <thead><tr><th>field ของ dummyjson</th><th>field ใน Prisma</th><th>เหตุผล</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code> (number)</td><td><code>id Int @id</code></td><td>ไม่ใส่ <code>@default(autoincrement())</code> เพราะเรา seed ด้วย id เดิมของ dummyjson</td></tr>
+          <tr><td><code>title</code>, <code>description</code>, <code>sku</code>, <code>warrantyInformation</code>, <code>shippingInformation</code>, <code>availabilityStatus</code>, <code>returnPolicy</code>, <code>thumbnail</code></td><td><code>String</code></td><td>ข้อความธรรมดา บังคับมีค่า (ทุกชิ้นใน 194 ชิ้นมีครบ)</td></tr>
+          <tr><td><code>price</code>, <code>discountPercentage</code>, <code>rating</code>, <code>weight</code></td><td><code>Float</code></td><td>ทศนิยม — เหตุผลที่ไม่ใช้ <code>Decimal</code> อยู่หัวข้อถัดไป</td></tr>
+          <tr><td><code>stock</code>, <code>minimumOrderQuantity</code></td><td><code>Int</code></td><td>จำนวนชิ้น ไม่มีทศนิยม</td></tr>
+          <tr><td><code>tags</code>, <code>images</code></td><td><code>String[]</code></td><td>PostgreSQL รองรับ array ของ text ในตัว (<code>text[]</code>) จึงไม่ต้องมีตารางแยก</td></tr>
+          <tr><td><code>brand</code> (บางชิ้นไม่มี)</td><td><code>brand String?</code></td><td>92 จาก 194 ชิ้นไม่มี field นี้ — เป็นคอลัมน์เดียวที่ nullable</td></tr>
+          <tr><td><code>dimensions: { width, height, depth }</code></td><td><code>width Float</code>, <code>height Float</code>, <code>depth Float</code></td><td>แบน object ซ้อนเป็นสามคอลัมน์ แล้วบทที่ 11 จะประกอบกลับเป็น object ตอนตอบ client</td></tr>
+          <tr><td><code>meta: { barcode, qrCode, createdAt, updatedAt }</code></td><td><code>barcode String</code>, <code>qrCode String</code>, <code>createdAt DateTime</code>, <code>updatedAt DateTime</code></td><td>แบนเช่นกัน และ<strong>ไม่</strong>ใส่ <code>@default(now())</code> / <code>@updatedAt</code> เพราะค่าต้องเป็นของ dummyjson</td></tr>
+          <tr><td><code>category</code> (เป็น slug string)</td><td><code>categoryId Int</code> + <code>category Category @relation(...)</code></td><td>เก็บเป็น relation ไม่ใช่ string ซ้ำ ๆ 194 แถว เพื่อให้ <code>GET /products/category/:slug</code> (บทที่ 14) join ได้</td></tr>
+          <tr><td><code>reviews: [ { rating, comment, date, reviewerName, reviewerEmail } ]</code></td><td>model <code>Review</code> + <code>reviews Review[]</code></td><td>array ของ object = ตารางลูก ผูกกลับด้วย <code>productId</code> และ <code>onDelete: Cascade</code></td></tr>
+          <tr><td><code>url</code> ใน <code>categories.json</code></td><td>ไม่เก็บ</td><td>คำนวณจาก <code>APP_URL</code> + slug ได้ในบทที่ 10 — เก็บค่าที่คำนวณได้ไว้ในฐานข้อมูลคือการเก็บข้อมูลซ้ำซ้อน</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Float ไม่ใช่ Decimal — เพราะ contract ต้องเป็นตัวเลข</h2>
+    <p>ปกติหนังสือเรื่องฐานข้อมูลจะสอนว่าราคาสินค้าควรใช้ชนิด <code>Decimal</code> เพื่อไม่ให้เกิดความคลาดเคลื่อนของ floating point และนั่นถูกต้องสำหรับระบบบัญชี แต่โปรเจกต์นี้มีข้อผูกมัดที่แรงกว่า: Prisma แปลงค่า <code>Decimal</code> ออกมาเป็น <strong>string</strong> ใน JSON (เพื่อรักษาความแม่นยำ) ดังนั้น response จะกลายเป็น <code>"price": "9.99"</code> ขณะที่ dummyjson ส่ง <code>"price": 9.99</code> — React app ที่เอาค่าไปคูณจำนวนชิ้นจะได้ผลเพี้ยนทันที เราจึงเลือก <code>Float</code> ซึ่งออกมาเป็น number ตรงตาม contract</p>
+    <div class="note">
+      <p>กติกาในไฟล์ <code>.cursor/rules/project.mdc</code> ของเราเขียนไว้ว่า <q>response ต้องเป็น JSON ธรรมดา ห้ามส่ง Date object หรือ Decimal ออกไปโดยไม่แปลง</q> — บทนี้คือตัวอย่างว่ากฎข้อนั้นมีผลถึงการออกแบบตาราง ไม่ใช่แค่ชั้น controller</p>
+    </div>
+
+    <h2>ทำไม Product.id ไม่มี autoincrement()</h2>
+    <p>React app ลิงก์ไปหน้าสินค้าด้วย id ตรง ๆ (<code>/products/1</code>) และ <code>docs/contract/product-1.json</code> คือของสินค้า id 1 ถ้าเราให้ PostgreSQL แจก id เอง ลำดับอาจไม่ตรงกับของ dummyjson แล้วลิงก์เดิม ๆ จะชี้ไปสินค้าผิดชิ้น เราจึงประกาศ <code>id Int @id</code> เฉย ๆ แล้วส่ง id มาเองตอน seed (บทที่ 9) ตรงกันข้าม <code>Category.id</code> และ <code>Review.id</code> ใช้ <code>@default(autoincrement())</code> ได้สบาย เพราะไม่มีใครอ้างอิงเลขสองตัวนั้นจากนอกระบบ — หมวดหมู่ถูกอ้างด้วย <code>slug</code> เท่านั้น</p>
+
+    <h2>ทำไมไม่เก็บ dimensions/meta/reviews เป็นคอลัมน์ Json</h2>
+    <p>PostgreSQL เก็บ JSON ได้ และ Prisma ก็มีชนิด <code>Json</code> ให้ใช้ ทางนั้นสั้นกว่าจริง แต่เราไม่เอา ด้วยเหตุผลสามข้อ</p>
+    <ul>
+      <li><strong>ค้นและ index ลำบาก</strong> — <code>GET /products/category/:slug</code> ในบทที่ 14 ต้องกรองตามหมวดหมู่ ถ้าหมวดหมู่ฝังอยู่ใน JSON เราจะ index ตรง ๆ แบบ <code>@@index([categoryId])</code> ไม่ได้</li>
+      <li><strong>ฐานข้อมูลไม่ช่วยตรวจ</strong> — คอลัมน์ <code>Json</code> รับอะไรเข้าไปก็ได้ พิมพ์ <code>widht</code> ผิดก็ยังบันทึกผ่าน แต่คอลัมน์ <code>width Float</code> จะปฏิเสธทันที</li>
+      <li><strong>เราอยากได้ relation จริง</strong> — <code>Review</code> เป็นตารางลูกทำให้ฝึกสิ่งที่เรียนมาใน <a href="../../../Week_09/01_nestjs_basic/content/25_create-a-relation-between-two-models.html">Week_09 บทที่ 25</a> ต่อได้ และ <code>onDelete: Cascade</code> ทำให้ลบสินค้าแล้วรีวิวหายตามเองโดยไม่ต้องเขียนโค้ดลบ</li>
+    </ul>
+    <p>ส่วน <code>@@index([categoryId])</code> และ <code>@@index([productId])</code> ที่เราใส่ไว้คือเหตุผลเดียวกับ <a href="../../../Week_09/01_nestjs_basic/content/30_adding-indexes-to-models.html">Week_09 บทที่ 30</a>: คอลัมน์ที่ถูกใช้เป็นเงื่อนไข <code>where</code> บ่อย ๆ ควรมี index — ที่นี่คือทุกครั้งที่ดึงสินค้าตามหมวด หรือดึงรีวิวของสินค้าหนึ่งชิ้น</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+└── prisma/schema.prisma      (แก้ไข: เพิ่มสาม model ต่อท้าย)</code></pre>
+    <ul>
+      <li><strong><code>prisma/schema.prisma</code></strong> — สัญญา: ต้องเพิ่ม model <code>Category</code>, <code>Product</code>, <code>Review</code> ต่อท้ายไฟล์ พร้อม relation และ <code>@@index</code> สองตัว / ต้องไม่แก้บล็อก <code>generator</code> กับ <code>datasource</code> ที่ <code>prisma init</code> สร้างไว้ และต้องไม่มีชนิด <code>Decimal</code> หรือ <code>Json</code> โผล่มา</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ให้ Cursor เขียน schema จาก payload จริง</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent สังเกตว่า prompt นี้แนบ <code>@docs/contract/product-1.json</code> กับ <code>@docs/contract/categories.json</code> ไปด้วย — นั่นคือหัวใจ: เราไม่ได้ให้ AI เดารูปทรงของสินค้า แต่ให้มันอ่านจากไฟล์สัญญาที่วางไว้ในโปรเจกต์</p>
+      <div class="cursor-prompt"><code>เพิ่ม Prisma model ของ Category, Product และ Review ให้ตรงกับ payload ของ dummyjson
+
+บริบท: @prisma/schema.prisma @docs/contract/product-1.json @docs/contract/categories.json @.cursor/rules/project.mdc
+schema.prisma ตอนนี้มีแค่ generator กับ datasource ห้ามแก้สองบล็อกนั้น
+docs/contract/product-1.json คือ response จริงของ GET https://dummyjson.com/products/1 — ทุก field ของ Product ต้องมาจากไฟล์นี้
+docs/contract/categories.json คือ response จริงของ GET /products/categories แต่ละรายการมี slug, name, url — url ไม่ต้องเก็บเพราะคำนวณจาก slug ได้
+สินค้าบางชิ้น (92 จาก 194) ไม่มี field brand
+ฐานข้อมูลคือ PostgreSQL 17
+
+โครงสร้าง: แก้ไฟล์เดียว
+- prisma/schema.prisma (แก้ไข: เพิ่มสาม model ต่อท้าย)
+
+ข้อกำหนดทางเทคนิค:
+- model Category: id Int @id @default(autoincrement()), slug String @unique, name String, products Product[]
+- model Product: id Int @id (ไม่ใส่ autoincrement เพราะเราจะ seed ด้วย id เดิมของ dummyjson)
+  field ตามลำดับนี้: title String, description String, price Float, discountPercentage Float, rating Float, stock Int,
+  tags String[], brand String?, sku String, weight Float, width Float, height Float, depth Float,
+  warrantyInformation String, shippingInformation String, availabilityStatus String, returnPolicy String,
+  minimumOrderQuantity Int, barcode String, qrCode String, images String[], thumbnail String,
+  createdAt DateTime, updatedAt DateTime (ไม่ใส่ @default หรือ @updatedAt เพราะค่ามาจาก meta ของ dummyjson)
+  categoryId Int, category Category @relation(fields: [categoryId], references: [id]), reviews Review[]
+  และ @@index([categoryId])
+- model Review: id Int @id @default(autoincrement()), rating Int, comment String, date DateTime, reviewerName String, reviewerEmail String,
+  productId Int, product Product @relation(fields: [productId], references: [id], onDelete: Cascade) และ @@index([productId])
+- ใช้ Float สำหรับทุกค่าที่เป็นทศนิยม ห้ามใช้ Decimal (Prisma serialize Decimal เป็น string ซึ่งผิด contract)
+- dimensions และ meta ของ dummyjson เป็น object ซ้อน ให้แบนเป็นคอลัมน์ตามที่ระบุด้านบน ห้ามใช้ Json
+- ห้ามสร้าง model อื่น ห้ามใส่ @@map หรือ @map
+
+ขอบเขต:
+- ห้ามแก้ไฟล์อื่น
+- ห้ามรัน prisma migrate, db push หรือ generate ให้ผมรันเอง
+- ยังไม่ต้องเขียน seed หรือ service</code></div>
+      <p>เมื่อ Agent แก้ไฟล์เสร็จ ตรวจตามหัวข้อถัดไป แล้วรันสองคำสั่งนี้เอง (ยังไม่ migrate — บทที่ 8 ค่อยทำ)</p>
+      <div class="prompt-example"><code>npx prisma validate
+npx prisma format</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li><code>Product.id</code> เป็น <code>Int @id</code> เฉย ๆ — <strong>ไม่มี</strong> <code>@default(autoincrement())</code></li>
+        <li><code>brand String?</code> เป็น field เดียวในทั้งสาม model ที่มีเครื่องหมาย <code>?</code> (ค้นหา <code>?</code> ในไฟล์แล้วต้องเจอที่เดียว)</li>
+        <li><code>updatedAt DateTime</code> ไม่มี <code>@updatedAt</code> และ <code>createdAt</code> ไม่มี <code>@default(now())</code> — ค่าทั้งคู่ต้องมาจาก <code>meta</code> ของ dummyjson</li>
+        <li><code>Review.product</code> มี <code>onDelete: Cascade</code> ส่วน <code>Product.category</code> ไม่มี (ปล่อยเป็น restrict ตามค่าปริยาย — ห้ามลบหมวดหมู่ที่ยังมีสินค้าอยู่)</li>
+        <li>มี <code>@@index([categoryId])</code> ใน <code>Product</code> และ <code>@@index([productId])</code> ใน <code>Review</code> ครบทั้งสองตัว</li>
+        <li>ไม่มีคำว่า <code>Decimal</code>, <code>Json</code>, <code>@map</code> หรือ <code>@@map</code> ในไฟล์เลย</li>
+        <li>บล็อก <code>generator client</code> และ <code>datasource db</code> ยังเหมือนเดิมทุกตัวอักษร และไม่มี model ที่เราไม่ได้สั่ง (เช่น <code>User</code>, <code>Order</code>) แถมมา</li>
+        <li>ทุก field ของ <code>Product</code> มีอยู่จริงใน <code>docs/contract/product-1.json</code> — ไล่เทียบทีละบรรทัด ไม่ใช่ไล่ด้วยความรู้สึก</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ใส่ <code>@updatedAt</code> ให้ <code>updatedAt</code> เพราะเป็นแบบแผนที่พบเจอทั่วไป (ผลคือค่าจาก dummyjson จะถูกเขียนทับด้วยเวลาปัจจุบันทุกครั้งที่แถวถูก update) หรือเลือก <code>Decimal</code> ให้ <code>price</code> ตามตำราบัญชี ซึ่งทำให้ราคาถูกส่งออกไปเป็น string และผิด contract ทันที</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <pre><code>// prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  slug     String    @unique
+  name     String
+  products Product[]
+}
+
+model Product {
+  id                   Int      @id
+  title                String
+  description          String
+  price                Float
+  discountPercentage   Float
+  rating               Float
+  stock                Int
+  tags                 String[]
+  brand                String?
+  sku                  String
+  weight               Float
+  width                Float
+  height               Float
+  depth                Float
+  warrantyInformation  String
+  shippingInformation  String
+  availabilityStatus   String
+  returnPolicy         String
+  minimumOrderQuantity Int
+  barcode              String
+  qrCode               String
+  images               String[]
+  thumbnail            String
+  createdAt            DateTime
+  updatedAt            DateTime
+  categoryId           Int
+  category             Category @relation(fields: [categoryId], references: [id])
+  reviews              Review[]
+
+  @@index([categoryId])
+}
+
+model Review {
+  id            Int      @id @default(autoincrement())
+  rating        Int
+  comment       String
+  date          DateTime
+  reviewerName  String
+  reviewerEmail String
+  productId     Int
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>npx prisma validate</code> ต้องจบด้วยบรรทัดว่า schema ใช้ได้</p>
+      <pre><code>Loaded Prisma config from prisma7.config.ts.
+
+Prisma schema loaded from prisma/schema.prisma.
+The schema at prisma/schema.prisma is valid 🚀</code></pre>
+      <p>ถ้าเห็นกรอบข้อความแจ้งว่ามี Prisma เวอร์ชันใหม่กว่าให้อัปเดต ก็แค่ประกาศ ไม่ต้องทำตาม — คอร์สนี้ปักไว้ที่ 7.10.0 ตลอด ส่วน <code>npx prisma format</code> จะจัดคอลัมน์ให้ตรงกัน ถ้าโค้ดที่ AI เขียนมาจัดรูปแบบถูกอยู่แล้ว <code>git diff</code> หลังรัน <code>format</code> จะไม่มีอะไรเปลี่ยนเลย</p>
+      <div class="warning">
+        <p><code>validate</code> ผ่าน <strong>ไม่</strong> ได้แปลว่าตารางถูกสร้างแล้ว ตอนนี้ฐานข้อมูลยังว่างเปล่า — schema เป็นแค่พิมพ์เขียวบนกระดาษจนกว่าจะ migrate ในบทถัดไป</p>
+      </div>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>npx prisma validate</code> ได้ <code>The schema at prisma/schema.prisma is valid 🚀</code></li>
+        <li><code>npx prisma format</code> แล้ว <code>git diff prisma/schema.prisma</code> ไม่มีบรรทัดที่เปลี่ยนเพิ่มจากของที่ AI เขียน</li>
+        <li><code>grep -n "Decimal\|Json\|@updatedAt\|autoincrement" prisma/schema.prisma</code> ต้องเจอแค่ <code>autoincrement</code> สองที่ (ใน <code>Category</code> และ <code>Review</code>) ไม่มีอย่างอื่น</li>
+        <li><code>git diff --stat</code> ต้องมีไฟล์เดียวคือ <code>prisma/schema.prisma</code></li>
+        <li>commit ด้วย <code>git add -A &amp;&amp; git commit -m "feat: product schema"</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/models">Data model: models and fields (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/relations/one-to-many-relations">One-to-many relations (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/reference/prisma-schema-reference">Prisma schema reference (Prisma Docs)</a></li>
+      <li><a href="https://dummyjson.com/docs/products">Products endpoints (DummyJSON Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="06_setting-up-prisma.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="08_running-the-first-migration.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

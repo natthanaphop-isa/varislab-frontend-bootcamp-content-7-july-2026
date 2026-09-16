@@ -1,0 +1,160 @@
+{
+  "questions": [
+    {
+      "prompt": "คำสั่งใดติดตั้ง NestJS CLI แบบ Global และตรวจสอบได้ว่าเรียกใช้จาก Directory ใดก็ได้?",
+      "choices": [
+        "npm install @nestjs/cli แล้วตรวจด้วย npm test",
+        "npm install -g @nestjs/cli แล้วตรวจด้วย nest --version",
+        "nest install --global แล้วตรวจด้วย node --version"
+      ],
+      "correctChoice": 2,
+      "explanation": "ธง -g ติดตั้ง NestJS CLI แบบ Global ทำให้เรียกคำสั่ง nest ได้จากทุก Directory และ nest --version ใช้ยืนยันว่า CLI พร้อมใช้งาน"
+    },
+    {
+      "prompt": "ข้อใดเรียงเส้นทางหลักของ Request ในแอป NestJS ที่ Scaffold ใหม่ได้ถูกต้อง?",
+      "choices": [
+        "main.ts สร้างแอปจาก Root Module จากนั้น Controller รับ Request และเรียก Service ทำ Business Logic",
+        "Service เปิด HTTP Server แล้วส่ง Request ไปให้ package.json เลือก Controller",
+        "Controller สร้าง Root Module ทุกครั้งที่มี Request แล้ว main.ts เขียนข้อมูลลง Database"
+      ],
+      "correctChoice": 1,
+      "explanation": "main.ts ใช้ NestFactory สร้างแอปจาก Root Module, Module ประกาศ Dependency Graph, Controller รับ HTTP Request และส่งงานที่เป็น Business Logic ต่อให้ Service"
+    },
+    {
+      "prompt": "ระหว่างพัฒนา คำสั่งและหลักฐานคู่ใดแสดงว่า Watch Mode ทำงานและ Route ถูกลงทะเบียนแล้ว?",
+      "choices": [
+        "npm run start:prod และเห็นไฟล์ package-lock.json เปลี่ยน",
+        "npm test และเห็นข้อความ Test Files passed",
+        "npm run start:dev และเห็น Log เช่น Mapped {/coffees, GET} route"
+      ],
+      "correctChoice": 3,
+      "explanation": "start:dev รันแอปแบบ Watch ซึ่ง Recompile และ Restart เมื่อไฟล์เปลี่ยน ส่วนบรรทัด Mapped ใน Log ยืนยันว่า Nest ลงทะเบียน Route ของ Controller แล้ว"
+    },
+    {
+      "prompt": "Route ใดเกิดจาก Controller และ Handler ต่อไปนี้ และค่า id ที่ Handler ได้มี Type เริ่มต้นเป็นอะไร?",
+      "body": "<pre><code>@Controller('coffees')\nexport class CoffeesController {\n  @Get(':id')\n  findOne(@Param('id') id: string) {\n    return id;\n  }\n}</code></pre>",
+      "choices": [
+        "GET /:id/coffees และ id เป็น number",
+        "GET /coffees/:id และ id เป็น string",
+        "POST /coffees/:id และ id เป็น object"
+      ],
+      "correctChoice": 2,
+      "explanation": "Prefix จาก @Controller('coffees') ประกอบกับ Path จาก @Get(':id') เป็น GET /coffees/:id และค่า Route Parameter จาก URL เป็น String ก่อนการแปลง Type"
+    },
+    {
+      "prompt": "ข้อใดจับคู่ข้อมูลจาก HTTP Request กับ Decorator ของ NestJS ได้ถูกต้อง?",
+      "choices": [
+        "@Param() รับ JSON Payload, @Body() รับ Pagination และ @Query() รับ Dynamic Path",
+        "@Param() รับ Header, @Body() รับ Status Code และ @Query() รับ Response Body",
+        "@Param() รับค่าใน Route, @Body() รับ JSON Payload และ @Query() รับตัวเลือกอย่าง limit กับ offset"
+      ],
+      "correctChoice": 3,
+      "explanation": "Route Parameter ใช้ระบุ Resource เช่น /coffees/1, Request Body ใช้ส่งข้อมูลสร้างหรือแก้ไข และ Query Parameter ใช้กับตัวเลือกเสริม เช่น Pagination, Filter หรือ Sort"
+    },
+    {
+      "prompt": "ข้อใดอธิบายพฤติกรรมของ Endpoint นี้ได้ถูกต้อง?",
+      "body": "<pre><code>@Post()\n@HttpCode(HttpStatus.GONE)\ncreate(@Body() body: any) {\n  return body;\n}</code></pre>",
+      "choices": [
+        "ตอบ 410 Gone แทนค่าเริ่มต้น 201 Created ของ POST",
+        "ตอบ 200 OK เพราะ Handler ทุกชนิดของ Nest ใช้ 200 เสมอ",
+        "ตอบ 404 Not Found เพราะ @HttpCode ใช้เปลี่ยนได้เฉพาะ GET"
+      ],
+      "correctChoice": 1,
+      "explanation": "Nest ใช้ 201 Created เป็นค่าเริ่มต้นของ POST แต่ @HttpCode สามารถ Override เฉพาะ Handler นั้นได้ โดย HttpStatus.GONE มีค่า 410"
+    },
+    {
+      "prompt": "เหตุใด Endpoint อัปเดตกาแฟในคอร์สจึงใช้ PATCH แทน PUT?",
+      "choices": [
+        "PATCH เป็น Method เดียวที่รับ Route Parameter ได้",
+        "PATCH ลบ Resource เดิมก่อนสร้าง Resource ใหม่เสมอ",
+        "PATCH ใช้แก้ไขบาง Field ได้ โดย Client ไม่ต้องส่ง Resource ทั้งก้อน"
+      ],
+      "correctChoice": 3,
+      "explanation": "PATCH สื่อถึง Partial Update จึงส่งเฉพาะ Field ที่ต้องการเปลี่ยนได้ ส่วน PUT ตาม Convention ใช้แทนที่ Resource ทั้งก้อนและมักต้องส่งข้อมูลให้ครบ"
+    },
+    {
+      "prompt": "ก่อนเปิด Auto-transform ค่า limit ใน Handler นี้จะเป็น Type ใดเมื่อเรียก /coffees?limit=10?",
+      "body": "<pre><code>@Get()\nfindAll(@Query('limit') limit: number) {\n  return typeof limit;\n}</code></pre>",
+      "choices": [
+        "number เพราะ TypeScript Annotation แปลงค่า Runtime ให้เอง",
+        "string เพราะค่าจาก URL ยังไม่ถูกแปลงที่ Runtime",
+        "undefined เพราะ @Query() รับได้เฉพาะ Object ทั้งก้อน"
+      ],
+      "correctChoice": 2,
+      "explanation": "ค่าจาก URL เป็น String เสมอ และ Type Annotation ของ TypeScript หายไปตอน Runtime จึงต้องเปิด transform ใน ValidationPipe หรือแปลงค่าด้วยวิธีอื่น"
+    },
+    {
+      "prompt": "@Injectable() บน CoffeesService และ Constructor Parameter ใน Controller ทำงานร่วมกันอย่างไร?",
+      "body": "<pre><code>@Injectable()\nexport class CoffeesService {}\n\n@Controller('coffees')\nexport class CoffeesController {\n  constructor(private readonly coffeesService: CoffeesService) {}\n}</code></pre>",
+      "choices": [
+        "Controller ต้องเรียก new CoffeesService() เองทุก Request",
+        "@Injectable() เปลี่ยน Service ให้กลายเป็น HTTP Route โดยอัตโนมัติ",
+        "Nest สร้าง CoffeesService เป็น Provider แล้ว Inject Instance ให้ Controller ผ่านระบบ Dependency Injection"
+      ],
+      "correctChoice": 3,
+      "explanation": "@Injectable() ทำให้ Class เป็น Provider ที่ IoC Container จัดการได้ เมื่อ Module ประกาศ Provider นี้ Nest จึง Resolve และ Inject Instance ให้ Constructor ของ Controller"
+    },
+    {
+      "prompt": "เมื่อ CoffeesService หา Coffee ตาม id ไม่พบ วิธีใดสื่อผลลัพธ์ให้ Client ได้เหมาะสมที่สุด?",
+      "choices": [
+        "โยน NotFoundException พร้อมข้อความ เช่น Coffee #999 not found",
+        "คืน undefined แล้วปล่อยให้ Response เป็น 200 พร้อม Body ว่าง",
+        "โยน Error ที่มี SQL Query และ Stack Trace ทั้งหมด"
+      ],
+      "correctChoice": 1,
+      "explanation": "NotFoundException ถูก Exceptions Layer ของ Nest แปลงเป็น Response 404 ที่มีโครงสร้างชัดเจน ข้อความควรบอก Resource ที่ไม่พบโดยไม่เปิดเผยรายละเอียดภายในระบบ"
+    },
+    {
+      "prompt": "หลังสร้าง CoffeesModule แล้ว การจัด Module แบบใดถูกต้องและไม่สร้าง CoffeesService ซ้ำซ้อน?",
+      "choices": [
+        "ประกาศ CoffeesController และ CoffeesService ทั้งใน AppModule และ CoffeesModule",
+        "ใส่ CoffeesController ใน exports ของ AppModule และไม่ประกาศ Provider",
+        "ประกาศ Controller กับ Service ใน CoffeesModule แล้วให้ AppModule import CoffeesModule"
+      ],
+      "correctChoice": 3,
+      "explanation": "แต่ละ Business Domain ควรห่อ Component ของตัวเองไว้ใน Module เดียว AppModule จึงเพียง Import CoffeesModule และไม่ประกาศ Controller หรือ Service ชุดเดิมซ้ำ"
+    },
+    {
+      "prompt": "เหตุใด UpdateCoffeeDto จึงเหมาะที่จะ extends PartialType(CreateCoffeeDto)?",
+      "choices": [
+        "เพื่อทำให้ทุก Property เป็น Optional พร้อมสืบทอดกฎ Validation เหมาะกับ PATCH",
+        "เพื่อเพิ่ม id ให้ Client เป็นผู้กำหนดทุกครั้งที่ Update",
+        "เพื่อปิด Validation ของ CreateCoffeeDto เฉพาะตอน Update"
+      ],
+      "correctChoice": 1,
+      "explanation": "PartialType สร้าง Class ที่มี Property ของ DTO ต้นฉบับแบบ Optional และคง Validation Metadata ไว้ จึงลดโค้ดซ้ำและสอดคล้องกับ Partial Update ของ PATCH"
+    },
+    {
+      "prompt": "ValidationPipe ชุดนี้จัดการ Payload ที่มี isAdmin เกินจาก DTO และ Route Parameter id อย่างไร?",
+      "body": "<pre><code>app.useGlobalPipes(new ValidationPipe({\n  whitelist: true,\n  forbidNonWhitelisted: true,\n  transform: true,\n}));\n\n@Get(':id')\nfindOne(@Param('id') id: number) {\n  return typeof id;\n}</code></pre>",
+      "choices": [
+        "ลบ isAdmin เงียบ ๆ และปล่อย id เป็น string",
+        "ตอบ 400 เพราะ isAdmin ไม่ได้อยู่ใน DTO และแปลง id ที่ถูกต้องเป็น number ก่อนเข้า Handler",
+        "รับ isAdmin ไว้ตามเดิมและแปลง id เป็น Boolean"
+      ],
+      "correctChoice": 2,
+      "explanation": "whitelist ทำงานร่วมกับ forbidNonWhitelisted เพื่อปฏิเสธ Property ที่ไม่อยู่ในสัญญาด้วย 400 ส่วน transform แปลงค่า Primitive จาก URL ตาม Type ที่ประกาศก่อนส่งเข้า Handler"
+    },
+    {
+      "prompt": "ใน Docker Compose ค่า ports: \"5433:5432\" หมายความว่าอย่างไร และต้องใช้ Port ใดใน DATABASE_URL จากเครื่อง Host?",
+      "choices": [
+        "Host Port 5433 Map ไป Container Port 5432 และ DATABASE_URL ใช้ 5433",
+        "Host Port 5432 Map ไป Container Port 5433 และ DATABASE_URL ใช้ 5432",
+        "PostgreSQL ใช้ทั้งสอง Port พร้อมกันและ DATABASE_URL เลือกค่าใดก็ได้"
+      ],
+      "correctChoice": 1,
+      "explanation": "รูปแบบ Port Mapping คือ host:container ดังนั้น Client ที่รันบนเครื่อง Host ต้องเชื่อม localhost:5433 ซึ่งถูกส่งต่อไปยัง PostgreSQL ที่ Port 5432 ภายใน Container"
+    },
+    {
+      "prompt": "หลังเพิ่ม model Coffee ลงใน schema.prisma ลำดับใดทำให้ทั้งตารางจริงและ Prisma Client ตรงกับ Schema ใน Prisma 7?",
+      "body": "<pre><code>model Coffee {\n  id      Int      @id @default(autoincrement())\n  name    String\n  brand   String\n  flavors String[]\n\n  @@map(\"coffee\")\n}</code></pre>",
+      "choices": [
+        "รัน prisma generate อย่างเดียว เพราะจะสร้างตารางและ Type พร้อมกัน",
+        "รัน prisma db push เพื่อ Sync ตาราง แล้วรัน prisma generate เพื่อสร้าง Client และ Type ใหม่",
+        "รัน nest build ก่อน แล้ว Prisma จะตรวจพบ Model และสร้าง Migration อัตโนมัติ"
+      ],
+      "correctChoice": 2,
+      "explanation": "prisma db push ทำให้โครงสร้างฐานข้อมูลตรงกับ Schema โดยไม่สร้างไฟล์ Migration ส่วน Prisma 7 ไม่ Generate Client ให้อัตโนมัติ จึงต้องรัน prisma generate ต่อเพื่ออัปเดต Client และ Type"
+    }
+  ]
+}

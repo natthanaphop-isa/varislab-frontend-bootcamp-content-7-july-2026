@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="กำหนด status code ของ response ด้วย @HttpCode และ HttpStatus enum พร้อมข้อควรระวังของการใช้ @Res โดยตรง" />
+  <title>กำหนด Response Status Codes</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 9 จาก 77</p>
+    <h1>กำหนด Response Status Codes</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>บอกค่า status code เริ่มต้นที่ Nest ใช้กับแต่ละ HTTP method</li>
+        <li>เปลี่ยน status code ของ handler ด้วย <code>@HttpCode</code> และ <code>HttpStatus</code> enum</li>
+        <li>อธิบายได้ว่าทำไมการหยิบ <code>@Res()</code> มาใช้ตรง ๆ จึงควรทำอย่างระมัดระวัง</li>
+      </ul>
+    </section>
+
+    <h2>ค่า default ดีอยู่แล้ว — แต่บางครั้งต้องกำหนดเอง</h2>
+    <p>Nest เลือก status code ให้อัตโนมัติ: ทุก handler คืน <code>200 OK</code> ยกเว้น POST ที่คืน <code>201 Created</code> ซึ่งครอบคลุมกรณีส่วนใหญ่ แต่เมื่อ endpoint ต้องสื่อสถานะเฉพาะ เช่น deprecated แล้ว ให้ใช้ decorator <code>@HttpCode</code> ประกบกับ <code>HttpStatus</code> enum — ทั้งคู่มาจาก <code>@nestjs/common</code></p>
+    <pre><code>/*
+  💡 BEST PRACTICE:
+  ใช้ @HttpCode คู่กับ HttpStatus enum แทนการพิมพ์เลขดิบ
+*/
+import { HttpStatus, HttpCode } from '@nestjs/common';
+
+@Post()
+@HttpCode(HttpStatus.GONE) // 👈 ตอบ 410 Gone
+create(@Body() body: any) {
+  // ...
+}</code></pre>
+    <p>การใช้ enum อย่าง <code>HttpStatus.GONE</code> แทนเลข <code>410</code> ทำให้โค้ดอ่านออกทันทีว่าตั้งใจสื่ออะไร และช่วยกัน typo ของเลข status ด้วย ตัวอย่างนี้ตั้ง 410 ชั่วคราวเพื่อทดลองเท่านั้น — เดี๋ยวเราจะเปลี่ยนกลับ</p>
+
+    <h2>@Res(): ทรงพลังแต่ผูกติดแพลตฟอร์ม</h2>
+    <p>อีกทางหนึ่งคือขอ response object ของแพลตฟอร์มข้างใต้ (Express หรือ Fastify) มาควบคุมเองผ่าน <code>@Res()</code></p>
+    <pre><code>/*
+  🚨 ใช้อย่างระวัง — โค้ดจะผูกกับแพลตฟอร์ม (Express/Fastify)
+*/
+import { Res } from '@nestjs/common';
+import { Response } from 'express'; // 👈 ต้อง type ให้ชัด ไม่งั้น TypeScript strict mode ฟ้อง implicit any
+
+@Get()
+findAll(@Res() response: Response) {
+  // ตัวอย่างแบบ Express: ใช้ status() และ send()
+  response.status(200).send('This action returns all coffees');
+}</code></pre>
+    <div class="warning">
+      <p>เมื่อใช้ <code>@Res()</code> เราต้องรับผิดชอบการส่ง response เองทั้งหมด และเสียความสามารถอัตโนมัติของ Nest ไปหลายอย่าง (เช่น interceptors ที่ทำงานกับค่า return) ที่สำคัญคือโค้ดจะ <strong>platform-dependent</strong> — ย้ายจาก Express ไป Fastify แล้วพังได้ ใช้เมื่อจำเป็นจริง ๆ เท่านั้น เช่น ต้อง stream ไฟล์หรือตั้ง header เฉพาะทาง</p>
+    </div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ทดลองเปลี่ยน status ของ POST /coffees</h2>
+      <p>เพิ่ม <code>@HttpCode(HttpStatus.GONE)</code> ให้ handler <code>create()</code> แล้วยิง POST ดู status ที่เปลี่ยนไป จากนั้นลบ decorator ออกเพื่อกลับสู่ 201 ตามเดิม (อย่าลืม import <code>HttpCode</code> และ <code>HttpStatus</code>)</p>
+      <div class="prompt-example"><code>curl -i -X POST http://localhost:3000/coffees \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Test Roast"}'
+# สังเกตบรรทัดแรก: HTTP/1.1 410 Gone</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ระหว่างที่ decorator ติดอยู่ POST ตอบ <code>410 Gone</code> แทน 201; เมื่อลบออกแล้ว ตอบ <code>201 Created</code> เหมือนเดิม โดย response body ไม่เปลี่ยน</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ก่อนแก้: <code>curl -i -X POST /coffees</code> ได้ 201 (ค่า default ของ POST)</li>
+        <li>หลังใส่ <code>@HttpCode(HttpStatus.GONE)</code>: ได้ 410</li>
+        <li><code>GET /coffees</code> ยังได้ 200 — ยืนยันว่า <code>@HttpCode</code> มีผลเฉพาะ handler ที่ติด decorator</li>
+        <li>หลังลบ decorator แล้ว status กลับเป็น 201 และไม่มี import ค้างที่ไม่ได้ใช้</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/controllers">Controllers: Status code และ Library-specific responses (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="08_handling-request-body-payload.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="10_handling-update-and-delete-requests.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

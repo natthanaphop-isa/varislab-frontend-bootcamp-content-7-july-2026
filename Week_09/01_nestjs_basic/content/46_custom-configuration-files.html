@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง custom configuration file ใน NestJS เพื่อจัดกลุ่มค่า config เป็น object ซ้อนชั้น แล้วอ่านผ่าน ConfigService ด้วย dot notation" />
+  <title>สร้าง Configuration Files ของตัวเอง</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 46 จาก 77</p>
+    <h1>สร้าง Configuration Files ของตัวเอง</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>สร้าง configuration file ที่ return object ซ้อนชั้น พร้อมค่า default และการแปลงชนิดข้อมูล</li>
+        <li>โหลดไฟล์นั้นเข้า <code>ConfigModule</code> ด้วย option <code>load</code></li>
+        <li>อ่านค่า nested ผ่าน <code>ConfigService</code> ด้วย dot notation</li>
+      </ul>
+    </section>
+
+    <h2>จาก key แบน ๆ สู่ config ที่มีโครงสร้าง</h2>
+    <p>ไฟล์ <code>.env</code> เก็บได้แค่คู่ key/value แบน ๆ ที่เป็น string ทั้งหมด เมื่อ config โตขึ้นเราอยากได้โครงสร้าง: จัดกลุ่มค่าที่เกี่ยวข้องกัน แปลงชนิดข้อมูล และกำหนด default ในที่เดียว <em>custom configuration file</em> คือ factory function ธรรมดาที่ return object — เราจะเขียน logic อะไรในนั้นก็ได้</p>
+    <pre><code>// src/config/app.config.ts
+export default () =&gt; ({
+  environment: process.env.NODE_ENV || 'development',
+  port: parseInt(process.env.PORT ?? '3000', 10),
+  database: {
+    url: process.env.DATABASE_URL,
+  },
+});</code></pre>
+    <p>สังเกตว่าไฟล์นี้เป็นจุดเดียวที่ยังแตะ <code>process.env</code> — ทั้งการอ่าน, fallback ด้วย <code>??</code> เมื่อไม่ได้ตั้งค่า (จำเป็นใน strict mode เพราะ <code>process.env.PORT</code> มีชนิด <code>string | undefined</code>) และการแปลงเป็นตัวเลขด้วย <code>parseInt</code> ถูกรวมไว้ที่เดียว ส่วนอื่นของแอปเห็นแค่ object ที่มีโครงสร้างชัดเจนแล้ว</p>
+
+    <h2>โหลดเข้า ConfigModule ด้วย option load</h2>
+    <pre><code>// app.module.ts
+import appConfig from './config/app.config.js';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      load: [appConfig],
+    }),
+  ],
+})
+export class AppModule {}</code></pre>
+    <p><code>load</code> รับ array จึงแยก config เป็นหลายไฟล์ตามหมวดได้เมื่อโปรเจกต์โตขึ้น (และบทถัดไปจะพาไปอีกขั้นด้วย namespaces)</p>
+
+    <h2>อ่านค่า nested ด้วย dot notation</h2>
+    <p>ค่าใน object ที่โหลดแล้วเข้าถึงผ่าน <code>ConfigService</code> เหมือนเดิม โดยชี้ลึกลงไปด้วยรูปแบบ <code>a.b</code> และยังใส่ default เป็น argument ตัวที่สองได้</p>
+    <pre><code>const databaseUrl = this.configService.get('database.url');
+const port = this.configService.get('port', 3000);</code></pre>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">รวม config ของ iluvcoffee ไว้ใน app.config.ts</h2>
+      <p>สร้าง <code>src/config/app.config.ts</code> ตามตัวอย่าง, ลงทะเบียนผ่าน <code>load</code> ใน <code>ConfigModule.forRoot()</code> แล้วเปลี่ยนจุดที่อ่าน <code>DATABASE_URL</code> ในบทก่อนให้ใช้ <code>database.url</code> แทน</p>
+      <div class="prompt-example"><code>mkdir -p src/config
+# สร้าง src/config/app.config.ts ตามตัวอย่างด้านบน
+
+// coffees.service.ts — ทดสอบอ่านค่า nested
+const databaseUrl = this.configService.get('database.url');
+console.log(databaseUrl, this.configService.get('port'));
+
+npm run start:dev</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>เทอร์มินัลพิมพ์ connection string จาก <code>.env</code> ผ่านเส้นทางใหม่ <code>database.url</code> และเมื่อไม่ได้ตั้ง <code>PORT</code> ใน <code>.env</code> ค่า <code>port</code> จะกลายเป็น <code>3000</code> จาก fallback ใน config file ไม่ใช่ <code>NaN</code></p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>get('database.url')</code> คืนค่าตรงกับ <code>DATABASE_URL</code> ใน <code>.env</code></li>
+        <li><code>get('environment')</code> คืน <q>development</q> เมื่อไม่ได้ตั้ง <code>NODE_ENV</code></li>
+        <li><code>port</code> เป็น number (ลอง <code>typeof</code>) เพราะผ่าน <code>parseInt</code> แล้ว</li>
+        <li>แอป start และ <code>GET /coffees</code> ทำงานปกติหลัง refactor</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/configuration">Configuration: custom configuration files (NestJS)</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals course (ต้นฉบับ)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="45_using-the-config-service.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="47_configuration-namespaces-and-partial-registration.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เปิด transform: true ของ ValidationPipe ให้ payload กลายเป็น instance ของ DTO จริง และแปลง primitive type จาก URL อัตโนมัติ" />
+  <title>แปลง Payload เป็น DTO Instance อัตโนมัติ</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 18 จาก 77</p>
+    <h1>แปลง Payload เป็น DTO Instance อัตโนมัติ</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เปิดคุณสมบัติ auto-transform ของ <code>ValidationPipe</code></li>
+        <li>อธิบายความต่างระหว่าง plain object กับ instance ของ DTO class จริง</li>
+        <li>ใช้ transform แปลง route/query parameter จาก string เป็น type ที่ประกาศไว้</li>
+      </ul>
+    </section>
+
+    <h2>Payload ที่ผ่านมาเป็นแค่ Plain Object</h2>
+    <p>โดย default สิ่งที่ <code>@Body()</code> ส่งให้ handler คือ plain JavaScript object ที่ Nest แปลงจาก JSON — ต่อให้เราประกาศ type เป็น <code>CreateCoffeeDto</code> การเช็ก <code>instanceof CreateCoffeeDto</code> ก็ได้ <code>false</code> เพราะ type annotation ของ TypeScript หายไปหมดตอน runtime การเปิด <code>transform</code> ทำให้ <code>ValidationPipe</code> ใช้ <code>class-transformer</code> สร้าง instance ของ DTO จริง ๆ ให้:</p>
+    <pre><code>/* main.ts */
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+);</code></pre>
+    <p>ลองพิสูจน์ใน handler:</p>
+    <pre><code>@Post()
+create(@Body() createCoffeeDto: CreateCoffeeDto) {
+  console.log(createCoffeeDto instanceof CreateCoffeeDto); // true เมื่อเปิด transform
+  return this.coffeesService.create(createCoffeeDto);
+}</code></pre>
+
+    <h2>โบนัสใหญ่: แปลง Primitive Type ให้ด้วย</h2>
+    <p>ทุกอย่างที่มากับ URL เป็น string เสมอ — <code>@Param('id')</code> และ <code>@Query('limit')</code> ที่เราเจอมาจึงต้องมานั่งแปลงเองด้วย <code>+id</code> เมื่อเปิด <code>transform</code> แล้ว แค่ประกาศ type เป็น <code>number</code> pipe จะแปลงให้ก่อนถึงมือเรา:</p>
+    <pre><code>@Get(':id')
+findOne(@Param('id') id: number) {
+  console.log(typeof id); // 'number'
+  return this.coffeesService.findOne('' + id);
+}</code></pre>
+    <div class="comparison" role="region" aria-label="พฤติกรรมก่อนและหลังเปิด transform" tabindex="0">
+      <table>
+        <thead><tr><th>สิ่งที่รับเข้า</th><th>ไม่เปิด transform</th><th>เปิด transform</th></tr></thead>
+        <tbody>
+          <tr><td>JSON body</td><td>plain object</td><td>instance ของ DTO class (validate + สร้างด้วย class-transformer)</td></tr>
+          <tr><td><code>@Param('id') id: number</code></td><td>string เสมอ ต้องแปลงเอง</td><td>number ตาม type ที่ประกาศ</td></tr>
+          <tr><td>Query parameters</td><td>string ทั้งหมด</td><td>แปลงตาม type ของ DTO/annotation ที่ประกาศ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><p>การแปลง type มีต้นทุน performance เล็กน้อยต่อ request แต่แลกกับโค้ดที่สะอาดขึ้นและ bug จาก type ผิดที่หายไป — สำหรับแอปส่วนใหญ่ถือว่าคุ้มมาก และชุดตัวเลือก <code>whitelist + forbidNonWhitelisted + transform</code> นี้คือ baseline ที่เราจะใช้ตลอดทั้งคอร์ส</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">เปิด transform แล้วพิสูจน์ด้วย instanceof และ typeof</h2>
+      <p>เพิ่ม <code>transform: true</code> ใน <code>main.ts</code> ใส่ <code>console.log</code> ชั่วคราวใน <code>create()</code> และ <code>findOne()</code> ตามตัวอย่าง แล้วยิง request ดูผลใน terminal ของ dev server</p>
+      <div class="prompt-example"><code>curl -X POST http://localhost:3000/coffees \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Roast", "brand": "Brew", "flavors": ["mocha"]}'
+
+curl http://localhost:3000/coffees/1</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>terminal แสดง <code>true</code> จาก <code>instanceof CreateCoffeeDto</code> และ <code>number</code> จาก <code>typeof id</code> — payload กับ parameter ถูกแปลงเป็น type ที่ประกาศไว้จริงโดยเราไม่ต้องเขียนโค้ดแปลงเองสักบรรทัด</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>instanceof CreateCoffeeDto</code> ใน <code>create()</code> พิมพ์ <code>true</code></li>
+        <li><code>typeof id</code> ใน <code>findOne()</code> พิมพ์ <code>number</code> ทั้งที่ค่ามาจาก URL</li>
+        <li>validation จากบทก่อน (400 เมื่อ payload ผิด) ยังทำงานครบ</li>
+        <li>ลบ <code>console.log</code> ทดลองออกแล้วเมื่อยืนยันเสร็จ</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation: Transform payload objects (NestJS)</a></li>
+      <li><a href="https://github.com/typestack/class-transformer">class-transformer</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="17_handling-malicious-request-data.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="19_before-we-get-started.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

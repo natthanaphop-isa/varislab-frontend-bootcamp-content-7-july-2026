@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เพิ่ม model Order และ OrderItem ใน Prisma พร้อมเก็บ snapshot ราคาสินค้า แล้วอัปเดต seed ให้ล้างคำสั่งซื้อก่อนล้างสินค้า" />
+  <title>ออกแบบ Model ของคำสั่งซื้อ</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 16 จาก 24</p>
+    <h1>ออกแบบ Model ของคำสั่งซื้อ</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อ่าน body ที่ React app ส่งมาตอน checkout แล้วแปลงเป็นตาราง <code>Order</code> และ <code>OrderItem</code> ได้</li>
+        <li>อธิบายได้ว่าทำไม <code>OrderItem</code> ต้องคัดลอก <code>title</code>, <code>price</code>, <code>discountPercentage</code>, <code>thumbnail</code> เก็บไว้เอง</li>
+        <li>เลือกใส่ <code>onDelete: Cascade</code> ให้ถูกฝั่ง และบอกได้ว่าทำไม seed ต้องเปลี่ยนลำดับการลบข้อมูล</li>
+      </ul>
+    </section>
+
+    <h2>สองฝั่งของคำสั่งซื้อ: body ที่รับ กับ response ที่ต้องคืน</h2>
+    <p>ถึงตอนนี้ API ของเราอ่านสินค้าได้ครบแล้ว บทที่ 16–19 จะเพิ่มฝั่ง <strong>เขียน</strong> ตัวเดียวที่ React app ต้องใช้ คือตอนกดสั่งซื้อ ก่อนออกแบบตารางต้องรู้สองอย่างให้แน่ชัด: client ส่งอะไรมา และ client คาดหวัง response หน้าตาแบบไหน</p>
+    <p>ฝั่งที่ส่งมาคือ hook <code>useCheckout</code> ของ React app มันประกอบ body จากตะกร้าแบบนี้เสมอ (<code>userId</code> ยังเป็นค่าคงที่ <code>1</code> เพราะแอปตัวอย่างยังไม่มีระบบ login)</p>
+    <pre><code>{
+  "userId": 1,
+  "products": [{ "id": 1, "quantity": 2 }],
+  "address": {
+    "address": "1 Sukhumvit Rd",
+    "email": "a@b.com",
+    "phone": "0812345678"
+  }
+}</code></pre>
+    <p>ฝั่งที่ต้องคืนคือสัญญาที่วางไว้ในโปรเจกต์ตั้งแต่บทที่ 3 ไฟล์ <code>docs/contract/cart-add.txt</code> คือ response จริงของ <code>POST https://dummyjson.com/carts/add</code> status <code>201</code></p>
+    <pre><code>{"id":209,"products":[{"id":1,"title":"Essence Mascara Lash Princess","price":9.99,"quantity":2,"total":19.98,"discountPercentage":10.48,"discountedPrice":18,"thumbnail":"https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp"}],"total":19.98,"discountedTotal":18,"userId":1,"totalProducts":1,"totalQuantity":2}</code></pre>
+    <p>สังเกตความไม่สมมาตรสองจุด: <code>address</code> ที่ส่งไปไม่ถูกส่งกลับมาใน response เลย และ <code>products[]</code> ที่กลับมามี field มากกว่าที่ส่งไปเยอะ (<code>title</code>, <code>price</code>, <code>total</code>, <code>discountPercentage</code>, <code>discountedPrice</code>, <code>thumbnail</code>) นั่นคือหน้าที่ของเรา — รับ id กับ quantity แล้วเติมข้อมูลสินค้าและยอดเงินให้ครบ</p>
+
+    <h2>Order หนึ่งใบ มีหลาย OrderItem</h2>
+    <p>คำสั่งซื้อหนึ่งใบมีสินค้าได้หลายรายการ จึงเป็นความสัมพันธ์ one-to-many ตรงตัว: <code>Order</code> เก็บสิ่งที่เป็นของ<em>ทั้งใบ</em> (<code>userId</code>, ที่อยู่จัดส่ง, ยอดรวม, เวลาที่สั่ง) และ <code>OrderItem</code> เก็บสิ่งที่เป็นของ<em>แต่ละบรรทัด</em> (สินค้าตัวไหน กี่ชิ้น ราคาเท่าไร) — pattern เดียวกับ <code>Product</code> กับ <code>Review</code> ในบทที่ 7</p>
+    <p>ที่อยู่จัดส่ง (<code>address</code>, <code>email</code>, <code>phone</code>) เก็บไว้ที่ <code>Order</code> แม้ response จะไม่คืนออกไป เพราะข้อมูลนี้จำเป็นต่อการจัดส่ง และเป็นค่าของใบนั้นใบเดียว ไม่ใช่ของ user (user คนเดียวสั่งไปหลายที่อยู่ได้)</p>
+
+    <h2>snapshot: ใบเสร็จของเมื่อวานต้องไม่เปลี่ยนเพราะราคาของวันนี้</h2>
+    <p>จุดตัดสินใจสำคัญที่สุดของบทนี้: <code>OrderItem</code> มี <code>productId</code> อยู่แล้ว ทำไมยังต้องเก็บ <code>title</code>, <code>price</code>, <code>discountPercentage</code>, <code>thumbnail</code> ซ้ำอีก ทั้งที่ join กลับไปที่ <code>Product</code> ก็อ่านได้</p>
+    <p>เพราะ <code>Product</code> เปลี่ยนได้ พรุ่งนี้ร้านลดราคาจาก 9.99 เป็น 7.99 หรือเปลี่ยนชื่อสินค้า ถ้าใบเสร็จอ่านราคาจากตาราง <code>Product</code> ทุกครั้ง ใบเสร็จของเมื่อวานจะเปลี่ยนตัวเลขตามไปด้วย — ลูกค้าจ่ายไป 19.98 แต่ประวัติกลับโชว์ 15.98 นี่คือบั๊กทางบัญชี ไม่ใช่เรื่องความสวยงามของ schema</p>
+    <p>เราจึง <strong>คัดลอก</strong> ค่าที่ใช้คิดเงินลงมาเก็บใน <code>OrderItem</code> ตอนสั่งซื้อ (เรียกว่า snapshot หรือ denormalization ที่ตั้งใจทำ) ส่วน <code>productId</code> ยังเก็บไว้เพื่อให้ลิงก์กลับไปหน้าสินค้าได้ แต่ตัวเลขบนใบเสร็จไม่พึ่งมันแล้ว ด้วยเหตุผลเดียวกัน <code>total</code>, <code>discountedTotal</code>, <code>totalProducts</code>, <code>totalQuantity</code> ก็ถูกเก็บเป็น column ไม่ใช่คำนวณใหม่ตอนอ่าน</p>
+
+    <h2>ลบอะไรได้ ลบอะไรไม่ได้</h2>
+    <p>สองความสัมพันธ์ของ <code>OrderItem</code> ต้องตั้ง <code>onDelete</code> ต่างกัน และนี่คือจุดที่ AI มักทำเหมือนกันทั้งคู่</p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ onDelete ของสองความสัมพันธ์" tabindex="0">
+      <table>
+        <thead><tr><th>ความสัมพันธ์</th><th>onDelete</th><th>เหตุผล</th></tr></thead>
+        <tbody>
+          <tr><td><code>OrderItem</code> → <code>Order</code></td><td><code>Cascade</code></td><td>รายการสินค้าไม่มีความหมายถ้าไม่มีใบคำสั่งซื้อ ลบใบทิ้ง รายการต้องหายตามไปด้วย</td></tr>
+          <tr><td><code>OrderItem</code> → <code>Product</code></td><td>ค่า default (<code>Restrict</code>)</td><td>ห้ามลบสินค้าที่ยังมีคำสั่งซื้ออ้างถึง ไม่งั้นเราจะทำใบเสร็จหายเพราะลบสินค้าตัวเดียว</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ผลข้างเคียงตามมาทันทีที่ <code>prisma/seed.ts</code> ปัจจุบัน seed ลบข้อมูลตามลำดับ <code>review</code> → <code>product</code> → <code>category</code> ใน transaction พอมี <code>OrderItem</code> อ้างถึง <code>Product</code> แบบ <code>Restrict</code> คำสั่ง <code>tx.product.deleteMany()</code> จะพังทันทีถ้ายังมีคำสั่งซื้อค้างอยู่ในฐานข้อมูล จึงต้องลบ <code>orderItem</code> และ <code>order</code> ขึ้นไปเป็นสองบรรทัดแรกของ transaction</p>
+    <div class="note"><p>ลำดับต้องเป็น <code>orderItem</code> ก่อน <code>order</code> เสมอ ไม่ใช่เพราะ Cascade ใช้ไม่ได้ (ใช้ได้) แต่เพราะการเขียนลำดับลูกก่อนแม่ให้ชัดเจนทำให้อ่าน seed แล้วเห็น dependency graph ทันที และไม่ต้องพึ่งพฤติกรรมของ FK</p></div>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+└── prisma/
+    ├── schema.prisma   (แก้ไข: เพิ่ม model Order, OrderItem และ relation ฝั่ง Product)
+    └── seed.ts         (แก้ไข: ลบ orderItem และ order ก่อนลบ review)</code></pre>
+    <ul>
+      <li><strong><code>prisma/schema.prisma</code></strong> — สัญญา: ต้องมี <code>model Order</code> และ <code>model OrderItem</code> ครบ field ตามสัญญาของ <code>cart-add.txt</code> บวกที่อยู่จัดส่ง, ต้องมี <code>orderItems OrderItem[]</code> ฝั่ง <code>Product</code>, ต้องมี <code>@@index([orderId])</code> และ <code>@@index([productId])</code> · ต้องไม่แตะ model <code>Category</code>, <code>Review</code> หรือ field เดิมของ <code>Product</code></li>
+      <li><strong><code>prisma/seed.ts</code></strong> — สัญญา: ต้องเพิ่ม <code>tx.orderItem.deleteMany()</code> แล้ว <code>tx.order.deleteMany()</code> ก่อน <code>tx.review.deleteMany()</code> · ต้องไม่แก้ส่วน fetch, ส่วน createMany หรือข้อความ log</li>
+      <li>ไม่มีไฟล์ใน <code>src/</code> เปลี่ยนในบทนี้ — DTO, service และ controller ของคำสั่งซื้ออยู่ในบทที่ 17–19</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor เพิ่มสอง model แล้วรัน migration ด้วยมือ</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent — commit ไว้เพื่อให้เทียบ diff ของ AI ได้ทีละบรรทัด และแชทใหม่ทำให้ context ไม่ปนกับบทก่อน (<code>git add -A &amp;&amp; git commit -m "chore: before order schema"</code>) จากนั้นส่ง prompt นี้ทั้งก้อน</p>
+      <p>ก่อนส่ง อ่าน<a href="01_what-well-be-building.html">กติกาของคอร์ส</a>อีกครั้ง: AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้ — ถ้าอธิบายไม่ได้ แปลว่ายังไม่ผ่านบทนี้</p>
+      <div class="cursor-prompt"><code>เพิ่ม Prisma model ของ Order และ OrderItem และอัปเดต seed ให้ล้างคำสั่งซื้อก่อนล้างสินค้า
+
+บริบท: @prisma/schema.prisma @prisma/seed.ts @docs/contract/cart-add.txt @.cursor/rules/project.mdc
+docs/contract/cart-add.txt คือ response จริงของ POST https://dummyjson.com/carts/add (status 201):
+  { id, products: [{ id, title, price, quantity, total, discountPercentage, discountedPrice, thumbnail }], total, discountedTotal, userId, totalProducts, totalQuantity }
+React app ส่ง body { userId, products: [{ id, quantity }], address: { address, email, phone } } — เราจะเก็บ address ไว้ที่ Order ด้วย
+schema มี Category, Product, Review แล้ว seed.ts ลบข้อมูลตามลำดับ review, product, category ใน transaction
+เมื่อมี OrderItem อ้างถึง Product แล้ว seed จะลบ product ไม่ได้ถ้ายังมีคำสั่งซื้อค้างอยู่
+
+โครงสร้าง: แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- prisma/schema.prisma (แก้ไข: เพิ่มสอง model ต่อท้าย และเพิ่ม relation ฝั่ง Product)
+- prisma/seed.ts (แก้ไข: เพิ่มการลบ orderItem และ order)
+
+ข้อกำหนดทางเทคนิค:
+- model Order: id Int @id @default(autoincrement()), userId Int, address String, email String, phone String,
+  total Float, discountedTotal Float, totalProducts Int, totalQuantity Int, createdAt DateTime @default(now()), items OrderItem[]
+- model OrderItem: id Int @id @default(autoincrement()), orderId Int, order Order @relation(fields: [orderId], references: [id], onDelete: Cascade),
+  productId Int, product Product @relation(fields: [productId], references: [id]), title String, thumbnail String,
+  price Float, discountPercentage Float, quantity Int, total Float, discountedPrice Float และ @@index([orderId]) @@index([productId])
+- Product เพิ่ม field orderItems OrderItem[] ต่อท้าย
+- ราคาและชื่อสินค้าถูกคัดลอกลง OrderItem ตอนสั่งซื้อ (snapshot) เพราะสินค้าอาจเปลี่ยนราคาภายหลัง ห้ามตัด field เหล่านี้ออก
+- seed.ts: ใน transaction ก่อน tx.review.deleteMany() เพิ่ม await tx.orderItem.deleteMany() แล้ว await tx.order.deleteMany() ตามลำดับ ห้ามแก้ส่วนอื่น
+
+ขอบเขต:
+- ห้ามแก้ไฟล์ใน src/
+- ห้ามรัน migrate หรือ generate ให้ผมรันเอง
+- ยังไม่ต้องสร้าง DTO, service หรือ controller ของคำสั่งซื้อ</code></div>
+      <p>prompt สั่งห้าม AI รัน migrate หรือ generate เอง เพราะสองคำสั่งนี้แก้ฐานข้อมูลจริงและสร้างไฟล์ migration ที่ commit ลง repo — เราต้องอ่าน schema ที่ AI เขียนให้จบก่อน แล้วจึงรันสามคำสั่งนี้ด้วยมือตามลำดับ</p>
+      <div class="prompt-example"><code>npx prisma migrate dev --name add-orders
+npx prisma generate
+npm run db:seed</code></div>
+      <div class="note"><p><code>prisma migrate dev</code> ของ Prisma 7 ไม่รัน <code>generate</code> ให้อัตโนมัติ ถ้าข้ามคำสั่งที่สอง <code>tx.orderItem</code> และ <code>tx.order</code> จะยังไม่มีใน Prisma Client และ seed จะพังด้วย type error</p></div>
+    </section>
+
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li><code>model Order</code> มี 10 field: <code>id</code>, <code>userId</code>, <code>address</code>, <code>email</code>, <code>phone</code>, <code>total</code>, <code>discountedTotal</code>, <code>totalProducts</code>, <code>totalQuantity</code>, <code>createdAt</code> บวก relation <code>items OrderItem[]</code></li>
+        <li><code>createdAt</code> เป็น <code>DateTime @default(now())</code> และ<strong>ไม่มี</strong> <code>updatedAt</code> — ใบเสร็จไม่ถูกแก้</li>
+        <li><code>model OrderItem</code> เก็บ snapshot ครบสี่ตัว (<code>title</code>, <code>thumbnail</code>, <code>price</code>, <code>discountPercentage</code>) บวก <code>quantity</code>, <code>total</code>, <code>discountedPrice</code></li>
+        <li>relation ฝั่ง <code>order</code> มี <code>onDelete: Cascade</code> ส่วนฝั่ง <code>product</code> <strong>ไม่มี</strong> <code>onDelete</code></li>
+        <li>มี <code>@@index([orderId])</code> และ <code>@@index([productId])</code> ทั้งสองบรรทัด</li>
+        <li><code>Product</code> ได้ field <code>orderItems OrderItem[]</code> ต่อท้าย และ field เดิมไม่ถูกแตะ (<code>git diff prisma/schema.prisma</code> ต้องเห็นแค่บรรทัดที่เพิ่ม)</li>
+        <li><code>seed.ts</code> เพิ่มแค่สองบรรทัด และอยู่<strong>ข้างใน</strong> <code>prisma.$transaction</code> ก่อน <code>tx.review.deleteMany()</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ใส่ <code>onDelete: Cascade</code> ให้ relation ฝั่ง <code>product</code> ด้วย (ลบสินค้าตัวเดียวแล้วใบเสร็จเก่าหายไปเงียบ ๆ) หรือแถม <code>@updatedAt</code> ให้ <code>Order</code> ทั้งที่ไม่มีใน requirement และผิดความหมายของใบเสร็จ อีกกรณีที่เจอบ่อยคือเอาบรรทัด <code>deleteMany</code> ไปวางไว้นอก transaction หรือวางไว้หลัง <code>tx.product.deleteMany()</code> ซึ่งพังตอนรัน</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <pre><code>// prisma/schema.prisma — ท้าย model Product (field อื่นทั้งหมดไม่เปลี่ยน)
+  categoryId           Int
+  category             Category @relation(fields: [categoryId], references: [id])
+  reviews              Review[]
+  orderItems           OrderItem[]
+
+  @@index([categoryId])
+}</code></pre>
+      <pre><code>// prisma/schema.prisma — สอง model ใหม่ต่อท้ายไฟล์
+model Order {
+  id              Int         @id @default(autoincrement())
+  userId          Int
+  address         String
+  email           String
+  phone           String
+  total           Float
+  discountedTotal Float
+  totalProducts   Int
+  totalQuantity   Int
+  createdAt       DateTime    @default(now())
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id                 Int     @id @default(autoincrement())
+  orderId            Int
+  order              Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId          Int
+  product            Product @relation(fields: [productId], references: [id])
+  title              String
+  thumbnail          String
+  price              Float
+  discountPercentage Float
+  quantity           Int
+  total              Float
+  discountedPrice    Float
+
+  @@index([orderId])
+  @@index([productId])
+}</code></pre>
+      <pre><code>// prisma/seed.ts — ใน transaction ของ main()
+  await prisma.$transaction(async (tx) =&gt; {
+    await tx.orderItem.deleteMany();
+    await tx.order.deleteMany();
+    await tx.review.deleteMany();
+    await tx.product.deleteMany();
+    await tx.category.deleteMany();</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>npx prisma migrate dev --name add-orders</code> สร้าง migration ใหม่และ apply ให้เลย โดย<strong>ไม่</strong>ถามยืนยันอะไร เพราะการเพิ่ม table ใหม่ไม่ทำข้อมูลเดิมหาย</p>
+      <pre><code>Loaded Prisma config from prisma7.config.ts.
+
+Prisma schema loaded from prisma/schema.prisma.
+Datasource "db": PostgreSQL database "ecommerce", schema "public" at "localhost:5432"
+
+Applying migration `20260911210450_add_orders`
+
+The following migration(s) have been created and applied from new schema changes:
+
+prisma/migrations/
+  └─ 20260911210450_add_orders/
+    └─ migration.sql
+
+Your database is now in sync with your schema.</code></pre>
+      <p>ตัวเลขนำหน้าชื่อโฟลเดอร์ migration เป็น timestamp ตอนที่คุณรัน จึงไม่ตรงกับตัวอย่างนี้ — ขอให้ชื่อลงท้ายด้วย <code>_add_orders</code> ก็ถูกแล้ว จากนั้น <code>npx prisma generate</code></p>
+      <pre><code>Loaded Prisma config from prisma7.config.ts.
+
+Prisma schema loaded from prisma/schema.prisma.
+
+✔ Generated Prisma Client (7.10.0) to ./src/generated/prisma in 22ms</code></pre>
+      <p>และ <code>npm run db:seed</code> ต้องได้ตัวเลขเท่าเดิมกับบทที่ 9 ทุกตัว — ถ้า count เปลี่ยน แปลว่า seed ถูกแก้เกินสองบรรทัด</p>
+      <pre><code>&gt; ecommerce-api@0.0.1 db:seed
+&gt; tsx prisma/seed.ts
+
+Seeded 24 categories, 194 products, 582 reviews</code></pre>
+      <p>เปิด <code>prisma/migrations/…_add_orders/migration.sql</code> ที่ Prisma สร้าง แล้วอ่านสองบรรทัดสุดท้าย นี่คือหลักฐานว่า <code>onDelete</code> ที่เขียนใน schema แปลเป็น SQL จริงตามที่ตั้งใจ: <code>orderId</code> เป็น <code>ON DELETE CASCADE</code> ส่วน <code>productId</code> เป็น <code>ON DELETE RESTRICT</code></p>
+      <pre><code>-- CreateTable
+CREATE TABLE "Order" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "address" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "total" DOUBLE PRECISION NOT NULL,
+    "discountedTotal" DOUBLE PRECISION NOT NULL,
+    "totalProducts" INTEGER NOT NULL,
+    "totalQuantity" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OrderItem" (
+    "id" SERIAL NOT NULL,
+    "orderId" INTEGER NOT NULL,
+    "productId" INTEGER NOT NULL,
+    "title" TEXT NOT NULL,
+    "thumbnail" TEXT NOT NULL,
+    "price" DOUBLE PRECISION NOT NULL,
+    "discountPercentage" DOUBLE PRECISION NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "total" DOUBLE PRECISION NOT NULL,
+    "discountedPrice" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
+
+-- CreateIndex
+CREATE INDEX "OrderItem_productId_idx" ON "OrderItem"("productId");
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;</code></pre>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>docker compose exec db psql -U postgres -d ecommerce -c '\dt'</code> เห็นตารางใหม่สองตัวคือ <code>Order</code> และ <code>OrderItem</code> รวมเป็น 6 แถว
+          <pre><code>               List of relations
+ Schema |        Name        | Type  |  Owner
+--------+--------------------+-------+----------
+ public | Category           | table | postgres
+ public | Order              | table | postgres
+ public | OrderItem          | table | postgres
+ public | Product            | table | postgres
+ public | Review             | table | postgres
+ public | _prisma_migrations | table | postgres
+(6 rows)</code></pre></li>
+        <li><code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT count(*) FROM "Order";'</code> ได้ <code>0</code> — ตารางว่าง ยังไม่มีคำสั่งซื้อจนถึงบทที่ 19</li>
+        <li><code>npx oxlint prisma/seed.ts</code> ผ่าน (<code>npm run lint</code> ดูแค่ <code>src/</code> กับ <code>test/</code> จึงต้องสั่งไฟล์ seed ตรง ๆ)</li>
+        <li><code>npm run build</code> ผ่าน — ยืนยันว่า Prisma Client ที่ generate ใหม่เข้ากับโค้ดเดิมทั้งหมด</li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: order schema"</code> (commit ไฟล์ migration ที่สร้างใหม่ไปด้วย)</li>
+      </ul>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/relations">Relations (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/relations/referential-actions">Referential actions: onDelete (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-migrate/workflows/development-and-production">Prisma Migrate: development workflow (Prisma Docs)</a></li>
+      <li><a href="https://dummyjson.com/docs/carts">Carts: add a new cart (DummyJSON Docs)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="15_checking-the-contract.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="17_validating-the-cart-payload.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

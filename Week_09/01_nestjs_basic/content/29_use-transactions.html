@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เพิ่ม Event model แล้วใช้ interactive transaction ($transaction) ของ Prisma ให้การบันทึกสองตารางสำเร็จหรือล้มเหลวไปพร้อมกัน" />
+  <title>ใช้ Transactions</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 29 จาก 77</p>
+    <h1>ใช้ Transactions</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่า transaction แก้ปัญหาอะไร และเมื่อไหร่ที่การเขียนสองครั้งติดกันไม่พอ</li>
+        <li>เพิ่ม <code>Event</code> model และคอลัมน์ <code>recommendations</code> ลงใน <code>schema.prisma</code> แล้ว push ขึ้นฐานข้อมูล</li>
+        <li>ใช้ <code>this.prisma.$transaction(async (tx) =&gt; …)</code> ให้หลาย query commit หรือ rollback พร้อมกันโดยไม่ต้องจัดการ connection เอง</li>
+      </ul>
+    </section>
+
+    <h2>งานที่ต้องสำเร็จด้วยกันหรือล้มด้วยกัน</h2>
+    <p><strong>Transaction</strong> คือหน่วยของงานฐานข้อมูลที่ต้องเกิดผลแบบ all-or-nothing สมมติเราเพิ่มฟีเจอร์ "แนะนำกาแฟ" ที่ต้องทำสองอย่าง: เพิ่มตัวนับ <code>recommendations</code> ของกาแฟ และบันทึกแถว event ลงอีกตารางเพื่อ analytics ถ้า query แรกสำเร็จแต่ตัวที่สองล้ม ข้อมูลจะค้างอยู่ในสภาพครึ่ง ๆ กลาง ๆ ที่เชื่อถือไม่ได้ — transaction ทำให้ทั้งคู่ commit พร้อมกัน หรือ rollback กลับทั้งหมด</p>
+    <p>เริ่มจากประกาศตารางใหม่ ใน Prisma ทุกตารางของโปรเจกต์ถูกนิยามในไฟล์ <code>schema.prisma</code> ไฟล์เดียว จึงไม่ต้องสร้างไฟล์ class แยกด้วย CLI — เพิ่ม <code>Event</code> model ต่อท้าย และเพิ่มฟิลด์ <code>recommendations</code> เข้า <code>Coffee</code> ด้วย <code>@default(0)</code></p>
+    <pre><code>model Coffee {
+  id              Int      @id @default(autoincrement())
+  name            String
+  brand           String
+  recommendations Int      @default(0)
+  flavors         Flavor[]
+
+  @@map("coffee")
+}
+
+model Event {
+  id      Int    @id @default(autoincrement())
+  type    String
+  name    String
+  payload Json
+
+  @@map("event")
+}</code></pre>
+    <pre><code>npx prisma db push
+npx prisma generate</code></pre>
+    <p>ชนิด <code>Json</code> กลายเป็นคอลัมน์ <code>jsonb</code> ใน PostgreSQL รับโครงสร้าง object อะไรก็ได้ และหลัง <code>generate</code> เราจะได้ type <code>Event</code> กับ property <code>this.prisma.event</code> มาใช้ทันที</p>
+
+    <h2>Interactive transaction: ห่อทุกอย่างไว้ใน callback</h2>
+    <p><code>PrismaService</code> ที่เรา inject ไว้แล้วมีเมธอด <code>$transaction()</code> รับ callback ที่ได้ <code>tx</code> — Prisma Client อีกตัวที่ผูกกับ transaction นี้โดยเฉพาะ — ทุก query ภายในต้องเรียกผ่าน <code>tx</code> ไม่ใช่ <code>this.prisma</code> จึงจะอยู่ใน transaction เดียวกัน</p>
+    <pre><code>@Injectable()
+export class CoffeesService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async recommendCoffee(id: string) {
+    return this.prisma.$transaction(async (tx) =&gt; {
+      const coffee = await tx.coffee.update({
+        where: { id: +id },
+        data: { recommendations: { increment: 1 } },
+      });
+
+      await tx.event.create({
+        data: {
+          type: 'coffee',
+          name: 'recommend_coffee',
+          payload: { coffeeId: coffee.id },
+        },
+      });
+
+      return coffee;
+    });
+  }
+}</code></pre>
+    <p>กติกาของ callback นี้คือหัวใจของบท:</p>
+    <ul>
+      <li>ทุก query ข้างในเรียกผ่าน <code>tx</code> — ถ้าเผลอใช้ <code>this.prisma</code> query นั้นจะวิ่ง<em>นอก</em> transaction และ rollback ไม่ได้</li>
+      <li>callback <strong>return</strong> เมื่อไหร่ Prisma <code>COMMIT</code> ให้ทันที</li>
+      <li>callback <strong>throw</strong> (หรือ query ใดล้ม) เมื่อไหร่ Prisma <code>ROLLBACK</code> ทุกอย่างที่ทำไปแล้วโดยอัตโนมัติ แล้วโยน error ต่อออกมาให้เรา</li>
+      <li>connection ถูกคืนกลับ pool ให้เองเสมอ — ไม่มี <code>release()</code> ให้ลืม</li>
+    </ul>
+    <p>สังเกต <code>{ increment: 1 }</code> ด้วย: นี่คือ atomic update operator ที่ให้ฐานข้อมูลบวกค่าเองใน SQL (<code>SET recommendations = recommendations + 1</code>) แทนการอ่านค่ามาบวกใน JavaScript แล้วเขียนกลับ ซึ่งจะพลาดได้เมื่อสองคำขอมาพร้อมกัน</p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบสองรูปแบบของ $transaction" tabindex="0">
+      <table>
+        <thead><tr><th>รูปแบบ</th><th>หน้าตา</th><th>เหมาะกับ</th></tr></thead>
+        <tbody>
+          <tr><td>Interactive</td><td><code>$transaction(async (tx) =&gt; { … })</code></td><td>query หลังต้องใช้ผลของ query ก่อน หรือมี logic/เงื่อนไขคั่นกลาง (เช่นตัวอย่างนี้ที่ event ต้องรู้ <code>coffee.id</code>)</td></tr>
+          <tr><td>Batch</td><td><code>$transaction([q1, q2, q3])</code></td><td>query อิสระหลายตัวที่แค่อยากให้สำเร็จหรือล้มพร้อมกัน เช่นลบหลายตารางทีเดียว — สั้นกว่าและไม่ถือ connection นาน</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning"><p>Interactive transaction ถือ connection หนึ่งเส้นไว้ตลอดช่วง callback — ทำให้มันสั้นที่สุด อย่าเรียก API ภายนอกหรือรอ I/O ที่ไม่เกี่ยวข้องข้างใน Prisma ตั้ง timeout ไว้ 5 วินาทีโดย default (ปรับได้ผ่าน option <code>{ timeout }</code>) ถ้าเกินจะ rollback ทิ้งทั้งก้อน</p></div>
+    <div class="note"><p>เพิ่ม endpoint ทดลองใน controller ที่เรียก <code>this.coffeesService.recommendCoffee(id)</code> ตามโค้ดด้านล่าง — ถ้า id ไม่มีจริง <code>tx.coffee.update</code> จะ throw error รหัส <code>P2025</code> ภายใน transaction (ซึ่ง rollback ให้อยู่แล้ว) จะเรียก <code>this.findOne(id)</code> ก่อนเข้า transaction เพื่อให้ได้ 404 ที่อ่านรู้เรื่องเหมือน endpoint อื่นก็ได้</p></div>
+    <pre><code>// coffees.controller.ts
+@Post(':id/recommend')
+recommend(@Param('id') id: string) {
+  return this.coffeesService.recommendCoffee(id);
+}</code></pre>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ทำให้การแนะนำกาแฟเป็น atomic</h2>
+      <p>แก้ <code>schema.prisma</code> ตามด้านบน, push และ generate, เขียน <code>recommendCoffee</code> แล้วต่อ endpoint ทดลองใน controller จากนั้นทดสอบทั้งขาสำเร็จและขา rollback</p>
+      <div class="prompt-example"><code># อัปเดต schema ลงฐานข้อมูล
+npx prisma db push
+npx prisma generate
+
+# ทดสอบ
+POST http://localhost:3000/coffees/1/recommend
+GET  http://localhost:3000/coffees/1
+
+# ดูในฐานข้อมูล
+SELECT * FROM event;
+
+# ทดสอบ rollback: เพิ่มบรรทัดนี้ชั่วคราวหลัง tx.event.create(...)
+#   throw new Error('boom');
+# แล้วยิง recommend อีกครั้ง</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ทุกครั้งที่ยิง recommend ค่า <code>recommendations</code> ของกาแฟเพิ่มขึ้น 1 <em>และ</em> ตาราง <code>event</code> ได้แถวใหม่ที่ payload ระบุ <code>coffeeId</code> เสมอ — สองตารางขยับพร้อมกันทุกครั้ง เมื่อใส่ <code>throw new Error('boom')</code> ไว้ท้าย callback ตัวนับต้อง<strong>ไม่</strong>เพิ่มและไม่มีแถว event ใหม่ แม้ว่า <code>tx.coffee.update</code> จะรันไปแล้วก็ตาม เพราะโดน rollback ทั้งก้อน (ลบบรรทัดทดลองออกเมื่อเสร็จ)</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ยิง recommend 3 ครั้ง — <code>recommendations</code> เป็น 3 และตาราง <code>event</code> มี 3 แถว เท่ากันเป๊ะ</li>
+        <li>ทดลอง sabotage ด้วย <code>throw</code> — ตัวนับไม่ขยับและไม่มีแถว event ใหม่ (แล้วแก้กลับ)</li>
+        <li>แอปยังรับคำขออื่นได้ปกติหลังทดลองหลายรอบ แสดงว่า connection ถูกคืน pool ครบ ไม่มีรั่ว</li>
+        <li>ทุก query ใน callback เรียกผ่าน <code>tx</code> ไม่มี <code>this.prisma</code> หลุดอยู่ข้างใน</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/transactions">Transactions and batch queries (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/recipes/prisma">Prisma recipe (NestJS Docs)</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="28_adding-pagination.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="30_adding-indexes-to-models.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

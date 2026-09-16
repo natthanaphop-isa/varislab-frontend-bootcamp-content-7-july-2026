@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง WrapResponseInterceptor ใน NestJS เพื่อแทรก logic ก่อน/หลัง handler และแปลงรูปแบบ response ทั้งแอปด้วย RxJS map" />
+  <title>เพิ่ม Pointcuts ด้วย Interceptors</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 54 จาก 77</p>
+    <h1>เพิ่ม Pointcuts ด้วย Interceptors</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่า interceptor แทรก logic ก่อนและหลังการทำงานของ handler ได้อย่างไร (แนวคิด Aspect-Oriented Programming)</li>
+        <li>implement <code>NestInterceptor</code> ที่ใช้ RxJS operator แปลงผลลัพธ์ของทุก endpoint</li>
+        <li>ห่อ response ทั้งแอปให้อยู่ใต้ key <code>data</code> เพื่อให้รูปแบบ API สม่ำเสมอ</li>
+      </ul>
+    </section>
+
+    <h2>Interceptor คือจุดแทรก (pointcut) รอบ ๆ handler</h2>
+    <p><strong>Interceptor</strong> ได้แรงบันดาลใจจาก Aspect-Oriented Programming: มันให้เรากำหนด <em>pointcut</em> — จุดที่ logic เสริมเข้าไปเกาะรอบการทำงานของ method โดยไม่ต้องแก้ method นั้นเลย ตามเอกสารต้นทาง interceptor ทำได้ทั้งหมดนี้</p>
+    <ul>
+      <li>ผูก logic เพิ่มเติม<strong>ก่อนหรือหลัง</strong>การทำงานของ method</li>
+      <li><strong>แปลงผลลัพธ์</strong>ที่ method คืนออกมา</li>
+      <li><strong>แปลง exception</strong> ที่ถูกโยนจาก method</li>
+      <li>ขยายพฤติกรรมพื้นฐานของ method</li>
+      <li>หรือกระทั่ง<strong>ข้ามการทำงานของ method ไปเลย</strong>ตามเงื่อนไข เช่น ตอบจาก cache แทนการเรียกจริง</li>
+    </ul>
+    <p>ต่างจาก guard ที่ตอบแค่ผ่าน/ไม่ผ่าน interceptor เห็นทั้งขาเข้าและขาออก จึงเหมาะกับงานอย่าง logging, caching และการจัดรูป response</p>
+
+    <h2>สร้าง WrapResponseInterceptor</h2>
+    <pre><code>nest g interceptor common/interceptors/wrap-response</code></pre>
+    <p>interface <code>NestInterceptor</code> มีเมธอดเดียวคือ <code>intercept(context, next)</code> — โค้ดที่รันก่อน <code>next.handle()</code> คือ logic <em>ก่อน</em> handler ส่วน pipeline ของ RxJS ที่ต่อท้าย <code>next.handle()</code> คือ logic <em>หลัง</em> handler เพราะ <code>handle()</code> คืน <code>Observable</code> ของ response stream</p>
+    <pre><code>import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+} from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+
+@Injectable()
+export class WrapResponseInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable&lt;any&gt; {
+    console.log('Before...');
+
+    return next.handle().pipe(map(data =&gt; ({ data })));
+  }
+}</code></pre>
+    <p><code>map(data =&gt; ({ data }))</code> รับผลลัพธ์เดิมของ handler แล้วห่อไว้ใต้ key <code>data</code> — จาก <code>[...]</code> กลายเป็น <code>{ "data": [...] }</code> ทุก endpoint โดยไม่ต้องแตะ controller แม้แต่บรรทัดเดียว ส่วน <code>console.log('Before...')</code> พิสูจน์ว่า interceptor ได้ทำงานก่อน handler จริง</p>
+
+    <h2>ลงทะเบียนแบบ global</h2>
+    <pre><code>app.useGlobalInterceptors(new WrapResponseInterceptor());</code></pre>
+    <div class="note"><p>เช่นเดียวกับ filter และ guard: interceptor ผูกได้ทั้งระดับ method/controller ด้วย <code>@UseInterceptors()</code> หรือผ่าน <code>APP_INTERCEPTOR</code> token เมื่อจำเป็นต้อง inject dependency — เวอร์ชันนี้ไม่มี dependency จึง <code>new</code> ใน <code>main.ts</code> ได้เลย</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ห่อ response ของ iluvcoffee ทั้งแอป</h2>
+      <p>สร้าง interceptor ตามโค้ดด้านบน ลงทะเบียนใน <code>main.ts</code> แล้วยิง endpoint ใดก็ได้เพื่อดูรูปแบบ response ใหม่</p>
+      <div class="prompt-example"><code>nest g interceptor common/interceptors/wrap-response
+
+# main.ts
+app.useGlobalInterceptors(new WrapResponseInterceptor());
+
+# ทดสอบ
+curl http://localhost:3000/coffees</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ทุก response สำเร็จถูกห่อเป็น <code>{ "data": ... }</code> เช่น <code>GET /coffees</code> คืน <code>{ "data": [ {...}, {...} ] }</code> และใน terminal ของ dev server เห็น <code>Before...</code> ทุกครั้งที่มี request เข้า</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ยิง <code>GET /coffees</code> และ <code>GET /coffees/1</code> แล้วดูว่า payload เดิมทั้งคู่ย้ายไปอยู่ใต้ key <code>data</code></li>
+        <li>ดู log <code>Before...</code> ใน terminal เพื่อยืนยันว่า logic ก่อน handler ทำงาน</li>
+        <li>ยิง request ที่ error (เช่น 404) แล้วสังเกตว่า error <em>ไม่</em>ถูกห่อ เพราะ exception ไปเข้า filter ไม่ผ่าน <code>map</code> ของ interceptor</li>
+        <li>ตรวจว่า guard จากบทก่อนยังทำงานร่วมกันได้: request ที่ไม่มี key ถูกตัดก่อนถึง interceptor</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/interceptors">Interceptors (NestJS docs)</a></li>
+      <li><a href="https://docs.nestjs.com/cli/overview">Nest CLI overview (NestJS docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="53_using-metadata-to-build-generic-guards-or-interceptors.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="55_handling-timeouts-with-interceptors.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

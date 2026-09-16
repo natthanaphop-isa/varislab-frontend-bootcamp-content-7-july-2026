@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ติดตั้งและใช้งาน @nestjs/config เพื่อจัดการ environment variables ของแอป NestJS อย่างปลอดภัย แทนการ hardcode ค่าเชื่อมต่อฐานข้อมูล" />
+  <title>รู้จัก Config Module</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 42 จาก 77</p>
+    <h1>รู้จัก Config Module</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่าทำไม configuration ควรอยู่ใน environment ไม่ใช่ hardcode ในโค้ด</li>
+        <li>ติดตั้ง <code>@nestjs/config</code> และสร้างไฟล์ <code>.env</code> ที่ไม่ถูก track โดย git</li>
+        <li>ให้ <code>ConfigModule</code> เป็นผู้โหลด <code>DATABASE_URL</code> จาก <code>.env</code> แทนการ <code>import 'dotenv/config'</code> เองใน <code>main.ts</code></li>
+      </ul>
+    </section>
+
+    <h2>ทำไม configuration ต้องแยกออกจากโค้ด</h2>
+    <p>แอปพลิเคชันมักรันในหลาย environment — development, staging, production — ซึ่งแต่ละที่ใช้ค่าต่างกัน เช่น host ของฐานข้อมูล, credentials หรือ API key แนวปฏิบัติมาตรฐานของชุมชน Node.js คือเก็บค่าเหล่านี้ไว้ใน <em>environment variables</em> ผ่าน object global <code>process.env</code> เพื่อให้โค้ดชุดเดียวรันได้ทุกที่โดยเปลี่ยนแค่ค่าแวดล้อม</p>
+    <p><code>@nestjs/config</code> ช่วยให้เรื่องนี้ง่ายขึ้น: เมื่อเรียก <code>ConfigModule.forRoot()</code> มันจะอ่านไฟล์ <code>.env</code> ที่ root ของโปรเจกต์ แล้ว merge คู่ key/value เข้ากับ <code>process.env</code> ให้อัตโนมัติ</p>
+    <pre><code>npm i @nestjs/config</code></pre>
+    <pre><code>// app.module.ts
+import { ConfigModule } from '@nestjs/config';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot(),
+    // ...imports อื่น ๆ
+  ],
+})
+export class AppModule {}</code></pre>
+
+    <h2>ไฟล์ .env ที่เรามีอยู่แล้ว และการกันไม่ให้หลุดขึ้น git</h2>
+    <p>ตั้งแต่บทที่ 22 <code>npx prisma init</code> สร้างไฟล์ <code>.env</code> ที่ root ของ <code>iluvcoffee</code> ไว้ให้ และเราเก็บ connection string ของ PostgreSQL ไว้ในนั้นมาตลอด</p>
+    <pre><code>DATABASE_URL="postgresql://postgres:pass123@localhost:5432/postgres"</code></pre>
+    <div class="warning">
+      <p>ไฟล์ <code>.env</code> มี credentials จริง ห้าม commit ขึ้น repository เด็ดขาด — <code>prisma init</code> ในบทที่ 22 เพิ่ม <code>.env</code> ลง <code>.gitignore</code> ให้แล้ว แต่บทถัดไปเราจะมีไฟล์ env หลายชื่อ จึงควรขยายเป็นแพทเทิร์น <code>*.env</code> ตั้งแต่ตอนนี้ แล้วตรวจด้วย <code>git status</code> ว่าไฟล์ไม่โผล่ในรายการ</p>
+    </div>
+    <pre><code># .gitignore
+# Env
+.env
+*.env</code></pre>
+
+    <h2>ให้ ConfigModule โหลด .env แทน dotenv ที่เราใส่เองใน main.ts</h2>
+    <p>ในบทที่ 22 เราแก้ขัดด้วยการ <code>import 'dotenv/config'</code> ไว้บรรทัดแรกของ <code>main.ts</code> เพื่อให้ <code>process.env.DATABASE_URL</code> มีค่าก่อน <code>PrismaService</code> ถูกสร้าง ตอนนี้ลบบรรทัดนั้นทิ้งแล้วให้ <code>ConfigModule.forRoot()</code> รับหน้าที่แทน — ผลลัพธ์เหมือนกัน แต่ต่อจากนี้เราจะได้ <code>ConfigService</code>, การ validate และ namespaces ในบทถัด ๆ ไปเป็นของแถม</p>
+    <pre><code>// main.ts — ลบบรรทัดนี้ออก
+- import 'dotenv/config';
+
+// app.module.ts
+@Module({
+  imports: [
+    ConfigModule.forRoot(),
+    PrismaModule,
+    CoffeesModule,
+  ],
+})
+export class AppModule {}
+
+// prisma/prisma.service.ts — ไม่ต้องแก้อะไร ยังอ่านจาก process.env เหมือนเดิม
+super({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});</code></pre>
+    <div class="note"><p><code>ConfigModule.forRoot()</code> อ่าน <code>.env</code> ตอนที่ <code>imports</code> array ถูกประเมิน ซึ่งเกิดก่อน Nest จะสร้าง provider ใด ๆ ดังนั้น constructor ของ <code>PrismaService</code> จึงเห็นค่าเสมอไม่ว่าจะวาง <code>PrismaModule</code> ไว้ก่อนหรือหลัง ส่วน <code>prisma7.config.ts</code> ยังต้องมี <code>import "dotenv/config"</code> ของตัวเองต่อไป เพราะ Prisma CLI ทำงานนอก NestJS</p></div>
+    <div class="warning"><p>ข้อยกเว้นคือค่าที่ถูกอ่านจาก <code>process.env</code> <strong>ตอน import module</strong> แทนที่จะอ่านใน constructor — เช่น <code>DatabaseModule.register({ connectionString: process.env.DATABASE_URL! })</code> ใน <code>coffee-rating.module.ts</code> จากบทที่ 39 ES module จะโหลด <code>coffee-rating.module.ts</code> (ซึ่งประเมิน <code>process.env.DATABASE_URL</code> ทันที) ก่อนที่ <code>app.module.ts</code> จะรัน <code>ConfigModule.forRoot()</code> เสมอ เพราะ static import ของไฟล์ที่ถูก import จะถูกประเมินก่อนโค้ดของไฟล์ที่ import มันทุกครั้ง ผลคือหลังลบ <code>import 'dotenv/config'</code> ออกจาก <code>main.ts</code> แล้ว <code>connectionString</code> ที่ <code>DatabaseModule.register()</code> ได้รับจะเป็น <code>undefined</code> — provider <code>'CONNECTION'</code> ตัวนั้นเป็นแค่ของสาธิต ไม่ได้ถูกใช้จริงใน <code>CoffeesService</code> (ดูคำเตือนในบทที่ 39) และปัญหานี้จะถูกแก้ในบทที่ 48 ด้วย <code>DatabaseModule.registerAsync()</code></p></div>
+    <div class="warning"><p><strong>ผลที่ตามมารุนแรงกว่านั้น:</strong> ถ้า <code>CoffeeRatingService.onModuleInit()</code> จากบทที่ 39 ยังเรียก <code>this.connection.$queryRaw</code> อยู่ (ตามที่บทนั้นให้ทำ) การได้ <code>connectionString</code> เป็น <code>undefined</code> จะไม่ใช่แค่ค่า demo ที่เงียบ ๆ — Postgres driver จะ throw <code>Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string</code> เป็น unhandled rejection ระหว่าง bootstrap ซึ่ง <strong>ทำให้ทั้งแอป process ตายทันที</strong> (ไม่ใช่แค่ endpoint <code>/coffees</code> ใช้ไม่ได้ — แอปทั้งตัว start ไม่สำเร็จเลย) ก่อนลบ <code>import 'dotenv/config'</code> ให้ห่อ query สาธิตนั้นด้วย <code>try/catch</code> ชั่วคราวก่อน เพื่อกันไม่ให้บทนี้ถึงบทที่ 47 พังทั้งแอป</p></div>
+    <pre><code>// coffee-rating.service.ts — กันชั่วคราวจนกว่าบทที่ 48 จะแก้ด้วย registerAsync
+async onModuleInit() {
+  try {
+    console.log(await this.connection.$queryRaw`SELECT current_database()`);
+  } catch (err) {
+    console.warn('CONNECTION demo unavailable (expected until lesson 48):', (err as Error).message);
+  }
+}</code></pre>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ส่งมอบหน้าที่โหลด .env ให้ ConfigModule</h2>
+      <p>ติดตั้ง <code>@nestjs/config</code>, ตรวจว่า <code>*.env</code> อยู่ใน <code>.gitignore</code>, ห่อ <code>$queryRaw</code> ใน <code>CoffeeRatingService.onModuleInit()</code> ด้วย <code>try/catch</code> ตามตัวอย่างด้านบน (ชั่วคราวจนกว่าบทที่ 48), import <code>ConfigModule.forRoot()</code> ใน <code>AppModule</code> แล้วลบ <code>import 'dotenv/config'</code> ออกจาก <code>main.ts</code></p>
+      <div class="prompt-example"><code>npm i @nestjs/config
+
+# ห่อ this.connection.$queryRaw ใน coffee-rating.service.ts ด้วย try/catch (ดูตัวอย่างด้านบน)
+# ลบ import 'dotenv/config' ใน src/main.ts
+# เพิ่ม ConfigModule.forRoot() ใน AppModule
+# ตรวจว่า *.env อยู่ใน .gitignore
+
+npm run start:dev</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>แอป start ขึ้นและเชื่อมต่อ PostgreSQL ได้เหมือนเดิมทุกประการ ทั้งที่ <code>main.ts</code> ไม่มี dotenv แล้ว และ <code>git status</code> ไม่แสดงไฟล์ <code>.env</code> ในรายการไฟล์ที่จะถูก commit</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>GET /coffees</code> ยังตอบข้อมูลจากฐานข้อมูลได้ปกติหลังถอด dotenv ออกจาก <code>main.ts</code></li>
+        <li>ลองแก้รหัสผ่านใน <code>DATABASE_URL</code> ของ <code>.env</code> ให้ผิดแล้ว restart — แอปต้องต่อฐานข้อมูลไม่ได้ ยืนยันว่าค่าถูกอ่านจากไฟล์ผ่าน <code>ConfigModule</code> จริง (แก้กลับเมื่อทดสอบเสร็จ)</li>
+        <li><code>git status</code> ไม่มี <code>.env</code> โผล่ในรายการ untracked/staged</li>
+        <li>คอมเมนต์ <code>ConfigModule.forRoot()</code> ออกชั่วคราว — แอปต้อง start ไม่ผ่านเพราะ <code>DATABASE_URL</code> เป็น <code>undefined</code> (แล้วใส่กลับ)</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/configuration">Configuration (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/recipes/prisma">Prisma recipe (NestJS)</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals course (ต้นฉบับ)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="41_diving-deeper-into-request-scoped-providers.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="43_custom-environment-file-paths.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

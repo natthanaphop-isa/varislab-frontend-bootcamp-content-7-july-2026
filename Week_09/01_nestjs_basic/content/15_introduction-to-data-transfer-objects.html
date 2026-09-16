@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="รู้จัก Data Transfer Objects: สร้าง CreateCoffeeDto และ UpdateCoffeeDto เพื่อกำหนดรูปร่างของ payload ที่ API รับเข้าอย่างชัดเจน" />
+  <title>รู้จัก Data Transfer Objects (DTO)</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 15 จาก 77</p>
+    <h1>รู้จัก Data Transfer Objects (DTO)</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่า DTO คืออะไรและต่างจาก entity อย่างไร</li>
+        <li>สร้าง DTO class ด้วย Nest CLI และใช้แทน <code>any</code> ใน <code>@Body()</code></li>
+        <li>ให้เหตุผลได้ว่าทำไม property ของ DTO ควรเป็น <code>readonly</code> และทำไม update จึงใช้ optional</li>
+      </ul>
+    </section>
+
+    <h2>DTO คือสัญญาของข้อมูลที่วิ่งข้ามเส้น</h2>
+    <p>ตอนนี้ <code>create()</code> และ <code>update()</code> ของเรารับ <code>@Body() body</code> เป็น type <code>any</code> — คอมไพเลอร์ช่วยอะไรไม่ได้เลย และไม่มีเอกสารว่า client ต้องส่งอะไรมา <strong>Data Transfer Object (DTO)</strong> คือ class ง่าย ๆ ที่ประกาศ "รูปร่าง" ของข้อมูลที่เดินทางเข้า (หรือออก) จาก API — ไม่มี logic มีแต่ property เพื่อเป็นสัญญาที่ทั้ง type system, เอกสาร และ (บทหน้า) ระบบ validation ใช้ร่วมกัน</p>
+    <p>สร้าง DTO ด้วย CLI โดยใส่ <code>--no-spec</code> เพราะ class เปล่า ๆ ไม่จำเป็นต้องมีไฟล์ test:</p>
+    <pre><code>nest g class coffees/dto/create-coffee.dto --no-spec</code></pre>
+    <pre><code>/* dto/create-coffee.dto.ts */
+export class CreateCoffeeDto {
+  readonly name: string;
+  readonly brand: string;
+  readonly flavors: string[];
+}</code></pre>
+    <pre><code>/* dto/update-coffee.dto.ts */
+export class UpdateCoffeeDto {
+  readonly name?: string;
+  readonly brand?: string;
+  readonly flavors?: string[];
+}</code></pre>
+    <p>สังเกตสองจุด: ทุก property เป็น <code>readonly</code> เพราะ DTO ควรเป็น snapshot ของข้อมูลขาเข้าที่ไม่ถูกแก้ระหว่างทาง (immutability ช่วยลด bug) และ <code>UpdateCoffeeDto</code> ใช้ <code>?</code> ทุกตัวเพราะ <code>PATCH</code> เป็น partial update — client ส่งมาเฉพาะ field ที่อยากแก้</p>
+
+    <h2>DTO ไม่ใช่ Entity</h2>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ DTO กับ Entity" tabindex="0">
+      <table>
+        <thead><tr><th></th><th>DTO</th><th>Entity</th></tr></thead>
+        <tbody>
+          <tr><td>บทบาท</td><td>รูปร่างข้อมูลที่รับ-ส่งข้ามขอบเขต API</td><td>ตัวแทนข้อมูลใน domain / ฐานข้อมูล</td></tr>
+          <tr><td>มี <code>id</code> ไหม</td><td>ไม่ — client ไม่ใช่คนกำหนด id</td><td>มี — เป็น identity ของ record</td></tr>
+          <tr><td>เปลี่ยนตามอะไร</td><td>ความต้องการของแต่ละ endpoint</td><td>โครงสร้างข้อมูลจริงของระบบ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>นำ DTO ไปใช้ใน controller แทน <code>any</code> ทันที:</p>
+    <pre><code>@Post()
+create(@Body() createCoffeeDto: CreateCoffeeDto) {
+  return this.coffeesService.create(createCoffeeDto);
+}
+
+@Patch(':id')
+update(@Param('id') id: string, @Body() updateCoffeeDto: UpdateCoffeeDto) {
+  return this.coffeesService.update(id, updateCoffeeDto);
+}</code></pre>
+    <div class="note"><p>ณ จุดนี้ DTO ยังเป็นแค่สัญญาระดับ type — ตอน runtime ยังไม่มีอะไรบังคับว่า client ต้องส่งข้อมูลตามนี้จริง บทถัดไปเราจะเติม <code>class-validator</code> เพื่อให้สัญญานี้มีผลจริงตอนรับ request</p></div>
+
+    <h2>อย่าลืมอัปเดต service ให้ตรงกับ DTO ใหม่</h2>
+    <p><code>CreateCoffeeDto</code> ไม่มี <code>id</code> (client ไม่ใช่คนกำหนด id) แต่ <code>coffees.service.ts</code> เดิมเก็บข้อมูลเป็น <code>Coffee[]</code> ที่ <code>id</code> เป็น field บังคับ ถ้าเปลี่ยน signature ของ <code>create()</code> เป็น <code>CreateCoffeeDto</code> โดยไม่แก้ตัว method ด้วย <code>this.coffees.push(createCoffeeDto)</code> เดิมจะคอมไพล์ไม่ผ่าน (property <code>id</code> ขาดหาย) — ต้องสร้าง <code>id</code> เพิ่มเองก่อน push:</p>
+    <pre><code>/* coffees.service.ts */
+create(createCoffeeDto: CreateCoffeeDto) {
+  const coffee = { id: this.coffees.length + 1, ...createCoffeeDto };
+  this.coffees.push(coffee);
+  return coffee;
+}</code></pre>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">แทนที่ any ด้วย DTO ทั้งสองตัว</h2>
+      <p>สร้าง <code>CreateCoffeeDto</code> และ <code>UpdateCoffeeDto</code> ในโฟลเดอร์ <code>coffees/dto/</code> แล้วอัปเดต signature ของ <code>create()</code> และ <code>update()</code> ทั้งใน controller และ service ให้ใช้ type ใหม่ (ดูโค้ด <code>create()</code> ที่แก้แล้วด้านบน — ไม่งั้น TypeScript จะฟ้องว่า <code>id</code> ขาดหาย)</p>
+      <div class="prompt-example"><code>nest g class coffees/dto/create-coffee.dto --no-spec
+nest g class coffees/dto/update-coffee.dto --no-spec
+# แก้ controller + service ให้รับ CreateCoffeeDto / UpdateCoffeeDto</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>โค้ดคอมไพล์ผ่านและ editor เริ่มช่วย autocomplete ชื่อ property ของ payload ได้ พฤติกรรม runtime ยังเหมือนเดิมทุกอย่าง (ยังไม่มี validation) แต่ตอนนี้ทุกคนที่อ่านโค้ดรู้ทันทีว่า <code>POST /coffees</code> คาดหวัง <code>name</code>, <code>brand</code> และ <code>flavors</code></p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ไม่มี <code>@Body() body</code> ที่เป็น <code>any</code> เหลืออยู่ใน <code>coffees.controller.ts</code></li>
+        <li>ลองพิมพ์ <code>createCoffeeDto.</code> ใน editor แล้วเห็น autocomplete ของ <code>name</code>, <code>brand</code>, <code>flavors</code></li>
+        <li>ลอง assign ค่าใหม่ให้ property ของ DTO ใน service แล้ว TypeScript ฟ้องเพราะเป็น <code>readonly</code></li>
+        <li><code>POST /coffees</code> และ <code>PATCH /coffees/1</code> ยังทำงานได้ตามปกติ</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/controllers">Controllers: Request payloads (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="14_encompass-business-domain-in-modules.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="16_validate-input-data-with-data-transfer-objects.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

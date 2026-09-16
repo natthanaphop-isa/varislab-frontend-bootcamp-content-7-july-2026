@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="จัดกลุ่ม endpoint ใน Swagger UI ตาม resource ด้วย @ApiTags เพื่อให้เอกสาร API อ่านเป็นหมวดหมู่" />
+  <title>จัดกลุ่ม Resources ด้วย Tags</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 63 จาก 77</p>
+    <h1>จัดกลุ่ม Resources ด้วย Tags</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ติด <code>@ApiTags</code> ระดับ controller เพื่อรวม endpoint ของ resource เดียวกันเป็นหมวดใน Swagger UI</li>
+        <li>ใช้ tag ระดับ method เมื่อ endpoint บางตัวควรอยู่คนละหมวดกับ controller</li>
+        <li>วางแนวทางตั้งชื่อ tag ให้สอดคล้องกับ business domain ของแอป</li>
+      </ul>
+    </section>
+
+    <h2>เอกสารที่โตขึ้นต้องการหมวดหมู่</h2>
+    <p>ตอนนี้ทุก endpoint ของเรากองรวมกันในหมวด <q>default</q> ของ Swagger UI ซึ่งพออยู่ได้กับ resource เดียว แต่แอปจริงมักมีหลาย resource — coffees, users, orders — การไล่หา endpoint ในกองเดียวจะยากขึ้นเรื่อย ๆ OpenAPI แก้เรื่องนี้ด้วยแนวคิด <strong>tag</strong>: ป้ายกำกับที่ Swagger UI ใช้จัดกลุ่มและพับ/กาง endpoint เป็นหมวด</p>
+    <p>ใน NestJS แค่ติด <code>@ApiTags</code> ไว้บน controller ทุก endpoint ในนั้นก็ย้ายเข้าหมวดเดียวกันทั้งหมด</p>
+    <pre><code>// coffees.controller.ts
+import { ApiTags } from '@nestjs/swagger';
+
+@ApiTags('coffees') // 👈 ทุก endpoint ใน controller นี้เข้าหมวด "coffees"
+@Controller('coffees')
+export class CoffeesController { /* ... */ }</code></pre>
+    <div class="note"><p>ติดระดับ method ได้เช่นกันเมื่อบาง endpoint ควรไปอยู่หมวดอื่น เช่น endpoint รายงานภายใน controller เดียวกันอาจติด <code>@ApiTags('reports')</code> เฉพาะ method นั้น — endpoint หนึ่งมีได้หลาย tag และจะปรากฏในทุกหมวดที่ระบุ</p></div>
+
+    <h2>ตั้งชื่อ tag ให้ตรง domain</h2>
+    <p>ชื่อ tag ควรตรงกับ business domain และมักตรงกับ path ของ resource (<code>coffees</code> สำหรับ <code>/coffees</code>) เพื่อให้ผู้อ่านเอกสารเดา URL ได้จากชื่อหมวด แนวทางที่ใช้ได้ดี:</p>
+    <ul>
+      <li>ใช้รูปพหูพจน์ตัวพิมพ์เล็กให้เหมือนกันทั้งแอป (<code>coffees</code> ไม่ใช่ <code>Coffee</code> ปน <code>flavors</code>)</li>
+      <li>หนึ่ง controller ต่อหนึ่ง tag เป็นค่าเริ่มต้น — ถ้าอยากได้หลาย tag ใน controller เดียว มักเป็นสัญญาณว่า controller นั้นทำหลาย domain แล้วควรแยก</li>
+      <li>ชื่อ tag เป็นส่วนหนึ่งของสัญญาเอกสาร: เปลี่ยนเมื่อจำเป็นเท่านั้น เพราะเครื่องมือ generate client บางตัวใช้ tag จัดกลุ่มโค้ดที่สร้าง</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">จัดหมวด endpoint ของ iluvcoffee</h2>
+      <p>ติด <code>@ApiTags('coffees')</code> บน <code>CoffeesController</code> แล้วรีเฟรช Swagger UI ดูผล ถ้าโปรเจกต์ของคุณมี controller อื่น (เช่น <code>coffee-rating</code>) ให้ติด tag ของมันเองด้วย</p>
+      <div class="prompt-example"><code># coffees.controller.ts → เพิ่ม @ApiTags('coffees') เหนือ @Controller('coffees')
+npm run start:dev
+# เปิด http://localhost:3000/api</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>Swagger UI แสดงหัวข้อหมวด <strong>coffees</strong> ที่พับ/กางได้ โดยมี endpoint ทั้ง 5 ของ CRUD อยู่ข้างใน แทนที่จะกองอยู่ในหมวด default</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>เปิด <code>http://localhost:3000/api</code> — ต้องไม่เหลือ endpoint ของ coffees ในหมวด default</li>
+        <li>กด header ของหมวด <code>coffees</code> เพื่อยืนยันว่าพับ/กาง endpoint ทั้งกลุ่มได้</li>
+        <li>ดู JSON ของเอกสารที่ <code>http://localhost:3000/api-json</code> ว่าแต่ละ operation มี field <code>"tags": ["coffees"]</code></li>
+        <li>ถ้ามีหลาย controller ตรวจว่าแต่ละหมวดตั้งชื่อตามแนวทางเดียวกัน</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/openapi/operations">OpenAPI: Operations — tags (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/openapi/introduction">OpenAPI: Introduction (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="62_adding-example-responses.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="64_introduction-to-vitest.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

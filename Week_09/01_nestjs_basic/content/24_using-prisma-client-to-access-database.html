@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ฉีด PrismaService เข้า CoffeesService แล้วเปลี่ยน CRUD ทั้งหมดจาก array ในหน่วยความจำเป็นการเรียก Prisma Client บนฐานข้อมูลจริง" />
+  <title>ใช้ Prisma Client เข้าถึงฐานข้อมูล</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 24 จาก 77</p>
+    <h1>ใช้ Prisma Client เข้าถึงฐานข้อมูล</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ฉีด <code>PrismaService</code> เข้า service ผ่าน constructor injection ปกติของ Nest</li>
+        <li>แปลง CRUD ทั้ง 5 method จาก array ในหน่วยความจำมาเป็นการเรียกฐานข้อมูลจริง</li>
+        <li>เลือกใช้ <code>findMany</code>, <code>findUnique</code>, <code>create</code>, <code>update</code>, <code>delete</code> ให้ถูกกับสถานการณ์</li>
+      </ul>
+    </section>
+
+    <h2>ทุก model คือ property บน Prisma Client</h2>
+    <p>หลัง <code>generate</code> ในบทที่แล้ว Prisma Client รู้จัก model <code>Coffee</code> แล้ว และเปิดให้เราเข้าถึงตารางผ่าน property ชื่อเดียวกับ model แบบ lowerCamelCase คือ <code>prisma.coffee</code> ซึ่งมี method ครบสำหรับ query ตารางนั้นโดยเฉพาะ ทุก argument และค่าที่คืนกลับถูก type จาก schema จึงได้ autocomplete ทั้งชื่อ field และชนิดข้อมูล เราขอ Client มาใช้ด้วยการฉีด <code>PrismaService</code> ผ่าน constructor — ไม่ต้องมี decorator พิเศษ เพราะ <code>PrismaModule</code> เป็น global ตั้งแต่บทที่ 22 นี่คือ pattern เดียวกับที่ฉีด provider อื่น ๆ ของ Nest จึงทดสอบและ mock ได้ง่ายในบทเรื่อง testing</p>
+    <pre><code>import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { CreateCoffeeDto } from './dto/create-coffee.dto.js';
+import { UpdateCoffeeDto } from './dto/update-coffee.dto.js';
+
+@Injectable()
+export class CoffeesService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  findAll() {
+    return this.prisma.coffee.findMany();
+  }
+
+  async findOne(id: string) {
+    const coffee = await this.prisma.coffee.findUnique({ where: { id: +id } });
+    if (!coffee) {
+      throw new NotFoundException(`Coffee #${id} not found`);
+    }
+    return coffee;
+  }
+
+  create(createCoffeeDto: CreateCoffeeDto) {
+    return this.prisma.coffee.create({ data: createCoffeeDto });
+  }
+
+  async update(id: string, updateCoffeeDto: UpdateCoffeeDto) {
+    await this.findOne(id); // ให้ id ที่ไม่มีจริงได้ 404 แบบเดียวกัน
+    return this.prisma.coffee.update({
+      where: { id: +id },
+      data: updateCoffeeDto,
+    });
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.coffee.delete({ where: { id: +id } });
+  }
+}</code></pre>
+
+    <h2>method ไหนทำอะไร</h2>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ method หลักของ Prisma Client" tabindex="0">
+      <table>
+        <thead><tr><th>Method</th><th>ทำอะไร</th><th>จุดที่ควรสังเกต</th></tr></thead>
+        <tbody>
+          <tr><td><code>findMany()</code> / <code>findUnique()</code></td><td>ดึงหลายแถว / แถวเดียวตามเงื่อนไข <code>where</code></td><td><code>findUnique</code> คืน <code>null</code> เมื่อไม่พบ — เราจึงต้อง throw <code>NotFoundException</code> เอง และ <code>where</code> ของมันรับได้เฉพาะ field ที่ unique เช่น <code>id</code></td></tr>
+          <tr><td><code>create({ data })</code></td><td>insert แถวใหม่ลงฐานข้อมูลทันที</td><td>คืนแถวที่บันทึกแล้วพร้อม <code>id</code> ที่ฐานข้อมูลรันให้ — ไม่มีขั้น "สร้างในหน่วยความจำก่อน" แยกต่างหาก</td></tr>
+          <tr><td><code>update({ where, data })</code></td><td>แก้แถวที่ตรงกับ <code>where</code> ด้วยค่าใน <code>data</code></td><td>ถ้า id ไม่มีจริง Prisma throw error รหัส <code>P2025</code> ซึ่งกลายเป็น 500 — เราจึงเรียก <code>findOne</code> ก่อนเพื่อให้ได้ 404 ที่สะอาด (อีกทางคือ map <code>P2025</code> ใน exception filter บทที่ 51)</td></tr>
+          <tr><td><code>delete({ where })</code></td><td>ลบแถวที่ตรงกับ <code>where</code> ออกจากตาราง</td><td>reuse <code>findOne</code> ก่อนด้วยเหตุผลเดียวกับ <code>update</code> — id ที่ไม่มีจริงต้องได้ 404 เหมือนกัน</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><p>สังเกตว่า <code>id</code> รับเข้ามาเป็น <code>string</code> จาก route parameter แล้วแปลงเป็นตัวเลขด้วย <code>+id</code> ก่อนใช้ query — Prisma จะไม่ยอมรับ string ในช่อง <code>id</code> ที่เป็น <code>Int</code> เลยแม้แต่ตอน compile ในบทที่ 56 เราจะเห็นวิธีที่สะอาดกว่าด้วย <code>ParseIntPipe</code> และ custom pipes</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ย้าย CoffeesService ลงฐานข้อมูลจริง</h2>
+      <p>แทนที่ array และ logic เดิมทั้งหมดใน <code>CoffeesService</code> ด้วยโค้ดด้านบน ตอนนี้ไม่มีที่ไหน import <code>Coffee</code> จาก <code>entities/coffee.entity.ts</code> อีกแล้ว (type <code>Coffee</code> มาจาก Prisma Client โดยตรงผ่าน <code>this.prisma.coffee</code>) ลบไฟล์ <code>src/coffees/entities/coffee.entity.ts</code> ทิ้งได้เลย แล้วทดสอบ CRUD ครบวงจรผ่าน Insomnia</p>
+      <div class="prompt-example"><code>POST http://localhost:3000/coffees
+{ "name": "Shipwreck Roast", "brand": "Buddy Brew", "flavors": ["chocolate", "vanilla"] }
+
+GET  http://localhost:3000/coffees
+GET  http://localhost:3000/coffees/1
+PATCH http://localhost:3000/coffees/1   { "name": "Updated Roast" }
+DELETE http://localhost:3000/coffees/1</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ทุก endpoint ทำงานเหมือนเดิมจากมุมมองของ client แต่ข้อมูลถูกเก็บถาวรแล้ว — restart แอปแล้วข้อมูลไม่หาย และเห็นแถวจริงในตาราง <code>coffee</code> ผ่าน pgAdmin โดย <code>flavors</code> ถูกเก็บเป็น array ในคอลัมน์เดียว ส่วน id ที่ไม่มีจริงได้ response 404 พร้อมข้อความ <code>Coffee #id not found</code></p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>POST แล้วเห็นแถวใหม่ในตาราง <code>coffee</code> ผ่าน pgAdmin หรือ <code>SELECT * FROM coffee;</code></li>
+        <li>restart แอป (<code>Ctrl+C</code> แล้ว <code>npm run start:dev</code> ใหม่) แล้ว GET ยังเห็นข้อมูลเดิม</li>
+        <li>GET <code>/coffees/9999</code> ได้ status 404 พร้อม message ที่อ่านรู้เรื่อง</li>
+        <li>PATCH ด้วย id จริงได้ค่าใหม่กลับมา และ PATCH ด้วย id ปลอมได้ 404 ไม่ใช่ 500 (พิสูจน์ว่า guard <code>findOne</code> ทำงานก่อน <code>update</code>)</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/crud">CRUD (Prisma Client Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/recipes/prisma">Prisma Recipe (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/exception-filters">Exception filters: built-in HTTP exceptions (NestJS Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="23_creating-a-prisma-model.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="25_create-a-relation-between-two-models.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

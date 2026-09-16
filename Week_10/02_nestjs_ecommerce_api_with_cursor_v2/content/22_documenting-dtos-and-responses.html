@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ใส่ decorator ของ @nestjs/swagger ให้ controller และ DTO เพื่อให้เอกสารที่ /api บอก response ของทุก endpoint ครบ" />
+  <title>ตกแต่ง DTO และ Response ให้เอกสารครบ</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 22 จาก 24</p>
+    <h1>ตกแต่ง DTO และ Response ให้เอกสารครบ</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ประกาศ response ของแต่ละ handler ด้วย <code>@ApiOkResponse</code>, <code>@ApiCreatedResponse</code>, <code>@ApiNotFoundResponse</code> และ <code>@ApiBadRequestResponse</code></li>
+        <li>อธิบายได้ว่าทำไม response DTO ต้องเป็น <em>class</em> และทำไม <code>[Type]</code> ต่างจาก <code>Type</code></li>
+        <li>ใช้ <code>@ApiPropertyOptional</code> กับ field ที่อาจไม่มี และ <code>@ApiTags</code> เพื่อจัดกลุ่ม endpoint ใน UI</li>
+      </ul>
+    </section>
+
+    <h2>plugin รู้ <em>รูปร่าง</em> แต่ไม่รู้ว่า handler คืนอะไร</h2>
+    <p>บทที่แล้ว CLI plugin อ่านไฟล์ <code>.dto.ts</code> แล้วใส่ metadata ของ field ให้ครบ แต่เปิด <code>/api</code> ดูจะพบว่า endpoint ทุกตัวยังไม่มี response schema — เพราะไม่มีใครบอก Swagger ว่า <code>findOne()</code> คืน <code>ProductResponseDto</code> TypeScript รู้ (จาก return type ของ service) แต่ข้อมูลนั้นหายไปตอน compile ส่วน OpenAPI document สร้างตอน runtime จึงต้องมี decorator ที่ถือ <em>ตัว class จริง</em> มาบอก: <code>@ApiOkResponse({ type: ProductResponseDto })</code></p>
+    <p>นี่คือเหตุผลย้อนหลังที่ตอนบทที่ 11 เราประกาศ response DTO เป็น <code>class</code> ไม่ใช่ <code>interface</code> — <code>interface</code> หายไปหมดตอน compile จึงเขียน <code>type: ProductResponseDto</code> ไม่ได้เลย ขณะที่ <code>class</code> ยังเหลือเป็นค่าจริงให้ส่งเข้า decorator ได้ และเพราะ class ถูก <em>อ้างถึง</em> จาก handler มันจึงถูกดึงเข้า <code>components.schemas</code> ให้เอกสารอ้างถึงด้วย <code>$ref</code> ได้ (Week_09 บทที่ 61–63 เล่าเรื่องเดียวกันในมุมของ <code>@ApiProperty</code>)</p>
+
+    <h2>สามรูปแบบที่ใช้ในบทนี้</h2>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ decorator ที่ใช้ในบทนี้" tabindex="0">
+      <table>
+        <thead><tr><th>Decorator</th><th>ใช้ตอนไหน</th><th>จุดที่ควรสังเกต</th></tr></thead>
+        <tbody>
+          <tr><td><code>@ApiTags('products')</code></td><td>บน class ของ controller</td><td>จัดกลุ่มใน Swagger UI ให้ endpoint ของ products แยกจาก carts — ไม่มีผลต่อ route</td></tr>
+          <tr><td><code>@ApiOkResponse({ type: X })</code></td><td>บน handler ที่คืน 200</td><td>ใส่ <code>[X]</code> เมื่อ handler คืน <em>array</em> เช่น <code>findCategories</code> ที่คืนลิสต์ของ category</td></tr>
+          <tr><td><code>@ApiCreatedResponse({ type: X })</code></td><td>บน handler ที่คืน 201</td><td><code>POST /carts/add</code> คืน 201 ตามค่าเริ่มต้นของ <code>@Post()</code> จึงใช้ตัวนี้ ไม่ใช่ <code>@ApiOkResponse</code></td></tr>
+          <tr><td><code>@ApiNotFoundResponse({ description })</code> / <code>@ApiBadRequestResponse({ description })</code></td><td>บน handler ที่มีทางออก 404 / 400</td><td>เรามีแค่ข้อความอธิบาย ไม่ต้องมี <code>type</code> เพราะรูปร่าง error มาจาก exception filter ของ Nest</td></tr>
+          <tr><td><code>@ApiPropertyOptional()</code></td><td>บน field ที่อาจไม่มีใน response</td><td>ทำให้ <code>brand</code> หลุดจาก <code>required</code> ของ schema — ตรงกับ mapper ที่ตัด <code>brand</code> ออกเมื่อค่าเป็น <code>null</code></td></tr>
+          <tr><td><code>@ApiProperty({ example: 1 })</code></td><td>บน field ของ body DTO ที่อยากให้มีค่าตัวอย่าง</td><td>ค่า <code>example</code> คือค่าที่ Swagger UI เติมให้ในกล่อง <q>Try it out</q> ทำให้ทดลองยิง <code>POST /carts/add</code> ได้เร็ว</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>สำหรับ field ที่เป็น nested object หรือ array ของ object ใน body DTO เราต้องบอก type ให้ชัดด้วย <code>@ApiProperty({ type: [CartProductDto] })</code> และ <code>@ApiProperty({ type: AddressDto })</code> — วงเล็บเหลี่ยมคือความต่างเดียวระหว่าง <q>หนึ่งตัว</q> กับ <q>อาเรย์</q> ในสายตาของ OpenAPI</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+└── src/
+    ├── orders/
+    │   ├── carts.controller.ts            (แก้ไข)
+    │   └── dto/add-cart.dto.ts            (แก้ไข)
+    └── products/
+        ├── products.controller.ts         (แก้ไข)
+        └── dto/product-response.dto.ts    (แก้ไข)</code></pre>
+    <ul>
+      <li><strong><code>src/products/products.controller.ts</code></strong> — สัญญา: ต้องมี <code>@ApiTags('products')</code> บน class และ response decorator บนทั้งสี่ handler / ต้องไม่แก้ logic และต้องไม่สลับลำดับ handler</li>
+      <li><strong><code>src/orders/carts.controller.ts</code></strong> — สัญญา: ต้องมี <code>@ApiTags('carts')</code> และ <code>@ApiCreatedResponse</code> + <code>@ApiBadRequestResponse</code> บน <code>create</code> / ต้องไม่แตะ <code>OrdersService</code></li>
+      <li><strong><code>src/products/dto/product-response.dto.ts</code></strong> — สัญญา: ต้องใส่ <code>@ApiPropertyOptional()</code> ให้ <code>brand</code> ตัวเดียว / ต้องไม่ใส่ decorator ให้ field อื่น</li>
+      <li><strong><code>src/orders/dto/add-cart.dto.ts</code></strong> — สัญญา: ต้องใส่ <code>@ApiProperty</code> ให้สาม field ของ <code>AddCartDto</code> ตามที่ระบุ / ต้องไม่แตะ decorator ของ class-validator ที่มีอยู่</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor ตกแต่งเอกสารให้ครบทุก endpoint</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: checkpoint before swagger decorations"</code>) จากนั้นส่ง prompt นี้ — <a href="01_what-well-be-building.html">กติกาเดิม</a>: AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้</p>
+      <div class="cursor-prompt"><code>ตกแต่ง controller และ DTO ด้วย decorator ของ @nestjs/swagger ให้เอกสารที่ /api บอก response ของทุก endpoint
+
+บริบท: @src/products/products.controller.ts @src/orders/carts.controller.ts @src/products/dto/product-response.dto.ts @src/orders/dto/cart-response.dto.ts @src/orders/dto/add-cart.dto.ts @src/products/dto/pagination-query.dto.ts @.cursor/rules/project.mdc
+Swagger ตั้งค่าที่ /api แล้ว และ CLI plugin เปิดอยู่ (plugin อ่าน type ของ field ใน class ที่ลงท้าย .dto.ts ให้เอง จึงไม่ต้องใส่ @ApiProperty ทุกบรรทัด)
+ตอนนี้ /api แสดง endpoint ครบแต่ไม่มี response schema และไม่มี tag
+
+โครงสร้าง: แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- src/products/products.controller.ts (แก้ไข)
+- src/orders/carts.controller.ts (แก้ไข)
+- src/products/dto/product-response.dto.ts (แก้ไข)
+- src/orders/dto/add-cart.dto.ts (แก้ไข)
+
+ข้อกำหนดทางเทคนิค:
+- products.controller.ts: @ApiTags('products') บน class
+  findCategories: @ApiOkResponse({ type: [CategoryResponseDto] })
+  findByCategory และ findAll: @ApiOkResponse({ type: ProductListResponseDto })
+  findOne: @ApiOkResponse({ type: ProductResponseDto }) และ @ApiNotFoundResponse({ description: "Product with id '9999' not found" })
+- carts.controller.ts: @ApiTags('carts') บน class, create: @ApiCreatedResponse({ type: CartResponseDto }) และ @ApiBadRequestResponse({ description: 'Validation failed' })
+- product-response.dto.ts: ใส่ @ApiPropertyOptional() ให้ brand ตัวเดียว (plugin จัดการ field อื่นให้)
+- add-cart.dto.ts: ใส่ @ApiProperty({ example: 1 }) ให้ userId, @ApiProperty({ type: [CartProductDto] }) ให้ products และ @ApiProperty({ type: AddressDto }) ให้ address
+- ห้ามแก้ logic ใด ๆ ใน controller ห้ามเปลี่ยนลำดับ handler
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์อื่น ห้ามแตะ service, mapper หรือ main.ts</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li><code>@ApiTags('products')</code> และ <code>@ApiTags('carts')</code> อยู่บน class คู่กับ <code>@Controller(...)</code></li>
+        <li><code>findCategories</code> ได้ <code>@ApiOkResponse({ type: [CategoryResponseDto] })</code> พร้อมวงเล็บเหลี่ยม — ไม่ใช่ <code>CategoryResponseDto</code> เดี่ยว</li>
+        <li><code>findByCategory</code> และ <code>findAll</code> ได้ <code>ProductListResponseDto</code> ส่วน <code>findOne</code> ได้ <code>ProductResponseDto</code> บวก <code>@ApiNotFoundResponse</code> ที่ข้อความตรงตัวรวมทั้ง quote</li>
+        <li>ลำดับ handler ยังเป็น <code>categories</code> → <code>category/:slug</code> → <code>@Get()</code> → <code>:id</code> เหมือนเดิม (ถ้าสลับ <code>/products/categories</code> จะไปโดน <code>:id</code> แล้วพัง)</li>
+        <li>ใน <code>product-response.dto.ts</code> มี <code>@ApiPropertyOptional()</code> แค่ที่ <code>brand</code> — field อื่นสะอาดเหมือนเดิม</li>
+        <li>ใน <code>add-cart.dto.ts</code> decorator ของ class-validator (<code>@IsInt</code>, <code>@ValidateNested</code>, <code>@Type</code>) ยังอยู่ครบ ไม่ถูกแทนที่</li>
+        <li>import path ทุกเส้นยังลงท้าย <code>.js</code> ตามกติกา ESM ของ Nest 12 เช่น <code>./dto/product-response.dto.js</code></li>
+        <li><code>npm run build</code> และ <code>npm run lint</code> ผ่านทั้งคู่</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ใส่ decorator เพลินจนใส่ <code>@ApiProperty()</code> ให้ทุก field ของทุก DTO — ซึ่งเป็นสิ่งที่ CLI plugin มีไว้เพื่อไม่ให้เราต้องทำ ผลคือไฟล์ยาวขึ้นเท่าตัวโดยเอกสารไม่ได้ดีขึ้นเลย ถ้าเจอให้ลบออกให้เหลือเท่าที่ prompt ระบุ อีกอันตรายที่แนบเนียนกว่าคือมันจัดเรียง handler ใหม่ตาม <q>ความสวยงาม</q> (เช่นย้าย <code>@Get(':id')</code> ขึ้นไปไว้ต้น class) ซึ่งทำให้ <code>GET /products/categories</code> กลายเป็นการหา product id ชื่อ <code>categories</code> แล้วได้ 400 จาก <code>ParseIntPipe</code> — ตรวจลำดับด้วยตาทุกครั้ง</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <pre><code>/* src/products/products.controller.ts */
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { PaginationQueryDto } from './dto/pagination-query.dto.js';
+import {
+  CategoryResponseDto,
+  ProductListResponseDto,
+  ProductResponseDto,
+} from './dto/product-response.dto.js';
+import { ProductsService } from './products.service.js';
+
+@ApiTags('products')
+@Controller('products')
+export class ProductsController {
+  constructor(private readonly productsService: ProductsService) {}
+
+  @Get('categories')
+  @ApiOkResponse({ type: [CategoryResponseDto] })
+  findCategories() {
+    return this.productsService.findCategories();
+  }
+
+  @Get('category/:slug')
+  @ApiOkResponse({ type: ProductListResponseDto })
+  findByCategory(@Param('slug') slug: string, @Query() query: PaginationQueryDto) {
+    return this.productsService.findByCategory(slug, query);
+  }
+
+  @Get()
+  @ApiOkResponse({ type: ProductListResponseDto })
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.productsService.findAll(query);
+  }
+
+  @Get(':id')
+  @ApiOkResponse({ type: ProductResponseDto })
+  @ApiNotFoundResponse({ description: "Product with id '9999' not found" })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.findOne(id);
+  }
+}</code></pre>
+      <pre><code>/* src/orders/carts.controller.ts */
+import { Body, Controller, Post } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import { AddCartDto } from './dto/add-cart.dto.js';
+import { CartResponseDto } from './dto/cart-response.dto.js';
+import { OrdersService } from './orders.service.js';
+
+@ApiTags('carts')
+@Controller('carts')
+export class CartsController {
+  constructor(private readonly ordersService: OrdersService) {}
+
+  @Post('add')
+  @ApiCreatedResponse({ type: CartResponseDto })
+  @ApiBadRequestResponse({ description: 'Validation failed' })
+  create(@Body() dto: AddCartDto) {
+    return this.ordersService.create(dto);
+  }
+}</code></pre>
+      <pre><code>/* src/products/dto/product-response.dto.ts — เฉพาะส่วนที่เปลี่ยน */
+import { ApiPropertyOptional } from '@nestjs/swagger';
+
+export class ProductResponseDto {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  discountPercentage: number;
+  rating: number;
+  stock: number;
+  tags: string[];
+  @ApiPropertyOptional()
+  brand?: string;
+  sku: string;
+  weight: number;
+  /* … field ที่เหลือเหมือนเดิม ไม่มี decorator … */
+}</code></pre>
+      <pre><code>/* src/orders/dto/add-cart.dto.ts — เฉพาะส่วนที่เปลี่ยน */
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+/* … import ของ class-validator เหมือนเดิม … */
+
+export class AddCartDto {
+  @ApiProperty({ example: 1 })
+  @IsInt()
+  @Min(1)
+  userId: number;
+
+  @ApiProperty({ type: [CartProductDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() =&gt; CartProductDto)
+  products: CartProductDto[];
+
+  @ApiProperty({ type: AddressDto })
+  @ValidateNested()
+  @Type(() =&gt; AddressDto)
+  address: AddressDto;
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>เปิด <code>http://localhost:3000/api</code> จะเห็น endpoint ถูกแบ่งเป็นสองกลุ่มคือ <strong>products</strong> และ <strong>carts</strong> แต่ละตัวกางดูได้ว่า response 200/201 หน้าตาอย่างไร ตัว <code>GET /products/{id}</code> มีทั้ง 200 ที่ชี้ไป <code>ProductResponseDto</code> และ 404 พร้อมข้อความ <code>Product with id '9999' not found</code> ส่วน <code>POST /carts/add</code> มีปุ่ม <q>Try it out</q> ที่เติม body ตัวอย่างให้แล้ว (เพราะ <code>example: 1</code> ที่ <code>userId</code>) การแก้รอบนี้เป็นการแก้ไฟล์ source ธรรมดา watch mode จึง recompile เองได้ ไม่ต้อง restart เหมือนบทที่แล้ว</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>อ่าน response ของ <code>/products/{id}</code> ลิสต์ schema และสถานะ <code>required</code> ของ <code>brand</code> ด้วย one-liner นี้</li>
+      </ul>
+      <pre><code>curl -s http://localhost:3000/api-json | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;{const j=JSON.parse(d);console.log(JSON.stringify(j.paths['/products/{id}'].get.responses));console.log(Object.keys(j.components.schemas));console.log(j.components.schemas.ProductResponseDto.required.includes('brand'))})"</code></pre>
+      <p>ผลที่ได้ตอนตรวจของจริง</p>
+      <pre><code>{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProductResponseDto"}}}},"404":{"description":"Product with id '9999' not found"}}
+[
+  'CategoryResponseDto',
+  'ProductDimensionsDto',
+  'ProductReviewDto',
+  'ProductMetaDto',
+  'ProductResponseDto',
+  'ProductListResponseDto',
+  'CartProductDto',
+  'AddressDto',
+  'AddCartDto',
+  'CartProductResponseDto',
+  'CartResponseDto'
+]
+false</code></pre>
+      <ul>
+        <li>บรรทัดแรกมี <code>$ref</code> ชี้ไป <code>ProductResponseDto</code> และมี <code>404</code> พร้อมข้อความที่เราสั่งไว้</li>
+        <li>ลิสต์ schema มี <code>CategoryResponseDto</code> เพิ่มเข้ามาจากบทที่แล้ว — เพราะตอนนี้มี handler อ้างถึงมันแล้ว</li>
+        <li>บรรทัดสุดท้ายเป็น <code>false</code> คือ <code>brand</code> ไม่อยู่ใน <code>required</code> ตามที่ <code>@ApiPropertyOptional()</code> สั่ง</li>
+        <li>สัญญากับ dummyjson ยังไม่เพี้ยน: <code>npm run contract:check</code> ต้องได้ ✅ ครบทั้งแปดบรรทัด</li>
+      </ul>
+      <pre><code>✅ /products/categories
+✅ /products?limit=3&amp;skip=0
+✅ /products?limit=2&amp;skip=190
+✅ /products/1
+✅ /products/194
+✅ /products/9999
+✅ /products/category/beauty?limit=2&amp;skip=1
+✅ /products/category/nope?limit=5&amp;skip=0</code></pre>
+      <ul>
+        <li>commit งานนี้ด้วย <code>git add -A &amp;&amp; git commit -m "feat: swagger decorations"</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/openapi/operations">OpenAPI: Operations (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/openapi/decorators">OpenAPI: Decorators (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/openapi/types-and-parameters">OpenAPI: Types and Parameters (NestJS Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="21_adding-swagger.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="23_switching-the-react-app.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

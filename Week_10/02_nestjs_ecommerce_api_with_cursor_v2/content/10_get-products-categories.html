@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง ProductsModule แล้วทำ endpoint แรกของคอร์ส GET /products/categories ให้ตอบเหมือน dummyjson ทุกไบต์ โดยให้ host ของ field url มาจาก APP_URL ผ่าน ConfigService" />
+  <title>GET /products/categories</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 10 จาก 24</p>
+    <h1>GET /products/categories</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ประกอบ module + controller + service ของ resource <code>products</code> ขึ้นมาใหม่ทั้งชุด แล้วลงทะเบียนเข้า <code>AppModule</code></li>
+        <li>อธิบายได้ว่าทำไม field <code>url</code> ของ category ต้องอ่าน host จาก <code>APP_URL</code> ไม่ใช่ hard-code</li>
+        <li>ยืนยันด้วย <code>diff</code> ว่า response ของเราตรงกับ <code>docs/contract/categories.json</code> แบบไบต์ต่อไบต์</li>
+      </ul>
+    </section>
+
+    <h2>เลือก endpoint ที่ง่ายที่สุดขึ้นมาทำก่อน</h2>
+    <p>ใน contract ที่วางไว้ในโปรเจกต์ตั้งแต่บทที่ 3 มี endpoint เดียวที่ไม่มี query parameter ไม่มี route parameter และมีรูปทรง response แบนราบสามคีย์ — นั่นคือ <code>GET /products/categories</code> เราจึงเริ่มจากตัวนี้ เพราะมันพิสูจน์ว่าเส้นทางทั้งเส้น (request → controller → service → Prisma → Postgres → response) เชื่อมกันได้จริง โดยยังไม่ต้องยุ่งกับ mapper หรือ pagination ที่จะมาในบทถัด ๆ ไป</p>
+    <p>โครงสร้างสามไฟล์เป็นแบบเดียวกับที่คุณเคยทำใน Week_09 บทที่ 6 (controller), บทที่ 12 (service) และบทที่ 14 (module) ต่างกันแค่คราวนี้เราไม่พิมพ์เอง — เราสั่ง Cursor พิมพ์ แล้วเราอ่านทุกบรรทัด</p>
+    <ul>
+      <li><strong>controller</strong> รู้แค่เรื่อง HTTP: path, method, parameter — แล้วส่งต่อให้ service ทันที</li>
+      <li><strong>service</strong> เป็นที่เดียวที่รู้จักฐานข้อมูลและรู้จักรูปทรงของ response</li>
+      <li><strong>module</strong> ผูกสองตัวนี้เข้าด้วยกันเป็นก้อน แล้วเราเอาก้อนนี้ไปเสียบใน <code>AppModule</code></li>
+    </ul>
+
+    <h2>field <code>url</code> คือจุดที่ต้องคิด ไม่ใช่จุดที่ต้อง copy</h2>
+    <p>เปิด <code>docs/contract/categories.json</code> ดูสักแถว dummyjson ตอบมาแบบนี้</p>
+    <pre><code>{ "slug": "beauty", "name": "Beauty", "url": "https://dummyjson.com/products/category/beauty" }</code></pre>
+    <p>ถ้าเรา copy ค่า <code>url</code> มาตรง ๆ React app จะยิงกลับไปที่ dummyjson แทนที่จะยิงมาที่ API ของเรา — API ของเราต้องตอบ <code>http://localhost:3000/products/category/beauty</code> คือ host ของ<em>ตัวเอง</em> ต่อท้ายด้วย path เดียวกัน</p>
+    <p>host ของตัวเองเปลี่ยนไปตามที่รัน (เครื่องคุณ, staging, production) จึงต้องมาจาก environment variable ไม่ใช่จากโค้ด เรามี <code>APP_URL</code> อยู่ใน <code>.env</code> ตั้งแต่บทที่ 5 แล้ว และ <code>ConfigModule</code> ถูกตั้งเป็น global ในบทที่ 6 แล้ว จึงฉีด <code>ConfigService</code> เข้า service ได้เลย</p>
+    <pre><code>const appUrl = this.config.getOrThrow&lt;string&gt;('APP_URL');</code></pre>
+    <p>สังเกตว่าเราใช้ <code>getOrThrow</code> ไม่ใช่ <code>get</code> — <code>get</code> คืน <code>undefined</code> เงียบ ๆ เมื่อไม่มีคีย์นั้น ผลคือ url จะกลายเป็น <code>undefined/products/category/beauty</code> แล้วหลุดขึ้น production ไปเงียบ ๆ ส่วน <code>getOrThrow</code> ทำให้แอปพังทันทีที่ request แรก ซึ่งเป็นสิ่งที่เราต้องการ (ทบทวน Week_09 บทที่ 45 เรื่อง <code>ConfigService</code>)</p>
+
+    <h2>ทำไมแค่ <code>orderBy: { id: 'asc' }</code> ก็ตรงกับ dummyjson</h2>
+    <p>ลำดับของ array มีผลต่อ <code>diff</code> — ถ้าเรียงไม่ตรง ถึงข้อมูลจะครบก็ถือว่าไม่ผ่าน seed ในบทที่ 9 ส่ง category เข้า <code>createMany</code> เป็น array ตามลำดับที่ <code>GET /products/categories</code> คืนมา ดังนั้น <code>id</code> ที่ sequence แจกให้ (auto-increment) จึงเรียงตรงกับลำดับของ dummyjson อยู่แล้ว การสั่ง <code>orderBy: { id: 'asc' }</code> คือการ<em>เขียนเจตนานั้นออกมา</em> ไม่ใช่การหวังว่า Postgres จะคืนแถวตามลำดับที่ insert — Postgres ไม่รับประกันลำดับให้เลยถ้าไม่สั่ง <code>ORDER BY</code></p>
+    <div class="note"><p>ค่า <code>id</code> ที่แท้จริงจะขยับขึ้นทุกครั้งที่ re-seed (ตามที่เจอในบทที่ 9) แต่ไม่มีผลกับบทนี้ เพราะ <code>id</code> ไม่ถูกส่งออกไปใน response — dummyjson ส่งแค่สามคีย์ <code>slug</code>, <code>name</code>, <code>url</code> เท่านั้น</p></div>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>src/
+├── app.module.ts                     (แก้ไข)
+└── products/
+    ├── products.module.ts            (สร้างใหม่)
+    ├── products.controller.ts        (สร้างใหม่)
+    └── products.service.ts           (สร้างใหม่)</code></pre>
+    <ul>
+      <li><strong><code>src/products/products.service.ts</code></strong> — สัญญา: ต้องดึง category ทุกแถวด้วย <code>findMany({ orderBy: { id: 'asc' } })</code> แล้ว map เป็น <code>{ slug, name, url }</code> โดย host มาจาก <code>this.config.getOrThrow&lt;string&gt;('APP_URL')</code> / ต้องไม่ส่ง <code>id</code> ออกไป และต้องไม่ hard-code host</li>
+      <li><strong><code>src/products/products.controller.ts</code></strong> — สัญญา: ต้องมี prefix <code>@Controller('products')</code> และ handler <code>@Get('categories')</code> ที่ <code>return</code> ผลจาก service ตรง ๆ / ต้องไม่มี logic ฐานข้อมูลอยู่ในนี้</li>
+      <li><strong><code>src/products/products.module.ts</code></strong> — สัญญา: ต้องประกาศ <code>controllers</code> และ <code>providers</code> ของ products / ต้องไม่ import <code>ConfigModule</code> หรือ <code>PrismaModule</code> ซ้ำ เพราะทั้งสองเป็น global แล้ว</li>
+      <li><strong><code>src/app.module.ts</code></strong> — สัญญา: ต้องเพิ่ม <code>ProductsModule</code> ต่อจาก <code>PrismaModule</code> ใน <code>imports</code> / ต้องไม่ลบ <code>AppController</code> หรือ <code>AppService</code></li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor สร้าง ProductsModule แล้วอ่านทุกบรรทัด</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before products module"</code>) จากนั้นส่ง prompt นี้ทั้งก้อน — กติกาของคอร์สยังเหมือนเดิม: <strong>AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้</strong></p>
+      <div class="cursor-prompt"><code>สร้าง ProductsModule พร้อม endpoint GET /products/categories ที่ตอบเหมือน dummyjson
+
+บริบท: @src/app.module.ts @src/prisma/prisma.service.ts @prisma/schema.prisma @docs/contract/categories.json @.env @.cursor/rules/project.mdc
+ฐานข้อมูลถูก seed แล้ว ตาราง Category มี 24 แถว (id เรียงตามลำดับเดียวกับ dummyjson)
+docs/contract/categories.json คือ response จริง: array ของ { slug, name, url } โดย url คือ https://dummyjson.com/products/category/&lt;slug&gt;
+ของเรา url ต้องเป็น &lt;APP_URL&gt;/products/category/&lt;slug&gt; โดย APP_URL อ่านจาก .env ผ่าน ConfigService (ConfigModule เป็น global แล้ว)
+PrismaModule เป็น global แล้ว ฉีด PrismaService ผ่าน constructor ได้เลย
+
+โครงสร้าง: สร้าง/แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- src/products/products.module.ts (สร้างใหม่)
+- src/products/products.controller.ts (สร้างใหม่)
+- src/products/products.service.ts (สร้างใหม่)
+- src/app.module.ts (แก้ไข: เพิ่ม ProductsModule ใน imports ต่อจาก PrismaModule)
+
+ข้อกำหนดทางเทคนิค:
+- products.service.ts: @Injectable() export class ProductsService
+  constructor(private readonly prisma: PrismaService, private readonly config: ConfigService)
+  method async findCategories() ดึง category ทั้งหมดด้วย findMany({ orderBy: { id: 'asc' } })
+  แล้ว map เป็น { slug, name, url } โดย url = `${appUrl}/products/category/${slug}` และ appUrl มาจาก this.config.getOrThrow&lt;string&gt;('APP_URL')
+  ห้ามคืน id ของ category ออกไป
+- products.controller.ts: @Controller('products') export class ProductsController
+  constructor(private readonly productsService: ProductsService)
+  handler @Get('categories') findCategories() return this.productsService.findCategories()
+- products.module.ts: @Module({ controllers: [ProductsController], providers: [ProductsService] })
+- import ไฟล์ในโปรเจกต์ทุกตัวลงท้าย .js
+- ห้ามสร้าง DTO หรือ interface ในรอบนี้
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์อื่นนอกจากที่ระบุ ห้ามลบ AppController/AppService
+- ห้ามสร้าง index.ts / barrel
+- ยังไม่ต้องสร้าง endpoint อื่นของสินค้า</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>service เรียก <code>this.config.getOrThrow&lt;string&gt;('APP_URL')</code> — ถ้าเห็น <code>this.config.get(...)</code> ให้แก้เป็น <code>getOrThrow</code></li>
+        <li><code>findMany({ orderBy: { id: 'asc' } })</code> มีจริง ไม่ใช่ <code>findMany()</code> เปล่า</li>
+        <li>object ที่ map ออกมามีเพียงสามคีย์ — ไม่มี <code>id</code> หลุดออกไป</li>
+        <li>import ที่ชี้ไปไฟล์ในโปรเจกต์ลงท้าย <code>.js</code> ครบทั้งสี่จุด (<code>prisma.service.js</code>, <code>products.service.js</code>, <code>products.controller.js</code>, <code>products.module.js</code>)</li>
+        <li><code>ProductsModule</code> ถูกเพิ่มใน <code>imports</code> ของ <code>AppModule</code> ต่อจาก <code>PrismaModule</code> จริง</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> hard-code <code>http://localhost:3000</code> ลงไปใน template string ตรง ๆ (อ่านผ่านตาแล้วดูเหมือนใช้ได้ เพราะ run บนเครื่องแล้วผลตรงกัน แต่สัญญาที่ตั้งไว้คือ host ต้องมาจาก <code>APP_URL</code>) อีกแบบคือ import <code>ConfigModule</code> เข้ามาใน <code>ProductsModule</code> ด้วย — ไม่เสียหายอะไร แต่ไม่จำเป็นเพราะ <code>ConfigModule.forRoot({ isGlobal: true })</code> ทำให้ <code>ConfigService</code> ใช้ได้ทั่วแอปแล้ว ลบออกให้เหลือเท่าที่จำเป็น</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <p><code>src/products/products.service.ts</code></p>
+      <pre><code>import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service.js';
+
+@Injectable()
+export class ProductsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
+
+  async findCategories() {
+    const appUrl = this.config.getOrThrow&lt;string&gt;('APP_URL');
+    const categories = await this.prisma.category.findMany({ orderBy: { id: 'asc' } });
+    return categories.map(({ slug, name }) =&gt; ({
+      slug,
+      name,
+      url: `${appUrl}/products/category/${slug}`,
+    }));
+  }
+}</code></pre>
+      <p><code>src/products/products.controller.ts</code></p>
+      <pre><code>import { Controller, Get } from '@nestjs/common';
+import { ProductsService } from './products.service.js';
+
+@Controller('products')
+export class ProductsController {
+  constructor(private readonly productsService: ProductsService) {}
+
+  @Get('categories')
+  findCategories() {
+    return this.productsService.findCategories();
+  }
+}</code></pre>
+      <p><code>src/products/products.module.ts</code></p>
+      <pre><code>import { Module } from '@nestjs/common';
+import { ProductsController } from './products.controller.js';
+import { ProductsService } from './products.service.js';
+
+@Module({
+  controllers: [ProductsController],
+  providers: [ProductsService],
+})
+export class ProductsModule {}</code></pre>
+      <p><code>src/app.module.ts</code></p>
+      <pre><code>import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { PrismaModule } from './prisma/prisma.module.js';
+import { ProductsModule } from './products/products.module.js';
+
+@Module({
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, ProductsModule],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>npm run build</code> และ <code>npm run lint</code> ผ่านเงียบ ๆ ทั้งคู่ (oxlint ไม่พิมพ์อะไรเลยเมื่อผ่าน) เมื่อรัน <code>npm run start:dev</code> log จะมีบรรทัด <code>Mapped {/products/categories, GET} route</code> และการยิง <code>GET http://localhost:3000/products/categories</code> ได้ array 24 ก้อน ขึ้นต้นแบบนี้</p>
+      <pre><code>[{"slug":"beauty","name":"Beauty","url":"http://localhost:3000/products/category/beauty"},{"slug":"fragrances","name":"Fragrances","url":"http://localhost:3000/products/category/fragrances"},{"slug":"furniture","name":"Furniture","url":"http://localhost:3000/products/category/furniture"},{"slug":"gr</code></pre>
+      <p>นี่คือ endpoint แรกของคอร์สที่ตรงกับ contract จริง — ครั้งแรกที่ Postgres, Prisma, seed และ ConfigService ทำงานพร้อมกันทั้งสาย</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>log ตอน start มีทั้ง <code>ProductsModule dependencies initialized</code> และ <code>Mapped {/products/categories, GET} route</code></li>
+        <li>เทียบกับ contract โดยแทน host ของเรากลับเป็นของ dummyjson ก่อน แล้ว <code>diff</code> — ต้องได้คำว่า <code>IDENTICAL</code>
+          <pre><code>curl -s http://localhost:3000/products/categories \
+  | sed 's#http://localhost:3000#https://dummyjson.com#g' &gt; /tmp/actual.json
+diff /tmp/actual.json docs/contract/categories.json &amp;&amp; echo IDENTICAL</code></pre>
+        </li>
+        <li>พิสูจน์ว่า host มาจาก config จริง: แก้ <code>APP_URL</code> ใน <code>.env</code> เป็น <code>http://127.0.0.1:3000</code> restart แล้วยิงซ้ำ — ทุก <code>url</code> ต้องเปลี่ยนตาม (จากนั้นแก้กลับเป็น <code>http://localhost:3000</code> แล้ว restart)</li>
+        <li>ลบบรรทัด <code>APP_URL</code> ออกจาก <code>.env</code> ชั่วคราว restart แล้วยิงซ้ำ — ต้องได้ error 500 จาก <code>getOrThrow</code> ไม่ใช่ url ที่มีคำว่า <code>undefined</code> (แล้วใส่กลับ)</li>
+        <li>commit ผลงานด้วย <code>git add -A &amp;&amp; git commit -m "feat: GET /products/categories"</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/modules">Modules (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/configuration">Configuration: ConfigService (NestJS Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/crud">CRUD: findMany (Prisma Docs)</a></li>
+      <li><a href="https://dummyjson.com/docs/products">Products endpoints (DummyJSON Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="09_seeding-real-products.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="11_mapping-rows-to-the-contract.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

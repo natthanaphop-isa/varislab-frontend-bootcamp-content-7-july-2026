@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง CoffeesController ด้วย Nest CLI แล้วเข้าใจว่า @Controller และ @Get ประกอบกันเป็น route ได้อย่างไร" />
+  <title>สร้าง Controller พื้นฐาน</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 6 จาก 77</p>
+    <h1>สร้าง Controller พื้นฐาน</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>Generate controller ใหม่ด้วย Nest CLI ทั้งแบบเต็มและแบบย่อ</li>
+        <li>อธิบายว่า <code>@Controller('coffees')</code> กับ <code>@Get()</code> ประกอบกันเป็น route path ได้อย่างไร</li>
+        <li>ยิงทดสอบ endpoint แรกของ resource <code>coffees</code> ได้</li>
+      </ul>
+    </section>
+
+    <h2>Controller คือด่านรับ request</h2>
+    <p><strong>Controller</strong> มีหน้าที่เดียว: รับ HTTP request ที่เข้ามา แล้วคืน response กลับไป การสร้าง controller ใหม่ไม่ต้องสร้างไฟล์เอง — ใช้ CLI generate ได้เลย ซึ่งจะสร้างทั้งไฟล์ controller, ไฟล์ test และอัปเดต module ให้อัตโนมัติ</p>
+    <pre><code># Generate a Controller
+nest generate controller coffees
+
+# แบบย่อ (ผลเหมือนกันทุกอย่าง)
+nest g co coffees</code></pre>
+    <div class="note">
+      <p>ถ้ารัน <code>nest generate controller</code> โดยไม่ใส่ชื่อ CLI จะถามชื่อจากเราแทน และเติม flag <code>--dry-run</code> ได้เสมอเพื่อดูว่าจะสร้าง/แก้ไฟล์อะไรบ้างโดยยังไม่เขียนจริง</p>
+    </div>
+
+    <h2>อ่านโค้ดที่ได้ทีละ decorator</h2>
+    <p>โค้ดสุดท้ายของบทนี้สั้นมาก แต่ทุกบรรทัดสำคัญ</p>
+    <pre><code>/* CoffeesController */
+import { Controller, Get } from '@nestjs/common';
+
+@Controller('coffees')
+export class CoffeesController {
+  @Get()
+  findAll() {
+    return 'This action returns all coffees';
+  }
+}</code></pre>
+    <ul>
+      <li><code>@Controller('coffees')</code> ประกาศว่า class นี้เป็น controller และกำหนด <em>route prefix</em> เป็น <code>/coffees</code> — ทุก handler ในนี้จะอยู่ใต้ path นี้</li>
+      <li><code>@Get()</code> ผูก method <code>findAll()</code> เข้ากับ HTTP GET ที่ path ของ prefix ตรง ๆ ดังนั้น route เต็มคือ <code>GET /coffees</code></li>
+      <li>ค่า string ที่ <code>return</code> จะถูกส่งกลับเป็น response body ให้เอง — Nest จัดการ serialization และ status code เริ่มต้น (200) ให้</li>
+    </ul>
+    <p>ชื่อ method (<code>findAll</code>) ตั้งอะไรก็ได้ ไม่มีผลต่อ route — สิ่งที่กำหนด route คือ decorator เท่านั้น แต่ตั้งชื่อให้สื่อความหมายไว้จะอ่านง่ายเมื่อ controller โตขึ้นในบทถัด ๆ ไป</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สร้าง CoffeesController แล้วยิง endpoint แรก</h2>
+      <p>ระหว่างที่ <code>npm run start:dev</code> รันอยู่ ให้ generate controller ชื่อ <code>coffees</code> แล้วเพิ่ม handler <code>findAll()</code> ตามโค้ดด้านบน จากนั้นยิง <code>GET http://localhost:3000/coffees</code> ด้วย Insomnia</p>
+      <div class="prompt-example"><code>nest g co coffees
+
+# ตรวจผลด้วย curl (หรือใช้ Insomnia)
+curl -i http://localhost:3000/coffees</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>CLI สร้าง <code>src/coffees/coffees.controller.ts</code> พร้อมไฟล์ <code>.spec.ts</code> และเพิ่ม <code>CoffeesController</code> เข้า <code>AppModule</code> ให้อัตโนมัติ เมื่อยิง <code>GET /coffees</code> ได้ status 200 พร้อมข้อความ <q>This action returns all coffees</q></p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>log ของ watch mode มีบรรทัด <code>Mapped {/coffees, GET} route</code></li>
+        <li><code>curl -i http://localhost:3000/coffees</code> ได้ <code>HTTP/1.1 200 OK</code> พร้อม body ตามที่ return</li>
+        <li>เปิด <code>app.module.ts</code> แล้วเห็น <code>CoffeesController</code> ถูกเพิ่มใน array <code>controllers</code> โดย CLI</li>
+        <li>ลองยิง <code>GET /coffee</code> (ไม่มี s) แล้วได้ 404 — ยืนยันว่า prefix มาจาก <code>@Controller('coffees')</code> จริง</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/controllers">Controllers (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/cli/overview">CLI: nest generate (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="05_running-nestjs-in-development-mode.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="07_use-route-parameters.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

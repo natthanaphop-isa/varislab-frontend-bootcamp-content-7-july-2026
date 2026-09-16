@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="รัน prisma migrate dev ครั้งแรกเพื่อเปลี่ยน schema เป็นตารางจริง แล้วเปิด psql ไปดูคอลัมน์ที่ได้ด้วยตาตัวเอง" />
+  <title>รัน Migration แรกและดูตารางจริง</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 8 จาก 24</p>
+    <h1>รัน Migration แรกและดูตารางจริง</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่า <code>prisma migrate dev</code> ทำสามอย่างอะไรในคำสั่งเดียว</li>
+        <li>อ่าน SQL ที่ Prisma สร้างให้ แล้วจับคู่กลับไปยังบรรทัดใน <code>schema.prisma</code> ได้</li>
+        <li>เปิด <code>psql</code> ในคอนเทนเนอร์เพื่อพิสูจน์ว่าคอลัมน์ nullable, array และ index เป็นอย่างที่ออกแบบไว้</li>
+      </ul>
+    </section>
+
+    <div class="note">
+      <p>บทนี้ไม่มี prompt — เราพิมพ์คำสั่งเองทั้งหมด เพราะเป็นคำสั่งที่<strong>แก้ฐานข้อมูลจริง</strong> กติกาใน <code>.cursor/rules/project.mdc</code> เขียนห้าม Agent รัน <code>prisma migrate</code>, <code>db push</code>, <code>generate</code> หรือ <code>docker</code> เอาไว้ตั้งแต่บทที่ 4 แล้ว ด้วยเหตุผลข้อนี้</p>
+    </div>
+
+    <h2>migrate dev ทำสามอย่างในคำสั่งเดียว</h2>
+    <p>เราเคยเห็น migration ครั้งแรกใน <a href="../../../Week_09/01_nestjs_basic/content/31_setting-up-migrations.html">Week_09 บทที่ 31</a> แล้ว ทบทวนว่า <code>prisma migrate dev --name init</code> ทำอะไร</p>
+    <ul>
+      <li><strong>เขียนไฟล์ SQL</strong> — เทียบ <code>schema.prisma</code> กับสถานะฐานข้อมูลปัจจุบัน แล้วสร้าง <code>prisma/migrations/&lt;timestamp&gt;_init/migration.sql</code> ที่เป็น SQL ธรรมดา อ่านได้ แก้ได้ และ commit ขึ้น git ได้</li>
+      <li><strong>รัน SQL นั้นกับฐานข้อมูล</strong> — ตารางเกิดขึ้นจริงหลังคำสั่งนี้</li>
+      <li><strong>บันทึกว่าทำไปแล้ว</strong> — เพิ่มแถวในตาราง <code>_prisma_migrations</code> ที่ Prisma ดูแลเอง คราวหน้าจะรู้ว่าไฟล์ไหนรันไปแล้ว ไม่รันซ้ำ</li>
+    </ul>
+    <p>สิ่งที่มันไม่ทำคือ <strong>generate Prisma Client</strong> — Prisma 7 แยกสองเรื่องนี้ออกจากกัน เราจึงต้องสั่ง <code>npx prisma generate</code> ต่อท้ายทุกครั้งที่ schema เปลี่ยน ไม่อย่างนั้น <code>this.prisma.product</code> จะยังไม่มีอยู่ในสายตาของ TypeScript</p>
+    <div class="warning">
+      <p><code>migrate dev</code> เป็นคำสั่งของ <strong>เครื่องนักพัฒนา</strong>เท่านั้น เพราะมันเปรียบเทียบสถานะแล้วอาจเสนอรีเซ็ตฐานข้อมูลเมื่อเจอความไม่ตรงกัน บน production ใช้ <code>prisma migrate deploy</code> ซึ่งรันไฟล์ที่ commit มาแล้วเท่านั้น ไม่สร้างไฟล์ใหม่และไม่ลบข้อมูล</p>
+    </div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สร้างตารางแล้วเปิดดูของจริง</h2>
+      <p>ตรวจก่อนว่าฐานข้อมูลจากบทที่ 5 ยังรันอยู่ (<code>docker compose ps</code> เห็น <code>db</code> เป็น <code>Up</code>) แล้วรันสี่คำสั่งนี้ตามลำดับ อ่านผลลัพธ์ทุกคำสั่งก่อนไปคำสั่งถัดไป</p>
+      <div class="prompt-example"><code># 1) สร้างและรัน migration แรก
+npx prisma migrate dev --name init
+
+# 2) generate client ใหม่ให้รู้จัก model ทั้งสาม (Prisma 7 ไม่ทำให้อัตโนมัติ)
+npx prisma generate
+
+# 3) ดูรายชื่อตารางในฐานข้อมูล
+docker compose exec db psql -U postgres -d ecommerce -c '\dt'
+
+# 4) ดูโครงสร้างตาราง Product (ต้องใส่เครื่องหมายคำพูดคร่อมชื่อตาราง)
+docker compose exec db psql -U postgres -d ecommerce -c '\d "Product"'</code></div>
+      <p>ชื่อตารางต้องใส่เครื่องหมายคำพูดคร่อมเพราะ Prisma สร้างตารางด้วยตัวพิมพ์ใหญ่นำ (<code>Product</code>) ขณะที่ PostgreSQL จะแปลงชื่อที่ไม่ได้คร่อมให้เป็นตัวพิมพ์เล็กทั้งหมด — <code>\d Product</code> เฉย ๆ จะหาไม่เจอ</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>คำสั่งแรกจะไม่ถามอะไรเลย เพราะฐานข้อมูลยังว่าง จึงไม่มีข้อมูลให้เสี่ยงหาย</p>
+      <pre><code>Loaded Prisma config from prisma7.config.ts.
+
+Prisma schema loaded from prisma/schema.prisma.
+Datasource "db": PostgreSQL database "ecommerce", schema "public" at "localhost:5432"
+
+Applying migration `20260911183551_init`
+
+The following migration(s) have been created and applied from new schema changes:
+
+prisma/migrations/
+  └─ 20260911183551_init/
+    └─ migration.sql
+
+Your database is now in sync with your schema.</code></pre>
+      <p>ตัวเลขนำหน้า <code>_init</code> คือ timestamp ตอนที่คุณรัน จึงไม่ตรงกับของในคอร์สแน่นอน — ขอแค่ลงท้าย <code>_init</code> ก็ถูกแล้ว ถัดมา <code>prisma generate</code> จะรายงานว่าเขียน client ใหม่ทับของเดิม</p>
+      <pre><code>Loaded Prisma config from prisma7.config.ts.
+
+Prisma schema loaded from prisma/schema.prisma.
+
+✔ Generated Prisma Client (7.10.0) to ./src/generated/prisma in 20ms</code></pre>
+      <p>และ <code>\dt</code> ต้องเห็นสี่ตาราง — สามตารางของเรา บวกตารางบัญชีของ Prisma เอง</p>
+      <pre><code>               List of relations
+ Schema |        Name        | Type  |  Owner
+--------+--------------------+-------+----------
+ public | Category           | table | postgres
+ public | Product            | table | postgres
+ public | Review             | table | postgres
+ public | _prisma_migrations | table | postgres
+(4 rows)</code></pre>
+    </section>
+
+    <h2>SQL ที่ Prisma เขียนให้ อ่านได้ทุกบรรทัด</h2>
+    <p>เปิด <code>prisma/migrations/&lt;timestamp&gt;_init/migration.sql</code> ขึ้นมาดู นี่คือส่วนต้นของไฟล์ (ทั้งไฟล์มี 68 บรรทัด: <code>CREATE TABLE</code> สามครั้ง, <code>CREATE INDEX</code> สามครั้ง และ <code>ALTER TABLE … ADD CONSTRAINT</code> สองครั้งสำหรับ foreign key)</p>
+    <pre><code>-- CreateTable
+CREATE TABLE "Category" (
+    "id" SERIAL NOT NULL,
+    "slug" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+
+    CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Product" (
+    "id" INTEGER NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "price" DOUBLE PRECISION NOT NULL,
+    "discountPercentage" DOUBLE PRECISION NOT NULL,
+    "rating" DOUBLE PRECISION NOT NULL,
+    "stock" INTEGER NOT NULL,
+    "tags" TEXT[],
+    "brand" TEXT,
+    "sku" TEXT NOT NULL,
+    "weight" DOUBLE PRECISION NOT NULL,
+    "width" DOUBLE PRECISION NOT NULL,
+    "height" DOUBLE PRECISION NOT NULL,
+    "depth" DOUBLE PRECISION NOT NULL,
+    "warrantyInformation" TEXT NOT NULL,
+    "shippingInformation" TEXT NOT NULL,
+    "availabilityStatus" TEXT NOT NULL,
+    "returnPolicy" TEXT NOT NULL,
+    "minimumOrderQuantity" INTEGER NOT NULL,
+    "barcode" TEXT NOT NULL,
+    "qrCode" TEXT NOT NULL,
+    "images" TEXT[],
+    "thumbnail" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "categoryId" INTEGER NOT NULL,
+
+    CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
+);</code></pre>
+    <p>เทียบกับ <code>schema.prisma</code> ของบทที่ 7 จะเห็นการตัดสินใจของเราแปลงเป็น SQL ตรง ๆ: <code>Category.id</code> เป็น <code>SERIAL</code> (คือ integer ที่มี sequence แจกเลขให้) แต่ <code>Product.id</code> เป็น <code>INTEGER</code> ธรรมดาเพราะเราไม่ได้ใส่ <code>autoincrement()</code> ส่วน <code>Float</code> กลายเป็น <code>DOUBLE PRECISION</code> และ <code>DateTime</code> กลายเป็น <code>TIMESTAMP(3)</code></p>
+
+    <h2>สามบรรทัดใน \d "Product" ที่พิสูจน์การออกแบบ</h2>
+    <p>ผลของคำสั่งที่สี่คือตารางยาวหนึ่งหน้าจอ ให้มองหาสามจุดนี้</p>
+    <pre><code>        Column        |              Type              | Collation | Nullable | Default
+----------------------+--------------------------------+-----------+----------+---------
+ id                   | integer                        |           | not null |
+ tags                 | text[]                         |           |          |
+ brand                | text                           |           |          |
+ categoryId           | integer                        |           | not null |
+Indexes:
+    "Product_pkey" PRIMARY KEY, btree (id)
+    "Product_categoryId_idx" btree ("categoryId")
+Foreign-key constraints:
+    "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"(id) ON UPDATE CASCADE ON DELETE RESTRICT</code></pre>
+    <ul>
+      <li><code>brand | text | |</code> — ช่อง Nullable <strong>ว่าง</strong> แปลว่าคอลัมน์นี้ยอมให้เป็น NULL ได้ ตรงกับ <code>brand String?</code> และรองรับสินค้า 92 ชิ้นที่ไม่มียี่ห้อ เทียบกับ <code>sku</code> ที่เขียน <code>not null</code> ไว้ชัดเจน</li>
+      <li><code>tags | text[]</code> — PostgreSQL เก็บ array ของ text ในคอลัมน์เดียวได้จริง ไม่ต้องมีตาราง <code>ProductTag</code> แยก (คอลัมน์ <code>images</code> ก็เป็น <code>text[]</code> เหมือนกัน)</li>
+      <li><code>"categoryId" integer not null</code> คู่กับบรรทัด <code>"Product_categoryId_idx" btree ("categoryId")</code> ในส่วน Indexes — นี่คือ <code>@@index([categoryId])</code> ที่กลายเป็น index จริง และเป็นเหตุผลว่าทำไม <code>GET /products/category/:slug</code> ในบทที่ 14 จะเร็วแม้สินค้าเยอะ</li>
+    </ul>
+    <p>ท้ายผลลัพธ์ยังมีส่วน <code>Referenced by:</code> ที่บอกว่า <code>Review</code> ชี้กลับมาที่ตารางนี้ด้วย <code>ON DELETE CASCADE</code> — ผลของ <code>onDelete: Cascade</code> ที่เราใส่ไว้ใน model <code>Review</code></p>
+    <div class="note">
+      <p><code>docker compose exec db psql …</code> คือวิธีดูฐานข้อมูลแบบไม่ต้องติดตั้งอะไรเพิ่ม (เรายืม <code>psql</code> ที่อยู่ในคอนเทนเนอร์มาใช้) ถ้าถนัด GUI จะต่อ pgAdmin ตามวิธีใน <a href="../../../Week_09/01_nestjs_basic/content/21_how-to-visualize-your-postgres-database-gui.html">Week_09 บทที่ 21</a> ก็ได้ — host <code>localhost</code>, port <code>5432</code>, user <code>postgres</code>, password <code>pass123</code>, database <code>ecommerce</code> คอร์สนี้จะใช้ <code>psql</code> ตลอดเพราะคัดลอกคำสั่งไปวางได้ตรง ๆ</p>
+    </div>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>ls prisma/migrations</code> เห็นโฟลเดอร์ <code>&lt;timestamp&gt;_init</code> ที่มี <code>migration.sql</code> อยู่ข้างใน และมีไฟล์ <code>migration_lock.toml</code> ระบุ provider เป็น <code>postgresql</code></li>
+        <li>ตาราง <code>_prisma_migrations</code> มีหนึ่งแถว: <code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT migration_name FROM _prisma_migrations;'</code> ต้องคืนชื่อ migration ของคุณแถวเดียว</li>
+        <li><code>grep -c Product src/generated/prisma/client.ts</code> ได้ค่ามากกว่า 0 — client ที่ generate ใหม่รู้จัก model <code>Product</code> แล้ว (ไฟล์นี้ export ชนิด <code>Category</code>, <code>Product</code>, <code>Review</code> ให้บทหลัง ๆ import ไปใช้)</li>
+        <li><code>npm run build</code> ผ่าน — ยืนยันว่า client ที่ generate ใหม่ยังเข้ากันได้กับโค้ดเดิม</li>
+        <li><code>git status</code> เห็นเฉพาะโฟลเดอร์ <code>prisma/migrations/</code> เป็นของใหม่ (<code>src/generated/prisma</code> ถูก ignore ไว้แล้วตั้งแต่บทที่ 6)</li>
+        <li>commit ด้วย <code>git add -A &amp;&amp; git commit -m "chore: init migration"</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-migrate/workflows/development-and-production">Prisma Migrate: development and production (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/reference/prisma-cli-reference">Prisma CLI reference: migrate dev, generate (Prisma Docs)</a></li>
+      <li><a href="https://docs.docker.com/reference/cli/docker/compose/exec/">docker compose exec (Docker Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="07_modeling-products-in-prisma.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="09_seeding-real-products.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

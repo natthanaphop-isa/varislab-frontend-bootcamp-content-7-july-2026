@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง LoggingMiddleware ใน NestJS: เข้าใจหน้าที่ของ middleware, ความสำคัญของ next() และการวัดเวลา request-response" />
+  <title>โบนัส: เพิ่ม Request Logging ด้วย Middleware</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 57 จาก 77</p>
+    <h1>โบนัส: เพิ่ม Request Logging ด้วย Middleware</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายว่า middleware ต่างจาก building block อื่นอย่างไร: ผูกกับ route <em>path</em> ไม่ใช่ method และรันก่อนทุกอย่าง</li>
+        <li>บอกได้ว่าทำไมการลืมเรียก <code>next()</code> ทำให้ request ค้าง</li>
+        <li>สร้าง middleware วัดเวลา request-response แล้วผูกกับทุก route ผ่าน <code>configure()</code> ของ module</li>
+      </ul>
+    </section>
+
+    <h2>Middleware ผูกกับ path และรันก่อนใครทั้งหมด</h2>
+    <p><strong>Middleware</strong> เป็นฟังก์ชันที่เข้าถึง request และ response object ได้โดยตรง และไม่ผูกกับ method ใด ๆ — มันผูกกับ route <em>path</em> ที่ระบุไว้ ใน request lifecycle ของ NestJS middleware ทำงานก่อน guard, interceptor และ pipe ทั้งหมด สิ่งที่ middleware ทำได้ตามเอกสารต้นทางคือ</p>
+    <ul>
+      <li>execute โค้ดใด ๆ</li>
+      <li>แก้ไข request และ response objects</li>
+      <li>จบ request-response cycle เองเลย</li>
+      <li>หรือเรียก middleware ตัวถัดไปใน call stack</li>
+    </ul>
+    <div class="warning"><p>กติกาเหล็กของ middleware: ถ้าไม่ได้<em>จบ</em> request-response cycle เอง ต้องเรียก <code>next()</code> เสมอเพื่อส่งต่อการควบคุม มิฉะนั้น request จะถูกทิ้งค้างไว้ — client รอไปเรื่อย ๆ โดยไม่มีวันได้ response</p></div>
+
+    <h2>สร้าง LoggingMiddleware</h2>
+    <pre><code>nest g middleware common/middleware/logging</code></pre>
+    <p>middleware แบบ class ใน NestJS ติด <code>@Injectable()</code> และ implement <code>NestMiddleware</code> ซึ่งบังคับเมธอด <code>use(req, res, next)</code> — โค้ดนี้ใช้ <code>console.time</code>/<code>console.timeEnd</code> จับเวลาตั้งแต่ request เข้า จนถึง event <code>finish</code> ของ response</p>
+    <pre><code>import {
+  Injectable,
+  NestMiddleware,
+} from '@nestjs/common';
+
+@Injectable()
+export class LoggingMiddleware implements NestMiddleware {
+  use(req: any, res: any, next: () =&gt; void) {
+    console.time('Request-response time');
+    console.log('Hi from middleware!');
+
+    res.on('finish', () =&gt; console.timeEnd('Request-response time'));
+    next();
+  }
+}</code></pre>
+    <p>สังเกตว่าเราไม่ได้จับเวลาแค่ถึงตอน <code>next()</code> คืนค่า แต่รอจน response ถูกส่งจริง (event <code>finish</code>) — ตัวเลขที่ได้จึงครอบคลุมทั้ง pipeline: guard, interceptor, pipe, handler และขากลับทั้งหมด</p>
+
+    <h2>ผูก middleware ใน module ด้วย configure()</h2>
+    <p>middleware ไม่ได้ลงทะเบียนใน <code>@Module()</code> decorator เหมือน provider แต่ผูกผ่านการ implement <code>NestModule</code> แล้วกำหนดใน <code>configure(consumer)</code> — ในที่นี้ผูกกับทุก path ด้วย <code>'*'</code></p>
+    <pre><code>consumer
+  .apply(LoggingMiddleware)
+  .forRoutes('*');</code></pre>
+    <p><code>forRoutes</code> รับได้ทั้ง string, ออบเจ็กต์ <code>{ path, method }</code> หรือทั้ง controller class จึงจำกัดขอบเขตได้ละเอียดเท่าที่ต้องการ เช่น log เฉพาะ <code>coffees</code> ก็เปลี่ยนเป็น <code>.forRoutes('coffees')</code></p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">วัดเวลาทุก request ของ iluvcoffee</h2>
+      <p>สร้าง <code>LoggingMiddleware</code> แล้วผูกกับทุก route ใน <code>CommonModule</code> (ให้ module implement <code>NestModule</code> และเพิ่ม <code>configure()</code>) จากนั้นยิง request แล้วดู log</p>
+      <div class="prompt-example"><code>nest g middleware common/middleware/logging
+
+# common.module.ts
+export class CommonModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggingMiddleware).forRoutes('*');
+  }
+}
+
+# ทดสอบ
+curl http://localhost:3000/coffees</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ทุกครั้งที่ยิง request ใน terminal ของ dev server จะเห็น <code>Hi from middleware!</code> ตามด้วย <code>Request-response time: X ms</code> เมื่อ response ส่งเสร็จ — และ log นี้ขึ้นก่อน <code>Before...</code> ของ interceptor เสมอ เพราะ middleware อยู่ต้นทางของ lifecycle</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ยิง <code>GET /coffees</code> แล้วเห็นทั้งข้อความทักทายและเวลารวมใน log</li>
+        <li>เทียบลำดับ log: <code>Hi from middleware!</code> ต้องมาก่อน <code>Before...</code> ของ WrapResponseInterceptor</li>
+        <li>ลองคอมเมนต์ <code>next()</code> ออกชั่วคราวแล้วยิงซ้ำ — request ต้องค้าง ไม่มี response กลับ (แล้วใส่คืนทันที)</li>
+        <li>เปลี่ยน <code>forRoutes('*')</code> เป็น <code>forRoutes('coffees')</code> แล้วยืนยันว่า route อื่นไม่ถูก log</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/middleware">Middleware (NestJS docs)</a></li>
+      <li><a href="https://docs.nestjs.com/cli/overview">Nest CLI overview (NestJS docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="56_creating-custom-pipes.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="58_bonus-create-custom-param-decorators.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ติดตั้งและตั้งค่า @nestjs/swagger เพื่อสร้างเอกสาร OpenAPI อัตโนมัติ พร้อมเปิด Swagger UI ที่ /api" />
+  <title>รู้จัก Swagger Module</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 59 จาก 77</p>
+    <h1>รู้จัก Swagger Module</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายว่า OpenAPI specification คืออะไรและบรรยายอะไรของ API ได้บ้าง</li>
+        <li>ติดตั้งและตั้งค่า <code>@nestjs/swagger</code> กับ <code>swagger-ui-express</code> ใน iluvcoffee</li>
+        <li>สร้าง Swagger document ด้วย <code>DocumentBuilder</code> และเปิด UI ที่ <code>/api</code></li>
+      </ul>
+    </section>
+
+    <h2>OpenAPI: ภาษากลางสำหรับบรรยาย REST API</h2>
+    <p>ในบทชุดนี้เราจะสร้างเอกสาร OpenAPI ให้แอป NestJS แบบอัตโนมัติ โดยใช้เครื่องมือและ plugin ล่าสุดของ Nest ที่ช่วยลดงาน manual ในทุกขั้น <strong>OpenAPI specification</strong> เป็นรูปแบบนิยาม API ที่ไม่ผูกกับภาษาโปรแกรมใด (language-agnostic) ใช้บรรยาย RESTful API ทั้งระบบได้ในเอกสารเดียว ครอบคลุม</p>
+    <ul>
+      <li>operations (endpoints) ที่มีให้เรียกทั้งหมด</li>
+      <li>parameters ของแต่ละ operation — ทั้ง input และ output</li>
+      <li>วิธี authentication</li>
+      <li>ข้อมูลติดต่อ, license, เงื่อนไขการใช้งาน และ metadata อื่น ๆ</li>
+    </ul>
+    <p>ผลพลอยได้ที่สำคัญคือ <em>Swagger UI</em> — หน้าเว็บ interactive ที่ทีม frontend หรือผู้ใช้ API เปิดดู endpoint ทั้งหมดและลองยิงได้จากเบราว์เซอร์เลย</p>
+
+    <h2>ติดตั้งและตั้งค่าใน main.ts</h2>
+    <p>แอปของเราใช้ Express อยู่เบื้องหลัง จึงติดตั้ง <code>swagger-ui-express</code> คู่กับ <code>@nestjs/swagger</code> (ถ้าใช้ Fastify ให้ติดตั้ง <code>fastify-swagger</code> แทน)</p>
+    <pre><code>npm install --save @nestjs/swagger swagger-ui-express</code></pre>
+    <p>จากนั้นประกอบ document ใน <code>main.ts</code> ก่อน <code>app.listen()</code>: <code>DocumentBuilder</code> ใช้กำหนด metadata ของเอกสาร, <code>SwaggerModule.createDocument</code> สแกนแอปทั้งหมดเพื่อสร้างสเปก และ <code>SwaggerModule.setup('api', ...)</code> กำหนด path ที่จะเสิร์ฟ UI</p>
+    <pre><code>const options = new DocumentBuilder()
+  .setTitle('Iluvcoffee')
+  .setDescription('Coffee application')
+  .setVersion('1.0')
+  .build();
+
+const document = SwaggerModule.createDocument(app, options);
+
+SwaggerModule.setup('api', app, document);</code></pre>
+    <p>เมื่อแอปรันอยู่ (<code>npm run start:dev</code>) เปิด <a href="http://localhost:3000/api">http://localhost:3000/api</a> จะพบ Swagger UI พร้อม endpoint ของ <code>coffees</code> และ <code>coffee-rating</code> เรียงให้เห็นทันที</p>
+    <div class="note"><p>ตอนนี้เอกสารยังโล่ง — เห็นแค่ path กับ HTTP method แต่ไม่มีรายละเอียด body หรือ response เพราะ TypeScript type ถูกลบทิ้งตอน compile ทำให้ Swagger มองไม่เห็น DTO ของเรา บทถัดไปจะแก้ด้วย CLI plugin ที่สอนให้ compiler ฝัง metadata เหล่านี้ให้อัตโนมัติ</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">เปิด Swagger UI ให้ iluvcoffee</h2>
+      <p>ติดตั้ง dependency ทั้งสองตัว เพิ่มโค้ดตั้งค่า document ใน <code>main.ts</code> แล้วเปิดเบราว์เซอร์ดูผล</p>
+      <div class="prompt-example"><code>npm install --save @nestjs/swagger swagger-ui-express
+
+# main.ts — ก่อน app.listen()
+const options = new DocumentBuilder()
+  .setTitle('Iluvcoffee')
+  .setDescription('Coffee application')
+  .setVersion('1.0')
+  .build();
+const document = SwaggerModule.createDocument(app, options);
+SwaggerModule.setup('api', app, document);
+
+# เปิดดู
+open http://localhost:3000/api</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>Swagger UI แสดงชื่อ <q>Iluvcoffee</q> เวอร์ชัน 1.0 พร้อมรายการ endpoint ทั้งหมดของแอป จัดกลุ่มตาม path คลิกแต่ละ operation เพื่อกางดูและกด <q>Try it out</q> ยิงจริงได้ แม้รายละเอียด schema จะยังว่างอยู่ก็ตาม</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>เปิด <code>http://localhost:3000/api</code> แล้วเห็น Swagger UI โหลดสำเร็จ</li>
+        <li>เห็น endpoint ของ <code>coffees</code> ครบทุก HTTP method ที่เราสร้างไว้</li>
+        <li>ลอง <q>Try it out</q> กับ <code>GET /coffees</code> — ถ้า route ไม่ติด <code>@Public()</code> อย่าลืมใส่ <code>Authorization</code> header</li>
+        <li>เปิด <code>http://localhost:3000/api-json</code> เพื่อดูสเปก OpenAPI ดิบเป็น JSON</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/openapi/introduction">OpenAPI introduction (NestJS docs)</a></li>
+      <li><a href="https://docs.nestjs.com/openapi/cli-plugin">OpenAPI CLI plugin (NestJS docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="58_bonus-create-custom-param-decorators.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="60_enabling-cli-plugin.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

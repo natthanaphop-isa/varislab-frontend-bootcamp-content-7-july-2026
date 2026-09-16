@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ติดตั้ง Node.js และ NestJS CLI แบบ global พร้อมตรวจสอบเวอร์ชันและสำรวจคำสั่งที่ CLI มีให้" />
+  <title>ติดตั้ง NestJS CLI</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 1 จาก 77</p>
+    <h1>ติดตั้ง NestJS CLI</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ตรวจสอบว่าเครื่องมี Node.js เวอร์ชันที่ใช้งานกับ NestJS ได้</li>
+        <li>ติดตั้ง NestJS CLI แบบ global และยืนยันว่าติดตั้งสำเร็จ</li>
+        <li>ใช้ <code>nest --help</code> สำรวจคำสั่งทั้งหมดที่ CLI มีให้</li>
+      </ul>
+    </section>
+
+    <h2>ทำไมต้องเริ่มที่ CLI</h2>
+    <p><strong>NestJS CLI</strong> คือเครื่องมือหลักที่เราจะใช้ตลอดทั้งคอร์ส ตั้งแต่ scaffold โปรเจกต์ใหม่, generate ไฟล์อย่าง controller/service/module ตาม convention ของ Nest ไปจนถึงรันแอปในโหมด development การติดตั้งไว้แบบ global ทำให้เรียกคำสั่ง <code>nest</code> ได้จากทุกที่ใน terminal โดยไม่ต้องพึ่ง <code>npx</code> ทุกครั้ง</p>
+    <p>NestJS เป็น framework ที่รันบน Node.js ดังนั้นก่อนติดตั้ง CLI ต้องมี Node.js ในเครื่องก่อน ดาวน์โหลดได้จาก <a href="https://nodejs.org">nodejs.org</a> (แนะนำเวอร์ชัน LTS ล่าสุด) ซึ่งจะติดตั้ง <code>npm</code> มาให้พร้อมกัน</p>
+
+    <h2>ติดตั้งและตรวจสอบเวอร์ชัน</h2>
+    <p>เปิด terminal แล้วไล่ตามคำสั่งต่อไปนี้ทีละขั้น: ตรวจ Node ก่อน จากนั้นติดตั้ง CLI แบบ global แล้วยืนยันเวอร์ชันของ Nest ที่ติดตั้งได้</p>
+    <pre><code># ตรวจว่า Node.js ติดตั้งแล้วและเป็นเวอร์ชันอะไร
+node --version
+
+# ติดตั้ง NestJS CLI แบบ global
+npm i -g @nestjs/cli
+
+# ตรวจเวอร์ชันของ Nest CLI (หลังติดตั้งเสร็จ)
+nest --version
+
+# 💡 TIP: แสดงคำสั่งทั้งหมดของ Nest CLI
+nest --help</code></pre>
+    <div class="note">
+      <p>ถ้าติดตั้งแบบ global แล้วเจอ permission error บน macOS/Linux อย่าเพิ่งใช้ <code>sudo</code> ทันที — ทางที่ปลอดภัยกว่าคือใช้ Node version manager อย่าง <code>nvm</code> ซึ่งทำให้ npm global packages อยู่ใน home directory ของเราเอง</p>
+    </div>
+    <p>คำสั่ง <code>nest --help</code> คุ้มค่าที่จะเปิดดูตั้งแต่วันแรก เพราะมันสรุปทั้งคำสั่ง (<code>new</code>, <code>generate</code>, <code>build</code>, <code>start</code> ฯลฯ) และ alias แบบย่อ เช่น <code>nest g co</code> แทน <code>nest generate controller</code> ที่เราจะได้ใช้บ่อยมากในบทถัด ๆ ไป</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">เตรียมเครื่องให้พร้อมสำหรับทั้งคอร์ส</h2>
+      <p>ติดตั้ง Node.js LTS จาก <a href="https://nodejs.org">nodejs.org</a> (ถ้ายังไม่มี) แล้วติดตั้ง NestJS CLI พร้อมตรวจสอบว่าทั้งสองอย่างพร้อมใช้งาน</p>
+      <div class="prompt-example"><code>node --version
+npm i -g @nestjs/cli
+nest --version
+nest --help</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>node --version</code> พิมพ์เลขเวอร์ชันออกมา (เช่น <code>v22.x.x</code>), การติดตั้ง CLI จบโดยไม่มี error, <code>nest --version</code> แสดงเลขเวอร์ชัน <code>12.x.x</code> ของ CLI และ <code>nest --help</code> แสดงตารางคำสั่งพร้อม alias แบบย่อของแต่ละคำสั่ง — คอร์สนี้เขียนสำหรับ NestJS 12 ซึ่ง scaffold โปรเจกต์เป็น ES module และใช้ Vitest เป็นเครื่องมือทดสอบ (เราจะเห็นผลของเรื่องนี้ในบทถัดไป)</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>รัน <code>node --version</code> และ <code>npm --version</code> ได้ผลเป็นเลขเวอร์ชัน ไม่ใช่ <code>command not found</code></li>
+        <li>รัน <code>nest --version</code> จาก directory ไหนก็ได้ (ยืนยันว่า global install สำเร็จ) และได้เลข <code>12.x.x</code></li>
+        <li>เปิด <code>nest --help</code> แล้วหา alias ของ <code>generate controller</code> เจอ (ควรเป็น <code>g co</code>)</li>
+        <li>ถ้าคำสั่ง <code>nest</code> ไม่เจอ ให้ตรวจว่า npm global bin path อยู่ใน <code>$PATH</code> ด้วย <code>npm bin -g</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/first-steps">First steps (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/cli/overview">CLI overview (NestJS)</a></li>
+      <li><a href="https://nodejs.org">Node.js</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="02_whats-inside-a-nestjs-application.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

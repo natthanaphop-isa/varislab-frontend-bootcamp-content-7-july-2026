@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ใช้ useFactory ใน NestJS สร้างค่า provider แบบ dynamic ด้วยฟังก์ชัน พร้อม inject dependency อื่นเข้า factory ผ่าน inject array" />
+  <title>Factory Providers (useFactory)</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 37 จาก 77</p>
+    <h1>Factory Providers (useFactory)</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>สร้าง provider ที่คำนวณค่าด้วยฟังก์ชัน factory แทนการส่งค่าตายตัว</li>
+        <li>ส่ง dependency อื่นเข้า factory ผ่าน property <code>inject</code></li>
+        <li>เลือกได้ว่าเมื่อไหร่ควรขยับจาก <code>useValue</code> ไป <code>useFactory</code></li>
+      </ul>
+    </section>
+
+    <h2>useFactory: ให้ฟังก์ชันเป็นคนสร้างค่า</h2>
+    <p>บางค่าไม่เหมาะจะเขียนตายตัวแบบ <code>useValue</code> เพราะต้องคำนวณก่อน เช่น ประกอบจาก environment, สุ่ม, หรืออ่านจาก service อื่น <code>useFactory</code> รับฟังก์ชันเข้าไป แล้วสิ่งที่ฟังก์ชัน <code>return</code> จะกลายเป็นค่าที่ผูกกับ token</p>
+    <pre><code>// ตัวอย่าง syntax "useFactory"
+{
+  provide: 'COFFEE_BRANDS',
+  useFactory: () =&gt; ['buddy brew', 'nescafe']
+}</code></pre>
+    <p>ตัวอย่างนี้ให้ผลเหมือน <code>useValue</code> ทุกประการ แต่เปิดประตูบานใหม่: ใน factory เราใส่ logic ได้เต็มที่ และที่สำคัญที่สุด — factory ขอ inject provider อื่นมาใช้ประกอบการสร้างค่าได้</p>
+
+    <h2>inject: ส่ง dependency เข้า factory</h2>
+    <p>ประกาศ token ที่ต้องการไว้ใน array <code>inject</code> แล้ว Nest จะ resolve และส่งเข้าเป็น parameter ของ factory ตามลำดับ</p>
+    <pre><code>{
+  provide: 'COFFEE_BRANDS',
+  useFactory: (coffeesService: CoffeesService) =&gt; {
+    // ใช้ service อื่นประกอบการสร้างค่าได้
+    return ['buddy brew', 'nescafe'];
+  },
+  inject: [CoffeesService], // 👈 ลำดับตรงกับ parameter ของ factory
+}</code></pre>
+    <div class="warning"><p>ลำดับใน <code>inject</code> ต้องตรงกับลำดับ parameter ของ factory แบบตัวต่อตัว และ token ที่ขอ inject ต้องมองเห็นได้จาก module นี้ (อยู่ใน providers เดียวกัน หรือถูก export มาจาก module ที่เรา import) ไม่อย่างนั้นจะเจอ error resolve dependency ตอน start นอกจากนี้ห้าม inject provider ที่ย้อนกลับมาพึ่ง token เดียวกันนี้ — เช่น <code>CoffeesService</code> เอง ก็ <code>@Inject('COFFEE_BRANDS')</code> อยู่แล้ว (บทที่ 35) ถ้า factory ของ <code>COFFEE_BRANDS</code> ไป <code>inject: [CoffeesService]</code> ด้วย จะกลายเป็น circular dependency แล้วแอปจะพังตอน start ทันที</p></div>
+
+    <h2>บันไดสามขั้นของ provider แบบกำหนดค่า</h2>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ useValue useClass useFactory" tabindex="0">
+      <table>
+        <thead><tr><th>รูปแบบ</th><th>ค่าเกิดจาก</th><th>inject dependency ได้ไหม</th><th>ใช้เมื่อ</th></tr></thead>
+        <tbody>
+          <tr><td><code>useValue</code></td><td>ค่าที่เขียนไว้ล่วงหน้า</td><td>ไม่ได้</td><td>ค่าคงที่, mock</td></tr>
+          <tr><td><code>useClass</code></td><td>Nest instantiate class ที่เลือก</td><td>ได้ ผ่าน constructor ของ class</td><td>สลับ implementation ทั้งก้อน</td></tr>
+          <tr><td><code>useFactory</code></td><td>ค่าที่ฟังก์ชัน return</td><td>ได้ ผ่าน <code>inject</code> array</td><td>ค่าที่ต้องมี logic หรือพึ่ง provider อื่น</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">เปลี่ยน COFFEE_BRANDS ให้มาจาก factory</h2>
+      <p>ใน <code>coffees.module.ts</code> แก้ provider <code>COFFEE_BRANDS</code> จาก <code>useValue</code> (บทที่ 35) เป็น <code>useFactory</code> จากนั้นทดลองเพิ่ม <code>inject: [PrismaService]</code> (<strong>ห้ามใช้ <code>CoffeesService</code></strong> — มันพึ่ง <code>COFFEE_BRANDS</code> อยู่แล้ว จะกลายเป็น circular dependency) และ log ใน factory เพื่อดูลำดับการสร้างของ container</p>
+      <div class="prompt-example"><code>// coffees.module.ts
+{
+  provide: COFFEE_BRANDS,
+  useFactory: () =&gt; ['buddy brew', 'nescafe'],
+}
+
+// ขั้นทดลองต่อ: เพิ่ม parameter + inject array แล้วสังเกต log
+// ใช้ provider ที่ไม่พึ่ง COFFEE_BRANDS กลับมา เช่น PrismaService
+{
+  provide: COFFEE_BRANDS,
+  useFactory: (prisma: PrismaService) =&gt; {
+    console.log('factory: got', typeof prisma);
+    return ['buddy brew', 'nescafe'];
+  },
+  inject: [PrismaService],
+}
+npm run start:dev</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>แอป start ปกติ และ log ใน <code>CoffeesService</code> (จากบทที่ 35) ยังแสดง array แบรนด์เหมือนเดิม — ผู้บริโภค token ไม่รับรู้ว่าเบื้องหลังเปลี่ยนวิธีสร้าง เมื่อเพิ่ม <code>inject</code> จะเห็นว่า factory ถูกเรียกหลังจาก dependency ที่ขอถูกสร้างเสร็จแล้ว</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>log ตอน start ยังแสดง <code>[ 'buddy brew', 'nescafe' ]</code> หลังสลับเป็น factory</li>
+        <li>ใส่ <code>console.log</code> ใน factory แล้วเห็นมันรันหนึ่งครั้งตอน bootstrap (default scope เป็น singleton)</li>
+        <li>ลองใส่ token ใน <code>inject</code> ที่ module นี้มองไม่เห็น — ต้องเจอ error resolve dependency ตามคาด</li>
+        <li>อธิบายได้ว่ากรณีไหนที่ <code>useValue</code> ไม่พอและต้องใช้ factory (เช่น ค่าขึ้นกับ provider อื่น)</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/fundamentals/custom-providers">Custom providers: useFactory — NestJS Docs</a></li>
+      <li><a href="https://docs.nestjs.com/fundamentals/async-providers">Asynchronous providers — NestJS Docs</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="36_class-providers.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="38_leverage-async-providers.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

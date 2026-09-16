@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ติดตั้ง mongoose และ @nestjs/mongoose แล้วตั้งค่า MongooseModule.forRoot ใน AppModule เพื่อเชื่อม NestJS เข้ากับ MongoDB" />
+  <title>รู้จัก Mongoose Module</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 72 จาก 77</p>
+    <h1>รู้จัก Mongoose Module</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ติดตั้ง dependencies ที่จำเป็นสำหรับใช้ Mongoose ใน NestJS ได้ครบและไม่เกินจำเป็น</li>
+        <li>ตั้งค่า <code>MongooseModule.forRoot()</code> ใน <code>AppModule</code> ให้ชี้ไปยังฐานข้อมูลที่รันอยู่ใน Docker</li>
+        <li>วินิจฉัยปัญหาการเชื่อมต่อเบื้องต้นได้ เช่น Docker ไม่ได้รัน หรือชื่อฐานข้อมูลไม่ตรงกัน</li>
+      </ul>
+    </section>
+
+    <h2>Nest ไม่ผูกกับฐานข้อมูลใดฐานข้อมูลหนึ่ง</h2>
+    <p>ตัว NestJS เอง <em>database agnostic</em> — ออกแบบให้เชื่อมกับฐานข้อมูล SQL หรือ NoSQL ตัวไหนก็ได้ตามความชอบหรือความต้องการของโปรเจกต์ วิธีเชื่อมมีหลายทาง แต่สำหรับเส้นทาง MongoDB นี้เราใช้ <strong>Mongoose</strong> ซึ่งเป็นเครื่องมือ object modeling สำหรับ MongoDB ที่ได้รับความนิยมสูงสุด ผ่านแพ็กเกจ <code>@nestjs/mongoose</code> ที่ทีม NestJS ดูแลเอง</p>
+    <pre><code># ติดตั้ง dependencies ของ mongoose
+npm i mongoose @nestjs/mongoose</code></pre>
+    <div class="note"><p>ตั้งแต่ <code>mongoose@5.11.1</code> เป็นต้นมา Mongoose เผยแพร่ type definitions ของตัวเองแล้ว จึง<strong>ไม่ต้อง</strong>ติดตั้งแพ็กเกจ <code>@types/mongoose</code> เพิ่มอีก</p></div>
+
+    <h2>ตั้งค่า MongooseModule ใน AppModule</h2>
+    <p>เช่นเดียวกับ <code>PrismaModule</code> ในเส้นทาง SQL การเชื่อมต่อระดับแอปทำครั้งเดียวที่ root module — คราวนี้ผ่าน dynamic module <code>MongooseModule.forRoot()</code> (แพทเทิร์นจากบทที่ 39) โดยส่ง connection string ที่ชี้ไปยัง MongoDB ใน Docker ของบทที่แล้ว: host <code>localhost</code>, พอร์ต <code>27017</code> และชื่อฐานข้อมูล <code>nest-course</code></p>
+    <pre><code>/* ตั้งค่า MongooseModule ใน AppModule */
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+
+@Module({
+  imports: [
+    MongooseModule.forRoot('mongodb://localhost:27017/nest-course'),
+  ],
+})
+export class AppModule {}</code></pre>
+    <p>ส่วนท้ายของ connection string (<code>/nest-course</code>) คือชื่อฐานข้อมูลที่จะใช้ ซึ่งต้องตรงกับที่ประกาศไว้ใน <code>docker-compose.yml</code> เมื่อ Nest สตาร์ต มันจะเปิด connection นี้ให้ทั้งแอปใช้ร่วมกัน และ module ฟีเจอร์ต่าง ๆ จะมาลงทะเบียน model ของตัวเองบน connection นี้ในบทถัดไป</p>
+    <div class="warning"><p>ถ้าแอปสตาร์ตแล้วค้างหรือฟ้อง connect ไม่ได้ ให้ตรวจว่า Docker รันอยู่ด้วย <code>docker compose up -d</code> ก่อน — นี่คือสาเหตุที่พบบ่อยที่สุดของปัญหานี้ ส่วนชื่อฐานข้อมูลใน <code>MongooseModule.forRoot()</code> ที่ไม่ตรงกับ <code>docker-compose.yml</code> จะ<strong>ไม่</strong>ทำให้ connect ล้มเหลวหรือค้าง (MongoDB สร้างฐานข้อมูลใหม่ให้อัตโนมัติตามชื่อที่ระบุ โดยไม่สนใจว่าชื่อนั้นมีอยู่จริงหรือไม่) แต่จะทำให้แอปต่อกับฐานข้อมูลคนละก้อนกับที่ตั้งใจแบบเงียบ ๆ แทน — ให้ตรวจชื่อให้ตรงกันเสมอเพื่อเลี่ยงปัญหานี้</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">เชื่อม iluvcoffee เข้ากับ MongoDB</h2>
+      <p>ติดตั้งแพ็กเกจ แล้วเพิ่ม <code>MongooseModule.forRoot()</code> เข้าไปใน <code>imports</code> ของ <code>AppModule</code> ตามโค้ดด้านบน จากนั้นสตาร์ตแอปโดยที่ container ของ MongoDB ยังรันอยู่</p>
+      <div class="prompt-example"><code>docker compose up -d
+npm i mongoose @nestjs/mongoose
+npm run start:dev</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>แอปสตาร์ตสำเร็จโดย log มีบรรทัด <code>MongooseModule dependencies initialized</code> และไม่มี error เรื่องการเชื่อมต่อ ถ้าปิด Docker แล้วสตาร์ตใหม่ จะเห็นแอปพยายาม retry การเชื่อมต่อ — เป็นการยืนยันว่า Nest ต่อกับ MongoDB ผ่าน config ของเราจริง</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>package.json</code> มี <code>mongoose</code> และ <code>@nestjs/mongoose</code> ใน dependencies แต่ไม่มี <code>@types/mongoose</code></li>
+        <li><code>npm run start:dev</code> ขึ้น <code>Nest application successfully started</code> โดยไม่มี <code>MongooseServerSelectionError</code></li>
+        <li>ลองแก้ชื่อฐานข้อมูลใน connection string ให้ผิดชั่วคราวแล้วดูว่าปลายทางเปลี่ยน — จากนั้นแก้กลับเป็น <code>nest-course</code></li>
+        <li>สั่ง <code>docker compose down</code> แล้วดู log ว่าแอปฟ้องเชื่อมต่อไม่ได้ ก่อน <code>up -d</code> กลับมาให้พร้อมใช้บทถัดไป</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/mongodb">Mongoose integration (NestJS docs)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/database">Database (NestJS docs)</a></li>
+      <li><a href="https://learn.nestjs.com/">คอร์สต้นฉบับ NestJS Fundamentals</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="71_running-mongodb.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="73_creating-a-mongoose-model.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

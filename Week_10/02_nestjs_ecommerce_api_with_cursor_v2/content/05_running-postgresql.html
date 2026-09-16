@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ยก PostgreSQL 17 ขึ้นด้วย Docker Compose แล้วสร้างไฟล์ .env สี่บรรทัดที่ทุกบทต่อจากนี้จะใช้ร่วมกัน" />
+  <title>รัน PostgreSQL ด้วย Docker Compose</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 5 จาก 24</p>
+    <h1>รัน PostgreSQL ด้วย Docker Compose</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เขียน <code>docker-compose.yml</code> สำหรับ <code>postgres:17</code> ที่เก็บข้อมูลถาวรด้วย named volume</li>
+        <li>อธิบายได้ว่า <code>.env</code> ทั้งสี่ key ถูกใช้ที่ไหนในโปรเจกต์นี้</li>
+        <li>พิสูจน์ด้วย <code>psql</code> ในคอนเทนเนอร์ว่า database ชื่อ <code>ecommerce</code> เกิดขึ้นจริง</li>
+      </ul>
+    </section>
+
+    <h2>ฐานข้อมูลอยู่ในคอนเทนเนอร์ ไม่ใช่ในเครื่องเรา</h2>
+    <p>เราใช้วิธีเดียวกับ <a href="../../../Week_09/01_nestjs_basic/content/20_running-postgresql.html">Week_09 บทที่ 20</a>: ไม่ติดตั้ง PostgreSQL ลงเครื่องโดยตรง แต่ประกาศมันเป็น service ในไฟล์ <code>docker-compose.yml</code> แล้วให้ Docker ยกขึ้นให้ ข้อดีคือทุกคนในทีมได้ PostgreSQL เวอร์ชันเดียวกันจากไฟล์เดียว และลบทิ้งทั้งชุดได้เมื่อจบคอร์ส คำสั่งที่ใช้ตลอดคอร์สมีแค่สามคำสั่งนี้</p>
+    <pre><code># ยกฐานข้อมูลขึ้นแบบ background (detached)
+docker compose up -d
+
+# ดูว่า service ไหนรันอยู่ และ map port อะไร
+docker compose ps
+
+# ปิดคอนเทนเนอร์ (ข้อมูลยังอยู่ใน volume)
+docker compose down</code></pre>
+    <p>เราปักเวอร์ชันเป็น <code>postgres:17</code> ไม่ใช่ <code>postgres:latest</code> เพราะ <code>latest</code> จะเปลี่ยน major version ใต้เท้าเราเมื่อ Docker Hub ปล่อยรุ่นใหม่ แล้ว volume ที่สร้างด้วย PostgreSQL รุ่นเก่าจะเปิดด้วยรุ่นใหม่ไม่ได้</p>
+
+    <h2>named volume ทำให้ข้อมูลไม่หายตอน down</h2>
+    <p>ถ้าไม่ประกาศ volume ข้อมูลทุกแถวจะอยู่ใน filesystem ของคอนเทนเนอร์และหายไปพร้อมกับคอนเทนเนอร์ เราจึงเมานต์ named volume ชื่อ <code>pgdata</code> ไว้ที่ <code>/var/lib/postgresql/data</code> ซึ่งเป็น data directory ของ PostgreSQL</p>
+    <ul>
+      <li><code>docker compose down</code> ลบคอนเทนเนอร์ แต่ <strong>ไม่</strong> ลบ volume — ยกขึ้นใหม่แล้วสินค้าที่ seed ไว้ในบทที่ 9 ยังอยู่ครบ</li>
+      <li><code>docker compose down -v</code> ลบ volume ด้วย — เท่ากับเริ่มจากฐานข้อมูลว่าง ต้อง <code>migrate</code> และ <code>seed</code> ใหม่ (มีประโยชน์เวลาต้องการล้างของจริง)</li>
+    </ul>
+    <p>เราเลือก named volume (<code>pgdata:</code>) แทน bind mount (<code>./data:/var/lib/postgresql/data</code>) เพราะ named volume ถูกจัดการโดย Docker ไม่โผล่เป็นโฟลเดอร์ในโปรเจกต์ให้เผลอ commit ขึ้น git</p>
+
+    <h2>ทำไมต้อง POSTGRES_DB=ecommerce</h2>
+    <p>ใน Week_09 เราต่อกับ database ปริยายชื่อ <code>postgres</code> ได้เพราะมีโปรเจกต์เดียว คอร์สนี้เราตั้ง <code>POSTGRES_DB=ecommerce</code> ให้คอนเทนเนอร์สร้าง database เฉพาะของโปรเจกต์ตั้งแต่ boot ครั้งแรก เหตุผลคือ <code>DATABASE_URL</code> ของ Prisma ลงท้ายด้วยชื่อ database (<code>…/ecommerce</code>) ถ้าลืม key นี้ database จะไม่มีจริง แล้วบทที่ 8 (<code>prisma migrate dev</code>) จะล้มด้วย error ว่าหา database ไม่เจอ</p>
+    <div class="note">
+      <p>ตัวแปร <code>POSTGRES_PASSWORD</code> เป็น key เดียวที่ image บังคับให้ใส่ ส่วน user เราไม่ตั้งเอง จึงได้ superuser ปริยายชื่อ <code>postgres</code> — ตรงกับ <code>-U postgres</code> ในคำสั่ง <code>psql</code> และตรงกับ <code>postgres:pass123</code> ใน <code>DATABASE_URL</code> รหัสผ่านแบบนี้ใช้ได้เพราะฐานข้อมูลนี้เปิดอยู่แค่บนเครื่องเราเพื่อเรียน ไม่ใช่ของจริงบน production</p>
+    </div>
+
+    <h2>.env สี่บรรทัด ใครใช้บรรทัดไหน</h2>
+    <p>เราสร้าง <code>.env</code> ครบทั้งสี่ key ตั้งแต่บทนี้ แล้วบทหลัง ๆ ค่อยมาหยิบไปใช้ทีละตัว จะได้ไม่ต้องกลับมาแก้ไฟล์เดิมซ้ำ ๆ</p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบตัวแปรใน .env และผู้ใช้งาน" tabindex="0">
+      <table>
+        <thead><tr><th>Key</th><th>ใครอ่าน</th><th>ใช้ทำอะไร</th></tr></thead>
+        <tbody>
+          <tr><td><code>DATABASE_URL</code></td><td>Prisma CLI (<code>prisma7.config.ts</code>) และ <code>PrismaService</code></td><td>connection string ของ PostgreSQL — ใช้ตั้งแต่บทที่ 6</td></tr>
+          <tr><td><code>PORT</code></td><td><code>src/main.ts</code></td><td>port ที่แอปฟัง (บทที่ 20 จะอ่านผ่าน <code>ConfigService</code> แทนเลข 3000 ที่ฝังไว้)</td></tr>
+          <tr><td><code>APP_URL</code></td><td><code>ProductsService</code></td><td>ฐานของ <code>url</code> ในผลลัพธ์ <code>GET /products/categories</code> (บทที่ 10) เพราะ dummyjson ส่ง URL เต็มกลับมาด้วย</td></tr>
+          <tr><td><code>CORS_ORIGIN</code></td><td><code>src/main.ts</code></td><td>origin ของ React app ที่อนุญาตให้เรียกข้าม origin ได้ (บทที่ 20)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ไฟล์ <code>.env</code> จะไม่ถูก commit (ถูก ignore ไว้) เราจึง commit <code>.env.example</code> คู่กันเสมอ เพื่อให้คนที่ clone โปรเจกต์รู้ว่าต้องมี key อะไรบ้าง ในโปรเจกต์เรียนนี้ไม่มี secret จริง ค่าทั้งสองไฟล์จึงเหมือนกันทุกบรรทัด — ในงานจริง <code>.env.example</code> จะเว้นค่าไว้ว่างหรือใส่ค่าตัวอย่างเท่านั้น</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+├── docker-compose.yml      (สร้างใหม่)
+├── .env                    (สร้างใหม่ — ไม่ commit)
+├── .env.example            (สร้างใหม่ — commit)
+└── .gitignore              (แก้ไข: ต้องมีบรรทัด .env)</code></pre>
+    <ul>
+      <li><strong><code>docker-compose.yml</code></strong> — สัญญา: ต้องมี service เดียวชื่อ <code>db</code> จาก image <code>postgres:17</code>, map <code>5432:5432</code>, ตั้ง <code>POSTGRES_PASSWORD</code> กับ <code>POSTGRES_DB</code> และใช้ named volume <code>pgdata</code> / ต้องไม่มี key <code>version</code> และต้องไม่เพิ่ม service อื่น</li>
+      <li><strong><code>.env</code></strong> — สัญญา: ต้องมีสี่บรรทัดตามลำดับ <code>DATABASE_URL</code>, <code>PORT</code>, <code>APP_URL</code>, <code>CORS_ORIGIN</code> / ต้องไม่ครอบค่าด้วยเครื่องหมายคำพูด และต้องไม่ถูก commit</li>
+      <li><strong><code>.env.example</code></strong> — สัญญา: ต้องมี key และค่าเหมือน <code>.env</code> ทั้งสี่บรรทัด / ต้องไม่มี key เกินมา</li>
+      <li><strong><code>.gitignore</code></strong> — สัญญา: ต้องทำให้ <code>.env</code> ถูก ignore / ต้องไม่ลบบรรทัดเดิมของ scaffold</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ให้ Cursor สร้าง compose file และ .env</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: add cursor rules"</code> ถ้ายังไม่ได้ commit ของบทที่ 4) แชทใหม่หมายถึงบริบทสะอาด ไม่มีคำสั่งเก่าค้างมากวน แล้วส่ง prompt นี้ทั้งก้อน</p>
+      <div class="cursor-prompt"><code>สร้าง Docker Compose สำหรับ PostgreSQL และไฟล์ .env ของโปรเจกต์
+
+บริบท: @package.json @.gitignore @.cursor/rules/project.mdc
+โปรเจกต์นี้เป็น NestJS 12 ที่เพิ่ง scaffold ยังไม่มีฐานข้อมูล ยังไม่ได้ติดตั้ง Prisma
+เครื่องมี Docker Desktop รันอยู่แล้ว
+บทเรียนถัดไปจะติดตั้ง Prisma ซึ่งต้องการตัวแปร DATABASE_URL
+
+โครงสร้าง: สร้าง/แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- docker-compose.yml (สร้างใหม่)
+- .env (สร้างใหม่)
+- .env.example (สร้างใหม่)
+- .gitignore (แก้ไข: เพิ่ม .env ต่อท้าย)
+
+ข้อกำหนดทางเทคนิค:
+- docker-compose.yml ไม่มี key version (Compose รุ่นใหม่ไม่ใช้แล้ว) มี service เดียวชื่อ db
+  image: postgres:17, restart: always, ports: "5432:5432"
+  environment: POSTGRES_PASSWORD=pass123 และ POSTGRES_DB=ecommerce
+  volumes: named volume ชื่อ pgdata เมานต์ที่ /var/lib/postgresql/data และประกาศ volumes: pgdata: ไว้ท้ายไฟล์
+- .env มีสี่บรรทัดตามลำดับนี้ ไม่มีเครื่องหมายคำพูดครอบค่า
+  DATABASE_URL=postgresql://postgres:pass123@localhost:5432/ecommerce
+  PORT=3000
+  APP_URL=http://localhost:3000
+  CORS_ORIGIN=http://localhost:5173
+- .env.example มี key และค่าเดียวกันทั้งสี่บรรทัด (โปรเจกต์นี้ไม่มี secret จริง)
+- .gitignore เพิ่มบรรทัด .env ต่อท้ายไฟล์ ห้ามลบบรรทัดเดิม
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์อื่นนอกจากที่ระบุ
+- ห้ามรัน docker compose up ให้ผมรันเอง
+- ยังไม่ต้องติดตั้งหรือตั้งค่า Prisma</code></div>
+      <p>เมื่อ Cursor สร้างไฟล์ครบแล้ว ยกฐานข้อมูลขึ้นเอง (prompt สั่งห้าม Agent รัน docker ให้)</p>
+      <div class="prompt-example"><code>docker compose up -d
+docker compose ps</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>บรรทัดแรกของ <code>docker-compose.yml</code> คือ <code>services:</code> — ไม่มี key <code>version:</code> (Compose รุ่นใหม่เลิกใช้แล้ว ถ้ามีจะขึ้น warning)</li>
+        <li>image เป็น <code>postgres:17</code> ไม่ใช่ <code>postgres:latest</code> หรือ <code>postgres:16-alpine</code></li>
+        <li>มี <code>POSTGRES_DB: ecommerce</code> จริง — ขาด key นี้แล้ว <code>DATABASE_URL</code> จะชี้ไป database ที่ไม่มีอยู่</li>
+        <li><code>volumes</code> ของ service เป็น <code>pgdata:/var/lib/postgresql/data</code> และมีบล็อก <code>volumes:</code> ประกาศ <code>pgdata:</code> ท้ายไฟล์ (ไม่ใช่ bind mount แบบ <code>./data:…</code>)</li>
+        <li><code>.env</code> มีสี่บรรทัดพอดี เรียงตามที่สั่ง และไม่มีเครื่องหมายคำพูดครอบค่า (<code>PORT=3000</code> ไม่ใช่ <code>PORT="3000"</code>)</li>
+        <li><code>.env.example</code> มี key และค่าเหมือน <code>.env</code> ทุกบรรทัด — <code>diff .env .env.example</code> ต้องไม่มีผลต่าง</li>
+        <li><code>git status</code> เห็นแค่ <code>docker-compose.yml</code> และ <code>.env.example</code> เป็นไฟล์ใหม่ — <strong>ไม่เห็น</strong> <code>.env</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> เติม <code>version: "3"</code> ไว้บนสุด (เป็นรูปแบบเก่าที่ยังเจอในบทความทั่วเน็ต), เพิ่มบรรทัด <code>POSTGRES_USER: …</code> ที่เราไม่ได้สั่ง (ทำให้ user ไม่ตรงกับ <code>postgres</code> ใน <code>DATABASE_URL</code>), หรือครอบค่าใน <code>.env</code> ด้วยเครื่องหมายคำพูด (บาง loader จะอ่านเครื่องหมายคำพูดติดไปเป็นส่วนของค่า)</p>
+      <div class="note">
+        <p>scaffold ของ Nest ใส่ <code>.env</code> ไว้ใน <code>.gitignore</code> ให้แล้วใต้หัวข้อ <code># dotenv environment variable files</code> ดังนั้นถ้า Agent บอกว่า <q>ไม่ต้องแก้ <code>.gitignore</code> เพราะมีอยู่แล้ว</q> ก็ถูกต้อง สิ่งที่เราตรวจคือผลลัพธ์ (<code>git status</code> ไม่โชว์ <code>.env</code>) ไม่ใช่จำนวนบรรทัดที่ถูกเพิ่ม</p>
+      </div>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <pre><code># docker-compose.yml
+services:
+  db:
+    image: postgres:17
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: pass123
+      POSTGRES_DB: ecommerce
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:</code></pre>
+      <pre><code># .env และ .env.example (เนื้อหาเหมือนกัน)
+DATABASE_URL=postgresql://postgres:pass123@localhost:5432/ecommerce
+PORT=3000
+APP_URL=http://localhost:3000
+CORS_ORIGIN=http://localhost:5173</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ครั้งแรก <code>docker compose up -d</code> จะดึง image <code>postgres:17</code> ลงมาก่อน (ใช้เวลาสักครู่) แล้วจบด้วยบรรทัด <code>Container ecommerce-api-db-1  Started</code> ส่วน <code>docker compose ps</code> ต้องเห็นหนึ่งแถว: service <code>db</code>, STATUS ขึ้นต้นด้วย <code>Up</code> และ PORTS เป็น <code>0.0.0.0:5432-&gt;5432/tcp</code> ถ้า STATUS ขึ้น <code>Restarting</code> ค้าง ให้ดู <code>docker compose logs db</code> — สาเหตุที่พบบ่อยคือลืม <code>POSTGRES_PASSWORD</code></p>
+      <div class="warning">
+        <p>ถ้าได้ error <code>port is already allocated</code> แปลว่ามี PostgreSQL ตัวอื่นจับ 5432 อยู่ในเครื่องแล้ว (อาจเป็นของโปรเจกต์อื่นหรือที่ติดตั้งไว้ตรง ๆ) ปิดตัวนั้นก่อนแล้วสั่ง <code>docker compose up -d</code> ใหม่ ถ้าปิดไม่ได้ ต้องเปลี่ยน port ฝั่งซ้ายของ <code>5432:5432</code> พร้อมเปลี่ยนเลข port ใน <code>DATABASE_URL</code> ให้ตรงกันทั้งสองที่ — คอร์สนี้จะใช้ 5432 ตลอด</p>
+      </div>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ถาม PostgreSQL ตรง ๆ ว่ามี database <code>ecommerce</code> จริงไหม — เข้าไปรัน <code>psql</code> ในคอนเทนเนอร์ (ไม่ต้องติดตั้ง client ในเครื่อง)</li>
+      </ul>
+      <div class="prompt-example"><code>docker compose exec db psql -U postgres -d ecommerce -c '\l' | grep ecommerce</code></div>
+      <pre><code> ecommerce | postgres | UTF8     | libc            | en_US.utf8 | en_US.utf8 |        |</code></pre>
+      <ul>
+        <li>ถ้าครั้งแรกได้ <code>socket … failed: No such file or directory</code> ไม่ต้องตกใจ — คอนเทนเนอร์ยัง restart ตัวเองอยู่ในขั้น init รออีกไม่กี่วินาทีแล้วรันซ้ำ จะได้แถวข้างบน</li>
+        <li><code>git status</code> ต้องไม่มี <code>.env</code> โผล่มาในรายการ (ถ้าโผล่ แปลว่า <code>.gitignore</code> ยังไม่ครอบ ต้องแก้ก่อน commit)</li>
+        <li>ทดสอบว่า volume ทำงาน: <code>docker compose down</code> แล้ว <code>docker compose up -d</code> อีกครั้ง — คำสั่ง <code>\l</code> ข้างบนยังเห็น <code>ecommerce</code> เหมือนเดิม</li>
+        <li>เมื่อผ่านทุกข้อแล้ว commit ด้วย <code>git add -A &amp;&amp; git commit -m "feat: postgres via docker compose"</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.docker.com/compose/">Docker Compose overview (Docker Docs)</a></li>
+      <li><a href="https://docs.docker.com/reference/compose-file/">Compose file reference (Docker Docs)</a></li>
+      <li><a href="https://docs.docker.com/engine/storage/volumes/">Volumes (Docker Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/configuration">Configuration (NestJS Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="04_cursor-rules-and-the-prompt-template.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="06_setting-up-prisma.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เข้าใจ module encapsulation ใน NestJS: ทำไม provider ถึงมองไม่เห็นข้าม module และใช้ exports/imports เปิดเผยเฉพาะสิ่งที่ตั้งใจแชร์" />
+  <title>ควบคุม Module Encapsulation</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 32 จาก 77</p>
+    <h1>ควบคุม Module Encapsulation</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่าทำไม provider ของ module หนึ่งจึงมองไม่เห็นจาก module อื่นโดย default</li>
+        <li>ใช้ <code>exports</code> และ <code>imports</code> เปิดเผย provider ข้าม module อย่างตั้งใจ</li>
+        <li>อ่าน error <q>Nest can't resolve dependencies</q> แล้วรู้ทันทีว่าต้องแก้ที่ module ใด</li>
+      </ul>
+    </section>
+
+    <h2>Module ทุกตัวถูกห่อหุ้มโดย default</h2>
+    <p>NestJS ตั้งใจให้แต่ละ module เป็นขอบเขตปิด (encapsulated): provider ที่ประกาศใน <code>providers</code> ของ module ใด ใช้ได้เฉพาะภายใน module นั้น ถ้า module อื่นอยากใช้ ต้องเกิดข้อตกลงสองฝั่งเสมอ — ฝั่งเจ้าของประกาศใน <code>exports</code> และฝั่งผู้ใช้เพิ่มเจ้าของเข้า <code>imports</code> ของตัวเอง หลักการนี้บังคับให้ dependency ระหว่าง domain ชัดเจน ไม่มี service ลอยข้าม boundary แบบเงียบ ๆ</p>
+    <p>เพื่อเห็น encapsulation ทำงานจริง เราจะสร้าง module ใหม่ชื่อ <code>CoffeeRatingModule</code> ที่ต้องพึ่ง <code>CoffeesService</code> จาก <code>CoffeesModule</code></p>
+    <pre><code># สร้าง CoffeeRatingModule ใหม่
+nest g mo coffee-rating
+
+# สร้าง CoffeeRatingService ใหม่
+nest g s coffee-rating</code></pre>
+
+    <h2>ทำให้ CoffeeRatingService ใช้ CoffeesService ได้</h2>
+    <p>ลอง inject <code>CoffeesService</code> เข้า constructor ของ <code>CoffeeRatingService</code> ตรง ๆ แอปจะพังตอน start พร้อม error ว่า Nest resolve dependency ไม่ได้ เพราะ <code>CoffeesService</code> ยังถูกห่ออยู่ใน <code>CoffeesModule</code> การแก้ต้องทำครบสองขั้น</p>
+    <pre><code>// coffees.module.ts — ฝั่งเจ้าของ: เปิดเผย service
+@Module({
+  controllers: [CoffeesController],
+  providers: [CoffeesService],
+  exports: [CoffeesService],
+})
+export class CoffeesModule {}
+
+// coffee-rating.module.ts — ฝั่งผู้ใช้: import module เจ้าของ
+@Module({
+  imports: [CoffeesModule],
+  providers: [CoffeeRatingService],
+})
+export class CoffeeRatingModule {}
+
+// coffee-rating.service.ts — จากนั้นจึง inject ได้ตามปกติ
+@Injectable()
+export class CoffeeRatingService {
+  constructor(private readonly coffeesService: CoffeesService) {}
+}</code></pre>
+    <div class="note"><p>สังเกตว่าเรา import <em>module</em> ไม่ใช่ตัว service: <code>imports: [CoffeesModule]</code> แปลว่า "ขอใช้ทุกอย่างที่ CoffeesModule ประกาศ export" การเพิ่ม <code>CoffeesService</code> ลง <code>providers</code> ของ <code>CoffeeRatingModule</code> ตรง ๆ เป็น anti-pattern เพราะจะได้ instance แยกอีกตัวแทนที่จะแชร์ตัวเดียวกัน</p></div>
+
+    <h2>บทบาทของแต่ละ property ใน @Module</h2>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ property ของ @Module" tabindex="0">
+      <table>
+        <thead><tr><th>Property</th><th>ความหมาย</th><th>ผลต่อการมองเห็น</th></tr></thead>
+        <tbody>
+          <tr><td><code>providers</code></td><td>สิ่งที่ Nest instantiate ให้ใน module นี้</td><td>ใช้ได้เฉพาะภายใน module ตัวเอง</td></tr>
+          <tr><td><code>exports</code></td><td>provider (หรือ module) ที่ยอมเปิดเผยออกไป</td><td>module อื่นที่ import เราเห็นได้</td></tr>
+          <tr><td><code>imports</code></td><td>module อื่นที่เราต้องพึ่งพา</td><td>ได้ทุกอย่างที่ module นั้น export</td></tr>
+          <tr><td><code>controllers</code></td><td>controller ที่ผูก route ใน module นี้</td><td>ไม่เกี่ยวกับการ export — route เป็น global อยู่แล้ว</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สร้าง CoffeeRatingModule ที่พึ่ง CoffeesService</h2>
+      <p>generate module และ service ใหม่ด้วย Nest CLI, inject <code>CoffeesService</code> เข้า <code>CoffeeRatingService</code> แล้วดู error ก่อนหนึ่งครั้งเพื่อรู้จักหน้าตาของมัน จากนั้นแก้ด้วย <code>exports</code>/<code>imports</code> ให้แอปกลับมา start ได้</p>
+      <div class="prompt-example"><code>nest g mo coffee-rating
+nest g s coffee-rating
+# inject CoffeesService แล้วสังเกต error ตอน start
+# จากนั้นเพิ่ม exports: [CoffeesService] ใน CoffeesModule
+# และ imports: [CoffeesModule] ใน CoffeeRatingModule
+npm run start:dev</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ก่อนแก้: แอป crash พร้อมข้อความ <q>Nest can't resolve dependencies of the CoffeeRatingService (?)</q> ซึ่งบอกว่า argument ตัวแรกหาไม่เจอ หลังแก้: แอป start สะอาด และ <code>CoffeeRatingService</code> เรียกเมธอดของ <code>CoffeesService</code> ตัวเดียวกับที่ controller ใช้ได้ (singleton แชร์กัน)</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>อ่าน error ตอนยังไม่ export ว่าชื่อ class และตำแหน่ง <code>?</code> ใน constructor ชี้ถึง dependency ตัวไหน</li>
+        <li>ตรวจว่า <code>CoffeesModule</code> มี <code>exports: [CoffeesService]</code> และ <code>CoffeeRatingModule</code> มี <code>imports: [CoffeesModule]</code></li>
+        <li>ลองลบ <code>exports</code> ออกชั่วคราว — แอปต้องพังแบบเดิม แสดงว่า encapsulation ยังทำงาน</li>
+        <li>ตรวจว่าไม่ได้เผลอใส่ <code>CoffeesService</code> ใน <code>providers</code> ของ <code>CoffeeRatingModule</code> ซึ่งจะสร้าง instance ซ้ำ</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/modules">Modules — NestJS Docs</a></li>
+      <li><a href="https://docs.nestjs.com/providers">Providers — NestJS Docs</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="31_setting-up-migrations.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="33_diving-into-custom-providers.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

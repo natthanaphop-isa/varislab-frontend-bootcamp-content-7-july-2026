@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ภาพรวมของ iluvcoffee: REST API เกี่ยวกับกาแฟที่เราจะสร้างแบบสะสมตลอดคอร์ส พร้อมเส้นทาง SQL และ NoSQL" />
+  <title>สิ่งที่เราจะสร้างกันในคอร์สนี้</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 3 จาก 77</p>
+    <h1>สิ่งที่เราจะสร้างกันในคอร์สนี้</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายขอบเขตของแอป <code>iluvcoffee</code> และแนวคิดหลักที่คอร์สนี้ครอบคลุม</li>
+        <li>วางแผนการเรียนแบบ incremental — เรียนตามลำดับโดยไม่ข้ามบท</li>
+        <li>เตรียมกลยุทธ์ git branch สำหรับแยกเส้นทาง SQL (PostgreSQL) และ NoSQL (MongoDB)</li>
+      </ul>
+    </section>
+
+    <h2>REST API เรื่องกาแฟล้วน ๆ ☕️</h2>
+    <p>ตลอดคอร์สนี้เราจะสร้าง REST API ขนาดเล็กที่ว่าด้วยกาแฟทั้งหมด — resource หลักคือ <code>coffees</code> ที่มี entity <code>Coffee</code> (ประกอบด้วย <code>id</code>, <code>name</code>, <code>brand</code> และ <code>flavors</code>) แอปเล็กพอที่จะไม่บังหลักการ แต่ครบพอที่จะได้เจอปัญหาจริงทุกชั้นของ backend</p>
+    <p>แนวคิดหลักที่จะได้ลงมือทำ:</p>
+    <ul>
+      <li>ห่อ feature / business domain ไว้ใน modules ของตัวเอง</li>
+      <li>สร้าง CRUD endpoints ครบชุดสำหรับ entity <code>Coffee</code></li>
+      <li>ใช้ building blocks สำคัญของ NestJS: pipes, filters, guards, interceptors, middleware</li>
+      <li>เข้าใจ dependency injection ถึงระดับ custom providers และ scopes</li>
+      <li>เชื่อมฐานข้อมูลทั้ง SQL (PostgreSQL ผ่าน Prisma) และ NoSQL (MongoDB ผ่าน Mongoose)</li>
+      <li>เขียน unit tests และ e2e tests ด้วย Vitest</li>
+    </ul>
+
+    <h2>คอร์สออกแบบมาให้เรียนแบบสะสม</h2>
+    <p>บทเรียนต่อยอดกันเป็นลูกโซ่: โค้ดของบทหลังสร้างต่อจากบทก่อนหน้าเสมอ ถ้าโค้ดตามไปด้วย (แนะนำมาก) ให้เรียงตามลำดับบทและ chapter อย่าข้าม เพราะ tips, best practices และการ setup โค้ดบางอย่างจะถูกใช้ต่อในบทถัด ๆ ไป</p>
+    <div class="warning">
+      <p><strong>สำคัญ:</strong> คอร์สนี้มีทั้งเส้นทาง SQL และ NoSQL — หลังจบ Chapter 2 <q>Creating a REST API Application</q> (บทที่ 18) ให้ <strong>บันทึกความคืบหน้าไว้ใน branch แยกต่างหาก</strong> เพราะบทโบนัส MongoDB/Mongoose (บทที่ 70–77) จะเริ่มต่อจากจุดนั้นพอดี ไม่ใช่ต่อจากเส้นทาง PostgreSQL</p>
+    </div>
+    <pre><code># หลังเรียนจบบทที่ 18 (จบ Chapter 2)
+git checkout -b end-of-chapter-2   # เก็บ snapshot ไว้ใช้กับบท MongoDB
+git checkout master                # กลับมาเรียนเส้นทาง PostgreSQL ต่อ</code></pre>
+    <p>การแตก branch แบบนี้ทำให้เลือกดูเฉพาะ section ฐานข้อมูลที่ตรงกับโปรเจกต์ของคุณได้ หรือจะโค้ดตามทั้งสองเส้นทางก็ได้เช่นกัน</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">วางแผนเส้นทางเรียนของตัวเอง</h2>
+      <p>ก่อนไปต่อ ตัดสินใจ 2 อย่าง: (1) จะโค้ดตามหรืออ่านอย่างเดียว (2) จะเรียนเส้นทางฐานข้อมูลไหน — PostgreSQL, MongoDB หรือทั้งคู่ ถ้าโค้ดตาม ให้ init git ในโปรเจกต์ <code>iluvcoffee</code> ตั้งแต่ตอนนี้เพื่อรองรับการแตก branch ในอนาคต</p>
+      <div class="prompt-example"><code>cd iluvcoffee
+git init
+git add .
+git commit -m "initial scaffold"</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>มี repository ที่ commit แรกเป็นโค้ด scaffold สะอาด ๆ และคุณรู้ชัดว่าเมื่อถึงจุดจบ Chapter 2 จะต้องแตก branch เก็บไว้หนึ่งเส้นเพื่อใช้กับบทโบนัส MongoDB</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>git log --oneline</code> แสดง commit แรกของโปรเจกต์</li>
+        <li><code>git status</code> สะอาด ไม่มีไฟล์ค้างที่ยังไม่ commit</li>
+        <li>บอกได้ว่า entity หลักของคอร์สคืออะไรและมี field อะไรบ้าง</li>
+        <li>บอกได้ว่าบทโบนัส MongoDB เริ่มต่อจากบทไหน (จบ Chapter 2 — บทที่ 18)</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ (learn.nestjs.com)</a></li>
+      <li><a href="https://docs.nestjs.com/first-steps">First steps (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="02_whats-inside-a-nestjs-application.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="04_prerequisite-install-insomnia.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

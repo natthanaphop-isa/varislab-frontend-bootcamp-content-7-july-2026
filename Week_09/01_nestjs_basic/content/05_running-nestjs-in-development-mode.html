@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="รันแอป NestJS ด้วย npm run start:dev เพื่อให้ recompile อัตโนมัติทุกครั้งที่แก้ไฟล์ พร้อมเทียบ script รันแบบอื่น" />
+  <title>รัน NestJS ในโหมด Development</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 5 จาก 77</p>
+    <h1>รัน NestJS ในโหมด Development</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>รันแอปในโหมด watch ที่ recompile อัตโนมัติเมื่อไฟล์เปลี่ยน</li>
+        <li>อ่าน log ตอน bootstrap เพื่อยืนยันว่า route ไหนถูก map แล้วบ้าง</li>
+        <li>เลือก script รันที่เหมาะกับสถานการณ์ (dev, debug, production)</li>
+      </ul>
+    </section>
+
+    <h2>โหมด development คือเพื่อนสนิทตลอดคอร์ส</h2>
+    <p>ตั้งแต่บทนี้เป็นต้นไป ให้เปิด terminal ค้างไว้หนึ่งจอเพื่อรันแอปด้วยคำสั่งเดียว</p>
+    <pre><code># Development mode:
+npm run start:dev</code></pre>
+    <p>คำสั่งนี้รัน Nest ใน <strong>watch mode</strong>: ทุกครั้งที่บันทึกไฟล์ <code>.ts</code> แอปจะ recompile และ restart ให้เอง เราจึงแก้โค้ด สลับไปยิง request ใน Insomnia แล้วเห็นผลได้ทันทีโดยไม่ต้องสั่งรันใหม่เอง ระหว่างเรียนคอร์สนี้แทบทั้งหมดเราจะอยู่ในโหมดนี้</p>
+    <p>สังเกต log ตอนเริ่ม: Nest จะพิมพ์ลำดับการโหลด modules และบรรทัด <code>Mapped {/, GET} route</code> ซึ่งเป็นวิธีเช็กเร็ว ๆ ว่า controller และ route ที่เพิ่งสร้างถูกลงทะเบียนจริง ถ้าสร้าง endpoint ใหม่แล้วไม่เห็นบรรทัด mapped ของมัน แปลว่ามีอะไรผิดตั้งแต่ประกาศ route</p>
+
+    <h2>Script อื่นที่ควรรู้จัก</h2>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ script การรัน" tabindex="0">
+      <table>
+        <thead><tr><th>คำสั่ง</th><th>ใช้เมื่อ</th><th>พฤติกรรม</th></tr></thead>
+        <tbody>
+          <tr><td><code>npm run start</code></td><td>รันครั้งเดียว ไม่ต้อง watch</td><td>compile แล้วรัน — แก้ไฟล์แล้วต้องรันใหม่เอง</td></tr>
+          <tr><td><code>npm run start:dev</code></td><td>ระหว่างพัฒนา (ใช้ตลอดคอร์สนี้)</td><td>watch mode — recompile + restart อัตโนมัติ</td></tr>
+          <tr><td><code>npm run start:debug</code></td><td>ต้องต่อ debugger/breakpoint</td><td>watch mode + เปิด inspector ของ Node</td></tr>
+          <tr><td><code>npm run start:prod</code></td><td>รันของจริงหลัง build</td><td>รัน JavaScript ที่ compile แล้วจาก <code>dist/</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      <p>ค่าเริ่มต้นแอปฟังที่ port 3000 (กำหนดใน <code>main.ts</code>) ถ้า port ชนกับโปรแกรมอื่นจะเห็น error <code>EADDRINUSE</code> ตอน start — ปิดโปรแกรมที่ใช้ port อยู่ หรือเปลี่ยนเลข port ใน <code>app.listen()</code></p>
+    </div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">รันแอปแล้วพิสูจน์ว่า watch mode ทำงาน</h2>
+      <p>รัน <code>iluvcoffee</code> ในโหมด development แล้วยิง <code>GET http://localhost:3000</code> ด้วย Insomnia (หรือ curl) จากนั้นแก้ข้อความใน <code>src/app.service.ts</code> จาก <q>Hello World!</q> เป็นข้อความอื่น บันทึกไฟล์ แล้วยิงซ้ำโดยไม่ต้อง restart เอง</p>
+      <div class="prompt-example"><code>cd iluvcoffee
+npm run start:dev
+
+# อีก terminal หนึ่ง
+curl http://localhost:3000</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ยิงครั้งแรกได้ <q>Hello World!</q> หลังแก้ service และบันทึก terminal ที่รันแอปจะ recompile เอง และยิงครั้งที่สองได้ข้อความใหม่ทันที — โดยที่เราไม่ได้แตะคำสั่งรันเลย</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>log ตอน start มีบรรทัด <code>Nest application successfully started</code></li>
+        <li>เห็นบรรทัด <code>Mapped {/, GET} route</code> ใน log ตอน bootstrap</li>
+        <li><code>curl http://localhost:3000</code> คืนข้อความจาก <code>AppService</code></li>
+        <li>แก้ไฟล์แล้ว terminal แสดงการ recompile โดยไม่ต้องสั่งอะไรเพิ่ม</li>
+        <li>รู้ว่าจะหยุดแอปด้วย <code>Ctrl+C</code> และรันใหม่ได้ทุกเมื่อ</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/first-steps">First steps: Running the application (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/cli/overview">CLI overview: nest start (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="04_prerequisite-install-insomnia.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="06_creating-a-basic-controller.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

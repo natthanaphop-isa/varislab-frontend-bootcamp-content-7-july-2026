@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ติดตั้ง Insomnia (หรือ Postman) เป็น REST client สำหรับยิงทดสอบทุก endpoint ที่เราจะสร้างตลอดคอร์ส" />
+  <title>เตรียมเครื่องมือ: ติดตั้ง Insomnia</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 4 จาก 77</p>
+    <h1>เตรียมเครื่องมือ: ติดตั้ง Insomnia</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ติดตั้ง REST client สำหรับใช้ทดสอบ API ตลอดทั้งคอร์ส</li>
+        <li>สร้าง request แรกและจัดกลุ่ม request เป็น collection ของโปรเจกต์</li>
+        <li>เลือกเครื่องมือทดแทน (Postman, curl) ได้ตามความถนัด</li>
+      </ul>
+    </section>
+
+    <h2>ทำไมต้องมี REST client</h2>
+    <p>ตั้งแต่บทที่ 6 เป็นต้นไป เราจะสร้าง endpoint ใหม่แทบทุกบท — ทั้ง <code>GET</code>, <code>POST</code>, <code>PATCH</code> และ <code>DELETE</code> — ซึ่ง browser ธรรมดายิงได้สะดวกแค่ <code>GET</code> เท่านั้น <strong>REST client</strong> ช่วยให้เรากำหนด HTTP method, แนบ JSON body, ใส่ query parameters และดู status code กับ response ได้ครบในที่เดียว</p>
+    <p>ในคอร์สนี้ใช้ <a href="https://insomnia.rest/">Insomnia</a> เป็นหลัก เพราะหน้าตาเรียบง่ายและสร้าง request ได้เร็ว ดาวน์โหลด installer ตามระบบปฏิบัติการจากเว็บไซต์ได้เลย</p>
+    <div class="note">
+      <p>ถ้าถนัด <a href="https://www.postman.com/">Postman</a> อยู่แล้วก็ใช้แทนได้ทุกบท — หรือจะใช้ <code>curl</code> ใน terminal ก็ได้ ทุกบทเรียนจะระบุ method, path และ body ไว้ชัดเจนพอให้แปลงเป็นเครื่องมือไหนก็ได้</p>
+    </div>
+
+    <h2>ตั้งค่าให้พร้อมสำหรับ iluvcoffee</h2>
+    <p>สิ่งที่ควรทำหลังติดตั้งเสร็จเพื่อให้บทถัด ๆ ไปลื่นไหล:</p>
+    <ul>
+      <li>สร้าง collection (Insomnia เรียกว่า <em>Request Collection</em>) ชื่อ <code>iluvcoffee</code> เก็บ request ของคอร์สนี้ไว้ด้วยกัน</li>
+      <li>สร้าง request แรก: <code>GET http://localhost:3000</code> — จะได้ใช้ทันทีในบทถัดไป</li>
+      <li>ทำความคุ้นเคยกับแท็บ Body (เลือก JSON) และแถบเลือก method เพราะเราจะสลับใช้บ่อยมาก</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ติดตั้งและสร้าง request แรก</h2>
+      <p>ติดตั้ง Insomnia จาก <a href="https://insomnia.rest/">insomnia.rest</a> แล้วสร้าง collection <code>iluvcoffee</code> พร้อม request <code>GET http://localhost:3000</code> เก็บไว้ (ยังยิงไม่ได้จนกว่าจะรันแอปในบทถัดไป — แค่เตรียมไว้ก่อน)</p>
+      <div class="prompt-example"><code># ทางเลือกสำหรับสาย terminal — ทดสอบด้วย curl แทนได้เสมอ
+curl -i http://localhost:3000</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>Insomnia เปิดใช้งานได้ มี collection <code>iluvcoffee</code> ที่มี request <code>GET http://localhost:3000</code> รออยู่ ถ้ายิงตอนนี้จะได้ connection refused ซึ่งถูกต้องแล้ว เพราะเรายังไม่ได้รันแอป</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>เปิด Insomnia แล้วเห็น collection <code>iluvcoffee</code> ที่สร้างไว้</li>
+        <li>ใน request ตัวอย่าง เปลี่ยน method ระหว่าง GET/POST/PATCH/DELETE ได้จาก dropdown</li>
+        <li>รู้ตำแหน่งแท็บ Body สำหรับแนบ JSON payload (จะใช้จริงในบทที่ 8)</li>
+        <li>ถ้าใช้ curl: รัน <code>curl --version</code> ผ่าน ไม่มี error</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://insomnia.rest/">Insomnia</a></li>
+      <li><a href="https://www.postman.com/">Postman — ทางเลือกที่ใช้แทนกันได้</a></li>
+      <li><a href="https://docs.nestjs.com/controllers">Controllers (NestJS) — endpoints ที่เราจะยิงทดสอบ</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="03_what-well-be-building-in-this-course.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="05_running-nestjs-in-development-mode.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

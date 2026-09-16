@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง endpoint POST /coffees และรับ JSON payload จากผู้ใช้ด้วย @Body decorator" />
+  <title>จัดการ Request Body (Payload)</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 8 จาก 77</p>
+    <h1>จัดการ Request Body (Payload)</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>สร้าง endpoint <code>POST /coffees</code> ที่รับ JSON payload</li>
+        <li>ดึง request body เข้ามาใน handler ด้วย <code>@Body()</code></li>
+        <li>ระบุข้อจำกัดของการรับ body แบบไม่มี type — เพื่อปูทางไปสู่ DTO</li>
+      </ul>
+    </section>
+
+    <h2>POST คือช่องทางส่งข้อมูลเข้า API</h2>
+    <p>การสร้างข้อมูลใหม่ใน REST ใช้ HTTP POST พร้อมแนบข้อมูลมาใน <strong>request body</strong> เป็น JSON ฝั่ง Nest เรารับ body ได้ด้วย decorator <code>@Body()</code> ในตำแหน่ง parameter ของ handler</p>
+    <pre><code>/* CoffeesController */
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+
+@Controller('coffees')
+export class CoffeesController {
+  @Get()
+  findAll() {
+    return 'This action returns all coffees';
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return `This action returns #${id} coffee`;
+  }
+
+  @Post()
+  create(@Body() body: any) {
+    return body;
+  }
+}</code></pre>
+    <p>handler <code>create()</code> ตอนนี้ echo ค่า body กลับไปตรง ๆ เพื่อให้เห็นว่า Nest parse JSON ให้เราแล้วเป็น object พร้อมใช้ — ไม่ต้องตั้งค่า body parser เองเหมือน Express เปล่า ๆ</p>
+    <div class="note">
+      <p>เช่นเดียวกับ <code>@Param()</code>, decorator <code>@Body('name')</code> แบบระบุ key จะดึงเฉพาะ property นั้นจาก payload มาให้ แต่ระวัง: ถ้ารับแบบเจาะบาง key การ validate ทั้งก้อนในอนาคตจะทำได้ไม่ครบ</p>
+    </div>
+
+    <h2>รับได้ ไม่ได้แปลว่าปลอดภัย</h2>
+    <p>สังเกตว่า <code>body</code> ตอนนี้ประกาศเป็น <code>any</code> ตรง ๆ (โปรเจกต์ Nest 12 เปิด <code>strict</code> mode ของ TypeScript ถ้าไม่ระบุ type เลย compiler จะฟ้อง <q>implicitly has an 'any' type</q> และ <code>nest start</code> จะไม่ยอมรันแอป) แปลว่าผู้ใช้ส่งอะไรมาก็ได้ — field เกิน, field ขาด, type ผิด — โค้ดเราก็รับหมด ปัญหานี้คือเหตุผลที่บทที่ 15–18 จะแนะนำ <strong>DTO (Data Transfer Object)</strong> และ <code>ValidationPipe</code> เพื่อประกาศหน้าตา payload ที่ยอมรับและปฏิเสธของแปลกปลอมโดยอัตโนมัติ ตอนนี้ให้จำไว้ก่อนว่า "รับ body ดิบ ๆ เป็นของชั่วคราว"</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ยิง POST แรกด้วย JSON payload</h2>
+      <p>เพิ่ม handler <code>create()</code> ตามโค้ดด้านบน แล้วใช้ Insomnia สร้าง request แบบ POST ไปที่ <code>http://localhost:3000/coffees</code> เลือก Body เป็น JSON แล้วส่งข้อมูลกาแฟหนึ่งตัว</p>
+      <div class="prompt-example"><code>curl -i -X POST http://localhost:3000/coffees \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Shipwreck Roast", "brand": "Buddy Brew", "flavors": ["chocolate", "vanilla"]}'</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ได้ status <code>201 Created</code> (ค่า default ของ POST ใน Nest) และ response body เป็น JSON ก้อนเดียวกับที่ส่งไป — ยืนยันว่า <code>@Body()</code> parse payload สำเร็จ</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>log แสดง <code>Mapped {/coffees, POST} route</code></li>
+        <li>POST พร้อม JSON ได้ echo กลับครบทุก field รวมถึง array <code>flavors</code></li>
+        <li>ลองส่ง field แปลกปลอม เช่น <code>"isAdmin": true</code> แล้วสังเกตว่าถูก echo กลับด้วย — นี่คือช่องโหว่ที่ DTO จะมาปิดในบทที่ 16–17</li>
+        <li>ลอง POST โดยไม่ใส่ header <code>Content-Type: application/json</code> แล้วดูว่า body ที่ parse ได้ต่างไปอย่างไร</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/controllers">Controllers: Request payloads (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation (NestJS) — ปลายทางของเรื่องนี้</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="07_use-route-parameters.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="09_response-status-codes.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

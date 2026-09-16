@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง CoffeesService ด้วย Nest CLI แยก business logic ออกจาก controller และรู้จัก dependency injection ผ่าน constructor" />
+  <title>สร้าง Service พื้นฐาน</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 12 จาก 77</p>
+    <h1>สร้าง Service พื้นฐาน</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>สร้าง service ด้วย Nest CLI และอธิบายบทบาทของ <code>@Injectable()</code> ได้</li>
+        <li>ย้าย business logic ออกจาก controller ไปไว้ใน service ตามหลัก separation of concerns</li>
+        <li>inject service เข้า controller ผ่าน constructor ด้วย dependency injection ของ Nest</li>
+      </ul>
+    </section>
+
+    <h2>Service คือบ้านของ Business Logic</h2>
+    <p>จนถึงตอนนี้ <code>CoffeesController</code> ของเราตอบข้อความจำลองอย่างเดียว ในแอปจริง controller ควรทำหน้าที่แค่รับ request และคืน response ส่วนงานจริง — การค้นหา จัดเก็บ ตรวจสอบ และติดต่อฐานข้อมูล — เป็นหน้าที่ของ <strong>service</strong> การแยกแบบนี้ทำให้ logic ถูกใช้ซ้ำจากหลาย controller ได้ และทดสอบแยกจากชั้น HTTP ได้ง่าย</p>
+    <p>สร้าง service ใหม่ด้วย CLI ได้ทันที</p>
+    <pre><code>nest generate service coffees
+# shorthand: nest g s coffees</code></pre>
+    <p>คลาสที่ได้จะติด decorator <code>@Injectable()</code> ซึ่งประกาศว่า class นี้เป็น <strong>provider</strong> ที่ Nest IoC container สามารถสร้าง instance และฉีด (inject) ให้ผู้อื่นใช้ได้ CLI ยังเพิ่ม service นี้เข้า <code>providers</code> array ของ module ให้อัตโนมัติ</p>
+
+    <h2>เก็บข้อมูลกาแฟไว้ในหน่วยความจำก่อน</h2>
+    <p>ระหว่างที่ยังไม่ต่อฐานข้อมูล (บทที่ 20 เป็นต้นไป) เราเก็บข้อมูลเป็น array ในหน่วยความจำ พร้อมสร้าง entity class ง่าย ๆ อธิบายหน้าตาของกาแฟหนึ่งรายการ</p>
+    <pre><code>/* entities/coffee.entity.ts */
+export class Coffee {
+  id: number;
+  name: string;
+  brand: string;
+  flavors: string[];
+}</code></pre>
+    <pre><code>/* coffees.service.ts */
+import { Injectable } from '@nestjs/common';
+import { Coffee } from './entities/coffee.entity.js';
+
+@Injectable()
+export class CoffeesService {
+  private coffees: Coffee[] = [
+    {
+      id: 1,
+      name: 'Shipwreck Roast',
+      brand: 'Buddy Brew',
+      flavors: ['chocolate', 'vanilla'],
+    },
+  ];
+
+  findAll() {
+    return this.coffees;
+  }
+
+  findOne(id: string) {
+    return this.coffees.find(item =&gt; item.id === +id);
+  }
+
+  create(createCoffeeDto: any) {
+    this.coffees.push(createCoffeeDto);
+  }
+
+  update(id: string, updateCoffeeDto: any) {
+    const existingCoffee = this.findOne(id);
+    if (existingCoffee) {
+      // update the existing entity
+    }
+  }
+
+  remove(id: string) {
+    const coffeeIndex = this.coffees.findIndex(item =&gt; item.id === +id);
+    if (coffeeIndex &gt;= 0) {
+      this.coffees.splice(coffeeIndex, 1);
+    }
+  }
+}</code></pre>
+
+    <h2>Inject Service เข้า Controller</h2>
+    <p>ประกาศ service ใน constructor ของ controller — Nest จะเห็น type <code>CoffeesService</code> แล้วส่ง instance ที่สร้างไว้เข้ามาให้เอง คีย์เวิร์ด <code>private readonly</code> เป็น shorthand ของ TypeScript ที่ทั้งประกาศ property และ assign ค่าในบรรทัดเดียว</p>
+    <pre><code>/* coffees.controller.ts */
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { CoffeesService } from './coffees.service.js';
+
+@Controller('coffees')
+export class CoffeesController {
+  constructor(private readonly coffeesService: CoffeesService) {}
+
+  @Get()
+  findAll(@Query() paginationQuery: any) {
+    return this.coffeesService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.coffeesService.findOne(id);
+  }
+
+  @Post()
+  create(@Body() body: any) {
+    return this.coffeesService.create(body);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() body: any) {
+    return this.coffeesService.update(id, body);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.coffeesService.remove(id);
+  }
+}</code></pre>
+    <div class="note"><p>สังเกตว่า <code>findOne()</code> ใช้ <code>+id</code> แปลง string เป็น number ก่อนเปรียบเทียบ เพราะ route parameter มาจาก URL จึงเป็น string เสมอ — เราจะจัดการเรื่อง type อย่างเป็นระบบด้วย <code>ValidationPipe</code> ในบทที่ 18</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ย้าย logic ทั้งหมดเข้า CoffeesService</h2>
+      <p>สร้าง service ด้วย CLI, สร้าง <code>Coffee</code> entity, ใส่ข้อมูลตัวอย่างหนึ่งรายการ แล้วแก้ทุก handler ใน controller ให้เรียกผ่าน <code>this.coffeesService</code> ตามโค้ดด้านบน</p>
+      <div class="prompt-example"><code>nest g s coffees
+nest g class coffees/entities/coffee.entity --no-spec
+curl http://localhost:3000/coffees
+curl http://localhost:3000/coffees/1</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>GET /coffees</code> คืน array ที่มี Shipwreck Roast หนึ่งรายการเป็น JSON จริง ไม่ใช่ข้อความจำลองอีกต่อไป และ <code>GET /coffees/1</code> คืน object รายการนั้น ส่วน id ที่ไม่มีจะได้ response ว่าง (ยังไม่มี error handling — บทถัดไปจะแก้)</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>GET /coffees</code> คืน JSON array ของข้อมูลใน service ไม่ใช่ string เดิม</li>
+        <li><code>POST /coffees</code> ด้วย body ใหม่ แล้ว <code>GET /coffees</code> อีกครั้งเห็นรายการเพิ่มขึ้น</li>
+        <li><code>DELETE /coffees/1</code> แล้วรายการหายไปจริงจาก <code>GET /coffees</code></li>
+        <li><code>coffees.module</code> หรือ <code>app.module</code> มี <code>CoffeesService</code> อยู่ใน <code>providers</code> array</li>
+        <li>ไม่มี logic เก็บข้อมูลเหลืออยู่ใน controller — controller เรียก service เท่านั้น</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/providers">Providers: Services and dependency injection (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/cli/overview">Nest CLI: generate (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="11_implement-pagination-with-query-parameters.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="13_send-user-friendly-error-messages.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

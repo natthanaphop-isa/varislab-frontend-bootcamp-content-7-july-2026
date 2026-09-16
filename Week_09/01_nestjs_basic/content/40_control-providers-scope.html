@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ควบคุม injection scope ของ provider ใน NestJS: DEFAULT (singleton), TRANSIENT และ REQUEST ต่างกันอย่างไรและเลือกใช้เมื่อไหร่" />
+  <title>ควบคุม Scope ของ Providers</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 40 จาก 77</p>
+    <h1>ควบคุม Scope ของ Providers</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายความต่างของ scope ทั้งสาม: <code>DEFAULT</code>, <code>TRANSIENT</code> และ <code>REQUEST</code></li>
+        <li>กำหนด scope ให้ทั้ง class provider (<code>@Injectable</code>) และ custom provider</li>
+        <li>เลือก scope ที่เหมาะกับงานโดยเข้าใจต้นทุนด้าน performance ของแต่ละแบบ</li>
+      </ul>
+    </section>
+
+    <h2>Default: ทุก provider เป็น singleton</h2>
+    <p>ปกติ Nest สร้าง provider หนึ่ง instance ต่อทั้งแอป แล้วแชร์ให้ทุกผู้บริโภค — instance ถูกสร้างตอน bootstrap และอยู่ยาวเท่าอายุแอป นี่คือ <code>Scope.DEFAULT</code> ซึ่งการเขียน <code>@Injectable()</code> เฉย ๆ ก็ได้ scope นี้อยู่แล้ว</p>
+    <pre><code>// Scope DEFAULT — เท่ากับการเขียน @Injectable() เปล่า ๆ
+@Injectable({ scope: Scope.DEFAULT })
+export class CoffeesService {}</code></pre>
+    <p>singleton เร็วที่สุดเพราะสร้างครั้งเดียวและ cache ได้เต็มที่ — ควรเป็นค่าเริ่มต้นเสมอ เว้นแต่มีเหตุผลจริง ๆ ที่ต้องการ instance ใหม่</p>
+
+    <h2>TRANSIENT: instance ใหม่ต่อผู้บริโภคหนึ่งราย</h2>
+    <p>provider แบบ transient ไม่ถูกแชร์ — ผู้บริโภคแต่ละรายที่ inject จะได้ instance เฉพาะของตัวเอง เหมาะกับของที่เก็บ state ต่อผู้ใช้งาน เช่น logger ที่จำ context ของ class แม่</p>
+    <pre><code>/*
+ * Scope TRANSIENT
+ * provider ไม่ถูกแชร์ข้ามผู้บริโภค
+ * แต่ละ class ที่ inject จะได้ instance ใหม่เฉพาะตัว
+ */
+@Injectable({ scope: Scope.TRANSIENT })
+export class CoffeesService {}
+
+// TRANSIENT กับ custom provider ก็กำหนดได้
+{
+  provide: 'COFFEE_BRANDS',
+  useFactory: () =&gt; ['buddy brew', 'nescafe'],
+  scope: Scope.TRANSIENT,
+}</code></pre>
+
+    <h2>REQUEST: instance ใหม่ต่อหนึ่ง request</h2>
+    <pre><code>/*
+ * Scope REQUEST
+ * สร้าง instance ใหม่ให้แต่ละ incoming request โดยเฉพาะ
+ */
+@Injectable({ scope: Scope.REQUEST })
+export class CoffeesService {}</code></pre>
+    <p>request scope ทำให้ provider เข้าถึงข้อมูลเฉพาะ request ได้ (จะลงลึกบทถัดไป) โดย instance ถูกเก็บกวาดหลัง response เสร็จ — จ่ายราคาด้วยการ instantiate ทุก request และ scope นี้จะ "ไต่ขึ้น" ไปหาผู้บริโภค: controller ที่ inject request-scoped provider จะกลายเป็น request-scoped ไปด้วย</p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ scope ทั้งสาม" tabindex="0">
+      <table>
+        <thead><tr><th>Scope</th><th>สร้าง instance เมื่อ</th><th>แชร์กับใคร</th><th>เหมาะกับ</th></tr></thead>
+        <tbody>
+          <tr><td><code>DEFAULT</code></td><td>ตอน bootstrap ครั้งเดียว</td><td>ทั้งแอป</td><td>เกือบทุกงาน — เร็วสุด, cache ได้</td></tr>
+          <tr><td><code>TRANSIENT</code></td><td>ต่อผู้บริโภคที่ inject</td><td>ไม่แชร์</td><td>ของมี state ผูกกับ class แม่ เช่น contextual logger</td></tr>
+          <tr><td><code>REQUEST</code></td><td>ทุก incoming request</td><td>ภายใน request เดียวกัน</td><td>logic ที่ต้องอ่านข้อมูล request เช่น multi-tenancy</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning"><p>อย่าเปลี่ยน service เป็น <code>REQUEST</code> scope เพียงเพราะ "เผื่อไว้" — ทุก request ต้องจ่ายค่า instantiate ทั้ง chain ของผู้บริโภคที่ถูกไต่ scope ตามไปด้วย ให้ singleton เป็นค่าเริ่มต้น แล้วยกระดับเฉพาะตัวที่มีเหตุผลชัดเจน</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">พิสูจน์พฤติกรรมของแต่ละ scope ด้วย log</h2>
+      <p>ใส่ <code>console.log('CoffeesService created')</code> ใน constructor ของ <code>CoffeesService</code> แล้วรันแอปสามรอบ โดยสลับ scope เป็น <code>DEFAULT</code>, <code>TRANSIENT</code> และ <code>REQUEST</code> ตามลำดับ ยิง <code>GET /coffees</code> สองสามครั้งในแต่ละรอบ แล้วนับจำนวน log</p>
+      <div class="prompt-example"><code>// รอบละหนึ่ง scope ใน coffees.service.ts
+@Injectable({ scope: Scope.DEFAULT })   // รอบที่ 1
+@Injectable({ scope: Scope.TRANSIENT }) // รอบที่ 2
+@Injectable({ scope: Scope.REQUEST })   // รอบที่ 3
+
+npm run start:dev
+curl http://localhost:3000/coffees
+curl http://localhost:3000/coffees</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>DEFAULT</code>: log ปรากฏครั้งเดียวตอน start ไม่เพิ่มตาม request; <code>TRANSIENT</code>: log ปรากฏตอน start เท่าจำนวนผู้บริโภคที่ inject service นี้ (เช่น controller และ CoffeeRatingService = 2 ครั้ง); <code>REQUEST</code>: ตอน start ไม่มี log แต่ปรากฏหนึ่งครั้งต่อทุก request ที่ยิงเข้ามา</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>จำนวน log ตรงตามตารางในแต่ละรอบ และอธิบายเหตุผลของตัวเลขได้</li>
+        <li>รอบ <code>REQUEST</code>: สังเกตว่า instance ถูกสร้างแบบ lazy — ไม่มีตอน bootstrap เลย</li>
+        <li>ตอบได้ว่า endpoint ที่ traffic สูงควรหลีกเลี่ยง scope ไหนเพราะอะไร</li>
+        <li>คืน scope กลับเป็น default (ลบ option ออก) ก่อนไปบทถัดไป</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/fundamentals/injection-scopes">Injection scopes — NestJS Docs</a></li>
+      <li><a href="https://docs.nestjs.com/fundamentals/custom-providers">Custom providers — NestJS Docs</a></li>
+      <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="39_create-a-dynamic-module.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="41_diving-deeper-into-request-scoped-providers.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

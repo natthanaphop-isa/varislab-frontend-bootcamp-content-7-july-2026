@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="วางสัญญาของ dummyjson ที่คอร์สยิงเก็บมาให้แล้วลงใน docs/contract/ ของโปรเจกต์ แล้วอ่านให้ครบทุกข้อเท็จจริงที่ API ของเราต้องทำตาม" />
+  <title>อ่านสัญญาของ dummyjson แล้ววางลงในโปรเจกต์</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 3 จาก 24</p>
+    <h1>อ่านสัญญาของ dummyjson แล้ววางลงในโปรเจกต์</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>วางไฟล์สัญญาแปดไฟล์ที่คอร์สยิงเก็บมาให้ลงใน <code>docs/contract/</code> ของโปรเจกต์ แล้ว commit</li>
+        <li>อ่านสัญญาแล้วสรุปข้อเท็จจริงที่ API ของเราต้องทำตาม รวมถึงกรณีขอบสี่ข้อที่เดาเองไม่ได้</li>
+        <li>อธิบายได้ว่าทำไมสัญญาต้องเป็น <em>ไฟล์ในโปรเจกต์</em> ไม่ใช่ความรู้ของ AI และไม่ใช่ความจำของเรา</li>
+      </ul>
+    </section>
+
+    <h2>สัญญามาพร้อมกับคอร์ส ไม่ต้องยิงเอง</h2>
+    <p>บทนี้ไม่มีคำสั่ง <code>curl</code> ให้รัน และไม่ต้องสั่ง Cursor ไปยิง API ให้ เพราะคอร์สยิง dummyjson เก็บ payload ดิบไว้ให้แล้วเมื่อ <strong>13 กันยายน 2026</strong> — งานของบทนี้คือ <em>ก๊อปไฟล์เข้าโปรเจกต์แล้วอ่านให้เข้าใจ</em> เหตุผลมีสามข้อ</p>
+    <ul>
+      <li><strong>ตัวเลขในบทเรียนต้องตรงกับของในเครื่องคุณ</strong> — dummyjson เป็น API สาธารณะที่ข้อมูลเปลี่ยนได้ทุกเมื่อ ถ้าแต่ละคนยิงเก็บเองในวันต่างกัน จำนวนสินค้า จำนวน review หรือ <code>rating</code> ของสินค้าชิ้นแรกอาจไม่เท่ากัน แล้วเกณฑ์ตรวจในบทที่ 10–19 ที่อ้างเลข 194 กับ 24 จะใช้ไม่ได้ทันที การแช่สัญญาไว้เป็นไฟล์คือสิ่งที่ทำให้ทุกคนตรวจงานด้วยเกณฑ์เดียวกัน</li>
+      <li><strong>สัญญาไม่ใช่สิ่งที่เราต้องฝึกยิง</strong> — สิ่งที่คอร์สนี้ฝึกคือการ<em>อ่านสัญญาแล้วสร้าง API ให้ตรง</em> การพิมพ์ <code>curl</code> เจ็ดบรรทัดไม่ได้สอนอะไรที่บทอื่นไม่ได้สอนอยู่แล้ว (ทุกบทหลังจากนี้จบด้วยการยิง <code>curl</code> ใส่ API ของเราเอง)</li>
+      <li><strong>AI เดาสัญญาแทนไม่ได้ และเราก็ไม่ควรให้มันเดา</strong> — ถ้าถาม Cursor ตรง ๆ ว่า product ของ dummyjson มี field อะไร มันจะตอบด้วยรูปทรงที่ <em>ดูสมเหตุสมผล</em>: มี <code>brand</code> ทุกชิ้น มี <code>createdAt</code> อยู่ระดับบนสุด ไม่มี <code>availabilityStatus</code> — ใกล้เคียงแต่ไม่ตรง และความไม่ตรงแบบนี้ทำให้หน้าจอ React พังแบบเงียบ ๆ: ช่องราคาว่าง รูปไม่ขึ้น ปุ่มกดไม่ติด โดยที่ API ของเราตอบ 200 อย่างหน้าตาเฉย</li>
+    </ul>
+    <p>พอสัญญาเป็นไฟล์ในโปรเจกต์แล้ว ทุก prompt ในบทถัด ๆ ไปจะ <code>@</code>-mention ไฟล์เหล่านี้ เพื่อให้ Cursor อ่าน payload จริงแทนที่จะเดา และเราก็ได้เกณฑ์ตรวจงานที่วัดได้ในเวลาเดียวกัน — ทุกบทจบด้วยการยิง endpoint ของเราแล้วเทียบกับไฟล์ใน <code>docs/contract/</code></p>
+
+    <h2>แปดไฟล์ใน docs/contract/</h2>
+    <p>เจ็ดไฟล์แรกคือ payload ดิบ หนึ่ง request ต่อหนึ่งไฟล์ (ไม่จัดรูปแบบใหม่ ไม่แก้ด้วยมือ) และไฟล์ที่แปดคือเอกสารสรุปที่อ่านจบได้เร็ว คลิกชื่อไฟล์เพื่อเปิดดูของจริงได้เลย</p>
+    <div class="comparison" role="region" aria-label="ไฟล์ contract แต่ละไฟล์และสิ่งที่ต้องสังเกต" tabindex="0">
+      <table>
+        <thead><tr><th>ไฟล์</th><th>Request ที่ใช้จับ</th><th>สิ่งที่ต้องสังเกต</th></tr></thead>
+        <tbody>
+          <tr><td><a href="contract/README.md"><code>README.md</code></a></td><td>—</td><td>สรุปสัญญาทั้งหมด: interface ของ <code>Product</code>, ซองของรายการ, สูตรคิดส่วนลด, กรณีขอบ และตัวเลขของชุดข้อมูล</td></tr>
+          <tr><td><a href="contract/categories.json"><code>categories.json</code></a></td><td><code>GET /products/categories</code></td><td>เป็น array ตรง ๆ ไม่มีซองห่อ 24 รายการ แต่ละรายการคือ <code>{slug, name, url}</code></td></tr>
+          <tr><td><a href="contract/products-page.json"><code>products-page.json</code></a></td><td><code>GET /products?limit=2&amp;skip=0</code></td><td>ซอง <code>{products, total, skip, limit}</code> — <code>"total":194</code> คือจำนวนสินค้าทั้งหมด ไม่ใช่จำนวนในหน้านี้</td></tr>
+          <tr><td><a href="contract/product-1.json"><code>product-1.json</code></a></td><td><code>GET /products/1</code></td><td>รูปทรงเต็มของ product: 22 key ระดับบนสุด มี object ซ้อนและ array ของ review</td></tr>
+          <tr><td><a href="contract/product-not-found.txt"><code>product-not-found.txt</code></a></td><td><code>GET /products/9999</code></td><td>status และข้อความ error ที่เราต้องลอกให้ตรงตัวอักษร</td></tr>
+          <tr><td><a href="contract/products-by-category.json"><code>products-by-category.json</code></a></td><td><code>GET /products/category/beauty?limit=2&amp;skip=0</code></td><td>ซองเดิม แต่ <code>total</code> เป็นจำนวนในหมวดนั้น (beauty มี 5)</td></tr>
+          <tr><td><a href="contract/products-by-category-unknown.json"><code>products-by-category-unknown.json</code></a></td><td><code>GET /products/category/nope?limit=2&amp;skip=0</code></td><td>หมวดที่ไม่มีจริงตอบ 200 ไม่ใช่ 404 — และ <code>limit</code> ที่ตอบกลับไม่ใช่ 2</td></tr>
+          <tr><td><a href="contract/cart-add.txt"><code>cart-add.txt</code></a></td><td><code>POST /carts/add</code></td><td>status 201 และวิธีคิดส่วนลดที่ต้องคำนวณให้ได้เลขเดียวกัน</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      <p>สองไฟล์ที่เป็น <code>.txt</code> จับด้วย <code>curl -i</code> จึงมี header ของ response ติดมาด้วย (วันเวลา, <code>cf-ray</code>, ตัวนับ rate limit) ค่าเหล่านั้นเป็นของรอบที่จับ ไม่มีความหมายกับสัญญา — สิ่งที่เราสนใจคือบรรทัดแรก (status) และ body บรรทัดสุดท้ายเท่านั้น</p>
+    </div>
+
+    <h2>วางลงในโปรเจกต์</h2>
+    <p>ก๊อปโฟลเดอร์ทั้งก้อนจากคอร์สมาไว้ที่ <code>docs/contract/</code> ในโปรเจกต์ <code>ecommerce-api</code> แก้ค่า <code>COURSE</code> ให้เป็นที่เก็บ repo ของคอร์สในเครื่องคุณ (โฟลเดอร์ที่มีไฟล์บทเรียนนี้อยู่)</p>
+    <div class="prompt-example"><code>COURSE=~/Sites/frontend-bootcamp-content-7-july-2026/Week_10/02_nestjs_ecommerce_api_with_cursor_v2/content
+
+mkdir -p docs
+cp -R "$COURSE/contract" docs/contract
+ls -1 docs/contract</code></div>
+    <p>ไฟล์เหล่านี้ต้องอยู่ใน git (ไม่ใช่ <code>.gitignore</code>) เพราะมันเป็นส่วนหนึ่งของโปรเจกต์เหมือน schema หรือ test — และเพราะ Cursor จะอ่านมันทุกครั้งที่เราสั่งงาน</p>
+
+    <h2>อ่านสัญญา: ข้อเท็จจริงที่ต้องจำ</h2>
+    <p>ข้อเท็จจริงต่อไปนี้อยู่ใน <code>docs/contract/README.md</code> ครบทุกข้อ แต่ห้าข้อนี้คือข้อที่จะกลับมาเป็นเงื่อนไขในบทที่ 10–19 บ่อยที่สุด แต่ละข้อมีไฟล์กำกับว่าพิสูจน์ได้จากที่ไหน</p>
+    <ul>
+      <li><strong>ค่าเริ่มต้นของการแบ่งหน้า</strong> คือ <code>limit</code> 30 และ <code>skip</code> 0 ถ้าไม่ส่ง query มาเลย และ <code>limit=0</code> มีความหมายพิเศษคือ <em>เอาทั้งหมด</em> (194 ชิ้น) — ไม่ใช่ "เอา 0 ชิ้น" (<code>products-page.json</code> และตาราง pagination ใน <code>README.md</code>)</li>
+      <li><strong><code>limit</code> ที่ตอบกลับคือจำนวนสินค้าที่ส่งมาจริง ไม่ใช่ค่าที่เราขอ</strong> — ยิง <code>?limit=10&amp;skip=190</code> ได้สินค้า 4 ชิ้น และซองก็ตอบ <code>"limit":4</code> ไม่ใช่ 10 ในกรณีสุดขั้วคือหมวดที่ไม่มีจริง ได้ <code>"limit":0</code> ทั้งที่ query ส่ง <code>limit=2</code> ไป (<code>products-by-category-unknown.json</code>) ข้อนี้สำคัญมาก เพราะตอนเขียน pagination เราต้องคืน <code>limit</code> เป็นจำนวนแถวที่ query ได้ ไม่ใช่ echo ค่าที่รับมา</li>
+      <li><strong>product มี 22 key ระดับบนสุด</strong> (<code>product-1.json</code>): <code>id</code>, <code>title</code>, <code>description</code>, <code>category</code>, <code>price</code>, <code>discountPercentage</code>, <code>rating</code>, <code>stock</code>, <code>tags</code>, <code>brand</code>, <code>sku</code>, <code>weight</code>, <code>dimensions</code>, <code>warrantyInformation</code>, <code>shippingInformation</code>, <code>availabilityStatus</code>, <code>reviews</code>, <code>returnPolicy</code>, <code>minimumOrderQuantity</code>, <code>meta</code>, <code>images</code>, <code>thumbnail</code> — โดย <code>category</code> เป็น <em>string ของ slug</em> ไม่ใช่ object</li>
+      <li><strong>มีของซ้อนอยู่สามที่</strong>: <code>dimensions</code> คือ <code>{width, height, depth}</code>, <code>meta</code> คือ <code>{createdAt, updatedAt, barcode, qrCode}</code> และ <code>reviews</code> คือ array ของ <code>{rating, comment, date, reviewerName, reviewerEmail}</code> จำนวน 3 รายการต่อสินค้าหนึ่งชิ้น — ในฐานข้อมูลของเราจะแยกเป็นคอลัมน์แบนและตาราง <code>Review</code> แล้วประกอบรูปทรงซ้อนคืนด้วย mapper ในบทที่ 11</li>
+      <li><strong><code>brand</code> ไม่ใช่ field ที่มีทุกชิ้น</strong> — คอร์สยิง <code>GET /products?limit=0</code> (เอาทั้ง 194 ชิ้น) แล้วนับได้ว่า</li>
+    </ul>
+    <pre><code>194 products; 92 without brand</code></pre>
+    <p>นั่นคือ 92 ชิ้นจาก 194 ชิ้น <em>ไม่มี key <code>brand</code> เลย</em> (ไม่ใช่มีแล้วเป็น <code>null</code>) คอลัมน์ <code>brand</code> ในฐานข้อมูลจึงต้อง nullable และ mapper ต้องตัด key นี้ออกเมื่อค่าเป็น null เพื่อให้เหมือนของจริง</p>
+    <ul>
+      <li><strong>วันเวลาเป็น string รูปแบบ ISO</strong> ทั้งใน <code>meta.createdAt</code>, <code>meta.updatedAt</code> และ <code>reviews[].date</code> — ห้ามส่ง <code>Date</code> object ออกไปตรง ๆ และตัวเลขทุกตัว (<code>price</code>, <code>rating</code>, <code>discountPercentage</code>) เป็น JSON number ไม่ใช่ string</li>
+      <li><strong>หมวดที่ไม่มีจริงไม่ใช่ error</strong> — <code>GET /products/category/nope</code> ตอบ 200 พร้อมซองเปล่า ไม่ใช่ 404 (<code>products-by-category-unknown.json</code>)</li>
+    </ul>
+    <pre><code>{"products":[],"total":0,"skip":0,"limit":0}</code></pre>
+    <ul>
+      <li><strong>id ที่ไม่มีจริงคือ 404 พร้อมข้อความเฉพาะ</strong> — บรรทัดแรกของ <code>product-not-found.txt</code> คือ <code>HTTP/2 404</code> (มีช่องว่างต่อท้าย เพราะเป็นบรรทัด status ดิบจาก <code>curl -i</code>) และ body คือ</li>
+    </ul>
+    <pre><code>{"message":"Product with id '9999' not found"}</code></pre>
+    <p>ข้อความนี้ต้องลอกให้ตรงทุกตัวอักษร รวมถึง single quote ครอบตัวเลข เพราะ React แสดงค่านี้ให้ผู้ใช้เห็นตรง ๆ</p>
+    <ul>
+      <li><strong><code>POST /carts/add</code> ตอบ 201</strong> — บรรทัดแรกของ <code>cart-add.txt</code> คือ <code>HTTP/2 201</code> และ body คือ cart เต็มรูปแบบ</li>
+    </ul>
+    <pre><code>{"id":209,"products":[{"id":1,"title":"Essence Mascara Lash Princess","price":9.99,
+"quantity":2,"total":19.98,"discountPercentage":10.48,"discountedPrice":18,
+"thumbnail":"https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp"}],
+"total":19.98,"discountedTotal":18,"userId":1,"totalProducts":1,"totalQuantity":2}</code></pre>
+    <p>ตัวเลขในนี้บอกสูตรทั้งหมด: <code>total</code> ของรายการคือ <code>price × quantity</code> = 9.99 × 2 = 19.98 ส่วน <code>discountedPrice</code> คือราคาหลังหักส่วนลดแล้ว <strong>ปัดเป็นจำนวนเต็ม</strong> — 19.98 × (1 − 10.48/100) = 19.98 × 0.8952 = 17.886 แล้ว <code>Math.round</code> ได้ 18 พอดี จากนั้น <code>discountedTotal</code> คือผลรวมของ <code>discountedPrice</code> ทุกรายการ ส่วน <code>totalProducts</code> คือจำนวน <em>รายการ</em> (1) และ <code>totalQuantity</code> คือจำนวน <em>ชิ้น</em> (2) — สองค่านี้ต่างกันและมักถูกสลับกัน</p>
+    <div class="note">
+      <p><code>"id":209</code> ในไฟล์นี้เป็น id ที่ dummyjson แจกมา ของเราจะเริ่มนับจาก 1 เพราะเก็บคำสั่งซื้อในฐานข้อมูลของเราเอง — ตัวเลขนี้เป็นข้อเดียวในสัญญาที่เราไม่ต้องทำให้ตรงกัน (บทที่ 19 พูดถึงเรื่องนี้อีกครั้ง)</p>
+    </div>
+
+    <h2>ถ้าอยากพิสูจน์ว่าไฟล์เป็นของจริง</h2>
+    <p>ไม่บังคับ แต่ทำได้ในหนึ่งบรรทัด: ยิง dummyjson สด ๆ แล้ว <code>diff</code> กับไฟล์ที่ก๊อปมา ถ้า dummyjson ยังไม่เปลี่ยนข้อมูลจะได้คำว่า <code>IDENTICAL</code></p>
+    <div class="prompt-example"><code>curl -s https://dummyjson.com/products/1 | diff - docs/contract/product-1.json &amp;&amp; echo IDENTICAL
+
+# นับสินค้าและชิ้นที่ไม่มี brand ด้วยตัวเอง
+node -e "fetch('https://dummyjson.com/products?limit=0').then(r=&gt;r.json()).then(({products})=&gt;console.log(products.length,'products;',products.filter(p=&gt;!('brand' in p)).length,'without brand'))"</code></div>
+    <p>ถ้าได้ diff ออกมาแปลว่า dummyjson เปลี่ยนข้อมูลหลังวันที่คอร์สจับไฟล์ — ให้ยึด <strong>ไฟล์ใน <code>docs/contract/</code></strong> เป็นเป้าต่อไป เพราะทุกบทและทุกเกณฑ์ตรวจในคอร์สนี้อ้างอิงตัวเลขชุดนั้น (ยกเว้นบทที่ 15 ที่เราจะเขียน script ยิง dummyjson สดเพื่อ <em>จับ</em> ความเปลี่ยนแปลงแบบนี้โดยเฉพาะ)</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">วางสัญญาแล้ว commit เป็น commit ที่สอง</h2>
+      <p>รันคำสั่งก๊อปจากโฟลเดอร์ <code>ecommerce-api</code> (ยังไม่ต้องเปิด dev server) แล้ว<strong>อ่านด้วยตาตัวเอง</strong>อย่างน้อยสามไฟล์ก่อน commit: <code>README.md</code> ทั้งไฟล์, <code>product-1.json</code> และ <code>cart-add.txt</code></p>
+      <div class="prompt-example"><code>ls -1 docs/contract
+head -1 docs/contract/product-not-found.txt
+head -1 docs/contract/cart-add.txt
+node -e "console.log(require('./docs/contract/categories.json').length)"
+
+git add docs
+git commit -m "docs: add dummyjson contract"</code></div>
+      <p>ถ้าใช้ Cursor อยู่แล้ว ลองถามด้วยแชทโหมด Ask (ยังไม่ใช่ Agent) หนึ่งคำถามเพื่อซ้อมการ <code>@</code>-mention: <code>@docs/contract/product-1.json สินค้าชิ้นนี้มี field ระดับบนสุดกี่ field และอันไหนเป็น object ซ้อน</code> — คำตอบต้องได้ 22 และชี้ <code>dimensions</code>, <code>meta</code>, <code>reviews</code> ถ้ามันตอบเลขอื่น แปลว่ามันยังไม่ได้อ่านไฟล์จริง</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>โฟลเดอร์ <code>docs/contract/</code> มีแปดไฟล์ครบ, <code>head -1</code> ของสองไฟล์ <code>.txt</code> ได้ <code>HTTP/2 404</code> และ <code>HTTP/2 201</code> ตามลำดับ, คำสั่ง <code>node -e</code> พิมพ์ <code>24</code> และ <code>git log --oneline</code> มีสอง commit คือ scaffold กับ contract</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>ls -1 docs/contract | wc -l</code> ได้ <code>8</code></li>
+        <li><code>head -1 docs/contract/product-not-found.txt</code> ขึ้นต้นด้วย <code>HTTP/2 404</code></li>
+        <li><code>head -1 docs/contract/cart-add.txt</code> ขึ้นต้นด้วย <code>HTTP/2 201</code></li>
+        <li><code>node -e "console.log(require('./docs/contract/categories.json').length)"</code> ได้ <code>24</code></li>
+        <li><code>grep -o '"total":194' docs/contract/products-page.json</code> พบข้อความ — ยืนยันว่า <code>total</code> คือ 194</li>
+        <li><code>cat docs/contract/products-by-category-unknown.json</code> ได้ <code>{"products":[],"total":0,"skip":0,"limit":0}</code> — จำ <code>"limit":0</code> ข้อนี้ไว้ให้ดี</li>
+        <li><code>git status</code> สะอาด และ <code>git log --oneline</code> แสดงสอง commit</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="contract/README.md">สัญญาฉบับเต็มของคอร์ส (docs/contract/README.md)</a></li>
+      <li><a href="https://dummyjson.com/docs">DummyJSON Docs</a></li>
+      <li><a href="https://dummyjson.com/docs/products">Products endpoints (DummyJSON Docs)</a></li>
+      <li><a href="https://dummyjson.com/docs/carts">Carts endpoints: Add a new cart (DummyJSON Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="02_scaffolding-the-project.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="04_cursor-rules-and-the-prompt-template.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="รัน PostgreSQL ในเครื่องด้วย docker-compose.yml ไฟล์เดียว: กำหนด image, port และรหัสผ่าน แล้วสั่ง up -d / down" />
+  <title>รัน PostgreSQL ด้วย Docker Compose</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 20 จาก 77</p>
+    <h1>รัน PostgreSQL ด้วย Docker Compose</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>เขียน <code>docker-compose.yml</code> ที่รัน PostgreSQL container สำหรับพัฒนา</li>
+        <li>อธิบายความหมายของ <code>image</code>, <code>ports</code> และ <code>environment</code> ในไฟล์ compose</li>
+        <li>start และ stop ฐานข้อมูลด้วยคำสั่งเดียวโดยไม่ติดตั้ง Postgres ลงเครื่องตรง ๆ</li>
+      </ul>
+    </section>
+
+    <h2>ทำไมต้อง Docker</h2>
+    <p>เราต้องการ PostgreSQL ไว้ให้แอปต่อ แต่การติดตั้งฐานข้อมูลลง OS ตรง ๆ ทั้งยุ่งยาก ผูกเวอร์ชันกับเครื่อง และลบออกยาก การรันเป็น <strong>Docker container</strong> แก้ครบทุกข้อ: ทีมทุกคนได้เวอร์ชันเดียวกัน สั่งเปิด-ปิดได้ในวินาที และเครื่องคุณไม่สกปรก สิ่งเดียวที่ต้องมีคือ Docker Desktop (หรือ Docker Engine) ที่รันอยู่</p>
+    <p>สร้างไฟล์ <code>docker-compose.yml</code> ที่ root ของโปรเจกต์:</p>
+    <pre><code>version: "3"
+services:
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: pass123</code></pre>
+    <p>อ่านทีละบรรทัด: service ชื่อ <code>db</code> ใช้ official image <code>postgres</code>, <code>restart: always</code> ให้ container ฟื้นเองถ้าล่ม, <code>ports</code> map พอร์ต 5432 ใน container ออกมาที่ 5432 ของเครื่องเรา (พอร์ตมาตรฐานของ Postgres) และ <code>environment</code> ตั้งรหัสผ่านของ user <code>postgres</code> เป็น <code>pass123</code></p>
+
+    <h2>คำสั่งประจำวัน</h2>
+    <pre><code># start ฐานข้อมูลแบบ detached (รันเบื้องหลัง)
+docker-compose up -d
+
+# stop และเก็บ container
+docker-compose down</code></pre>
+    <p>ธง <code>-d</code> (detached) ทำให้ container รันเบื้องหลังโดยไม่ยึด terminal ของเรา ส่วน <code>docker-compose down</code> หยุดและลบ container ทิ้ง (ข้อมูลจะหายด้วยหากยังไม่ได้ตั้ง volume — สำหรับการเรียนถือว่ายอมรับได้ เพราะบทถัด ๆ ไปเราสั่ง <code>prisma db push</code> ให้สร้าง schema ใหม่ได้ในคำสั่งเดียว)</p>
+    <div class="note"><p>Docker รุ่นใหม่ใช้ <code>docker compose</code> (เว้นวรรค) แทน <code>docker-compose</code> ได้เช่นกัน — ทั้งสองคำสั่งอ่านไฟล์ <code>docker-compose.yml</code> เดียวกัน</p></div>
+    <div class="warning"><p>ถ้าเครื่องคุณเคยติดตั้ง PostgreSQL ไว้อยู่แล้ว พอร์ต 5432 จะชนกันและ container จะ start ไม่ขึ้น — ปิด service เดิมก่อน หรือเปลี่ยนฝั่งซ้ายของ mapping เป็นพอร์ตอื่น เช่น <code>"5433:5432"</code> (แล้วจำไว้ใส่ใน <code>DATABASE_URL</code> ตอนตั้งค่า Prisma ในบทที่ 22)</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">ยกฐานข้อมูลขึ้นมาให้ได้ในสามคำสั่ง</h2>
+      <p>สร้าง <code>docker-compose.yml</code> ตามตัวอย่าง แล้ว start container และตรวจสถานะ</p>
+      <div class="prompt-example"><code>docker-compose up -d
+docker-compose ps
+docker-compose logs db</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>docker-compose ps</code> แสดง service <code>db</code> สถานะ <code>Up</code> ที่พอร์ต 5432 และใน log มีบรรทัด <code>database system is ready to accept connections</code> — ฐานข้อมูลพร้อมให้ NestJS ต่อในบทที่ 22</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>docker-compose ps</code> เห็น container สถานะ Up และ mapping <code>0.0.0.0:5432-&gt;5432/tcp</code></li>
+        <li>log ของ <code>db</code> จบด้วย <code>ready to accept connections</code> โดยไม่มี error</li>
+        <li>ทดสอบต่อจากในเครื่อง: <code>docker exec -it &lt;container&gt; psql -U postgres</code> เข้า prompt <code>postgres=#</code> ได้</li>
+        <li><code>docker-compose down</code> แล้ว <code>docker-compose up -d</code> ใหม่ ยังกลับมา Up ได้ปกติ</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/database">Database (NestJS)</a></li>
+      <li><a href="https://hub.docker.com/_/postgres">postgres official image (Docker Hub)</a></li>
+      <li><a href="https://docs.docker.com/compose/">Docker Compose documentation</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="19_before-we-get-started.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="21_how-to-visualize-your-postgres-database-gui.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

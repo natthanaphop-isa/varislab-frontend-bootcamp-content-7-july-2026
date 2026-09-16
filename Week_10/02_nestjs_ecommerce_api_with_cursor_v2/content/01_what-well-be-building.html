@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ภาพรวมของ API ที่เราจะสร้างขึ้นมาแทน dummyjson.com กติกาเข้าใจก่อนแล้วค่อยสั่ง Cursor และเวอร์ชันเครื่องมือที่คอร์สนี้ใช้" />
+  <title>สิ่งที่เราจะสร้างและกติกาของคอร์ส</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 1 จาก 24</p>
+    <h1>สิ่งที่เราจะสร้างและกติกาของคอร์ส</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>บอกได้ว่า React app จาก Week_05_06 เรียก dummyjson ที่ endpoint ไหน และคำว่า <em>drop-in replacement</em> หมายถึงอะไร</li>
+        <li>อ่านโครงสร้างสุดท้ายของโปรเจกต์ <code>ecommerce-api</code> ได้ว่าไฟล์ไหนเกิดขึ้นในบทไหน</li>
+        <li>ตรวจความพร้อมของเครื่องตัวเอง (Node, Docker, Cursor, React app) ก่อนลงมือบทที่ 2</li>
+      </ul>
+    </section>
+
+    <h2>เราจะแทนที่ dummyjson ด้วย API ของเราเอง</h2>
+    <p>React e-commerce app ที่เราสร้างไว้ใน Week_05_06 ไม่มีฐานข้อมูลของตัวเอง มันดึงข้อมูลสินค้าทั้งหมดจาก <a href="https://dummyjson.com/">dummyjson.com</a> ผ่าน endpoint เพียง 5 เส้น เป้าหมายของคอร์สนี้คือสร้าง API ของเราเองที่ตอบ 5 เส้นนี้ได้ <strong>ด้วย path เดิมและรูปทรง JSON เดิม</strong> เพื่อให้ React app ไม่ต้องแก้โค้ดแม้แต่บรรทัดเดียว — เปลี่ยนแค่ค่า <code>VITE_API_BASE_URL</code> จาก <code>https://dummyjson.com</code> เป็น <code>http://localhost:3000</code> ก็ใช้งานได้ทันที นี่คือความหมายของคำว่า drop-in replacement</p>
+    <div class="comparison" role="region" aria-label="endpoint ของ dummyjson ที่ React app เรียกใช้" tabindex="0">
+      <table>
+        <thead><tr><th>Method + Path</th><th>React ใช้ที่ไหน</th><th>ตอบอะไร</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET /products/categories</code></td><td>หน้า Home และเมนูหมวดสินค้า</td><td>array ของ <code>{slug, name, url}</code> จำนวน 24 รายการ</td></tr>
+          <tr><td><code>GET /products?limit&amp;skip</code></td><td>แถบดีลบนหน้า Home</td><td>ซอง <code>{products, total, skip, limit}</code></td></tr>
+          <tr><td><code>GET /products/category/:slug?limit&amp;skip</code></td><td>หน้า Home และหน้า Category ที่มีการแบ่งหน้า</td><td>ซองเดียวกับด้านบน แต่กรองด้วย slug</td></tr>
+          <tr><td><code>GET /products/:id</code></td><td>หน้ารายละเอียดสินค้า</td><td>product เต็มรูปแบบ พร้อม <code>reviews</code></td></tr>
+          <tr><td><code>POST /carts/add</code></td><td>หน้า Checkout</td><td>cart ที่คิดส่วนลดแล้ว พร้อม <code>id</code> ของคำสั่งซื้อ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ข้อผูกมัดจึงชัดเจนมาก: ทุกชื่อ field ทุก status code และทุกพฤติกรรมขอบ ๆ (เช่น หมวดที่ไม่มีจริงตอบอะไร) ต้องตรงกับของ dummyjson เพราะถ้าไม่ตรง หน้าจอของ React จะพังโดยที่ API ของเราไม่ฟ้อง error อะไรเลย บทที่ 3 จะวาง <em>สัญญา</em> (contract) นี้ลงเป็นไฟล์จริงในโปรเจกต์ — payload ที่คอร์สยิงเก็บมาจาก dummyjson ให้แล้ว — และทุกบทหลังจากนั้นจะอ้างถึงไฟล์เหล่านั้นเสมอ</p>
+
+    <h2>สถาปัตยกรรมที่จะได้ตอนจบ</h2>
+    <p>เราใช้สแตกเดียวกับ Week_09 บทที่ 19–31 คือ <strong>NestJS 12</strong> (ES module + TypeScript strict) ต่อ <strong>PostgreSQL 17</strong> ที่รันใน Docker ผ่าน <strong>Prisma 7</strong> บวกของที่ React app ต้องใช้จริงอีกสามอย่าง: validation ด้วย <code>class-validator</code>, CORS และเอกสาร Swagger ตอนจบคอร์สโปรเจกต์จะมีหน้าตาแบบนี้</p>
+    <pre><code>ecommerce-api/
+├── .cursor/rules/project.mdc        กติกาถาวรที่ Cursor ต้องทำตาม      (บทที่ 4)
+├── docs/contract/                   payload จริงของ dummyjson 8 ไฟล์   (บทที่ 3)
+│   ├── README.md
+│   ├── categories.json
+│   ├── products-page.json
+│   ├── product-1.json
+│   ├── product-not-found.txt
+│   ├── products-by-category.json
+│   ├── products-by-category-unknown.json
+│   └── cart-add.txt
+├── docker-compose.yml               service postgres:17                (บทที่ 5)
+├── .env / .env.example              DATABASE_URL, PORT, APP_URL, CORS_ORIGIN
+├── prisma7.config.ts                ไฟล์ config ของ Prisma CLI          (บทที่ 6)
+├── prisma/
+│   ├── schema.prisma                Category, Product, Review, Order, OrderItem
+│   ├── migrations/                  &lt;timestamp&gt;_init, &lt;timestamp&gt;_add_orders
+│   └── seed.ts                      ดึงสินค้า 194 ชิ้นลงฐานข้อมูล      (บทที่ 9)
+├── scripts/contract-check.ts        เทียบ response ของเรากับ dummyjson (บทที่ 15)
+├── nest-cli.json                    เปิด Swagger CLI plugin            (บทที่ 21)
+└── src/
+    ├── main.ts                      ValidationPipe, CORS, Swagger
+    ├── app.module.ts
+    ├── prisma/
+    │   ├── prisma.module.ts
+    │   └── prisma.service.ts
+    ├── products/
+    │   ├── products.module.ts
+    │   ├── products.controller.ts
+    │   ├── products.service.ts
+    │   ├── product.mapper.ts
+    │   └── dto/
+    │       ├── pagination-query.dto.ts
+    │       └── product-response.dto.ts
+    └── orders/
+        ├── orders.module.ts
+        ├── carts.controller.ts
+        ├── orders.service.ts
+        ├── cart.mapper.ts
+        └── dto/
+            ├── add-cart.dto.ts
+            └── cart-response.dto.ts</code></pre>
+    <p>สังเกตว่าไฟล์ที่เราเขียนเองมีไม่ถึงสามสิบไฟล์ และแต่ละบทเพิ่มหรือแก้เพียงไม่กี่ไฟล์ — นั่นตั้งใจไว้ตั้งแต่ต้น เพราะการตรวจงานที่ AI เขียนจะทำได้จริงก็ต่อเมื่อ diff ของแต่ละรอบสั้นพอที่คุณจะอ่านจบ</p>
+
+    <h2>กติกาของคอร์ส: เข้าใจก่อน แล้วค่อยสั่ง</h2>
+    <div class="warning">
+      <p><strong>AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้ — ถ้าอธิบายไม่ได้ แปลว่ายังไม่ผ่านบทนี้</strong></p>
+    </div>
+    <p>ทุกบทที่ใช้ Cursor เดินตามลำดับเดียวกันห้าขั้น: <strong>แนวคิด</strong> (ทำความเข้าใจว่า endpoint นี้ต้องทำอะไร และข้อเท็จจริงจาก dummyjson ข้อไหนบังคับมันอยู่) → <strong>เป้าหมายของบทนี้</strong> (ไฟล์ที่จะเกิดขึ้นและสัญญาของแต่ละไฟล์) → <strong>🤖 prompt</strong> (คำสั่งห้าส่วนที่ส่งให้ Cursor Agent) → <strong>✅ review</strong> (ตรวจโค้ดที่ AI สร้างทีละข้อ เทียบกับโค้ดอ้างอิงของบทนั้น) → <strong>ตรวจว่าใช้งานได้จริง</strong> (ยิง curl แล้วเทียบกับไฟล์ใน <code>docs/contract/</code>) ลำดับนี้ไม่สลับ เพราะ prompt ที่ดีเขียนได้เฉพาะเมื่อคุณรู้คำตอบคร่าว ๆ อยู่ก่อนแล้ว</p>
+    <p>มีห้าบทที่เรา <strong>ไม่</strong> ใช้ Cursor แต่ลงมือเองทั้งบท (บทที่ 2, 3, 4, 8 และ 23) ด้วยเหตุผลสามข้อ</p>
+    <ul>
+      <li>บทที่ 3 คือ <strong>ความจริงที่ AI เดาแทนไม่ได้</strong> — สัญญาของ dummyjson ต้องมาจากการยิงของจริง คอร์สจึงยิงเก็บไว้ให้แล้วเป็นไฟล์ (คุณแค่ก๊อปเข้าโปรเจกต์แล้วอ่านให้เข้าใจ) ถ้าปล่อยให้ AI เขียนไฟล์ contract ให้ มันจะแต่ง field ที่ไม่มีอยู่จริงขึ้นมา แล้วทุกบทหลังจากนั้นจะผิดตามกันไปหมด</li>
+      <li>บทที่ 2 และ 8 คือ <strong>งานที่รัน ไม่ใช่งานที่เขียน</strong> — <code>nest new</code> และ <code>prisma migrate dev</code> เป็นคำสั่งที่คุณต้องเห็นผลลัพธ์ด้วยตาตัวเอง (และ Cursor rules ที่เราเขียนในบทที่ 4 ก็สั่งห้าม AI รัน migration เองอยู่แล้ว)</li>
+      <li>บทที่ 4 คือ <strong>กติกาที่คุณตั้งให้ AI</strong> และบทที่ 23 คือ <strong>หลักฐาน</strong> ว่างานทั้งหมดใช้ได้จริง — สองอย่างนี้เป็นความรับผิดชอบของคน ไม่ใช่ของเครื่องมือ</li>
+    </ul>
+
+    <h2>เวอร์ชันที่คอร์สนี้ใช้</h2>
+    <p>ตารางนี้คือเวอร์ชันที่สังเกตได้จริงตอนสร้างโปรเจกต์อ้างอิงของคอร์ส (12 กันยายน 2026) สามอย่างที่เรา <strong>pin</strong> ไว้ตรง ๆ คือ Prisma, <code>@prisma/adapter-pg</code> และ image <code>postgres:17</code> เพราะ Prisma 7 เปลี่ยนรูปแบบ config ไปจาก 6 ค่อนข้างมาก ตัวอื่นติดตั้งด้วย <code>npm i</code> ธรรมดา ถ้าเครื่องคุณได้เลขต่างออกไปเล็กน้อยถือว่าปกติ</p>
+    <div class="comparison" role="region" aria-label="เวอร์ชันของเครื่องมือและแพ็กเกจที่คอร์สนี้ใช้" tabindex="0">
+      <table>
+        <thead><tr><th>เครื่องมือ / แพ็กเกจ</th><th>เวอร์ชัน</th><th>หมายเหตุ</th></tr></thead>
+        <tbody>
+          <tr><td>Node.js</td><td>24 LTS หรือใหม่กว่า</td><td>เครื่องที่บันทึกคอร์สนี้รัน <code>v26.7.0</code> — ต่ำกว่า 24 ใช้ไม่ได้ เพราะ scaffold ของ Nest 12 เป็น ESM ล้วน</td></tr>
+          <tr><td>Docker</td><td>29.7.2</td><td>ใช้รัน PostgreSQL อย่างเดียว (บทที่ 5)</td></tr>
+          <tr><td><code>@nestjs/cli</code></td><td>12.0.0</td><td><code>nest --version</code> ต้องขึ้นต้นด้วย 12</td></tr>
+          <tr><td><code>@nestjs/common</code> / <code>@nestjs/core</code></td><td>12.0.1</td><td>ติดมากับ scaffold</td></tr>
+          <tr><td><code>typescript</code></td><td>6.0.3</td><td>scaffold เปิด strict ไว้ให้แล้ว</td></tr>
+          <tr><td><code>oxlint</code></td><td>1.82.0</td><td>scaffold ของ Nest 12 ใช้ oxlint ไม่ใช่ ESLint — <code>npm run lint</code> เรียกตัวนี้</td></tr>
+          <tr><td>PostgreSQL</td><td>17</td><td>image <code>postgres:17</code> ใน <code>docker-compose.yml</code></td></tr>
+          <tr><td><code>prisma</code>, <code>@prisma/client</code>, <code>@prisma/adapter-pg</code></td><td>7.10.0 (pin ทั้งสามตัว)</td><td>ตั้งค่าผ่าน <code>prisma7.config.ts</code></td></tr>
+          <tr><td><code>@nestjs/config</code></td><td>12.0.0</td><td>อ่านค่าจาก <code>.env</code> (บทที่ 6 และ 20)</td></tr>
+          <tr><td><code>class-validator</code> / <code>class-transformer</code></td><td>0.15.1 / 0.5.1</td><td>validation ของ DTO (บทที่ 13 และ 17)</td></tr>
+          <tr><td><code>@nestjs/swagger</code></td><td>12.0.1</td><td>เอกสาร API (บทที่ 21–22)</td></tr>
+          <tr><td><code>tsx</code></td><td>4.23.13</td><td>devDependency ใช้รัน <code>prisma/seed.ts</code> (บทที่ 9)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">พร้อมเริ่มหรือยัง</h2>
+      <ul>
+        <li>เรียน <a href="../../../Week_09/01_nestjs_basic/content/index.html">NestJS Fundamentals (Week_09)</a> จบแล้ว และอธิบายได้ว่า module, controller, service, DTO และ <code>PrismaService</code> แต่ละอย่างทำหน้าที่อะไร — คอร์สนี้ทบทวนให้สั้น ๆ เท่านั้น ไม่ได้สอนใหม่</li>
+        <li>ติดตั้ง Cursor แล้วและ sign in เรียบร้อย เปิดแชทโหมด Agent ได้ (ทบทวนวิธีใช้ได้จากคอร์ส Week_05_06)</li>
+        <li><code>node --version</code> ได้เลข 24 หรือมากกว่า</li>
+        <li><code>docker --version</code> ตอบเวอร์ชันได้ และ Docker Desktop กำลังรันอยู่</li>
+        <li>เปิดโปรเจกต์ React e-commerce จาก Week_05_06 แล้ว <code>npm run dev</code> ขึ้นหน้า Home ที่เห็นสินค้าจาก dummyjson จริง — นี่คือหลักฐานตั้งต้นที่เราจะเอากลับมาเทียบในบทที่ 23</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/">NestJS Documentation</a></li>
+      <li><a href="https://www.prisma.io/docs">Prisma Documentation</a></li>
+      <li><a href="https://dummyjson.com/docs/products">Products endpoints (DummyJSON Docs)</a></li>
+      <li><a href="https://dummyjson.com/docs/carts">Carts endpoints (DummyJSON Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="02_scaffolding-the-project.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

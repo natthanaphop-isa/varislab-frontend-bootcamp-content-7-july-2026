@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ทำ GET /products ให้รับ skip และ limit ตามกติกาของ dummyjson ด้วย query DTO ค่าเริ่มต้น global ValidationPipe และ $transaction ที่ดึงหน้าข้อมูลกับ total จาก snapshot เดียว" />
+  <title>GET /products พร้อม skip และ limit</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 13 จาก 24</p>
+    <h1>GET /products พร้อม skip และ limit</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>รับ query parameter ด้วย DTO ที่มีค่าเริ่มต้นในตัว แล้วเปิด <code>ValidationPipe</code> แบบ global</li>
+        <li>อธิบายกติกา pagination ของ dummyjson ได้ครบ รวมข้อที่ขัดความรู้สึกที่สุด: <code>limit</code> ใน response ไม่ใช่ค่าที่ client ขอมา</li>
+        <li>ดึงหน้าข้อมูลกับ <code>total</code> จาก snapshot เดียวด้วย <code>$transaction</code> ใน method กลางชื่อ <code>paginate</code> ที่บทที่ 14 จะเพิ่ม endpoint ใหม่ได้ด้วยโค้ดสองบรรทัด</li>
+      </ul>
+    </section>
+
+    <h2>กติกา pagination ของ dummyjson ทีละข้อ</h2>
+    <p>ก่อนเขียนโค้ด ต้องอ่านกติกาให้ครบ เพราะสามข้อหลังเป็นข้อที่คนเดาผิดบ่อยที่สุด</p>
+    <div class="comparison" role="region" aria-label="กติกา pagination ของ dummyjson" tabindex="0">
+      <table>
+        <thead><tr><th>กรณี</th><th>dummyjson ทำอะไร</th><th>เราต้องทำอะไร</th></tr></thead>
+        <tbody>
+          <tr><td>ไม่ส่ง <code>limit</code></td><td>คืน 30 ชิ้น</td><td>ค่าเริ่มต้นของ <code>limit</code> = 30</td></tr>
+          <tr><td>ไม่ส่ง <code>skip</code></td><td>เริ่มจากชิ้นแรก</td><td>ค่าเริ่มต้นของ <code>skip</code> = 0</td></tr>
+          <tr><td><code>limit=0</code></td><td>คืน<strong>ทั้งหมด</strong> ไม่ใช่คืนศูนย์ชิ้น</td><td><code>take: undefined</code> คือ "ไม่จำกัด" ใน Prisma</td></tr>
+          <tr><td>ลำดับสินค้า</td><td>เรียงตาม <code>id</code> น้อยไปมาก</td><td><code>orderBy: { id: 'asc' }</code></td></tr>
+          <tr><td><code>?limit=10&amp;skip=190</code> (เหลือของแค่ 4 ชิ้น)</td><td>ตอบ <code>limit: 4</code></td><td><code>limit</code> = จำนวนที่ส่งกลับจริง</td></tr>
+          <tr><td>หมวดที่ไม่มีสินค้า</td><td>ตอบ <code>limit: 0</code></td><td>เช่นเดียวกัน — <code>rows.length</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>สองแถวล่างสุดคือหัวใจ: <code>limit</code> ใน response ของ dummyjson <strong>ไม่ใช่</strong> การสะท้อนค่าที่ client ขอมา มันคือ <em>จำนวนสินค้าที่ส่งกลับจริง</em> เราจึงคืน <code>limit: rows.length</code> ไม่ใช่ <code>limit: query.limit</code> ตรงนี้ถ้าเขียนผิด curl บนหน้าแรกจะยังดูถูกต้องทุกอย่าง แล้วจะพังเฉพาะเมื่อขอเลยขอบข้อมูล — ซึ่งเป็นบั๊กชนิดที่หาเจอตอนดึกที่สุด</p>
+
+    <h2>ค่าเริ่มต้นอยู่ที่ field ของ DTO ไม่ใช่ที่ <code>??</code> ใน service</h2>
+    <p>ใน Week_09 บทที่ 11 เราอ่าน query parameter แบบดิบ ๆ แล้วเติมค่าเริ่มต้นเอง บทที่ 16 และ 18 พาเราไปถึงวิธีที่สะอาดกว่า: ประกาศ DTO แล้วปล่อยให้ pipe จัดการ</p>
+    <pre><code>export class PaginationQueryDto {
+  @IsInt()
+  @Min(0)
+  skip: number = 0;
+
+  @IsInt()
+  @Min(0)
+  limit: number = 30;
+}</code></pre>
+    <p>ค่าเริ่มต้นเขียนเป็น field initialiser ธรรมดา ไม่ต้องมี <code>@IsOptional()</code> และไม่ต้องมี <code>?</code> เหตุผลคือ option <code>transform: true</code> ทำให้ <code>ValidationPipe</code> <strong>สร้าง instance ของ class ขึ้นมาจริง</strong> ก่อนส่งเข้า handler — เมื่อ instance เกิดขึ้น initialiser ก็ทำงาน ดังนั้น request ที่ไม่ส่ง <code>limit</code> มาจะได้ <code>30</code> ติดมาโดยอัตโนมัติ</p>
+    <p>ผลพลอยได้คือใน service เราเขียน <code>query.limit</code> ได้ตรง ๆ โดยไม่ต้องมี <code>?? 30</code> โปรยอยู่ทั่วไฟล์ และ type ก็เป็น <code>number</code> ไม่ใช่ <code>number | undefined</code></p>
+    <pre><code>app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+    transformOptions: { enableImplicitConversion: true },
+  }),
+);</code></pre>
+    <ul>
+      <li><code>enableImplicitConversion: true</code> — query string เป็น string เสมอ (<code>"2"</code>) option นี้แปลงเป็น <code>number</code> ตาม type ที่ประกาศไว้ให้ก่อน validate จึงไม่ต้องใส่ <code>@Type(() =&gt; Number)</code> ทีละ field</li>
+      <li><code>whitelist: true</code> — คีย์ที่ไม่มีใน DTO ถูกตัดออกเงียบ ๆ ใครยิง <code>?sort=price&amp;skip=0</code> มาก็ได้แค่ <code>skip</code> ส่วน React app ส่งมาแค่ <code>skip</code> กับ <code>limit</code> อยู่แล้ว</li>
+      <li><code>transform: true</code> — ทำให้ handler ได้ instance ของ <code>PaginationQueryDto</code> จริง (จุดที่ทำให้ค่าเริ่มต้นทำงาน)</li>
+    </ul>
+
+    <h2><code>total</code> กับหน้าข้อมูลต้องมาจาก snapshot เดียว</h2>
+    <p>response envelope ต้องมี <code>total</code> คือจำนวนสินค้าทั้งหมด ซึ่งเป็นอีก query หนึ่ง (<code>count</code>) ถ้ายิงสอง query แยกกัน มีช่องให้ข้อมูลเปลี่ยนระหว่างนั้น แล้ว client จะได้ <code>total: 194</code> พร้อมหน้าข้อมูลที่มาจากโลกที่มี 195 ชิ้น เราจึงห่อทั้งคู่ไว้ใน transaction เดียว (ทบทวน Week_09 บทที่ 29)</p>
+    <pre><code>const [rows, total] = await this.prisma.$transaction([
+  this.prisma.product.findMany({ /* … */ }),
+  this.prisma.product.count({ where }),
+]);</code></pre>
+    <p>รูปแบบ array ของ <code>$transaction</code> รับ list ของ query แล้วคืน array ของผลลัพธ์ตามลำดับเดิม — เขียนสั้นกว่าแบบ callback และเพียงพอเพราะสอง query นี้ไม่ต้องพึ่งผลของกันและกัน</p>
+
+    <h2><code>take: undefined</code> และ <code>productInclude</code> ที่ใช้ร่วมกัน</h2>
+    <p>Prisma ตีความ <code>take: undefined</code> ว่า "ไม่จำกัดจำนวน" ซึ่งพอดีกับกติกา <code>limit=0</code> ของ dummyjson จึงเขียนได้ตรง ๆ ว่า <code>take: limit === 0 ? undefined : limit</code> — ถ้าเผลอเขียน <code>take: limit</code> เฉย ๆ <code>limit=0</code> จะกลายเป็นหน้าเปล่า</p>
+    <p>อีกอย่างคือ <code>include</code> ก้อนเดียวกันตอนนี้ต้องใช้ทั้งใน <code>findOne</code> และใน list ถ้าปล่อยให้ copy กันไว้สองที่ วันหนึ่งจะแก้ที่เดียวแล้ว list กับ detail ตอบไม่เหมือนกัน เราจึงยกขึ้นมาเป็นค่าคงที่ระดับไฟล์</p>
+    <pre><code>const productInclude = {
+  category: true,
+  reviews: { orderBy: { id: 'asc' } },
+} satisfies Prisma.ProductInclude;</code></pre>
+    <p><code>satisfies</code> สำคัญกว่าที่เห็น: ถ้าเขียน <code>const productInclude: Prisma.ProductInclude = {...}</code> TypeScript จะกว้างเกินไป และถ้าไม่ใส่อะไรเลย <code>'asc'</code> จะถูกอนุมานเป็น <code>string</code> ซึ่ง Prisma ไม่รับ <code>satisfies</code> ตรวจว่าก้อนนี้เข้ากับ <code>Prisma.ProductInclude</code> จริง <em>โดยยังคง literal type</em> <code>'asc'</code> ไว้ให้</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>src/
+├── main.ts                           (แก้ไข: เพิ่ม global ValidationPipe)
+└── products/
+    ├── dto/pagination-query.dto.ts   (สร้างใหม่)
+    ├── products.controller.ts        (แก้ไข: เพิ่ม handler)
+    └── products.service.ts           (แก้ไข: productInclude + paginate + findAll)</code></pre>
+    <ul>
+      <li><strong><code>src/products/dto/pagination-query.dto.ts</code></strong> — สัญญา: ต้องมีสอง field พร้อมค่าเริ่มต้น <code>0</code> และ <code>30</code> และมี <code>@IsInt()</code> <code>@Min(0)</code> ทั้งคู่ / ต้องไม่ใส่ <code>@IsOptional()</code> และไม่ใส่ <code>?</code></li>
+      <li><strong><code>src/main.ts</code></strong> — สัญญา: ต้องเพิ่ม <code>useGlobalPipes</code> ก่อน <code>app.listen</code> ด้วย option สามข้อตามที่ระบุ / ต้องไม่เปลี่ยนวิธีอ่าน port</li>
+      <li><strong><code>src/products/products.service.ts</code></strong> — สัญญา: ต้องมี <code>productInclude</code> ระดับไฟล์ที่ <code>findOne</code> หันมาใช้ด้วย, <code>private async paginate(where, skip, limit)</code> ที่คืน <code>limit: rows.length</code>, และ <code>findAll(query)</code> ที่เรียก <code>paginate({}, …)</code> / ต้องไม่เขียน logic pagination ซ้ำใน <code>findAll</code></li>
+      <li><strong><code>src/products/products.controller.ts</code></strong> — สัญญา: ต้องเพิ่ม <code>@Get()</code> ไว้<em>ระหว่าง</em> <code>findCategories</code> กับ <code>findOne</code> / ต้องไม่ย้าย <code>@Get(':id')</code> ขึ้นไปข้างบน</li>
+    </ul>
+
+    <h2>ติดตั้ง validator ก่อน (ทำด้วยมือ)</h2>
+    <p>สองแพ็กเกจนี้เป็น peer dependency ของ <code>ValidationPipe</code> ติดตั้งเองก่อนเปิดแชท เพื่อไม่ให้ Cursor ต้องเดาว่าจะลงอะไร</p>
+    <div class="prompt-example"><code>npm install class-validator class-transformer</code></div>
+    <p>เวอร์ชันที่ได้ตอนตรวจทานคอร์สนี้คือ <code>class-validator@0.15.1</code> และ <code>class-transformer@0.5.1</code> — ทั้งคู่เป็น transitive dependency ของ <code>@nestjs/common</code> อยู่แล้ว การติดตั้งตรง ๆ จึง dedupe ไปที่เวอร์ชันเดียวกันและ <code>package-lock.json</code> เปลี่ยนเพียงเล็กน้อย</p>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor ทำ list endpoint พร้อม pagination</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: install validators"</code>) จากนั้นส่ง prompt นี้</p>
+      <div class="cursor-prompt"><code>เพิ่ม endpoint GET /products พร้อม skip/limit ที่ตอบ envelope เหมือน dummyjson และเปิด ValidationPipe แบบ global
+
+บริบท: @src/main.ts @src/products/products.controller.ts @src/products/products.service.ts @src/products/product.mapper.ts @src/products/dto/product-response.dto.ts @docs/contract/products-page.json @.cursor/rules/project.mdc
+ติดตั้ง class-validator และ class-transformer แล้ว
+docs/contract/products-page.json คือ response จริงของ GET /products?limit=2&amp;skip=0: { products: Product[], total: 194, skip: 0, limit: 2 }
+กติกาของ dummyjson: ถ้าไม่ส่ง limit ใช้ 30, ถ้าไม่ส่ง skip ใช้ 0, limit=0 หมายถึงเอาทั้งหมด, สินค้าเรียงตาม id น้อยไปมาก
+field limit ใน response ไม่ใช่ค่าที่ client ขอมา แต่คือจำนวนสินค้าที่ส่งกลับจริง (products.length) เช่น ?limit=10&amp;skip=190 ตอบ limit: 4 และหมวดที่ไม่มีสินค้าตอบ limit: 0
+มี ProductListResponseDto { products, total, skip, limit } และ toProductResponse อยู่แล้ว
+findOne ใช้ include: { category: true, reviews: { orderBy: { id: 'asc' } } } — list ต้องใช้ include เดียวกัน
+
+โครงสร้าง: สร้าง/แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
+- src/products/dto/pagination-query.dto.ts (สร้างใหม่)
+- src/products/products.service.ts (แก้ไข)
+- src/products/products.controller.ts (แก้ไข)
+- src/main.ts (แก้ไข)
+
+ข้อกำหนดทางเทคนิค:
+- pagination-query.dto.ts: export class PaginationQueryDto มีสอง field พร้อมค่าเริ่มต้น
+  @IsInt() @Min(0) skip: number = 0
+  @IsInt() @Min(0) limit: number = 30
+  ไม่ต้องใส่ @Type และไม่ต้องใส่ @IsOptional เพราะจะเปิด enableImplicitConversion ที่ pipe และมีค่าเริ่มต้นแล้ว
+- main.ts: ก่อน app.listen เพิ่ม app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, transformOptions: { enableImplicitConversion: true } }))
+- service: ประกาศค่าคงที่ระดับไฟล์ const productInclude = { category: true, reviews: { orderBy: { id: 'asc' } } } satisfies Prisma.ProductInclude
+  (import type { Prisma } from '../generated/prisma/client.js') แล้วให้ findOne ใช้ include: productInclude แทนของเดิม
+  เพิ่ม private async paginate(where: Prisma.ProductWhereInput, skip: number, limit: number): Promise&lt;ProductListResponseDto&gt;
+  ใช้ this.prisma.$transaction([ findMany, count ]) โดย findMany มี where, skip, take: limit === 0 ? undefined : limit, orderBy: { id: 'asc' }, include: productInclude ส่วน count มี where เดียวกัน
+  คืน { products: rows.map(toProductResponse), total, skip, limit: rows.length } (limit คือจำนวนที่ส่งกลับจริงตาม dummyjson)
+  เพิ่ม findAll(query: PaginationQueryDto) ที่คืน this.paginate({}, query.skip, query.limit)
+- controller: เพิ่ม handler @Get() findAll(@Query() query: PaginationQueryDto) วางไว้ระหว่าง findCategories กับ findOne (ต้องอยู่ก่อน @Get(':id'))
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์อื่นนอกจากที่ระบุ
+- ยังไม่ต้องทำ GET /products/category/:slug</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>DTO มีค่าเริ่มต้น <code>= 0</code> และ <code>= 30</code> เขียนอยู่ที่ field พร้อม <code>@IsInt()</code> <code>@Min(0)</code> — ไม่มี <code>?</code> ไม่มี <code>@IsOptional()</code></li>
+        <li>option ของ pipe มีครบสามข้อและไม่มีข้ออื่นแถมมา: <code>whitelist</code>, <code>transform</code>, <code>transformOptions: { enableImplicitConversion: true }</code></li>
+        <li><code>$transaction</code> ใช้รูปแบบ array <code>[findMany, count]</code> ไม่ใช่ callback</li>
+        <li><code>take: limit === 0 ? undefined : limit</code> ตรงตามนี้</li>
+        <li>envelope คืน <code>limit: rows.length</code> — ไม่ใช่ <code>limit</code> ที่รับเข้ามา</li>
+        <li><code>findOne</code> เปลี่ยนมาใช้ <code>include: productInclude</code> แล้ว ไม่มี <code>include</code> แบบเขียนสดค้างอยู่</li>
+        <li>ใน controller ลำดับ handler เป็น <code>findCategories</code> → <code>findAll</code> → <code>findOne</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ประกาศ <code>skip?: number</code> คู่กับ <code>@IsOptional()</code> แล้วไปโปรย <code>query.skip ?? 0</code> ตามจุดต่าง ๆ ใน service — ใช้งานได้ แต่ย้ายกฎเรื่องค่าเริ่มต้นออกจาก DTO ไปกระจายในโค้ด ซึ่งบทที่ 21 (Swagger) จะอ่านค่าเริ่มต้นไม่เจอ อีกข้อคือเขียน <code>take: limit</code> เฉย ๆ ทำให้ <code>?limit=0</code> คืนหน้าเปล่าแทนที่จะคืนทั้งหมด — curl หน้าแรกไม่จับได้ ต้องทดสอบ <code>limit=0</code> โดยเฉพาะ</p>
+      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <p><code>src/products/dto/pagination-query.dto.ts</code></p>
+      <pre><code>import { IsInt, Min } from 'class-validator';
+
+export class PaginationQueryDto {
+  @IsInt()
+  @Min(0)
+  skip: number = 0;
+
+  @IsInt()
+  @Min(0)
+  limit: number = 30;
+}</code></pre>
+      <p><code>src/main.ts</code></p>
+      <pre><code>import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module.js';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
+  await app.listen(process.env.PORT ?? 3000);
+}
+await bootstrap();</code></pre>
+      <p><code>src/products/products.service.ts</code></p>
+      <pre><code>import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { Prisma } from '../generated/prisma/client.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { PaginationQueryDto } from './dto/pagination-query.dto.js';
+import { ProductListResponseDto, ProductResponseDto } from './dto/product-response.dto.js';
+import { toProductResponse } from './product.mapper.js';
+
+const productInclude = {
+  category: true,
+  reviews: { orderBy: { id: 'asc' } },
+} satisfies Prisma.ProductInclude;
+
+@Injectable()
+export class ProductsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
+
+  async findCategories() {
+    const appUrl = this.config.getOrThrow&lt;string&gt;('APP_URL');
+    const categories = await this.prisma.category.findMany({ orderBy: { id: 'asc' } });
+    return categories.map(({ slug, name }) =&gt; ({
+      slug,
+      name,
+      url: `${appUrl}/products/category/${slug}`,
+    }));
+  }
+
+  findAll(query: PaginationQueryDto) {
+    return this.paginate({}, query.skip, query.limit);
+  }
+
+  async findOne(id: number): Promise&lt;ProductResponseDto&gt; {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      include: productInclude,
+    });
+    if (!product) {
+      throw new NotFoundException(`Product with id '${id}' not found`);
+    }
+    return toProductResponse(product);
+  }
+
+  private async paginate(
+    where: Prisma.ProductWhereInput,
+    skip: number,
+    limit: number,
+  ): Promise&lt;ProductListResponseDto&gt; {
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where,
+        skip,
+        take: limit === 0 ? undefined : limit,
+        orderBy: { id: 'asc' },
+        include: productInclude,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+    return { products: rows.map(toProductResponse), total, skip, limit: rows.length };
+  }
+}</code></pre>
+      <p><code>src/products/products.controller.ts</code></p>
+      <pre><code>import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { PaginationQueryDto } from './dto/pagination-query.dto.js';
+import { ProductsService } from './products.service.js';
+
+@Controller('products')
+export class ProductsController {
+  constructor(private readonly productsService: ProductsService) {}
+
+  @Get('categories')
+  findCategories() {
+    return this.productsService.findCategories();
+  }
+
+  @Get()
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.productsService.findAll(query);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.findOne(id);
+  }
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>log ตอน start มีสาม route เรียงตามนี้</p>
+      <pre><code>[RouterExplorer] Mapped {/products/categories, GET} route
+[RouterExplorer] Mapped {/products, GET} route
+[RouterExplorer] Mapped {/products/:id, GET} route</code></pre>
+      <p><code>GET /products?limit=2&amp;skip=0</code> ตอบ envelope สี่คีย์ <code>{ products, total, skip, limit }</code> โดย <code>total</code> เป็น <code>194</code> และ <code>products</code> มีสองชิ้นคือ id 1 และ 2 ส่วน <code>GET /products</code> เปล่า ๆ ได้ 30 ชิ้น และ <code>?limit=0</code> ได้ทั้ง 194 ชิ้น</p>
+      <p>query ที่ผิดรูปจะได้ 400 ตั้งแต่ก่อนเข้า handler เช่น <code>?limit=abc</code></p>
+      <pre><code>HTTP/1.1 400 Bad Request
+{"message":["limit must not be less than 0","limit must be an integer number"],"error":"Bad Request","statusCode":400}</code></pre>
+      <p>สังเกตว่า <code>message</code> เป็น array สองข้อความ ไม่ใช่ข้อความเดียว — เพราะ <code>Number('abc')</code> คือ <code>NaN</code> ซึ่งทั้ง <code>@IsInt()</code> และ <code>@Min(0)</code> ถือว่าไม่ผ่าน validator ทั้งสองตัวจึงรายงานพร้อมกัน</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>หน้าแรกสองชิ้น — ต้องพิมพ์ <code>194 0 2 [ 1, 2 ]</code>
+          <pre><code>curl -s "http://localhost:3000/products?limit=2&amp;skip=0" \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;{const j=JSON.parse(d);console.log(j.total,j.skip,j.limit,j.products.map(p=&gt;p.id))})"</code></pre>
+        </li>
+        <li>ค่าเริ่มต้นทำงาน — <code>curl -s "http://localhost:3000/products"</code> แล้วอ่าน <code>limit</code> กับ <code>products.length</code> ต้องได้ <code>30 30</code></li>
+        <li><code>limit=0</code> คืนทั้งหมด — <code>curl -s "http://localhost:3000/products?limit=0"</code> แล้วอ่านสองค่าเดิม ต้องได้ <code>194 194</code></li>
+        <li><code>curl -s -i "http://localhost:3000/products?limit=abc" | sed -n '1p;$p'</code> ได้ 400 พร้อม <code>limit must be an integer number</code> อยู่ใน array <code>message</code></li>
+        <li><code>curl -s -i "http://localhost:3000/products?limit=-1" | sed -n '1p'</code> ได้ <code>HTTP/1.1 400 Bad Request</code></li>
+        <li>เทียบหน้าแรกกับ contract แบบเรียงคีย์ — ต้องได้ <code>IDENTICAL</code>
+          <pre><code>curl -s "http://localhost:3000/products?limit=2&amp;skip=0" \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log(JSON.stringify(JSON.parse(d),Object.keys(JSON.parse(d)).sort())))" &gt; /tmp/actual.json
+node -e "const d=require('./docs/contract/products-page.json');console.log(JSON.stringify(d,Object.keys(d).sort()))" &gt; /tmp/expected.json
+diff /tmp/actual.json /tmp/expected.json &amp;&amp; echo IDENTICAL</code></pre>
+        </li>
+        <li>ขอเลยขอบข้อมูล — <code>curl -s "http://localhost:3000/products?limit=10&amp;skip=190"</code> ต้องได้ <code>limit: 4</code> (ไม่ใช่ <code>10</code>) กับ <code>total: 194</code></li>
+        <li><code>whitelist</code> ทำงาน — <code>curl -s "http://localhost:3000/products?limit=2&amp;sort=price"</code> ต้องได้ 200 ปกติ ไม่ใช่ 400</li>
+        <li>commit ผลงานด้วย <code>git add -A &amp;&amp; git commit -m "feat: GET /products with pagination"</code></li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation: ValidationPipe options (NestJS Docs)</a></li>
+      <li><a href="https://github.com/typestack/class-validator">class-validator: IsInt, Min (GitHub)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/pagination">Pagination: skip and take (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/transactions">Transactions: sequential operations (Prisma Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="12_get-product-by-id.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="14_get-products-by-category.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

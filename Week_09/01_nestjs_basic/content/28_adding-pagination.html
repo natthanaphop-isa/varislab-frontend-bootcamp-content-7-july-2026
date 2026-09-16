@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง PaginationQueryDto ที่ใช้ซ้ำได้ แล้วส่ง limit/offset ลงถึง skip/take ของ Prisma Client เพื่อแบ่งหน้าที่ชั้นฐานข้อมูลจริง" />
+  <title>เพิ่ม Pagination ที่ชั้นฐานข้อมูล</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 28 จาก 77</p>
+    <h1>เพิ่ม Pagination ที่ชั้นฐานข้อมูล</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>สร้าง <code>PaginationQueryDto</code> ไว้ในโฟลเดอร์ <code>common</code> เพื่อใช้ซ้ำได้ทุก resource</li>
+        <li>เปิด <code>enableImplicitConversion</code> ให้ query string ถูกแปลงเป็น number อัตโนมัติ</li>
+        <li>ส่ง <code>limit</code>/<code>offset</code> ลงไปเป็น <code>take</code>/<code>skip</code> ของ Prisma Client เพื่อให้ฐานข้อมูลเป็นผู้แบ่งหน้า</li>
+      </ul>
+    </section>
+
+    <h2>ย้าย pagination จากหน่วยความจำลงฐานข้อมูล</h2>
+    <p>ในบทที่ 11 เราเคยรับ <code>limit</code>/<code>offset</code> จาก query string มาแล้ว แต่ตอนนั้นข้อมูลอยู่ใน array การหั่นข้อมูลจึงเกิดในหน่วยความจำ พอข้อมูลจริงอยู่ใน PostgreSQL การดึง<em>ทุกแถว</em>มาก่อนแล้วค่อยหั่นเป็นการเสียทั้ง memory และเวลา — เราต้องให้ฐานข้อมูลแบ่งหน้าให้ตั้งแต่ใน query ผ่าน option <code>skip</code> และ <code>take</code> ของ <code>findMany()</code> ซึ่ง Prisma จะแปลงเป็น <code>OFFSET</code> และ <code>LIMIT</code> ใน SQL ให้เอง</p>
+    <p>เนื่องจาก pagination เป็นสิ่งที่ resource อื่น ๆ ในอนาคตต้องใช้เหมือนกัน เราจะเก็บ DTO นี้ไว้ในโฟลเดอร์กลาง <code>common/</code> โดยใช้ Nest CLI สร้างให้</p>
+    <pre><code>nest g class common/dto/pagination-query.dto --no-spec</code></pre>
+
+    <h2>PaginationQueryDto: validate และแปลงชนิดในที่เดียว</h2>
+    <pre><code>import { Type } from 'class-transformer';
+import { IsOptional, IsPositive, Min } from 'class-validator';
+
+export class PaginationQueryDto {
+  @Type(() =&gt; Number)
+  @IsOptional()
+  @IsPositive()
+  limit: number;
+
+  @Type(() =&gt; Number)
+  @IsOptional()
+  @Min(0) // 👈 ไม่ใช่ @IsPositive() — offset=0 (เริ่มจากแถวแรก) เป็นค่าที่ถูกต้องและใช้บ่อยที่สุด
+  offset: number;
+}</code></pre>
+    <ul>
+      <li><code>@IsOptional()</code> — ไม่ส่งมาก็ได้ endpoint จะคืนทั้งหมดตามเดิม</li>
+      <li><code>@IsPositive()</code> บน <code>limit</code> — กันค่า 0 และค่าติดลบที่ทำให้ query เพี้ยน (ขอกาแฟ 0 หรือ -1 รายการไม่มีความหมาย)</li>
+      <li><code>@Min(0)</code> บน <code>offset</code> — กันเฉพาะค่าติดลบ แต่ยังรับ <code>0</code> ได้ เพราะ <code>offset=0</code> แปลว่า "เริ่มจากแถวแรก" ซึ่งถูกต้อง ถ้าใช้ <code>@IsPositive()</code> กับ <code>offset</code> ด้วย จะปัดตก <code>offset=0</code> ทิ้งอย่างผิด ๆ</li>
+      <li><code>@Type(() =&gt; Number)</code> — query string มาเป็น string เสมอ ต้องแปลงเป็น number ก่อน validate</li>
+    </ul>
+    <p>จริง ๆ แล้วเราไม่ต้องติด <code>@Type</code> ทีละฟิลด์ก็ได้ ถ้าเปิดการแปลงชนิดแบบ implicit ที่ <code>ValidationPipe</code> กลางใน <code>main.ts</code>:</p>
+    <pre><code>app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+    forbidNonWhitelisted: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+  }),
+);</code></pre>
+    <div class="note"><p><code>enableImplicitConversion: true</code> ให้ class-transformer เดาชนิดจาก type ของ property ใน DTO โดยอัตโนมัติ — สะดวกทั้งแอป แต่การคง <code>@Type(() =&gt; Number)</code> ไว้ก็ทำให้ DTO ประกาศเจตนาของตัวเองชัดเจนโดยไม่พึ่ง config กลาง เลือกแนวใดแนวหนึ่งให้สม่ำเสมอทั้งทีม</p></div>
+
+    <h2>ต่อท่อจาก controller ลงถึง query</h2>
+    <p>รับ DTO ที่ controller ด้วย <code>@Query()</code> แล้วส่งต่อให้ service ใช้เป็น <code>skip</code>/<code>take</code> ของ <code>findMany()</code> — ถ้า client ไม่ส่ง query มา ทั้งสองค่าจะเป็น <code>undefined</code> ซึ่ง Prisma ตีความว่า "ไม่จำกัด" endpoint จึงคืนทั้งหมดเหมือนเดิม</p>
+    <pre><code>/* CoffeesController */
+@Get()
+findAll(@Query() paginationQuery: PaginationQueryDto) {
+  return this.coffeesService.findAll(paginationQuery);
+}
+
+/* CoffeesService */
+findAll(paginationQuery: PaginationQueryDto) {
+  const { limit, offset } = paginationQuery;
+  return this.prisma.coffee.findMany({
+    include: { flavors: true },
+    orderBy: { id: 'asc' },
+    skip: offset,
+    take: limit,
+  });
+}</code></pre>
+    <div class="comparison" role="region" aria-label="เทียบ option ของ findMany กับ SQL" tabindex="0">
+      <table>
+        <thead><tr><th>Option ของ Prisma</th><th>SQL ที่ได้</th><th>หมายเหตุ</th></tr></thead>
+        <tbody>
+          <tr><td><code>take: limit</code></td><td><code>LIMIT limit</code></td><td>จำนวนแถวสูงสุดต่อหน้า</td></tr>
+          <tr><td><code>skip: offset</code></td><td><code>OFFSET offset</code></td><td>ข้ามกี่แถวก่อนเริ่มนับ</td></tr>
+          <tr><td><code>orderBy: { id: 'asc' }</code></td><td><code>ORDER BY id ASC</code></td><td>ทำให้ทุกหน้าเรียงลำดับเดิมเสมอ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning"><p>อย่าลืม <code>orderBy</code> — SQL ไม่รับประกันลำดับแถวถ้าไม่ได้สั่ง ORDER BY ถ้าไม่ระบุ หน้าที่ 1 กับหน้าที่ 2 อาจมีแถวซ้ำกันหรือแถวหายไปได้เมื่อฐานข้อมูลเลือกลำดับต่างกันในแต่ละ query การแบ่งหน้าที่เชื่อถือได้ต้องมีลำดับที่แน่นอนเสมอ</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">แบ่งหน้ารายการกาแฟ</h2>
+      <p>สร้าง DTO, ปรับ <code>main.ts</code>, controller และ service ตามด้านบน จากนั้น POST กาแฟสัก 5 ตัวแล้วทดสอบการแบ่งหน้า</p>
+      <div class="prompt-example"><code>GET http://localhost:3000/coffees?limit=2&amp;offset=0
+GET http://localhost:3000/coffees?limit=2&amp;offset=2
+GET http://localhost:3000/coffees?limit=-1     # ต้องได้ 400
+GET http://localhost:3000/coffees              # ไม่ส่ง = ได้ทั้งหมด</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>คำขอที่ใส่ <code>limit=2</code> ได้กาแฟทีละ 2 ตัวไม่ซ้ำชุดกันเมื่อเลื่อน <code>offset</code>, คำขอที่ไม่ส่ง query ได้ทั้งหมด และค่าที่ไม่ใช่จำนวนบวกถูกปัดตกด้วย 400 พร้อมข้อความจาก class-validator — ทั้งหมดนี้โดยฐานข้อมูลเป็นคนทำ <code>LIMIT</code>/<code>OFFSET</code> ไม่ใช่ JavaScript</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>limit=2&amp;offset=0</code> กับ <code>limit=2&amp;offset=2</code> คืนคนละชุดข้อมูลและไม่ซ้ำกัน</li>
+        <li><code>limit=abc</code> หรือ <code>limit=-1</code> ได้ status 400 ไม่ใช่ 500</li>
+        <li>ไม่ส่ง query เลยยังได้รายการทั้งหมดพร้อม <code>flavors</code> ตามปกติ (<code>skip</code>/<code>take</code> เป็น <code>undefined</code> = ไม่จำกัด)</li>
+        <li>ไฟล์ DTO อยู่ที่ <code>src/common/dto/pagination-query.dto.ts</code> พร้อมให้ resource อื่น import ไปใช้</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation: auto-transformation (NestJS Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/pagination">Pagination (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/cli/overview">Nest CLI (NestJS Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="27_using-nested-writes.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="29_use-transactions.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+</body>
+</html>

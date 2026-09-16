@@ -1,0 +1,358 @@
+{
+  "questions": [
+    {
+      "prompt": "Client ควรส่ง JWT ในรูปแบบใดเพื่อให้ authenticateToken ในบทเรียนดึง Token ไปตรวจได้?",
+      "choices": [
+        "Authorization: Bearer <token>",
+        "Authorization: <token>",
+        "Content-Type: Bearer <token>"
+      ],
+      "correctChoice": 1,
+      "explanation": "Middleware อ่าน Header authorization แล้วแยกข้อความด้วยช่องว่างเพื่อหยิบ Token ที่ Index 1 จึงต้องส่งในรูปแบบ Bearer ตามด้วย Token"
+    },
+    {
+      "prompt": "หลัง verifyToken(token) สำเร็จ เหตุใด Middleware จึงกำหนด req.user = payload แล้วเรียก next()?",
+      "choices": [
+        "เพื่อบันทึก Session ของผู้ใช้ลงฐานข้อมูลทุกครั้ง",
+        "เพื่อส่งตัวตนที่ตรวจแล้วให้ Controller และให้ Request ไปทำงานขั้นตอนถัดไป",
+        "เพื่อออก JWT ใหม่และส่งกลับ Client โดยอัตโนมัติ"
+      ],
+      "correctChoice": 2,
+      "explanation": "req.user เก็บ Payload ที่ผ่านการตรวจแล้วบน Request ปัจจุบัน ส่วน next() ส่งการทำงานต่อ หากไม่ตอบ Response และไม่เรียก next() Request จะค้างอยู่"
+    },
+    {
+      "prompt": "ตามโค้ด authenticateToken ในบทที่ 24 กรณีไม่มี Token และกรณี verifyToken โยน Error จะได้ Status Code ใดตามลำดับ?",
+      "choices": [
+        "403 และ 401",
+        "401 และ 500",
+        "401 และ 403"
+      ],
+      "correctChoice": 3,
+      "explanation": "โค้ดในบทเรียนตอบ 401 เมื่อดึง Token ไม่ได้ และตอบ 403 ใน catch เมื่อ Token ตรวจไม่ผ่านหรือหมดอายุ คำตอบนี้อ้างอิงพฤติกรรมของโค้ดตัวอย่าง"
+    },
+    {
+      "prompt": "ควรวาง router.use(authenticateToken) ตรงไหนเพื่อป้องกันทุก Route ใน habitRoutes?",
+      "choices": [
+        "หลังสร้าง Router และก่อนลงทะเบียน Route ของ Habit",
+        "หลังลงทะเบียน Route ของ Habit ทั้งหมด",
+        "ก่อน Route สมัครสมาชิกแบบ Global เพื่อบังคับให้ผู้ใช้ใหม่มี Token"
+      ],
+      "correctChoice": 1,
+      "explanation": "Middleware ทำงานตามลำดับที่ลงทะเบียน จึงต้องวางก่อน Route ที่ต้องการป้องกัน ส่วน Route สมัครสมาชิกและล็อกอินต้องเปิดให้ผู้ที่ยังไม่มี Token ใช้งานได้"
+    },
+    {
+      "prompt": "คำสั่ง as unknown as JwtPayload หลัง jwtVerify มีผลอย่างไร?",
+      "choices": [
+        "ตรวจว่าทุก Field ใน Payload มีชนิดถูกต้องขณะรันจริง",
+        "บอก TypeScript ให้มองค่าเป็น JwtPayload โดยไม่ได้เพิ่มการตรวจข้อมูลขณะรัน",
+        "ลงลายเซ็น JWT ใหม่ให้ตรงกับ Interface"
+      ],
+      "correctChoice": 2,
+      "explanation": "Type Assertion เป็นคำบอกชนิดให้ TypeScript ไม่ใช่ Runtime Validation การตรวจลายเซ็นและอายุ Token เกิดจาก jwtVerify ส่วนการตรวจรูปแบบ Field ต้องมีโค้ดตรวจเพิ่มเติมหากต้องการ"
+    },
+    {
+      "prompt": "เหตุใดบทเรียนจึงห้ามบันทึก Bearer Token เต็ม ๆ ลง Log?",
+      "choices": [
+        "เพราะ Log ทำให้วันหมดอายุของ Token ถูกเลื่อนออกไป",
+        "เพราะ JWT จะถูกแปลงเป็นรหัสผ่านดิบเมื่ออยู่ใน Log",
+        "เพราะผู้ที่เข้าถึง Log อาจนำ Token ไปใช้เรียก API ในนามเจ้าของได้"
+      ],
+      "correctChoice": 3,
+      "explanation": "Bearer Token ใช้งานได้โดยผู้ที่ถือมัน การเก็บ Token ใน Log เพิ่มจุดที่มันอาจรั่ว รวมถึงบริการเก็บ Log ภายนอก ควรบันทึกเหตุการณ์โดยไม่เก็บตัว Token"
+    },
+    {
+      "prompt": "เหตุใด JWT_SECRET ของเครื่องพัฒนาและ Production จึงควรใช้คนละค่า?",
+      "choices": [
+        "เพื่อลดโอกาสที่ Token ซึ่งเซ็นจากเครื่องพัฒนาจะผ่านการตรวจลายเซ็นบน Production",
+        "เพื่อให้ Client เลือกฐานข้อมูลได้ด้วยการเปลี่ยน Secret",
+        "เพื่อให้ JWT ของ Production ไม่ต้องมีวันหมดอายุ"
+      ],
+      "correctChoice": 1,
+      "explanation": "หากใช้ Secret เดียวกันกับอัลกอริทึมเดียวกัน Token จากสภาพแวดล้อมหนึ่งอาจผ่านการตรวจลายเซ็นอีกสภาพแวดล้อมได้ การแยก Secret ช่วยแยกขอบเขตความเสียหาย"
+    },
+    {
+      "prompt": "การใช้ HTTPS ช่วยปกป้อง Bearer Token ที่ส่งใน Authorization Header อย่างไร?",
+      "choices": [
+        "เปลี่ยน JWT ให้กลายเป็น Session ที่เก็บบน Server",
+        "เข้ารหัสข้อมูลระหว่าง Client กับปลายทาง HTTPS รวมถึง Header ของ Request",
+        "ทำให้ Token ที่ถูกขโมยไปแล้วใช้ซ้ำไม่ได้ทันที"
+      ],
+      "correctChoice": 2,
+      "explanation": "HTTPS ปกป้องข้อมูลระหว่างทาง รวมถึง Authorization Header แต่ไม่ได้ทำให้ Token ที่รั่วจากแหล่งอื่นถูกเพิกถอนโดยอัตโนมัติ"
+    },
+    {
+      "prompt": "หาก Client ส่ง userId ของคนอื่นมาใน Body ของ Request สร้าง Habit ควรเลือกเจ้าของ Habit จากที่ใด?",
+      "choices": [
+        "req.body.userId เพราะเป็นข้อมูลที่ผู้ใช้ต้องการบันทึก",
+        "req.query.userId เพราะ Query แก้ไขได้ยากกว่า Body",
+        "req.user.id ที่ได้หลังผ่าน authenticateToken"
+      ],
+      "correctChoice": 3,
+      "explanation": "Body และ Query เป็นข้อมูลที่ Client เปลี่ยนได้ เจ้าของ Resource จึงต้องมาจากตัวตนที่ตรวจ Token แล้ว เพื่อป้องกันการสร้างข้อมูลในชื่อคนอื่น"
+    },
+    {
+      "prompt": "Rate Limiting บน Route ล็อกอินช่วยรับมือการเดารหัสผ่านอย่างไร?",
+      "choices": [
+        "จำกัดจำนวน Request ภายในช่วงเวลา ทำให้ลองรหัสผ่านต่อเนื่องได้ยากขึ้น",
+        "ทำให้ bcrypt ถอด Hash กลับเป็นรหัสผ่านได้เร็วขึ้น",
+        "อนุญาตให้เข้าสู่ระบบได้หลังลองผิดครบจำนวนที่กำหนด"
+      ],
+      "correctChoice": 1,
+      "explanation": "Rate Limiting ลดจำนวนครั้งที่ส่งคำขอได้ต่อช่วงเวลา จึงช่วยลดการลองรหัสผ่านแบบ Brute Force ส่วนการล็อกบัญชีชั่วคราวเป็นอีกกลไกหนึ่งที่บทเรียนกล่าวถึง"
+    },
+    {
+      "prompt": "เหตุใด createHabit จึงใช้ prisma.$transaction() ครอบการสร้าง Habit และความสัมพันธ์กับ Tag?",
+      "choices": [
+        "เพื่อให้ทุก Query ไม่ต้องตรวจ Foreign Key",
+        "เพื่อให้การเขียนทั้งสองส่วนสำเร็จร่วมกัน หรือย้อนกลับเมื่อขั้นตอนหนึ่งล้มเหลว",
+        "เพื่อให้ข้อมูล Habit ถูก Cache และไม่ต้องเขียนลงฐานข้อมูล"
+      ],
+      "correctChoice": 2,
+      "explanation": "การสร้าง Habit กับแถวใน habitTags เป็นการเขียนหลายส่วน Transaction ป้องกันข้อมูลค้างเพียงบางส่วน โดยคำสั่งภายในต้องเรียกผ่าน tx เพื่อร่วม Transaction เดียวกัน"
+    },
+    {
+      "prompt": "เงื่อนไข where ในโค้ดนี้ป้องกันปัญหาใด?",
+      "body": "<pre><code>const userId = req.user!.id\nconst habit = await prisma.habit.findFirst({\n  where: { id: req.params.id, userId },\n})</code></pre>",
+      "choices": [
+        "การส่ง Body ที่ไม่มี Content-Type",
+        "การสร้างชื่อ Habit ซ้ำกับคนอื่น",
+        "การอ่าน Habit ของผู้ใช้อื่นแม้ผู้เรียกจะรู้ ID ของ Habit นั้น"
+      ],
+      "correctChoice": 3,
+      "explanation": "เงื่อนไข id และ userId ต้องตรงทั้งคู่ จึงจำกัดผลลัพธ์ให้เป็น Habit ของผู้ใช้ที่ยืนยันตัวตนแล้ว หากไม่พบ โค้ดในบทเรียนตอบ 404"
+    },
+    {
+      "prompt": "เมื่อแปลงผลลัพธ์ด้วยโค้ดนี้แล้วส่งเป็น JSON Client จะเห็นข้อมูล Tag ในรูปแบบใด?",
+      "body": "<pre><code>const result = {\n  ...habit,\n  tags: habit.habitTags.map((ht) =&gt; ht.tag),\n  habitTags: undefined,\n}</code></pre>",
+      "choices": [
+        "มี tags เป็นรายการ Tag และไม่มี Field habitTags ใน JSON",
+        "มี habitTags เป็น null และไม่มี Field tags",
+        "มี tags เป็นรายการ ID ของ Habit เท่านั้น"
+      ],
+      "correctChoice": 1,
+      "explanation": "map หยิบ Object tag จากแต่ละความสัมพันธ์มาใส่ tags ส่วน Property ที่มีค่า undefined จะถูกละออกเมื่อ Object ถูกแปลงเป็น JSON"
+    },
+    {
+      "prompt": "ใน updateHabit ของบทเรียน การไม่ส่ง tagIds กับการส่ง tagIds: [] มีผลต่างกันอย่างไร?",
+      "choices": [
+        "ทั้งสองกรณีลบความสัมพันธ์กับ Tag ทั้งหมด",
+        "ไม่ส่งจะคง Tag เดิม แต่ส่ง Array ว่างจะลบความสัมพันธ์กับ Tag ทั้งหมด",
+        "ไม่ส่งจะเพิ่ม Tag เริ่มต้น แต่ส่ง Array ว่างจะตอบ 404"
+      ],
+      "correctChoice": 2,
+      "explanation": "โค้ดทำงานส่วน Tag เฉพาะเมื่อ tagIds !== undefined จากนั้นลบความสัมพันธ์เดิม และสร้างชุดใหม่เฉพาะเมื่อ Array มีสมาชิก จึงแยกความหมายระหว่างไม่แก้กับล้าง Tag ได้"
+    },
+    {
+      "prompt": "เมื่อ prisma.habit.update({ where: { id, userId }, ... }) หาแถวที่ตรงเงื่อนไขไม่พบ โค้ดในบทเรียนจัดการอย่างไร?",
+      "choices": [
+        "สร้าง Habit ใหม่ด้วย ID ที่ได้รับและตอบ 201",
+        "คืนรายการ Habit ว่างและตอบ 200",
+        "จับ Error P2025 แล้วตอบ 404 พร้อม Habit not found"
+      ],
+      "correctChoice": 3,
+      "explanation": "Prisma update โยน P2025 เมื่อไม่พบแถวที่ต้องอัปเดต catch แปลงเป็น 404 ซึ่งใช้ทั้งกรณีไม่มี ID นั้นและกรณีเป็น Habit ของคนอื่นโดยไม่เปิดเผยความแตกต่าง"
+    },
+    {
+      "prompt": "Request สร้าง Habit ส่ง targetCount: \"30\" แล้วได้รับ Validation failed ควรแก้ Payload อย่างไรตาม Schema ในบทเรียน?",
+      "choices": [
+        "ส่ง targetCount: 30 เป็นตัวเลข JSON",
+        "ส่ง targetCount: \"thirty\" เพื่อให้เป็นข้อความชัดเจน",
+        "เปลี่ยนชื่อ Field เป็น target_count โดยยังส่ง String"
+      ],
+      "correctChoice": 1,
+      "explanation": "createHabitSchema คาดหวัง targetCount เป็น number จึงไม่รับ String \"30\" การเอาเครื่องหมายคำพูดออกทำให้ JSON ส่งค่าตัวเลขตรงตาม Schema"
+    },
+    {
+      "prompt": "PATCH Habit พร้อม tagIds ที่อ้างถึง Tag ซึ่งไม่มีอยู่จริง แล้วพบ P2003 ใน Log ควรตีความว่าอย่างไร?",
+      "choices": [
+        "Token หมดอายุก่อนถึง Controller",
+        "การสร้างความสัมพันธ์ผิด Foreign Key Constraint เพราะไม่มี Tag ปลายทาง",
+        "Route ไม่รองรับ Method PATCH"
+      ],
+      "correctChoice": 2,
+      "explanation": "P2003 ในตัวอย่างเกิดจาก habit_tags.tag_id อ้างถึง Tag ที่ไม่มีอยู่ การเขียนใน Transaction จึงย้อนกลับ รวมถึงการแก้ตัว Habit ด้วย"
+    },
+    {
+      "prompt": "หลัง PATCH โดยส่งเพียง { \"name\": \"stretch hammies\" } สำเร็จ frequency และ targetCount เดิมควรเป็นอย่างไร?",
+      "choices": [
+        "ถูกลบเพราะไม่ได้อยู่ใน Body ล่าสุด",
+        "กลับเป็นค่าเริ่มต้นของตารางเสมอ",
+        "คงค่าเดิม เพราะ Controller อัปเดตเฉพาะ Field ที่ส่งมา"
+      ],
+      "correctChoice": 3,
+      "explanation": "PATCH ในบทเรียนทำ Partial Update จึงแก้ name โดยไม่แตะ Field ที่ไม่ได้ส่งมา ส่วน updatedAt ถูกปรับโดย Prisma ตาม @updatedAt"
+    },
+    {
+      "prompt": "การทดสอบใดช่วยยืนยันว่า User B แก้ Habit ของ User A ไม่ได้?",
+      "choices": [
+        "ใช้ Token ของ User B ส่ง PATCH ไปยัง ID ของ Habit ของ User A และคาดหวัง 404",
+        "ใช้ Token ของ User A อ่าน Habit ของตัวเองและคาดหวัง 200",
+        "ไม่ส่ง Token ไปยัง Route ล็อกอินและคาดหวังให้ล็อกอินสำเร็จ"
+      ],
+      "correctChoice": 1,
+      "explanation": "การใช้ผู้ใช้คนที่สองทดสอบข้ามเจ้าของจะตรวจเงื่อนไข userId ใน Query โดยตรง โค้ดบทเรียนควรตอบ 404 และไม่แก้ข้อมูลของ User A"
+    },
+    {
+      "prompt": "พิมพ์ JSON ใน Postman แล้ว แต่ express.json() ไม่ Parse Body ตามที่คาด ควรตรวจการตั้งค่าใดก่อน?",
+      "choices": [
+        "ตั้ง Authorization เป็น JWT Bearer แทน Bearer Token",
+        "เลือก Body แบบ raw และ JSON เพื่อส่ง Content-Type: application/json",
+        "เปลี่ยนทุก Field ของ Body ให้เป็น Query Parameter"
+      ],
+      "correctChoice": 2,
+      "explanation": "express.json() จะ Parse Request ที่มี Content-Type ตรงกับชนิดที่รองรับ การเลือก raw และ JSON ใน Postman ช่วยให้ส่ง Header และ Body สำหรับ JSON ได้ถูกต้อง"
+    },
+    {
+      "prompt": "ฟังก์ชันใดมีรูปแบบอาร์กิวเมนต์ที่ Express ใช้ระบุ Error-handling Middleware?",
+      "choices": [
+        "(req, res, next) => {}",
+        "(err, req, res) => {}",
+        "(err, req, res, next) => {}"
+      ],
+      "correctChoice": 3,
+      "explanation": "Error Handler ต้องมีอาร์กิวเมนต์สี่ตัว โดย err อยู่ตัวแรก แม้ไม่ได้ใช้ next ก็ต้องคงไว้เพื่อให้ Express จำแนกฟังก์ชันเป็น Error Handler"
+    },
+    {
+      "prompt": "เมื่อ Middleware เรียก next(new Error(\"failed\")) Express จะทำอะไรต่อ?",
+      "choices": [
+        "ข้าม Middleware ปกติที่เหลือแล้วส่ง Error ไปยัง Error Handler ถัดไปในลำดับ",
+        "กลับไปเริ่ม Request ใหม่ตั้งแต่ Middleware ตัวแรก",
+        "เรียก Controller ทุกตัวก่อนส่ง Error กลับ Client"
+      ],
+      "correctChoice": 1,
+      "explanation": "next(err) เปลี่ยนเข้าสู่เส้นทางจัดการ Error และข้าม Handler ปกติ ส่วน Error Handler ที่รับต่อสามารถส่งต่อ Error ด้วย next(err) ได้อีก"
+    },
+    {
+      "prompt": "ควรลงทะเบียน Route, notFound และ errorHandler ตามลำดับใด?",
+      "choices": [
+        "errorHandler → notFound → Route",
+        "Route → notFound → errorHandler",
+        "notFound → Route → errorHandler"
+      ],
+      "correctChoice": 2,
+      "explanation": "ให้ Route มีโอกาสรับ Request ก่อน หากไม่มี Route จบ Response จึงถึง notFound ที่สร้าง Error 404 แล้วส่งให้ errorHandler จัดรูปแบบคำตอบ"
+    },
+    {
+      "prompt": "จากเงื่อนไขนี้ Field ใดจะถูกเพิ่มใน Response เฉพาะเมื่อ APP_STAGE เป็น dev?",
+      "body": "<pre><code>res.status(status).json({\n  error: message,\n  ...(env.APP_STAGE === 'dev' &amp;&amp; {\n    stack: err.stack,\n    details: err.message,\n  }),\n})</code></pre>",
+      "choices": [
+        "error เท่านั้น",
+        "status และ user",
+        "stack และ details"
+      ],
+      "correctChoice": 3,
+      "explanation": "Conditional Spread เพิ่ม stack และ details เฉพาะเมื่อเงื่อนไขเป็นจริง ส่วน error มีอยู่เสมอ วิธีนี้ช่วยไม่ส่ง Stack Trace ออกไปใน Production"
+    },
+    {
+      "prompt": "ใน Express 5 กรณีใดถูกส่งไปยัง Error Handler โดยอัตโนมัติเมื่อ Handler คืน Promise ที่ Reject?",
+      "choices": [
+        "Async Route Handler โยน Error ภายในงานที่อยู่ใน Promise ที่คืนให้ Express",
+        "Callback ของ setTimeout โยน Error หลัง Handler จบแล้วโดยไม่ส่งต่อ",
+        "Promise ที่ถูกสร้างแล้วปล่อยทิ้งโดยไม่ await หรือ return"
+      ],
+      "correctChoice": 1,
+      "explanation": "Express 5 จัดการการ Reject ของ Promise ที่ Handler หรือ Middleware คืนมาได้ แต่งานที่แยกออกไปอย่าง Callback หรือ Promise ที่ไม่ได้เชื่อมกับ Handler ต้องจัดการ Error เอง"
+    },
+    {
+      "prompt": "เหตุใดการทดสอบในบทเรียนจึงต้องใช้ฐานข้อมูลแยกและโหลดค่าจาก .env.test?",
+      "choices": [
+        "เพื่อให้ Test ข้ามการตรวจ Foreign Key ทั้งหมด",
+        "เพราะ Setup และ Cleanup ล้างข้อมูล จึงต้องแยกจากข้อมูลพัฒนาและ Production",
+        "เพราะ Vitest อ่านฐานข้อมูลที่มีข้อมูลอยู่แล้วไม่ได้"
+      ],
+      "correctChoice": 2,
+      "explanation": "Global Setup ใช้ db push --force-reset และมี Cleanup ลบข้อมูล การแยกฐานข้อมูลจึงป้องกันไม่ให้กระบวนการทดสอบล้างข้อมูลที่ใช้งานจริงหรือข้อมูลพัฒนา"
+    },
+    {
+      "prompt": "fileParallelism: false ใน vitest.config.ts ของบทเรียนมีจุดประสงค์ใด?",
+      "choices": [
+        "บังคับให้ทุก Test ใช้ Mock Database",
+        "ปิดการรันไฟล์ TypeScript ทั้งหมด",
+        "ให้รันไฟล์ Test ทีละไฟล์เพื่อลดการชนกันของข้อมูลในฐานข้อมูลร่วม"
+      ],
+      "correctChoice": 3,
+      "explanation": "หากหลายไฟล์สร้างหรือล้างข้อมูลพร้อมกันในฐานข้อมูลเดียว Test อาจรบกวนกันได้ การปิด File Parallelism ลดปัญหานี้ แต่ยังต้องออกแบบแต่ละ Test ให้เป็นอิสระ"
+    },
+    {
+      "prompt": "ใน Global Setup ฟังก์ชัน async ที่ return ออกมามีไว้ทำอะไร?",
+      "choices": [
+        "เป็น Teardown ที่ Vitest เรียกหลัง Test ทั้งหมดจบเพื่อเก็บกวาดฐานข้อมูล",
+        "เป็น Test ตัวแรกที่ Vitest เรียกก่อน Test อื่นทุกครั้ง",
+        "เป็น Controller สำหรับ Route สมัครสมาชิกระหว่าง Test"
+      ],
+      "correctChoice": 1,
+      "explanation": "ฟังก์ชัน Setup เตรียมฐานข้อมูลก่อนเริ่มชุดทดสอบ ส่วนฟังก์ชันที่คืนออกมาถูกใช้เป็น Teardown หลังจบชุดทดสอบ ไม่ใช่ afterEach ของ Test แต่ละตัว"
+    },
+    {
+      "prompt": "เหตุใด createTestUser จึงเก็บ Password แบบ Hash ในฐานข้อมูล แต่คืน rawPassword ให้ Test ด้วย?",
+      "choices": [
+        "เพื่อให้ Test เปลี่ยน Hash กลับเป็นข้อความดิบโดยไม่ใช้ bcrypt",
+        "เพื่อให้ข้อมูลในฐานข้อมูลเหมือนระบบจริง และให้ Test ล็อกอินด้วยรหัสผ่านดิบแบบ Client",
+        "เพื่อใช้ rawPassword แทน JWT_SECRET ตอนตรวจ Token"
+      ],
+      "correctChoice": 2,
+      "explanation": "การล็อกอินต้องส่งรหัสผ่านดิบให้ Controller เปรียบเทียบกับ Hash ที่เก็บไว้ Helper จึงเตรียมทั้งข้อมูลในฐานข้อมูลและค่าที่ Test ใช้ส่ง Request"
+    },
+    {
+      "prompt": "คำสั่ง cross-env APP_STAGE=test vitest run ช่วยให้โค้ดของแอปใช้ฐานข้อมูลทดสอบได้อย่างไร?",
+      "choices": [
+        "Vitest เปลี่ยนชื่อฐานข้อมูลใน Connection String ทุกตัวให้อัตโนมัติ",
+        "cross-env สร้าง .env.test จาก .env แล้วลบฐานข้อมูลเดิม",
+        "ตั้ง APP_STAGE ก่อนเริ่ม Test เพื่อให้ env.ts เลือกโหลด .env.test"
+      ],
+      "correctChoice": 3,
+      "explanation": "env.ts ของโปรเจกต์เลือกไฟล์ Environment ตาม APP_STAGE การตั้งค่าก่อนรัน Test ทำให้โค้ดเชื่อมต่อฐานข้อมูลใช้ค่าทดสอบ และ Process ลูกสืบทอด Environment นี้ได้"
+    },
+    {
+      "prompt": "เหตุใดการแยก Express App ใน server.ts ออกจากการ listen ใน index.ts จึงช่วยเขียน Integration Test ด้วย SuperTest?",
+      "choices": [
+        "Test Import app แล้วส่งให้ request(app) ได้ โดยไม่ต้องรัน index.ts เพื่อเปิด Server เอง",
+        "Test จะข้าม Middleware ทั้งหมดเมื่อ Import server.ts",
+        "ทำให้ทุก Query ถูกเปลี่ยนเป็น Mock โดยอัตโนมัติ"
+      ],
+      "correctChoice": 1,
+      "explanation": "การประกอบ App แยกจากจุดเริ่ม Server ทำให้ SuperTest รับ App ไปจัดการ Request สำหรับทดสอบได้ โดยยังผ่าน Route, Middleware และ Controller ของแอป"
+    },
+    {
+      "prompt": "โค้ด SuperTest นี้ส่งข้อมูลและตรวจอะไร?",
+      "body": "<pre><code>const response = await request(app)\n  .post('/api/auth/register')\n  .send(userData)\n  .expect(201)</code></pre>",
+      "choices": [
+        "ส่ง GET โดยใช้ userData เป็น Query และตรวจว่ามี User 201 คน",
+        "ส่ง POST พร้อม Body เป็น userData และตรวจ HTTP Status ว่าเป็น 201",
+        "ส่ง POST แล้วตั้งค่าให้ Server ตอบ 201 แม้ Controller จะตอบอย่างอื่น"
+      ],
+      "correctChoice": 2,
+      "explanation": "post กำหนด Method และ Path, send ส่ง Body และ expect(201) เป็น Assertion ตรวจ Status หาก Response ตอบค่าอื่น Test จะล้มเหลว"
+    },
+    {
+      "prompt": "Assertion ใดตรวจว่า Response สมัครสมาชิกในกรณีที่ทดสอบไม่เปิดเผย Field password ของ User?",
+      "choices": [
+        "expect(response.body.user).toHaveProperty(\"password\")",
+        "expect(response.body).toHaveProperty(\"token\")",
+        "expect(response.body.user).not.toHaveProperty(\"password\")"
+      ],
+      "correctChoice": 3,
+      "explanation": "การตรวจว่าไม่มี Property password ยืนยันพฤติกรรมที่ต้องการใน Response ของกรณีทดสอบนี้ได้โดยตรง ส่วนการมี Token ไม่ได้พิสูจน์ว่าไม่มี Password หลุดมาด้วย"
+    },
+    {
+      "prompt": "afterEach(async () => { await cleanupDatabase() }) ทำงานเมื่อใด?",
+      "choices": [
+        "หลัง Test แต่ละตัวจบ เพื่อเก็บกวาดข้อมูลก่อน Test ถัดไป",
+        "หลัง expect แต่ละบรรทัด แม้อยู่ใน Test เดียวกัน",
+        "ครั้งเดียวก่อนเริ่ม Test ทั้งหมด"
+      ],
+      "correctChoice": 1,
+      "explanation": "afterEach เป็น Hook ที่รันหลัง Test แต่ละตัว ไม่ได้รันหลัง Assertion ทุกบรรทัด การ await Cleanup ช่วยไม่ให้ Test ถัดไปเริ่มขณะยังล้างข้อมูลไม่เสร็จ"
+    },
+    {
+      "prompt": "ชุดทดสอบใดครอบคลุมทั้งกรณีสร้าง Habit สำเร็จและการป้องกันผู้ที่ยังไม่ยืนยันตัวตน?",
+      "choices": [
+        "ส่งข้อมูลถูกต้องสองครั้งด้วย Token เดียวกันและคาดหวัง 201 ทั้งคู่",
+        "ส่งข้อมูลถูกต้องพร้อม Bearer Token แล้วคาดหวัง 201 และส่งโดยไม่มี Token แล้วคาดหวัง 401",
+        "ส่งข้อมูลถูกต้องโดยไม่มี Token แล้วคาดหวัง 201 จากนั้นตรวจว่ามี Field habit"
+      ],
+      "correctChoice": 2,
+      "explanation": "ควรตรวจทั้ง Happy Path และทางปฏิเสธ Request การทดสอบโดยไม่แนบ Token ช่วยยืนยันว่า authenticateToken ยังป้องกัน Route อยู่จริง"
+    }
+  ]
+}
