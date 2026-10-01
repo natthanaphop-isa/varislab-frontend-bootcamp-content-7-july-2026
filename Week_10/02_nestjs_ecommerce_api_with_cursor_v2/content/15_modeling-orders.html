@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เพิ่ม model Order และ OrderItem ใน Prisma พร้อมเก็บ snapshot ราคาสินค้า แล้วสร้าง DTO สามชั้นด้วย class-validator ให้ ValidationPipe ตรวจ body ของ POST /carts/add ได้ถึงระดับ nested object และ array" />
+  <title>ออกแบบ Model และ DTO ของคำสั่งซื้อ</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>ออกแบบ Model และ DTO ของคำสั่งซื้อ</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อ่าน body ที่ React app ส่งมาตอน checkout แล้วแปลงเป็นตาราง <code>Order</code> และ <code>OrderItem</code> ได้</li>
+        <li>อธิบายได้ว่าทำไม <code>OrderItem</code> ต้องคัดลอก <code>title</code>, <code>price</code>, <code>discountPercentage</code>, <code>thumbnail</code> เก็บไว้เอง</li>
+        <li>เลือกใส่ <code>onDelete: Cascade</code> ให้ถูกฝั่ง และบอกได้ว่าทำไม seed ต้องเปลี่ยนลำดับการลบข้อมูล</li>
+        <li>เขียน DTO ที่มี object และ array ซ้อนอยู่ข้างใน ให้ <code>ValidationPipe</code> ตรวจได้จริงทุกชั้น และอธิบายได้ว่าทำไม nested object ต้องมีทั้ง <code>@ValidateNested()</code> และ <code>@Type(() =&gt; Class)</code></li>
+        <li>เทียบ zod schema ฝั่ง React กับ DTO ฝั่ง API และบอกได้ว่าทำไมต้องตรวจซ้ำทั้งสองฝั่ง</li>
+      </ul>
+    </section>
+
+    <div class="note"><p>บทนี้มี prompt <strong>สองอันในสองแชท</strong>: อันแรกออกแบบตารางที่เก็บคำสั่งซื้อไว้ในฐานข้อมูล อันที่สองออกแบบ DTO ที่ตรวจ body ตอนคำสั่งซื้อเดินทางเข้ามา — รูปทรงเดียวกันคนละด้านของแอป และทั้งคู่ต้องเสร็จก่อนจะเปิด route <code>POST /carts/add</code> ได้ในบทถัดไป</p></div>
+
+    <h2>สองฝั่งของคำสั่งซื้อ: body ที่รับ กับ response ที่ต้องคืน</h2>
+    <p>ถึงตอนนี้ API ของเราอ่านสินค้าได้ครบแล้ว จากนี้ไปจะเพิ่มฝั่ง <strong>เขียน</strong> ตัวเดียวที่ React app ต้องใช้ คือตอนกดสั่งซื้อ ก่อนออกแบบตารางต้องรู้สองอย่างให้แน่ชัด: client ส่งอะไรมา และ client คาดหวัง response หน้าตาแบบไหน</p>
+    <p>ฝั่งที่ส่งมาคือ hook <code>useCheckout</code> ของ React app มันประกอบ body จากตะกร้าแบบนี้เสมอ (<code>userId</code> ยังเป็นค่าคงที่ <code>1</code> เพราะแอปตัวอย่างยังไม่มีระบบ login)</p>
+    <pre><code>{
+  "userId": 1,
+  "products": [{ "id": 1, "quantity": 2 }],
+  "address": {
+    "address": "1 Sukhumvit Rd",
+    "email": "a@b.com",
+    "phone": "0812345678"
+  }
+}</code></pre>
+    <p>ฝั่งที่ต้องคืนคือ response shape ที่เรา<strong>ออกแบบเอง</strong> ไว้ใน <code>docs/api-spec.md</code> ส่วน order receipt — client ของจริง (<code>PlaceOrderResponse</code>) อ่านแค่ <code>{ id }</code> แล้วทิ้งที่เหลือ แต่ endpoint ที่คืนแค่ id เดียวใช้ตรวจสอบอะไรไม่ได้เลย เราจึงออกแบบใบเสร็จเต็มรูปแบบ ตัวอย่างสั่งซื้อสินค้า id 1 (<code>Velvet Matte Lipstick</code> ราคา <code>9.99</code> ส่วนลด <code>10.48%</code>) จำนวน 2 ชิ้น — <code>id</code> ของ order เริ่มนับจาก 1 เองเพราะเป็นตารางคนละใบกับ <code>Product</code></p>
+    <pre><code>{"id":1,"userId":1,"products":[{"id":1,"title":"Velvet Matte Lipstick","price":9.99,"quantity":2,"total":19.98,"discountPercentage":10.48,"discountedPrice":17.89,"thumbnail":"https://picsum.photos/seed/product-1-thumb/300/300"}],"total":19.98,"discountedTotal":17.89,"totalProducts":1,"totalQuantity":2}</code></pre>
+    <p><code>discountedPrice</code> ได้ <code>17.89</code> เพราะ <code>19.98 × (1 − 10.48/100)</code> ปัดสองตำแหน่ง (สูตรและตัวอย่างแบบทีละขั้นอยู่ในขั้นคิดเงินถัดไป) สังเกตความไม่สมมาตรสองจุด: <code>address</code> ที่ส่งไปไม่ถูกส่งกลับมาใน response เลย และ <code>products[]</code> ที่กลับมามี field มากกว่าที่ส่งไปเยอะ (<code>title</code>, <code>price</code>, <code>total</code>, <code>discountPercentage</code>, <code>discountedPrice</code>, <code>thumbnail</code>) นั่นคือหน้าที่ของเรา — รับ id กับ quantity แล้วเติมข้อมูลสินค้าและยอดเงินให้ครบ</p>
+
+    <h2>Order หนึ่งใบ มีหลาย OrderItem</h2>
+    <p>คำสั่งซื้อหนึ่งใบมีสินค้าได้หลายรายการ จึงเป็นความสัมพันธ์ one-to-many ตรงตัว: <code>Order</code> เก็บสิ่งที่เป็นของ<em>ทั้งใบ</em> (<code>userId</code>, ที่อยู่จัดส่ง, ยอดรวม, เวลาที่สั่ง) และ <code>OrderItem</code> เก็บสิ่งที่เป็นของ<em>แต่ละบรรทัด</em> (สินค้าตัวไหน กี่ชิ้น ราคาเท่าไร) — pattern เดียวกับ <code>Product</code> กับ <code>Review</code> ที่ทำไว้ตอนออกแบบตารางสินค้า</p>
+    <p>ที่อยู่จัดส่ง (<code>address</code>, <code>email</code>, <code>phone</code>) เก็บไว้ที่ <code>Order</code> แม้ response จะไม่คืนออกไป เพราะข้อมูลนี้จำเป็นต่อการจัดส่ง และเป็นค่าของใบนั้นใบเดียว ไม่ใช่ของ user (user คนเดียวสั่งไปหลายที่อยู่ได้)</p>
+
+    <h2>snapshot: ใบเสร็จของเมื่อวานต้องไม่เปลี่ยนเพราะราคาของวันนี้</h2>
+    <p>จุดตัดสินใจสำคัญที่สุดของบทนี้: <code>OrderItem</code> มี <code>productId</code> อยู่แล้ว ทำไมยังต้องเก็บ <code>title</code>, <code>price</code>, <code>discountPercentage</code>, <code>thumbnail</code> ซ้ำอีก ทั้งที่ join กลับไปที่ <code>Product</code> ก็อ่านได้</p>
+    <p>เพราะ <code>Product</code> เปลี่ยนได้ พรุ่งนี้ร้านลดราคาจาก 9.99 เป็น 7.99 หรือเปลี่ยนชื่อสินค้า ถ้าใบเสร็จอ่านราคาจากตาราง <code>Product</code> ทุกครั้ง ใบเสร็จของเมื่อวานจะเปลี่ยนตัวเลขตามไปด้วย — ลูกค้าจ่ายไป 19.98 แต่ประวัติกลับโชว์ 15.98 นี่คือบั๊กทางบัญชี ไม่ใช่เรื่องความสวยงามของ schema</p>
+    <p>เราจึง <strong>คัดลอก</strong> ค่าที่ใช้คิดเงินลงมาเก็บใน <code>OrderItem</code> ตอนสั่งซื้อ (เรียกว่า snapshot หรือ denormalization ที่ตั้งใจทำ) ส่วน <code>productId</code> ยังเก็บไว้เพื่อให้ลิงก์กลับไปหน้าสินค้าได้ แต่ตัวเลขบนใบเสร็จไม่พึ่งมันแล้ว ด้วยเหตุผลเดียวกัน <code>total</code>, <code>discountedTotal</code>, <code>totalProducts</code>, <code>totalQuantity</code> ก็ถูกเก็บเป็น column ไม่ใช่คำนวณใหม่ตอนอ่าน</p>
+
+    <h2>ลบอะไรได้ ลบอะไรไม่ได้</h2>
+    <p>สองความสัมพันธ์ของ <code>OrderItem</code> ต้องตั้ง <code>onDelete</code> ต่างกัน และนี่คือจุดที่ AI มักทำเหมือนกันทั้งคู่</p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ onDelete ของสองความสัมพันธ์" tabindex="0">
+      <table>
+        <thead><tr><th>ความสัมพันธ์</th><th>onDelete</th><th>เหตุผล</th></tr></thead>
+        <tbody>
+          <tr><td><code>OrderItem</code> → <code>Order</code></td><td><code>Cascade</code></td><td>รายการสินค้าไม่มีความหมายถ้าไม่มีใบคำสั่งซื้อ ลบใบทิ้ง รายการต้องหายตามไปด้วย</td></tr>
+          <tr><td><code>OrderItem</code> → <code>Product</code></td><td>ค่า default (<code>Restrict</code>)</td><td>ห้ามลบสินค้าที่ยังมีคำสั่งซื้ออ้างถึง ไม่งั้นเราจะทำใบเสร็จหายเพราะลบสินค้าตัวเดียว</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ผลข้างเคียงตามมาทันทีที่ <code>prisma/seed.ts</code> ปัจจุบัน seed ลบข้อมูลตามลำดับ <code>review</code> → <code>product</code> → <code>category</code> ใน transaction พอมี <code>OrderItem</code> อ้างถึง <code>Product</code> แบบ <code>Restrict</code> คำสั่ง <code>tx.product.deleteMany()</code> จะพังทันทีถ้ายังมีคำสั่งซื้อค้างอยู่ในฐานข้อมูล จึงต้องลบ <code>orderItem</code> และ <code>order</code> ขึ้นไปเป็นสองบรรทัดแรกของ transaction</p>
+    <div class="note"><p>ลำดับต้องเป็น <code>orderItem</code> ก่อน <code>order</code> เสมอ ไม่ใช่เพราะ Cascade ใช้ไม่ได้ (ใช้ได้) แต่เพราะการเขียนลำดับลูกก่อนแม่ให้ชัดเจนทำให้อ่าน seed แล้วเห็น dependency graph ทันที และไม่ต้องพึ่งพฤติกรรมของ FK</p></div>
+
+    <p>ตารางพร้อมรับข้อมูลแล้ว ทีนี้ถึงคิวประตูทางเข้า: body ที่ React app ส่งมาต้องถูกตรวจให้ครบทุกชั้นก่อน ไม่ใช่ปล่อยให้เดินเข้าไปถึงตารางที่เพิ่งออกแบบเสร็จ</p>
+
+    <h2>ทวนของเดิม: DTO + whitelist</h2>
+    <p>คอร์ส NestJS Fundamentals วางกติกาไว้แล้วว่า body ที่เข้ามาต้องผ่าน DTO ที่เป็น <strong>class</strong> ไม่ใช่ <code>interface</code> เพราะ decorator ของ class-validator ต้องเกาะอยู่กับ metadata ของ class จริงตอน runtime ส่วน <code>interface</code> หายไปหมดตอน compile และตั้งแต่ตอนทำ pagination <code>src/main.ts</code> ก็เปิด <code>ValidationPipe</code> แบบ global ไว้แล้ว</p>
+    <pre><code>app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+    transformOptions: { enableImplicitConversion: true },
+  }),
+);</code></pre>
+    <p>สามตัวเลือกนี้มีผลกับบทนี้ตรง ๆ: <code>whitelist: true</code> ตัด field ที่ไม่มี decorator ออกจาก body ทิ้งเงียบ ๆ (client แนบ <code>isAdmin: true</code> มาก็ไม่มีทางไหลเข้า service), <code>transform: true</code> สั่งให้ pipe แปลง body ดิบเป็น instance ของ DTO และ <code>enableImplicitConversion</code> แปลง string เป็น number ตามชนิดที่ประกาศไว้ให้ — สะดวกกับ query string ของ pagination แต่ body ของบทนี้เป็น JSON ที่มีชนิดข้อมูลมาถูกต้องแล้ว</p>
+
+    <h2>nested object ไม่ถูกตรวจเอง</h2>
+    <p>กับดักใหญ่ที่สุดของ DTO ซ้อนชั้นคือ: <code>class-validator</code> ตรวจได้เฉพาะ <strong>instance ของ class</strong> เท่านั้น แต่ <code>JSON.parse</code> คืน plain object ธรรมดาที่ไม่มี constructor ผูกอยู่ ดังนั้นถึงเราประกาศชนิดว่า <code>address: AddressDto</code> ตัว pipe ก็ยังไม่รู้ว่าจะต้องเอา rule ของ class ไหนไปตรวจ object ก้อนนั้น เพราะ type annotation ของ TypeScript หายไปตอน compile</p>
+    <p>จึงต้องใช้สอง decorator คู่กัน</p>
+    <div class="comparison" role="region" aria-label="หน้าที่ของ decorator สำหรับ nested DTO" tabindex="0">
+      <table>
+        <thead><tr><th>Decorator</th><th>มาจาก</th><th>ทำอะไร</th></tr></thead>
+        <tbody>
+          <tr><td><code>@Type(() =&gt; AddressDto)</code></td><td><code>class-transformer</code></td><td>บอกว่าจะ <em>สร้าง</em> ก้อน JSON นี้เป็น instance ของ class ไหน ถ้าไม่มีบรรทัดนี้ object จะยังเป็น plain object</td></tr>
+          <tr><td><code>@ValidateNested()</code></td><td><code>class-validator</code></td><td>บอกว่าให้ไล่ตรวจ rule ข้าง<em>ใน</em> instance นั้นต่อ ไม่ใช่ตรวจแค่ว่ามี field นี้</td></tr>
+          <tr><td><code>@ValidateNested({ each: true })</code></td><td><code>class-validator</code></td><td>รูปแบบสำหรับ array — ไล่ตรวจทุกสมาชิก ไม่ใช่ตรวจตัว array เป็นก้อนเดียว</td></tr>
+          <tr><td><code>@ArrayMinSize(1)</code></td><td><code>class-validator</code></td><td>ตะกร้าว่างต้องไม่กลายเป็นคำสั่งซื้อ — <code>products: []</code> ต้องได้ 400 ไม่ใช่ order ยอด 0 บาท</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning"><p>ถ้าลืม <code>@Type(() =&gt; AddressDto)</code> จะไม่มี error อะไรเลย แต่ validation ของ <code>address</code> จะ<strong>ผ่านทุกอย่าง</strong> — ส่ง <code>{"address": {}}</code> ก็ผ่าน นี่คือความพลาดที่อันตรายที่สุดในบทนี้ เพราะเงียบสนิทจนกว่าจะมีข้อมูลเสียลงฐานข้อมูล</p></div>
+    <p>เราเรียง class เล็กไปใหญ่เพื่ออ่านง่าย: <code>CartProductDto</code> → <code>AddressDto</code> → <code>AddCartDto</code> — arrow function ใน <code>@Type(() =&gt; CartProductDto)</code> ถูกเรียกตอน class-transformer แปลง payload จริง (คือตอนมี request เข้ามา) ไม่ใช่ตอนประกาศ class จึงไม่ผูกกับลำดับการประกาศ นั่นคือเหตุผลที่ <code>@Type</code> รับ function ไม่ใช่รับ class ตรง ๆ</p>
+
+    <h2>ตรวจสองฝั่งไม่ใช่ความซ้ำซ้อน</h2>
+    <p>ฝั่ง React app ตรวจ address ด้วย zod อยู่แล้ว (<code>src/features/checkout/schema.ts</code>)</p>
+    <pre><code>export const checkoutAddressSchema = z.object({
+  address: z.string().min(1, "Address is required"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .pipe(z.email("Enter a valid email address")),
+  phone: z.string().min(1, "Phone number is required"),
+});</code></pre>
+    <p>DTO ของเราจะสะท้อนกฎเดียวกันทีละข้อ: <code>address</code> ไม่ว่าง → <code>@IsString() @IsNotEmpty()</code>, <code>email</code> ต้องเป็นอีเมล → <code>@IsEmail()</code>, <code>phone</code> ไม่ว่าง → <code>@IsString() @IsNotEmpty()</code> ที่ต้องตรวจซ้ำเพราะ validation ฝั่ง client เป็นเรื่องของ <em>ประสบการณ์ผู้ใช้</em> ไม่ใช่ความปลอดภัย — ใครก็ยิง <code>curl</code> ตรงเข้า API ข้าม React ไปได้ กฎง่าย ๆ คือข้อมูลจากภายนอกไม่เชื่อถือได้เลย จนกว่า API จะตรวจเอง</p>
+    <p>รูปแบบ error ที่ตอบออกไปเป็นมาตรฐานของ Nest: <code>message</code> เป็น array ของทุกข้อที่ผิดพร้อมกัน ไม่ใช่ string เดี่ยว — <code>ApiError</code> ของ React app อ่านค่าจาก <code>data.message</code> ได้อยู่แล้วไม่ว่าจะเป็น string หรือ array และการบอกครบทุกข้อในรอบเดียวมีประโยชน์กับคนใช้ API มากกว่าการต้องยิงซ้ำทีละข้อ</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <p>รายการด้านล่างคือไฟล์ที่เปลี่ยนใน<strong>โค้ดอ้างอิงของคอร์ส</strong> — ใช้เป็นแผนที่ตอนเทียบงาน ไม่ใช่ข้อบังคับ Cursor ของคุณอาจวางไฟล์หรือตั้งชื่อต่างไปได้ ขอแค่ผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
+    <pre><code>ecommerce-api/
+├── prisma/
+│   ├── schema.prisma          (แก้ไข: เพิ่ม model Order, OrderItem และ relation ฝั่ง Product)
+│   └── seed.ts                (แก้ไข: ลบ orderItem และ order ก่อนลบ review)
+└── src/
+    └── orders/
+        └── dto/
+            └── add-cart.dto.ts   (สร้างใหม่)</code></pre>
+    <ul>
+      <li><strong><code>prisma/schema.prisma</code></strong> — ในโค้ดอ้างอิง: มี <code>model Order</code> และ <code>model OrderItem</code> ครบ field ตาม order receipt ใน <code>docs/api-spec.md</code> บวกที่อยู่จัดส่ง, มี <code>orderItems OrderItem[]</code> ฝั่ง <code>Product</code>, มี <code>@@index([orderId])</code> และ <code>@@index([productId])</code> · ไม่แตะ model <code>Category</code>, <code>Review</code> หรือ field เดิมของ <code>Product</code></li>
+      <li><strong><code>prisma/seed.ts</code></strong> — ในโค้ดอ้างอิง: เพิ่ม <code>tx.orderItem.deleteMany()</code> แล้ว <code>tx.order.deleteMany()</code> ก่อน <code>tx.review.deleteMany()</code> · ไม่แก้ส่วน fetch, ส่วน createMany หรือข้อความ log</li>
+      <li><strong><code>src/orders/dto/add-cart.dto.ts</code></strong> — ในโค้ดอ้างอิง: <code>export</code> class สามตัวในไฟล์เดียว เรียง <code>CartProductDto</code> → <code>AddressDto</code> → <code>AddCartDto</code>, ทุก field มี decorator, <code>products</code> มีทั้ง <code>@IsArray()</code>, <code>@ArrayMinSize(1)</code>, <code>@ValidateNested({ each: true })</code> และ <code>@Type()</code> · ไม่มี field ที่เป็น optional, ไม่มีค่า default, ไม่ติดตั้ง package ใหม่ (class-validator และ class-transformer ติดตั้งไว้แล้วตั้งแต่ตอนเปิด <code>ValidationPipe</code>)</li>
+      <li>ยังไม่มี service, controller หรือ module ของคำสั่งซื้อในบทนี้ — DTO ตัวนี้จะถูกใช้ครั้งแรกในบทถัดไปตอนคิดเงิน แล้วจึงถูกผูกเข้ากับ route <code>POST /carts/add</code></li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="schema-heading">
+      <h2 id="schema-heading">สั่ง Cursor เพิ่มสอง model แล้วรัน migration ด้วยมือ</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent — commit ไว้เพื่อให้เทียบ diff ของ AI ได้ทีละบรรทัด และแชทใหม่ทำให้ context ไม่ปนกับบทก่อน (<code>git add -A &amp;&amp; git commit -m "chore: before order schema"</code>) จากนั้นส่ง prompt นี้ทั้งก้อน</p>
+      <p>ก่อนส่ง อ่าน<a href="01_what-well-be-building.html">กติกาของคอร์ส</a>อีกครั้ง: AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้ — ถ้าอธิบายไม่ได้ แปลว่ายังไม่ผ่านบทนี้</p>
+      <div class="cursor-prompt"><code>เพิ่ม Prisma model ชื่อ Order และ OrderItem และอัปเดต seed ให้ล้างคำสั่งซื้อก่อนล้างสินค้า
+@prisma/schema.prisma @prisma/seed.ts (ชื่อไฟล์ตามโค้ดอ้างอิง ถ้า seed ของคุณอยู่คนละที่ ให้ @ ไฟล์ seed ที่คุณมีจริง)
+
+ผลลัพธ์ที่ต้องได้:
+- หลังผมรัน npx prisma migrate dev --name add-orders ฐานข้อมูลมีตารางใหม่ Order และ OrderItem (\dt ได้ 6 แถว) โดย migration ไม่ถามยืนยันและไม่ทำข้อมูลเดิมหาย
+- Order เก็บของทั้งใบตาม order receipt ใน docs/api-spec.md: userId, total, discountedTotal, totalProducts, totalQuantity, เวลาที่สั่ง และที่อยู่จัดส่งที่ React app ส่งมา (address, email, phone) — ใบเสร็จแก้ไม่ได้ จึงไม่มีเวลาแก้ไข
+- OrderItem เก็บของแต่ละบรรทัด: สินค้าตัวไหน, quantity, total, discountedPrice และ snapshot ของ title, thumbnail, price, discountPercentage ณ ตอนสั่ง เพราะสินค้าอาจเปลี่ยนราคาภายหลัง (discountPercentage ว่างได้ ฟิลด์อื่นห้ามว่าง)
+- ลบ Order → OrderItem ของใบนั้นหายตามไปด้วย แต่ลบ Product ที่ยังมี OrderItem อ้างถึง → ฐานข้อมูลปฏิเสธ (ใน migration.sql: orderId เป็น ON DELETE CASCADE ส่วน productId เป็น ON DELETE RESTRICT)
+- ค้นรายการตาม order และตามสินค้าได้เร็ว (มี index ของทั้งสองคอลัมน์)
+- npm run db:seed ยังได้ Seeded 24 categories, 208 products, 624 reviews เท่าเดิม และรันซ้ำได้แม้มีคำสั่งซื้อค้างอยู่ในฐานข้อมูล
+- model Category, Review และ field เดิมของ Product ไม่เปลี่ยน, ไม่มีไฟล์ใน src/ ถูกแก้ และ npm run build ผ่าน
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามรัน migrate หรือ generate ให้ผมรันเอง
+- ยังไม่ต้องสร้าง DTO, service หรือ controller ของคำสั่งซื้อ — DTO เป็น prompt แยกในแชทถัดไป</code></div>
+      <p>prompt สั่งห้าม AI รัน migrate หรือ generate เอง เพราะสองคำสั่งนี้แก้ฐานข้อมูลจริงและสร้างไฟล์ migration ที่ commit ลง repo — เราต้องอ่าน schema ที่ AI เขียนให้จบก่อน แล้วจึงรันสามคำสั่งนี้ด้วยมือตามลำดับ</p>
+      <div class="prompt-example"><code>npx prisma migrate dev --name add-orders
+npx prisma generate
+npm run db:seed</code></div>
+      <div class="note"><p><code>prisma migrate dev</code> ของ Prisma 7 ไม่รัน <code>generate</code> ให้อัตโนมัติ ถ้าข้ามคำสั่งที่สอง <code>tx.orderItem</code> และ <code>tx.order</code> จะยังไม่มีใน Prisma Client และ seed จะพังด้วย type error</p></div>
+    </section>
+
+    <section class="review" aria-labelledby="schema-review-heading">
+      <h2 id="schema-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li><code>Order</code> เก็บครบทุกค่าของทั้งใบ (userId, ที่อยู่จัดส่งสามค่า, ยอดรวมสี่ค่า, เวลาที่สั่ง) และ<strong>ไม่มี</strong>เวลาแก้ไข — ใบเสร็จไม่ถูกแก้</li>
+        <li><code>OrderItem</code> เก็บ snapshot ครบสี่ค่า (title, thumbnail, price, discountPercentage) บวก quantity, total, discountedPrice — ไม่ได้อ่านราคาย้อนกลับจาก <code>Product</code></li>
+        <li><code>migration.sql</code> ที่สร้างขึ้น: FK ฝั่ง order เป็น <code>ON DELETE CASCADE</code> ส่วนฝั่ง product เป็น <code>ON DELETE RESTRICT</code> และมี index ของทั้งสองคอลัมน์</li>
+        <li>field เดิมของ <code>Product</code>, <code>Category</code>, <code>Review</code> ไม่เปลี่ยน (<code>git diff prisma/schema.prisma</code> เห็นแค่บรรทัดที่เพิ่ม)</li>
+        <li>seed ล้างคำสั่งซื้อ<strong>ก่อน</strong>ล้างสินค้า และอยู่ใน transaction เดียวกับการลบเดิม — ตัวเลข seed เท่าเดิม และส่วน fetch/createMany/log ไม่ถูกแก้</li>
+        <li><code>git status</code> ไม่มีไฟล์ใน <code>src/</code> และไม่มีไฟล์ที่ไม่เกี่ยวกับ schema หรือ seed ถูกแก้</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ใส่ <code>onDelete: Cascade</code> ให้ relation ฝั่ง <code>product</code> ด้วย (ลบสินค้าตัวเดียวแล้วใบเสร็จเก่าหายไปเงียบ ๆ) หรือแถม <code>@updatedAt</code> ให้ <code>Order</code> ทั้งที่ไม่มีใน requirement และผิดความหมายของใบเสร็จ อีกกรณีที่เจอบ่อยคือเอาบรรทัด <code>deleteMany</code> ไปวางไว้นอก transaction หรือวางไว้หลัง <code>tx.product.deleteMany()</code> ซึ่งพังตอนรัน</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้ (prompt ต่อ ๆ ไปจะอ้างชื่อ field เหล่านี้ ถ้าของคุณตั้งชื่อต่างไปก็ไม่เป็นไร Cursor ในขั้นนั้นจะอ่านจาก schema ของคุณเอง):</p>
+      <pre><code>// prisma/schema.prisma — ท้าย model Product (field อื่นทั้งหมดไม่เปลี่ยน)
+  categoryId           Int
+  category             Category @relation(fields: [categoryId], references: [id])
+  reviews              Review[]
+  orderItems           OrderItem[]
+
+  @@index([categoryId])
+}</code></pre>
+      <pre><code>// prisma/schema.prisma — สอง model ใหม่ต่อท้ายไฟล์
+model Order {
+  id              Int         @id @default(autoincrement())
+  userId          Int
+  address         String
+  email           String
+  phone           String
+  total           Float
+  discountedTotal Float
+  totalProducts   Int
+  totalQuantity   Int
+  createdAt       DateTime    @default(now())
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id                 Int     @id @default(autoincrement())
+  orderId            Int
+  order              Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId          Int
+  product            Product @relation(fields: [productId], references: [id])
+  title              String
+  thumbnail          String
+  price              Float
+  discountPercentage Float?
+  quantity           Int
+  total              Float
+  discountedPrice    Float
+
+  @@index([orderId])
+  @@index([productId])
+}</code></pre>
+      <pre><code>// prisma/seed.ts — ใน transaction ของ main()
+  await prisma.$transaction(async (tx) =&gt; {
+    await tx.orderItem.deleteMany();
+    await tx.order.deleteMany();
+    await tx.review.deleteMany();
+    await tx.product.deleteMany();
+    await tx.category.deleteMany();</code></pre>
+      <p>ถ้าอธิบาย field ไหนใน schema ไม่ได้ ยังไปต่อไม่ได้ — กลับไปอ่านส่วน snapshot กับส่วน <code>onDelete</code> ก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="schema-result-heading">
+      <h2 id="schema-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>npx prisma migrate dev --name add-orders</code> สร้าง migration ใหม่และ apply ให้เลย โดย<strong>ไม่</strong>ถามยืนยันอะไร เพราะการเพิ่ม table ใหม่ไม่ทำข้อมูลเดิมหาย</p>
+      <pre><code>Loaded Prisma config from prisma7.config.ts.
+
+Prisma schema loaded from prisma/schema.prisma.
+Datasource "db": PostgreSQL database "ecommerce", schema "public" at "localhost:5432"
+
+Applying migration `20260911210450_add_orders`
+
+The following migration(s) have been created and applied from new schema changes:
+
+prisma/migrations/
+  └─ 20260911210450_add_orders/
+    └─ migration.sql
+
+Your database is now in sync with your schema.</code></pre>
+      <p>ตัวเลขนำหน้าชื่อโฟลเดอร์ migration เป็น timestamp ตอนที่คุณรัน จึงไม่ตรงกับตัวอย่างนี้ — ขอให้ชื่อลงท้ายด้วย <code>_add_orders</code> ก็ถูกแล้ว จากนั้น <code>npx prisma generate</code></p>
+      <pre><code>Loaded Prisma config from prisma7.config.ts.
+
+Prisma schema loaded from prisma/schema.prisma.
+
+✔ Generated Prisma Client (7.10.0) to ./src/generated/prisma in 22ms</code></pre>
+      <p>และ <code>npm run db:seed</code> ต้องได้ตัวเลขเท่าเดิมกับตอน seed ครั้งแรกทุกตัว — ถ้า count เปลี่ยน แปลว่า seed ถูกแก้เกินสองบรรทัด</p>
+      <pre><code>&gt; ecommerce-api@0.0.1 db:seed
+&gt; tsx prisma/seed.ts
+
+Seeded 24 categories, 208 products, 624 reviews</code></pre>
+      <p>เปิด <code>prisma/migrations/…_add_orders/migration.sql</code> ที่ Prisma สร้าง แล้วอ่านสองบรรทัดสุดท้าย นี่คือหลักฐานว่า <code>onDelete</code> ที่เขียนใน schema แปลเป็น SQL จริงตามที่ตั้งใจ: <code>orderId</code> เป็น <code>ON DELETE CASCADE</code> ส่วน <code>productId</code> เป็น <code>ON DELETE RESTRICT</code></p>
+      <pre><code>-- CreateTable
+CREATE TABLE "Order" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "address" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "total" DOUBLE PRECISION NOT NULL,
+    "discountedTotal" DOUBLE PRECISION NOT NULL,
+    "totalProducts" INTEGER NOT NULL,
+    "totalQuantity" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OrderItem" (
+    "id" SERIAL NOT NULL,
+    "orderId" INTEGER NOT NULL,
+    "productId" INTEGER NOT NULL,
+    "title" TEXT NOT NULL,
+    "thumbnail" TEXT NOT NULL,
+    "price" DOUBLE PRECISION NOT NULL,
+    "discountPercentage" DOUBLE PRECISION,
+    "quantity" INTEGER NOT NULL,
+    "total" DOUBLE PRECISION NOT NULL,
+    "discountedPrice" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
+
+-- CreateIndex
+CREATE INDEX "OrderItem_productId_idx" ON "OrderItem"("productId");
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;</code></pre>
+    </section>
+
+    <section class="workshop" aria-labelledby="dto-heading">
+      <h2 id="dto-heading">สั่ง Cursor เขียน DTO ของ POST /carts/add</h2>
+      <p>commit งานของครึ่งแรกให้เรียบร้อยก่อน — <code>git add -A &amp;&amp; git commit -m "feat: order schema"</code> โดย commit ไฟล์ migration ที่เพิ่งสร้างไปด้วย commit นี้ยังทำหน้าที่เป็นจุดตั้งต้นให้เทียบ diff ของ prompt ถัดไปได้ด้วย จากนั้น<strong>เปิดแชทใหม่</strong>ใน Cursor โหมด Agent — ไม่ต้อง <code>@</code>-mention ไฟล์ตัวอย่าง Cursor Agent อ่านสไตล์ DTO ที่มีอยู่แล้วในโปรเจกต์และการตั้งค่า <code>ValidationPipe</code> ใน <code>main.ts</code> ได้เอง</p>
+      <div class="cursor-prompt"><code>สร้าง DTO สำหรับ validate body ของ POST /carts/add ตามที่ React app ส่งมา
+
+ผลลัพธ์ที่ต้องได้ (ยังยิง curl ไม่ได้จนกว่าจะผูก route ในขั้นถัดไป — ตอนนี้ตรวจด้วย build และอ่านโค้ด):
+- body รูปนี้ผ่าน validation ครบทุกชั้น: { "userId": 1, "products": [{ "id": 1, "quantity": 2 }], "address": { "address": "...", "email": "...", "phone": "..." } }
+- ทุก field required: ขาด userId, products หรือ address ตัวใดตัวหนึ่ง → 400
+- userId, products[].id, products[].quantity ต้องเป็นจำนวนเต็มตั้งแต่ 1 ขึ้นไป — 0, ติดลบ หรือทศนิยม → 400
+- products: [] (ตะกร้าว่าง) → 400
+- ทุกสมาชิกใน products ถูกตรวจ: { "products": [{ "id": 1 }] } ที่ขาด quantity → 400
+- address ถูกตรวจข้างในตามกฎเดียวกับฟอร์มฝั่ง React (address ไม่ว่าง, email เป็นอีเมล, phone ไม่ว่าง): "address": {} → 400 และ email ผิดรูป → 400 ด้วย message ที่มีคำนำหน้า address. เช่น "address.email must be an email"
+- error 400 ใช้รูปแบบมาตรฐานของ ValidationPipe ใน Nest (message เป็น array ของทุกข้อที่ผิด) ไม่ต้องเขียนรูปแบบเอง
+- field ที่ไม่ได้ประกาศ (เช่น isAdmin) ถูกตัดทิ้ง ไม่ไหลเข้า service
+- DTO ของ body ถูก export ไว้ให้ service ที่คิดเงินและ route POST /carts/add import ไปใช้ในขั้นถัดไป
+- npm run build และ npm run lint ผ่าน
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ยังไม่ต้องสร้าง service, controller หรือ module ของ orders</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="dto-review-heading">
+      <h2 id="dto-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>body ของ request เป็น <strong>class</strong> ไม่ใช่ <code>interface</code> — ไม่งั้น <code>ValidationPipe</code> ไม่มี rule ให้ตรวจเลย</li>
+        <li><code>address</code> และสมาชิกทุกตัวของ <code>products</code> ถูกแปลงเป็น instance และถูกไล่ตรวจข้างในจริง — อ่านโค้ดแล้วชี้ได้ว่าบรรทัดไหนทำให้ <code>"address": {}</code> ได้ 400 (ถ้าชี้ไม่ได้ มักแปลว่าขาดตัวแปลงชนิดของ nested object)</li>
+        <li>ตะกร้าว่าง (<code>products: []</code>) ไม่ผ่าน</li>
+        <li><code>email</code> ถูกตรวจว่าเป็นอีเมลจริง ไม่ใช่แค่เป็น string และไม่มี regex เขียนเองมาแทนตัวตรวจของ library</li>
+        <li>ไม่มี field ไหนเป็น optional หรือมีค่า default</li>
+        <li><code>userId</code>, <code>id</code>, <code>quantity</code> ปฏิเสธ 0, ค่าติดลบ และทศนิยม</li>
+        <li><code>git status</code> ไม่มีไฟล์ที่ไม่เกี่ยวกับ DTO ตัวนี้ถูกแก้, <code>package.json</code> ไม่เปลี่ยน และไม่มี <code>any</code>, <code>as</code> หรือ <code>!</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ลืม <code>@Type(() =&gt; AddressDto)</code> ที่ field <code>address</code> เพราะมันดู "ไม่ใช่ array" จึงรู้สึกว่าไม่ต้องมี ผลคือ <code>address</code> กลายเป็น plain object ที่ validation ผ่านทุกค่า รวมถึง object ว่าง ตรวจง่าย ๆ ด้วยการนับจำนวน <code>@Type</code> ในไฟล์ว่าได้ 2 จริง อีกกรณีคือใส่ <code>@IsObject()</code> แทน <code>@ValidateNested()</code> ซึ่งตรวจแค่ว่า "เป็น object" แล้วจบ</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้ (ขั้นถัดไปอ้างชื่อ <code>AddCartDto</code> และ path <code>src/orders/dto/add-cart.dto.ts</code> ถ้าของคุณต่างไปก็ไม่เป็นไร Cursor ในขั้นนั้นจะอ่านจากโค้ดของคุณเอง):</p>
+      <pre><code>// src/orders/dto/add-cart.dto.ts
+import { Type } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsEmail,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+
+export class CartProductDto {
+  @IsInt()
+  @Min(1)
+  id: number;
+
+  @IsInt()
+  @Min(1)
+  quantity: number;
+}
+
+export class AddressDto {
+  @IsString()
+  @IsNotEmpty()
+  address: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+}
+
+export class AddCartDto {
+  @IsInt()
+  @Min(1)
+  userId: number;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() =&gt; CartProductDto)
+  products: CartProductDto[];
+
+  @ValidateNested()
+  @Type(() =&gt; AddressDto)
+  address: AddressDto;
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="dto-result-heading">
+      <h2 id="dto-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ได้ไฟล์ใหม่ไฟล์เดียวคือ <code>src/orders/dto/add-cart.dto.ts</code> และ <code>npm run build</code> ผ่านโดยไม่มี error — โฟลเดอร์ <code>src/orders/</code> ยังไม่มี module ลงทะเบียนใน <code>AppModule</code> ดังนั้นการ build จะแค่ compile ไฟล์นี้ผ่าน type check ไม่มี route ใหม่โผล่ใน log ของ <code>npm run start:dev</code> และยังไม่มีอะไรให้ <code>curl</code> ทดสอบในบทนี้</p>
+      <p>ข้อความ error ที่ DTO ชุดนี้จะผลิตออกมา จะได้เห็นของจริงตอนเปิด route <code>POST /carts/add</code> — เช่น <code>userId</code> ที่ไม่ได้ส่งมาให้ <code>{"message":["userId must not be less than 1","userId must be an integer number"],"error":"Bad Request","statusCode":400}</code> และ email ผิดรูปให้ <code>{"message":["address.email must be an email"],"error":"Bad Request","statusCode":400}</code> สังเกตคำนำหน้า <code>address.</code> — นั่นคือหลักฐานว่า <code>@ValidateNested()</code> ไล่ตรวจเข้าไปข้างในจริง</p>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>docker compose exec db psql -U postgres -d ecommerce -c '\dt'</code> เห็นตารางใหม่สองตัวคือ <code>Order</code> และ <code>OrderItem</code> รวมเป็น 6 แถว
+          <pre><code>               List of relations
+ Schema |        Name        | Type  |  Owner
+--------+--------------------+-------+----------
+ public | Category           | table | postgres
+ public | Order              | table | postgres
+ public | OrderItem          | table | postgres
+ public | Product            | table | postgres
+ public | Review             | table | postgres
+ public | _prisma_migrations | table | postgres
+(6 rows)</code></pre></li>
+        <li><code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT count(*) FROM "Order";'</code> ได้ <code>0</code> — ตารางว่าง ยังไม่มีคำสั่งซื้อจนกว่าจะเปิด route สั่งซื้อ</li>
+        <li><code>npx oxlint prisma/seed.ts</code> ผ่าน (<code>npm run lint</code> ดูแค่ <code>src/</code> กับ <code>test/</code> จึงต้องสั่งไฟล์ seed ตรง ๆ)</li>
+        <li><code>npm run build</code> ผ่าน — ยืนยันว่า Prisma Client ที่ generate ใหม่เข้ากับโค้ดเดิมทั้งหมด</li>
+        <li><code>npm run lint</code> ผ่าน (oxlint ดู <code>src/</code> จึงครอบไฟล์ DTO แล้ว)</li>
+        <li>ถ้าใช้ class-transformer เหมือนโค้ดอ้างอิง <code>grep -rc "@Type" src/orders/dto/</code> รวมกันต้องได้ <code>2</code> (หนึ่งที่ <code>products</code> หนึ่งที่ <code>address</code>)</li>
+        <li><code>grep -rn "IsOptional\|?:" src/orders/dto/</code> ไม่เจออะไรเลย — ยืนยันว่าไม่มี field optional หลุดมา</li>
+        <li><code>git diff --stat HEAD</code> เห็นแค่ไฟล์ DTO ที่สร้างใหม่ (ในโค้ดอ้างอิงคือ <code>src/orders/dto/</code>) และ <code>package.json</code> กับ <code>package-lock.json</code> ไม่อยู่ในรายการ</li>
+        <li>commit ผลงานครึ่งหลัง: <code>git add -A &amp;&amp; git commit -m "feat: add-cart dto"</code></li>
+      </ul>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/relations">Relations (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/relations/referential-actions">Referential actions: onDelete (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-migrate/workflows/development-and-production">Prisma Migrate: development workflow (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/validation">Validation: ValidationPipe และ nested objects (NestJS Docs)</a></li>
+      <li><a href="https://github.com/typestack/class-validator">class-validator: decorators reference (GitHub)</a></li>
+      <li><a href="https://docs.nestjs.com/pipes">Pipes (NestJS Docs)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="14_get-products-by-category.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="16_post-carts-add.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

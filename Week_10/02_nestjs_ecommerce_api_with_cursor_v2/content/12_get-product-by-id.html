@@ -3,38 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="ต่อ endpoint GET /products/:id เข้ากับ mapper ให้ตอบสินค้าหนึ่งชิ้นตรงกับ contract ทุกไบต์ และตอบ 404 ด้วยข้อความเดียวกับ dummyjson พร้อมเข้าใจว่าทำไมลำดับของ route สำคัญ" />
+  <meta name="description" content="ต่อ endpoint GET /products/:id เข้ากับ mapper ให้ตอบสินค้าหนึ่งชิ้นตรงกับ docs/api-spec.md ทุกไบต์ และตอบ 404 ด้วยข้อความของเราเอง พร้อมเข้าใจว่าทำไมลำดับของ route สำคัญ" />
   <title>GET /products/:id</title>
   <link rel="stylesheet" href="lesson.css" />
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 12 จาก 24</p>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
     <h1>GET /products/:id</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
       <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
       <ul>
         <li>รับ route parameter ด้วย <code>@Param('id', ParseIntPipe)</code> แล้วส่งต่อเป็น <code>number</code> ให้ service</li>
         <li>อธิบายว่าทำไม <code>@Get('categories')</code> ต้องประกาศไว้ก่อน <code>@Get(':id')</code> เสมอ</li>
-        <li>พิสูจน์ด้วย <code>diff</code> ว่า response ของสินค้าชิ้นที่ 1 ตรงกับ contract ทุกคีย์ และข้อความใน <code>NotFoundException</code> ตรงตัวอักษรต่ออักษรกับ dummyjson</li>
+        <li>พิสูจน์ว่า response ของสินค้าชิ้นที่ 1 ตรงกับ docs/api-spec.md ทุกคีย์ และข้อความใน <code>NotFoundException</code> ตรงตัวอักษรต่ออักษรกับที่เราออกแบบไว้</li>
+        <li>ย้าย checklist ของบทนี้ลงไปอยู่ใน e2e test ที่รันด้วย <code>npm run test:e2e</code> — คำสั่งเดียวที่ตัดสินถูก/ผิดได้เองและคืน exit code ให้ทั้งคุณและ AI ใช้ตรวจซ้ำได้</li>
       </ul>
     </section>
 
     <h2>บทนี้คือบทที่ mapper ได้ทำงานจริง</h2>
-    <p>บทที่ 11 เขียน <code>toProductResponse</code> ไว้แต่ยังไม่มีใครเรียก บทนี้เราต่อสายให้ครบ: controller รับ id → service query สินค้าพร้อม relation → ส่งแถวเข้า mapper → คืน JSON ที่ตรงกับ <code>docs/contract/product-1.json</code></p>
-    <p>รูปแบบการรับ parameter เป็นแบบเดียวกับ Week_09 บทที่ 7 (route parameters) และการโยน error เป็นแบบเดียวกับบทที่ 13 (ข้อความ error ที่อ่านรู้เรื่อง) ต่างกันที่คราวนี้ข้อความไม่ใช่เรื่องรสนิยม — มันคือส่วนหนึ่งของสัญญา</p>
+    <p>ขั้นก่อนหน้าเขียน <code>toProductResponse</code> ไว้แต่ยังไม่มีใครเรียก บทนี้เราต่อสายให้ครบ: controller รับ id → service query สินค้าพร้อม relation → ส่งแถวเข้า mapper → คืน JSON ที่ตรงกับ section Product ใน <code>docs/api-spec.md</code></p>
+    <p>รูปแบบการรับ parameter เป็นแบบเดียวกับ NestJS Fundamentals ตอน route parameters และการโยน error เป็นแบบเดียวกับตอนที่ว่าด้วยข้อความ error ที่อ่านรู้เรื่อง ต่างกันที่คราวนี้ข้อความไม่ใช่เรื่องรสนิยม — มันคือส่วนหนึ่งของสัญญา</p>
 
     <h2>ข้อความ 404 คือสัญญา ไม่ใช่ข้อความประกอบ</h2>
-    <p>เปิด <code>docs/contract/product-not-found.txt</code> ที่วางไว้ในบทที่ 3 dummyjson ตอบ status 404 พร้อม body</p>
-    <pre><code>{ "message": "Product with id '9999' not found" }</code></pre>
-    <p>React app ที่เราจะต่อในบทที่ 23 อ่าน <code>data.message</code> มาโชว์ให้ผู้ใช้เห็นตรง ๆ ผ่าน <code>ApiError</code> ของมัน ถ้าเราเขียนเป็น <code>Product #9999 not found</code> แบบที่เคยทำใน Week_09 หน้าเว็บก็ยังไม่พัง แต่ข้อความที่ผู้ใช้เห็นจะเปลี่ยนไป และ script ตรวจสัญญาในบทที่ 15 จะจับได้ทันที จุดที่ต้องระวังเป็นพิเศษคือ <strong>single quote ครอบตัวเลข</strong> — ไม่ใช่ double quote ไม่ใช่ backtick ไม่ใช่ไม่มีเลย</p>
-    <pre><code>throw new NotFoundException(`Product with id '${id}' not found`);</code></pre>
-    <p>backtick ด้านนอกคือ template literal ของ JavaScript ส่วน single quote ด้านในเป็นตัวอักษรจริงที่จะโผล่ใน JSON</p>
+    <p>เปิด <code>docs/api-spec.md</code> ดู section Errors — เราออกแบบให้ product ที่ไม่มีอยู่ตอบ status 404 พร้อม body</p>
+    <pre><code>{ "message": "Product 9999 not found" }</code></pre>
+    <p>React app ที่เราจะต่อในตอนท้ายของ workshop อ่าน <code>data.message</code> มาโชว์ให้ผู้ใช้เห็นตรง ๆ ผ่าน <code>ApiError</code> ของมัน ข้อความจึงต้องตรงตามที่เราออกแบบไว้ทุกตัวอักษร ถ้าเขียนเป็น <code>Product #9999 not found</code> แบบที่เคยทำในคอร์ส NestJS Fundamentals หน้าเว็บก็ยังไม่พัง (เพราะ client อ่านแค่ field <code>message</code> ไม่สนใจเนื้อหา) แต่ผิดสัญญาที่เราเขียนไว้ใน <code>docs/api-spec.md</code> และ test ตรวจสัญญาที่เราจะเขียนท้ายบทนี้จะจับได้ทันที</p>
+    <pre><code>throw new NotFoundException(`Product ${id} not found`);</code></pre>
 
     <h2><code>include</code> และเหตุผลที่ต้องสั่ง <code>orderBy</code> ให้ reviews</h2>
-    <p>แถว <code>Product</code> เปล่า ๆ ไม่มี <code>category</code> และไม่มี <code>reviews</code> ติดมา เราจึงต้องสั่ง <code>include</code> (ทบทวน Week_09 บทที่ 26 เรื่องดึง model พร้อม relation)</p>
+    <p>แถว <code>Product</code> เปล่า ๆ ไม่มี <code>category</code> และไม่มี <code>reviews</code> ติดมา เราจึงต้องสั่ง <code>include</code> (ทบทวน NestJS Fundamentals ตอนดึง model พร้อม relation)</p>
     <pre><code>include: { category: true, reviews: { orderBy: { id: 'asc' } } }</code></pre>
-    <p>ทำไมต้องมี <code>orderBy</code> ให้ reviews ด้วย? เพราะ array ที่ลำดับไม่ตรงกันคือ <code>diff</code> ที่ไม่ผ่าน และ Postgres ไม่รับประกันลำดับของแถวที่คืนมาถ้าไม่มี <code>ORDER BY</code> — มันจะเรียงตามที่สะดวกที่สุดในแผนการ query นั้น ๆ ซึ่งอาจเปลี่ยนเมื่อข้อมูลโตขึ้นหรือมี index ใหม่ seed ในบทที่ 9 ใส่ review ตามลำดับที่ dummyjson ส่งมาใน <code>products[].reviews</code> ดังนั้น <code>id</code> น้อยไปมากคือลำดับเดียวกับ dummyjson</p>
+    <p>ทำไมต้องมี <code>orderBy</code> ให้ reviews ด้วย? เพราะ array ที่ลำดับไม่ตรงกันจะทำให้การตรวจสัญญาในบทถัด ๆ ไปไม่ผ่าน และ Postgres ไม่รับประกันลำดับของแถวที่คืนมาถ้าไม่มี <code>ORDER BY</code> — มันจะเรียงตามที่สะดวกที่สุดในแผนการ query นั้น ๆ ซึ่งอาจเปลี่ยนเมื่อข้อมูลโตขึ้นหรือมี index ใหม่ seed script ใส่ review ของสินค้าแต่ละชิ้นตามลำดับที่เขียนไว้ในสคริปต์ ดังนั้น <code>id</code> น้อยไปมากคือลำดับเดียวกับที่ seed ใส่ไว้</p>
 
     <h2>ลำดับการประกาศ route คือลำดับที่ Nest ลองจับ</h2>
     <p>Nest ลงทะเบียน handler ตามลำดับที่ประกาศไว้ใน class และ router จะจับ pattern แรกที่ตรง ถ้าเราเผลอวาง <code>@Get(':id')</code> ไว้ก่อน</p>
@@ -42,62 +42,53 @@
   → ตรงกับ pattern /products/:id  (id = "categories")
   → ParseIntPipe แปลง "categories" ไม่ได้
   → 400 Bad Request</code></pre>
-    <p>endpoint ที่เคยทำงานในบทที่ 10 จะตายเงียบ ๆ ทั้งที่เราไม่ได้แตะโค้ดของมันเลย กฎง่าย ๆ คือ <strong>route ที่เป็นคำตายตัวต้องมาก่อน route ที่มี parameter เสมอ</strong> ดังนั้นใน <code>ProductsController</code> เราวาง <code>findOne</code> เป็น handler สุดท้ายของ class ตั้งแต่วันนี้ แล้วบทที่ 13 และ 14 จะแทรก handler ใหม่ไว้<em>ก่อน</em>มันทุกครั้ง</p>
+    <p>endpoint หมวดสินค้าที่เคยทำงานอยู่จะตายเงียบ ๆ ทั้งที่เราไม่ได้แตะโค้ดของมันเลย กฎง่าย ๆ คือ <strong>route ที่เป็นคำตายตัวต้องมาก่อน route ที่มี parameter เสมอ</strong> ดังนั้นใน <code>ProductsController</code> เราวาง <code>findOne</code> เป็น handler สุดท้ายของ class ตั้งแต่วันนี้ แล้ว endpoint ที่เพิ่มทีหลังจะแทรก handler ใหม่ไว้<em>ก่อน</em>มันทุกครั้ง</p>
 
-    <h2>ความต่างหนึ่งข้อที่เรายอมรับ</h2>
-    <p>ถ้ายิง <code>GET /products/abc</code> dummyjson ตอบ 404 แต่ของเราตอบ 400 พร้อมข้อความ <code>Validation failed (numeric string is expected)</code> เพราะ <code>ParseIntPipe</code> ดักไว้ก่อนที่ handler จะทำงาน</p>
-    <p>เรา<em>เลือก</em>ที่จะไม่แก้ เพราะ React app ไม่เคยยิง id ที่ไม่ใช่ตัวเลข (มันได้ id มาจาก list ที่ API ตอบไป) และ 400 เป็นคำตอบที่ตรงความจริงกว่า: request นั้นผิดรูป ไม่ใช่ resource ไม่มีอยู่ ความต่างข้อนี้จะถูกบันทึกไว้ในตารางของบทที่ 15 พร้อมเหตุผล — การ<strong>รู้และเขียนไว้</strong>ว่าต่างที่ไหน ต่างจากการไม่รู้ว่าต่าง</p>
+    <h2>ทำไม id ที่ไม่ใช่ตัวเลขได้ 400 ไม่ใช่ 404</h2>
+    <p>ถ้ายิง <code>GET /products/abc</code> เราตอบ 400 พร้อมข้อความ <code>Validation failed (numeric string is expected)</code> เพราะ <code>ParseIntPipe</code> ดักไว้ก่อนที่ handler จะทำงาน — เป็นพฤติกรรมมาตรฐานของ Nest ไม่ต้องเขียนโค้ดเพิ่ม</p>
+    <p>เรา<em>เลือก</em>ที่จะปล่อยให้เป็น 400 เพราะ React app ไม่เคยยิง id ที่ไม่ใช่ตัวเลข (มันได้ id มาจาก list ที่ API ตอบไป) และ 400 เป็นคำตอบที่ตรงความจริงกว่า: request นั้นผิดรูป ไม่ใช่ resource ไม่มีอยู่ พฤติกรรมนี้จะถูกตรวจซ้ำทุกครั้งด้วย e2e test ที่เราเขียนท้ายบทนี้</p>
 
     <h2>เป้าหมายของบทนี้</h2>
-    <pre><code>src/products/
-├── products.controller.ts            (แก้ไข: เพิ่ม handler)
-└── products.service.ts               (แก้ไข: เพิ่ม method)</code></pre>
+    <p>ในโค้ดอ้างอิงคือการเพิ่ม handler ใน controller กับ method ใน service เดิมของ <code>src/products/</code> — Cursor เลือกวิธีเองได้ โดยต้องได้ผลลัพธ์นี้</p>
     <ul>
-      <li><strong><code>src/products/products.service.ts</code></strong> — สัญญา: ต้องมี <code>async findOne(id: number): Promise&lt;ProductResponseDto&gt;</code> ที่ใช้ <code>findUnique</code> + <code>include</code> แล้วคืน <code>toProductResponse(product)</code> / ต้องไม่แก้ <code>findCategories</code> และต้องไม่คืน <code>null</code> ออกไปให้ controller จัดการ</li>
-      <li><strong><code>src/products/products.controller.ts</code></strong> — สัญญา: ต้องเพิ่ม <code>@Get(':id')</code> เป็น handler สุดท้ายของ class โดยมี <code>ParseIntPipe</code> ที่ parameter / ต้องไม่แปลง id เองด้วย <code>+id</code> หรือ <code>Number(id)</code></li>
+      <li><code>GET /products/:id</code> ตอบสินค้าหนึ่งชิ้นครบ 22 คีย์ผ่าน mapper ที่มีอยู่แล้ว</li>
+      <li>id ที่ไม่มีอยู่ → 404 <code>Product 9999 not found</code> ตรงตัวอักษร / id ที่ไม่ใช่ตัวเลข → 400</li>
+      <li><code>GET /products/categories</code> ยังทำงานเหมือนเดิม</li>
     </ul>
-    <p>บทนี้ไม่แตะ <code>product.mapper.ts</code> และไม่แตะ DTO เลย</p>
+    <p>บทนี้ไม่แตะ mapper และ DTO ที่มีอยู่แล้วเลย</p>
 
     <section class="workshop" aria-labelledby="exercise-heading">
       <h2 id="exercise-heading">สั่ง Cursor ต่อ endpoint สินค้าหนึ่งชิ้น</h2>
       <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before product by id"</code>) จากนั้นส่ง prompt นี้</p>
-      <div class="cursor-prompt"><code>เพิ่ม endpoint GET /products/:id ที่ตอบสินค้าหนึ่งชิ้นตามรูปทรง dummyjson และ 404 ด้วยข้อความเดียวกัน
+      <div class="cursor-prompt"><code>เพิ่ม endpoint GET /products/:id ที่ตอบสินค้าหนึ่งชิ้นตามรูปทรงใน docs/api-spec.md และ 404 ด้วยข้อความที่เราออกแบบไว้
+@&lt;controller และ service ของ products ที่คุณมีอยู่แล้ว&gt; — โค้ดอ้างอิงคือ src/products/products.controller.ts กับ src/products/products.service.ts
 
-บริบท: @src/products/products.controller.ts @src/products/products.service.ts @src/products/product.mapper.ts @src/products/dto/product-response.dto.ts @docs/contract/product-1.json @docs/contract/product-not-found.txt @.cursor/rules/project.mdc
-มี toProductResponse(product: ProductWithRelations) ที่รับแถวสินค้าพร้อม category และ reviews แล้วคืน ProductResponseDto
-docs/contract/product-not-found.txt คือ response จริงของ GET /products/9999: status 404 body { "message": "Product with id '9999' not found" }
-reviews ต้องเรียงตามลำดับที่ seed (id น้อยไปมาก) เพื่อให้ตรงกับ dummyjson
-controller มี route GET /products/categories อยู่แล้ว route ใหม่ที่มี parameter ต้องประกาศไว้หลัง route ที่เป็นคำตายตัวเสมอ
-
-โครงสร้าง: แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
-- src/products/products.service.ts (แก้ไข: เพิ่ม method)
-- src/products/products.controller.ts (แก้ไข: เพิ่ม handler)
-
-ข้อกำหนดทางเทคนิค:
-- service: async findOne(id: number): Promise&lt;ProductResponseDto&gt;
-  ใช้ this.prisma.product.findUnique({ where: { id }, include: { category: true, reviews: { orderBy: { id: 'asc' } } } })
-  ถ้าได้ null ให้ throw new NotFoundException(`Product with id '${id}' not found`) ข้อความต้องตรงตัวอักษรต่ออักษรรวม single quote
-  คืน toProductResponse(product)
-- controller: handler @Get(':id') findOne(@Param('id', ParseIntPipe) id: number) วางไว้เป็น handler สุดท้ายของ class ต่อจาก findCategories
-- ห้ามแก้ findCategories ห้ามแตะ mapper
+ผลลัพธ์ที่ต้องได้:
+- GET /products/1 ตอบ 200 เป็นสินค้าครบ 22 คีย์ตาม section Product ใน docs/api-spec.md ผ่าน mapper ที่มีอยู่แล้ว (title "Velvet Matte Lipstick", price 9.99, discountPercentage 10.48, brand "Lumina")
+- reviews ของสินค้าเรียงตาม id ของ review (ลำดับที่ seed ใส่ไว้) และคงที่ทุกครั้งที่ยิง
+- GET /products/3 (ไม่มีส่วนลด) ไม่มีคีย์ discountPercentage เลย
+- GET /products/9999 ตอบ 404 และ message เป็น "Product 9999 not found" ตรงตัวอักษรต่ออักษร
+- GET /products/abc ตอบ 400 พร้อมข้อความ "Validation failed (numeric string is expected)"
+- GET /products/categories ยังตอบรายการหมวด 24 รายการเหมือนเดิม ไม่ถูกจับเป็น id
 
 ขอบเขต:
 - ห้ามติดตั้ง dependency ใหม่
-- ห้ามแก้ไฟล์อื่นนอกจากที่ระบุ
+- ห้ามแก้ mapper/DTO
+- ห้ามเขียน test — e2e test เป็น prompt แยกในแชทถัดไป
 - ยังไม่ต้องทำ GET /products (list) หรือ pagination</code></div>
     </section>
     <section class="review" aria-labelledby="review-heading">
       <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
       <ul>
-        <li>controller ใช้ <code>@Param('id', ParseIntPipe) id: number</code> — ไม่ใช่ <code>@Param('id') id: string</code> แล้วแปลงเองในภายหลัง</li>
-        <li>service ใช้ <code>findUnique</code> และมี <code>include: { category: true, reviews: { orderBy: { id: 'asc' } } }</code> ครบทั้งสองส่วน</li>
-        <li>ข้อความ error ตรงตัวอักษรต่ออักษร: <code>Product with id '9999' not found</code> — single quote ครอบตัวเลข</li>
-        <li><code>findOne</code> เป็น handler <em>สุดท้าย</em> ของ class อยู่ใต้ <code>findCategories</code></li>
-        <li>return type ของ service เขียนไว้ชัดเป็น <code>Promise&lt;ProductResponseDto&gt;</code></li>
-        <li><code>findCategories</code> เดิมไม่ถูกแก้ และไฟล์ mapper/DTO ไม่มีการเปลี่ยนแปลง (<code>git diff --stat</code> ต้องเห็นแค่สองไฟล์)</li>
+        <li><code>GET /products/abc</code> ได้ 400 — ไม่ใช่ 404 หรือ 500 (ถ้าได้ 500 แปลว่า id ที่ไม่ใช่ตัวเลขหลุดเข้าไปถึง query)</li>
+        <li><code>GET /products/9999</code> ได้ 404 และข้อความตรงตัวอักษรต่ออักษร: <code>Product 9999 not found</code></li>
+        <li><code>GET /products/categories</code> ยังตอบรายการหมวด ไม่ถูกจับเป็น id (log ตอน start ต้องเห็น route <code>categories</code> ก่อน <code>:id</code>)</li>
+        <li>สินค้ามี <code>category</code> เป็น slug และมี <code>reviews</code> ครบ — ถ้าได้ <code>category</code> เป็น <code>undefined</code> หรือ reviews ว่าง แปลว่า query ไม่ได้ดึง relation มาด้วย</li>
+        <li>response ผ่าน mapper ตัวเดิมที่มีอยู่แล้ว ไม่ได้ประกอบรูปทรงใหม่ขึ้นมาเองใน service</li>
+        <li>ไม่มีไฟล์ที่ไม่เกี่ยวกับเป้าหมายถูกแก้, mapper/DTO ไม่ถูกแก้, และไม่มี <code>any</code> / <code>as</code> / <code>!</code></li>
       </ul>
-      <p><strong>AI มักพลาดตรงนี้:</strong> เขียนข้อความเป็น <code>Product #9999 not found</code> ตามสไตล์ที่เคยเห็นใน Week_09 (ซึ่งเป็นข้อความที่ถูกต้องใน<em>คอร์สนั้น</em> แต่ผิดสัญญาในคอร์สนี้) อีกแบบคือใช้ <code>findFirst({ where: { id } })</code> โดยลืม <code>include</code> ทั้งก้อน — TypeScript จะฟ้องเมื่อส่งเข้า <code>toProductResponse</code> เพราะ type <code>ProductWithRelations</code> ไม่ยอม แต่บางครั้ง Cursor จะแก้ปัญหาด้วยการเติม <code>as</code> เข้าไปกลบ ให้ค้นคำว่า <code>as </code> ในไฟล์แล้วลบออก แก้ที่ <code>include</code> แทน</p>
-      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <p><strong>AI มักพลาดตรงนี้:</strong> เขียนข้อความเป็น <code>Product #9999 not found</code> ตามสไตล์ที่เคยเห็นในคอร์ส NestJS Fundamentals (ซึ่งเป็นข้อความที่ถูกต้องใน<em>คอร์สนั้น</em> แต่ผิดสัญญาในคอร์สนี้) อีกแบบคือใช้ <code>findFirst({ where: { id } })</code> โดยลืม <code>include</code> ทั้งก้อน — TypeScript จะฟ้องเมื่อส่งเข้า <code>toProductResponse</code> เพราะ type <code>ProductWithRelations</code> ไม่ยอม แต่บางครั้ง Cursor จะแก้ปัญหาด้วยการเติม <code>as</code> เข้าไปกลบ ให้ค้นคำว่า <code>as </code> ในไฟล์แล้วลบออก แก้ที่ <code>include</code> แทน</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
       <p><code>src/products/products.service.ts</code></p>
       <pre><code>import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -128,7 +119,7 @@ export class ProductsService {
       include: { category: true, reviews: { orderBy: { id: 'asc' } } },
     });
     if (!product) {
-      throw new NotFoundException(`Product with id '${id}' not found`);
+      throw new NotFoundException(`Product ${id} not found`);
     }
     return toProductResponse(product);
   }
@@ -160,29 +151,141 @@ export class ProductsController {
 [RouterExplorer] Mapped {/products/:id, GET} route</code></pre>
       <p><code>GET /products/1</code> ตอบ 200 พร้อมสินค้าครบ 22 คีย์รวม <code>dimensions</code>, <code>meta</code> และ array <code>reviews</code> ส่วน <code>GET /products/9999</code> ตอบ</p>
       <pre><code>HTTP/1.1 404 Not Found
-{"message":"Product with id '9999' not found","error":"Not Found","statusCode":404}</code></pre>
-      <p>สังเกตว่า body ของเรามีคีย์ <code>error</code> และ <code>statusCode</code> เพิ่มจาก dummyjson — นี่คือรูปแบบมาตรฐานของ <code>HttpException</code> ใน Nest และเป็นความต่างอีกข้อที่เราบันทึกไว้ยอมรับ เพราะ client อ่านแค่ <code>message</code></p>
+{"message":"Product 9999 not found","error":"Not Found","statusCode":404}</code></pre>
+      <p>สังเกตว่า body มีคีย์ <code>error</code> และ <code>statusCode</code> เพิ่มจาก message — นี่คือรูปแบบมาตรฐานของ <code>HttpException</code> ใน Nest ซึ่งไม่มีผลกับ React app เพราะ client อ่านแค่ <code>message</code></p>
     </section>
     <section class="verification" aria-labelledby="exercise-check-heading">
       <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
       <ul>
-        <li>เทียบสินค้าชิ้นที่ 1 กับ contract โดยเรียงคีย์ทั้งสองฝั่งให้เหมือนกันก่อน — ต้องได้ <code>IDENTICAL</code>
-          <pre><code>curl -s http://localhost:3000/products/1 \
-  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log(JSON.stringify(JSON.parse(d),Object.keys(JSON.parse(d)).sort())))" &gt; /tmp/actual.json
-node -e "const d=require('./docs/contract/product-1.json');console.log(JSON.stringify(d,Object.keys(d).sort()))" &gt; /tmp/expected.json
-diff /tmp/actual.json /tmp/expected.json &amp;&amp; echo IDENTICAL</code></pre>
-          <p>(คำสั่ง <code>node -e</code> ใช้ <code>require</code> ได้ ทั้งที่โปรเจกต์เป็น <code>"type": "module"</code> เพราะสคริปต์ที่ส่งผ่าน <code>-e</code> ถูกรันเป็น CommonJS โดยปริยาย)</p>
+        <li>ยืนยันด้วย curl ว่าสินค้าชิ้นที่ 1 มี 22 คีย์ และค่าตรงกับที่ seed ไว้
+          <pre><code>curl -s http://localhost:3000/products/1 -o /tmp/product-1.json
+node -e "
+const p = require('/tmp/product-1.json');
+console.log('keys:', Object.keys(p).length);
+console.log(p.title, p.price, p.discountPercentage, p.brand);
+"</code></pre>
+          <p>ผลลัพธ์จริง: <code>keys: 22</code> แล้วบรรทัดถัดมา <code>Velvet Matte Lipstick 9.99 10.48 Lumina</code></p>
         </li>
-        <li><code>curl -i http://localhost:3000/products/9999</code> ได้ 404 พร้อม <code>"message":"Product with id '9999' not found"</code> ตรงตัวอักษร</li>
-        <li><code>curl -s http://localhost:3000/products/categories</code> ยังตอบ array 24 ก้อนเหมือนบทที่ 10 — พิสูจน์ว่าลำดับ route ถูก (ถ้าได้ 400 แปลว่า <code>@Get(':id')</code> ไปอยู่ข้างบน)</li>
-        <li>หาสินค้าที่ไม่มีแบรนด์แล้วยืนยันว่าคีย์ <code>brand</code> หายไปทั้งคีย์ — ในฐานข้อมูลที่ seed มา สินค้า id <code>16</code> คือตัวหนึ่งที่ <code>brand</code> เป็น <code>null</code>
-          <pre><code>curl -s http://localhost:3000/products/16 \
-  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log('brand' in JSON.parse(d)))"
+        <li><code>curl -i http://localhost:3000/products/9999</code> ได้ 404 พร้อม <code>"message":"Product 9999 not found"</code> ตรงตัวอักษร</li>
+        <li><code>curl -s http://localhost:3000/products/categories</code> ยังตอบ array 24 ก้อนเหมือนเดิม — พิสูจน์ว่าลำดับ route ถูก (ถ้าได้ 400 แปลว่า <code>@Get(':id')</code> ไปอยู่ข้างบน)</li>
+        <li>หาสินค้าที่ไม่มีส่วนลดแล้วยืนยันว่าคีย์ <code>discountPercentage</code> หายไปทั้งคีย์ — สินค้า id <code>3</code> คือตัวหนึ่งที่ <code>discountPercentage</code> เป็น <code>null</code>
+          <pre><code>curl -s http://localhost:3000/products/3 \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log('discountPercentage' in JSON.parse(d)))"
 # ต้องพิมพ์ false</code></pre>
         </li>
-        <li><code>curl -i http://localhost:3000/products/abc</code> ได้ 400 พร้อม <code>Validation failed (numeric string is expected)</code> — ความต่างที่เรายอมรับ ไม่ใช่ bug</li>
+        <li><code>curl -i http://localhost:3000/products/abc</code> ได้ 400 พร้อม <code>Validation failed (numeric string is expected)</code> — พฤติกรรมที่เราออกแบบไว้ ไม่ใช่ bug</li>
         <li>commit ผลงานด้วย <code>git add -A &amp;&amp; git commit -m "feat: GET /products/:id"</code></li>
       </ul>
+    </section>
+    <section class="workshop" aria-labelledby="contract-test-heading">
+      <h2 id="contract-test-heading">เปลี่ยน checklist ให้เป็น test ที่รันได้</h2>
+      <p>ทุกข้อในส่วน "ตรวจว่าใช้งานได้จริง" ด้านบนคือสัญญาที่ต้องเป็นจริง<em>ตลอดไป</em> ไม่ใช่แค่วันนี้ — ขั้นถัด ๆ ไปจะกลับมาแก้ controller ตัวเดิมนี้อีก และจะไม่มีใครไล่ยิง curl ห้าคำสั่งแล้วอ่านผลด้วยตาทุกครั้งที่ AI แก้โค้ดให้ วิธีที่ใช้ได้จริงคือย้าย checklist ทั้งอันลงไปอยู่ในไฟล์ที่รันได้ แล้วตัดสินด้วยคำสั่งเดียวว่า <code>npm run test:e2e</code> ผ่านหรือไม่ผ่าน</p>
+      <p>เหตุผลที่ลึกกว่านั้นคือ <strong>check ที่รันได้คือสิ่งที่ AI เอาไปใช้เองได้</strong> คู่มือของเครื่องมือ agent ทุกตัวพูดตรงกันข้อหนึ่ง: ให้คำสั่งที่ตัดสินถูก/ผิดได้เองกับมัน แล้วมันจะรัน อ่านผล และแก้ซ้ำจนผ่านได้โดยไม่ต้องรอคุณอ่าน output ให้ทีละบรรทัด ส่วน checklist ที่เป็นข้อความเฉย ๆ มีแต่คุณเท่านั้นที่ตรวจได้ และเป็นงานที่คนเลิกทำเป็นคนแรกเมื่อรีบ</p>
+      <p>เครื่องมือสำหรับงานนี้<strong>มีอยู่ในโปรเจกต์แล้วตั้งแต่วันแรก</strong> ไม่ต้องประดิษฐ์เอง: <code>nest new</code> แถม Vitest, <code>supertest</code>, ไฟล์ตัวอย่าง <code>test/app.e2e-spec.ts</code>, ไฟล์ตั้งค่า <code>vitest.config.e2e.ts</code> (จับเฉพาะไฟล์ <code>*.e2e-spec.ts</code>) และ script <code>test:e2e</code> มาให้ครบตั้งแต่ตอน scaffold และคุณเขียน e2e test แบบนี้มาแล้วใน <a href="../../../Week_09/01_nestjs_basic/content/48_diving-into-e2e-tests.html">NestJS Fundamentals บทรู้จัก e2e Test</a> — <code>Test.createTestingModule</code> boot <code>AppModule</code> ทั้งใบ แล้ว <code>supertest</code> ยิง HTTP เข้าไปที่แอปนั้นตรง ๆ บทนี้แค่เอาสิ่งที่คุณมีอยู่แล้วมาใช้กับสัญญาของเรา</p>
+      <div class="note"><p>e2e test <strong>boot แอปของตัวเอง</strong>ขึ้นมาในโปรเซสเดียวกับ Vitest ไม่ได้ยิงไปที่ <code>npm run start:dev</code> ที่คุณเปิดค้างไว้ และไม่ต้องจอง port จริง จะเปิด dev server ค้างไว้หรือไม่ก็ได้ ผลเท่ากัน — แต่ <strong>ฐานข้อมูลต้องรันอยู่</strong> เพราะแอปที่ boot ขึ้นมาสร้าง <code>PrismaService</code> ตัวจริงและ query ข้อมูลที่ seed ไว้จริง ๆ</p></div>
+      <p><strong>แล้วให้ AI เขียน test ที่เอาไว้ตรวจงานของ AI เองได้จริงหรือ?</strong> ได้ — แต่ต้องรักษา<strong>ความเป็นอิสระ</strong>ของ test ไว้ ไม่ใช่ความเป็นเจ้าของบรรทัดโค้ด สิ่งที่ทำให้ test เชื่อถือได้ไม่ใช่ว่าใครพิมพ์มัน แต่เป็นสามข้อนี้ต่างหาก และทั้งสามข้ออยู่ในมือคุณทั้งหมด</p>
+      <ul>
+        <li><strong>แชทใหม่</strong> — สั่งเขียน test ในแชทที่<em>ไม่เห็น</em>บทสนทนาที่เพิ่งเขียน endpoint ไป ถ้าใช้แชทเดิม มันจะเขียน test ที่ตรงกับโค้ดที่มันเพิ่งเขียน ไม่ใช่ตรงกับสัญญา — รวมถึงบั๊กที่มันเพิ่งใส่ไว้ด้วย</li>
+        <li><strong>ผลลัพธ์ที่ต้องได้มาจาก <code>docs/api-spec.md</code></strong> — บรรทัดพวกนั้น<em>คุณ</em> เป็นคนตัดสินใจ ไม่ใช่ AI มันแค่แปลสิ่งที่คุณตัดสินใจไว้แล้วให้เป็นโค้ด เหมือนที่มันแปล endpoint ให้เมื่อกี้</li>
+        <li><strong>ห้ามมันแก้ <code>src/</code></strong> — ข้อนี้สำคัญที่สุด ถ้า agent แก้โค้ดได้ด้วยและเขียน test ได้ด้วยในคำสั่งเดียว มันจะทำให้ test ผ่านด้วยการแก้ฝั่งที่ง่ายกว่าเสมอ ซึ่งมักเป็นฝั่ง test</li>
+      </ul>
+      <p>และข้อพิสูจน์สุดท้ายที่ไม่มีใครทำแทนคุณได้คือ <strong>ทำให้มันพังให้เห็นกับตา</strong> — test ที่คุณไม่เคยเห็นมันขึ้นสีแดงเลย ยังไม่นับว่าเป็น test เพราะคุณยังไม่รู้ว่ามันตรวจอะไรอยู่จริง ๆ หรือเปล่า แบบฝึกหัดท้ายหัวข้อนี้บังคับข้อนั้นไว้แล้ว</p>
+      <p>commit งานก่อน แล้ว<strong>เปิดแชทใหม่</strong>ใน Cursor โหมด Agent แล้วส่ง prompt นี้</p>
+      <div class="cursor-prompt"><code>เขียน e2e test ของ endpoint สินค้าให้ตรงกับสัญญาใน docs/api-spec.md
+@docs/api-spec.md
+
+ผลลัพธ์ที่ต้องได้:
+- ไฟล์ test/products.e2e-spec.ts ที่ npm run test:e2e เก็บไปรันด้วย (ไม่ต้องแก้ package.json — script นี้มีอยู่แล้ว)
+- boot แอปจริงด้วย Test.createTestingModule({ imports: [AppModule] }) แล้วยิงผ่าน supertest ที่ app.getHttpServer() — ไม่ mock อะไรเลย ไม่ยิงไป URL หรือ port ภายนอก และปิดแอปด้วย app.close() ใน afterAll
+- สี่ test ตามนี้
+  1. GET /products/categories → 200 และได้ category 24 รายการ แต่ละก้อนมีคีย์ name, slug, url
+  2. GET /products/1 → 200 และสินค้ามี 22 คีย์ ชื่อ "Velvet Matte Lipstick" category เป็น string และ reviews เป็น array
+  3. GET /products/9999 → 404 และ message เป็น "Product 9999 not found" ตรงตัวอักษร
+  4. GET /products/abc → 400 และ body มี message
+- import ในไฟล์ test ลงท้ายด้วย .js ตามกติกา ESM ของโปรเจกต์
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่ — Vitest กับ supertest มากับ scaffold แล้ว
+- ห้ามแก้ไฟล์ใน src/ เด็ดขาด ถ้า test ไม่ผ่านให้บอกผมว่าไม่ผ่านข้อไหน ห้ามแก้โค้ดให้ test ผ่านเอง
+- ห้ามรัน test ให้ ผมจะรันเอง</code></div>
+      <p>โค้ดอ้างอิงของหัวข้อนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้ข้างบน</p>
+      <pre><code>import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { AppModule } from './../src/app.module.js';
+
+describe('Products contract (e2e)', () =&gt; {
+  let app: INestApplication;
+
+  beforeAll(async () =&gt; {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () =&gt; {
+    await app.close();
+  });
+
+  it('GET /products/categories → 200, 24 categories', async () =&gt; {
+    const response = await request(app.getHttpServer())
+      .get('/products/categories')
+      .expect(200);
+
+    expect(response.body).toHaveLength(24);
+    expect(Object.keys(response.body[0]).sort()).toEqual(['name', 'slug', 'url']);
+  });
+
+  it('GET /products/1 → 200, product with 22 keys', async () =&gt; {
+    const response = await request(app.getHttpServer())
+      .get('/products/1')
+      .expect(200);
+
+    expect(Object.keys(response.body)).toHaveLength(22);
+    expect(response.body.title).toBe('Velvet Matte Lipstick');
+    expect(typeof response.body.category).toBe('string');
+    expect(Array.isArray(response.body.reviews)).toBe(true);
+  });
+
+  it('GET /products/9999 → 404 with the exact message', async () =&gt; {
+    const response = await request(app.getHttpServer())
+      .get('/products/9999')
+      .expect(404);
+
+    expect(response.body.message).toBe('Product 9999 not found');
+  });
+
+  it('GET /products/abc → 400 with message', async () =&gt; {
+    const response = await request(app.getHttpServer())
+      .get('/products/abc')
+      .expect(400);
+
+    expect(response.body.message).toBeDefined();
+  });
+});</code></pre>
+      <p>สังเกตสองอย่างในไฟล์นี้ อย่างแรก <code>import</code> ลงท้ายด้วย <code>.js</code> ทั้งที่ไฟล์จริงเป็น <code>.ts</code> — ธรรมเนียมเดิมของ ESM+TypeScript ที่ใช้ทั่วโปรเจกต์นี้ อย่างที่สอง <code>.expect(404)</code> ของ supertest ตรวจ status ให้ในบรรทัดเดียว ถ้า status ไม่ตรง test จะล้มตรงนั้นทันทีโดยไม่ต้องเขียน <code>if</code> เอง ส่วน <code>expect(...)</code> ที่เหลือคือของ Vitest ซึ่งพิมพ์ค่าที่ได้จริงเทียบกับค่าที่คาดไว้ให้เองเมื่อไม่ตรง</p>
+      <p>เปิดฐานข้อมูลไว้แล้วรัน <code>npm run test:e2e</code> จะเห็นรายงานของ Vitest — ไฟล์ที่ผ่านขึ้นต้นด้วย <code>✓</code> และปิดท้ายด้วยสรุปจำนวน (ตัวเลขเวลาเป็นของเครื่องคุณเอง ไม่ต้องตรงกับที่นี่)</p>
+      <pre><code> ✓ test/app.e2e-spec.ts (1 test)
+ ✓ test/products.e2e-spec.ts (4 tests)
+
+ Test Files  2 passed (2)
+      Tests  5 passed (5)</code></pre>
+      <p><code>test/app.e2e-spec.ts</code> คือไฟล์ตัวอย่างที่ scaffold ให้มา (ยิง <code>GET /</code> แล้วคาดว่าได้ <code>Hello World!</code>) ปล่อยไว้ได้ ไม่ต้องลบ — มันเป็นสัญญาณว่าแอป boot ขึ้นจริง</p>
+      <p><strong>ตรวจ test ที่ AI เขียนก่อนจะเชื่อมัน</strong> — test ที่อ่านแล้วดูดีแต่ไม่ได้ตรวจอะไรเลยคือสิ่งที่อันตรายที่สุดในไฟล์นี้ เพราะมันขึ้นเขียวตลอดไป</p>
+      <ul>
+        <li><code>git status</code> ต้องเห็นไฟล์ใหม่แค่ <code>test/products.e2e-spec.ts</code> ไฟล์เดียว — <strong>ไม่มีไฟล์ใน <code>src/</code> ถูกแก้</strong> ถ้ามี แปลว่า agent ไปแก้โค้ดให้เข้ากับ test ของมันเอง ให้ย้อนกลับแล้วสั่งใหม่</li>
+        <li>ทุก test ยิงผ่าน <code>request(app.getHttpServer())</code> — ไม่มี <code>http://localhost:3000</code> หรือเลข port โผล่ในไฟล์ และไม่มีการ mock <code>PrismaService</code> ทิ้ง (ถ้า mock แปลว่ามันกลายเป็น unit test ที่ไม่ได้แตะฐานข้อมูลจริง)</li>
+        <li>ข้อความ 404 ถูกเทียบแบบ <em>ตรงตัวอักษร</em> ด้วย <code>toBe('Product 9999 not found')</code> ไม่ใช่แค่ <code>toContain('not found')</code> หรือเช็คว่า <code>message</code> มีค่าอยู่เฉย ๆ</li>
+        <li>มี <code>afterAll</code> ที่เรียก <code>app.close()</code> — ถ้าลืม Vitest จะค้างไม่ยอมจบเพราะ connection ยังเปิดอยู่</li>
+        <li>ลองทำให้พังก่อนจะเชื่อมัน: แก้ข้อความใน <code>NotFoundException</code> เป็น <code>Product #9999 not found</code> ชั่วคราว แล้วรัน <code>npm run test:e2e</code> ซ้ำ — test ที่สามต้องล้มพร้อมบรรทัดเทียบค่าที่ได้จริงกับค่าที่คาดไว้ และ <code>echo $?</code> ต้องไม่ใช่ <code>0</code> จากนั้นย้อนกลับด้วย <code>git checkout -- .</code> (ไม่ต้องรอ watch mode เพราะ test ไม่ได้ยิงไปที่ dev server — มัน compile และ boot แอปจากซอร์สปัจจุบันเองทุกครั้งที่รัน)</li>
+        <li>พิสูจน์ว่ามันไม่ได้แอบพึ่ง dev server: ปิด <code>npm run start:dev</code> (Ctrl+C) แล้วรัน <code>npm run test:e2e</code> อีกครั้ง — ต้องผ่านเขียวครบเหมือนเดิม ถ้าพังแปลว่าคุณยิงผิดที่</li>
+        <li>รันเฉพาะไฟล์เดียวได้ด้วย <code>npm run test:e2e -- products</code> เมื่อไม่อยากรอไฟล์อื่น</li>
+        <li>commit ด้วย <code>git add -A &amp;&amp; git commit -m "test: contract e2e for the products endpoints"</code></li>
+      </ul>
+      <div class="note"><p>สี่ test นี้จะโตขึ้นทีละขั้น: ขั้น pagination เพิ่มสามข้อของ <code>GET /products</code> ขั้นกรองตามหมวดเพิ่มอีกสองข้อ รวมเป็นเก้าข้อที่คุ้มครอง endpoint ฝั่งอ่านทั้งหมด แล้วข้อที่สิบจะมาพร้อม <code>POST /carts/add</code> ในไฟล์ spec ของตัวเอง — ทุกครั้งที่เพิ่ม endpoint ใหม่ ให้เพิ่ม test ของมันด้วย prompt แยกเสมอ</p></div>
     </section>
     <h2>แหล่งอ้างอิง</h2>
     <ul class="source-list">
@@ -190,6 +293,7 @@ diff /tmp/actual.json /tmp/expected.json &amp;&amp; echo IDENTICAL</code></pre>
       <li><a href="https://docs.nestjs.com/pipes">Pipes: ParseIntPipe (NestJS Docs)</a></li>
       <li><a href="https://docs.nestjs.com/exception-filters">Exception filters: NotFoundException (NestJS Docs)</a></li>
       <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries">Relation queries: include (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/fundamentals/testing#end-to-end-testing">Testing: end-to-end tests (NestJS Docs)</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
       <a class="lesson-navigation__link" href="11_mapping-rows-to-the-contract.html" rel="prev">← บทก่อนหน้า</a>

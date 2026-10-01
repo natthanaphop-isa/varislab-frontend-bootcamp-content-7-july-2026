@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="รู้จัก display: flex, justify-content, align-items, gap, flex: 1 และ flex-wrap ซึ่งเป็น property หลักที่เราจะใช้สร้างหน้า landing page" />
+    <title>Property หลักของ Flexbox ที่ควรรู้ | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 03 · พื้นฐาน Flexbox (Flexbox Fundamentals)</p>
+          <h1>Property หลักของ Flexbox ที่ควรรู้</h1>
+          <p class="lesson-original-title" lang="en">Flexbox Properties</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ใช้ <code>justify-content</code> จัดตำแหน่งตามแนวหลัก (ปกติคือแนวนอน)</li>
+            <li>ใช้ <code>align-items</code> จัดตำแหน่งตามแนวตั้ง</li>
+            <li>ใช้ <code>gap</code> สร้างระยะห่างระหว่าง item</li>
+            <li>ใช้ <code>flex: 1</code> แบ่งพื้นที่ให้ item เท่า ๆ กัน และใช้ <code>flex-wrap</code> ให้ item ขึ้นบรรทัดใหม่ได้</li>
+          </ul>
+        </section>
+
+        <p>บทนี้เป็น "กล่องเครื่องมือ" ที่เราจะหยิบไปใช้ในบทถัด ๆ ไป ทุก property ในบทนี้จะปรากฏในโค้ดจริงของโปรเจกต์ ลองอ่านให้เห็นภาพก่อน แล้วค่อยกลับมาเปิดดูตอนลงมือเขียน</p>
+
+        <h2>1. <code>display: flex</code> — เปิดโหมด Flexbox</h2>
+        <pre><code class="language-css">.container {
+  display: flex;
+}</code></pre>
+        <p>ใช้เปิดโหมด Flexbox ให้ container เมื่อเปิดแล้ว ลูกโดยตรงจะเรียงต่อกันเป็นแถวแนวนอนโดยอัตโนมัติ property อื่น ๆ ในบทนี้ส่วนใหญ่จะทำงานก็ต่อเมื่อมี <code>display: flex</code> อยู่ก่อน</p>
+
+        <h2>2. <code>justify-content</code> — จัดตำแหน่งในแนวหลัก</h2>
+        <p>ใช้จัดตำแหน่งของลูกในแนวหลัก ซึ่งโดยปกติคือแนวนอน (ซ้าย-ขวา)</p>
+        <pre><code class="language-css">.navbar {
+  display: flex;
+  justify-content: space-between;
+}</code></pre>
+        <p>ค่าที่ควรรู้ก่อน:</p>
+        <pre><code class="language-css">justify-content: flex-start;
+justify-content: center;
+justify-content: space-between;</code></pre>
+        <div class="comparison" role="region" aria-label="ค่าของ justify-content" tabindex="0">
+          <table>
+            <thead><tr><th>ค่า</th><th>ผลลัพธ์</th></tr></thead>
+            <tbody>
+              <tr><td><code>flex-start</code></td><td>ชิดซ้าย (เป็นค่าเริ่มต้น)</td></tr>
+              <tr><td><code>center</code></td><td>อยู่กลาง</td></tr>
+              <tr><td><code>space-between</code></td><td>ดันตัวแรกไปซ้ายสุด ตัวสุดท้ายไปขวาสุด แล้วกระจายที่ว่างไว้ตรงกลาง</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>3. <code>align-items</code> — จัดตำแหน่งในแนวตั้ง</h2>
+        <pre><code class="language-css">.navbar {
+  display: flex;
+  align-items: center;
+}</code></pre>
+        <p><code>align-items: center</code> ใช้จัดลูกใน container ให้อยู่กึ่งกลางแนวตั้ง ใช้บ่อยมากใน navbar เพราะเราอยากให้ logo กับลิงก์อยู่กึ่งกลางแนวเดียวกัน แม้ขนาดตัวอักษรจะไม่เท่ากัน</p>
+        <div class="note">
+          <p>ค่าเริ่มต้นของ <code>align-items</code> คือ <code>stretch</code> ซึ่งยืดลูกทุกตัวให้สูงเท่ากับ container เราจะได้ใช้ค่า <code>stretch</code> นี้อีกครั้งตอนทำ responsive ในบทที่ 09</p>
+        </div>
+
+        <h2>4. <code>gap</code> — ระยะห่างระหว่างลูก</h2>
+        <pre><code class="language-css">.nav-links {
+  display: flex;
+  gap: 20px;
+}</code></pre>
+        <p><code>gap</code> กำหนดระยะห่าง<strong>ระหว่าง</strong>ลูกแต่ละตัว ดีกว่าการใส่ <code>margin</code> ซ้ายขวาให้ item ทีละตัว เพราะ:</p>
+        <ul>
+          <li>เขียนที่เดียว (ที่ parent) ควบคุมระยะห่างได้ทั้งหมด</li>
+          <li>ไม่มีระยะเกินที่หัวหรือท้ายแถว ไม่ต้องมาลบ margin ของตัวสุดท้าย</li>
+          <li>อ่านง่ายกว่า เห็นปุ๊บรู้เลยว่าระยะห่างระหว่าง item คือเท่าไร</li>
+        </ul>
+
+        <h2>5. <code>flex: 1</code> — แบ่งพื้นที่ให้ลูก</h2>
+        <p>property นี้ต่างจากตัวอื่นตรงที่ <strong>ใส่ที่ลูก</strong> ไม่ใช่ที่แม่ ใช้บอกว่าลูกตัวนี้ควรยืดขยายกินพื้นที่ว่างในแถวแค่ไหน</p>
+        <pre><code class="language-css">.feature-card {
+  flex: 1;
+}</code></pre>
+        <p>ถ้ามี card 3 ใบ และทุกใบมี <code>flex: 1</code> พื้นที่ในแถวจะถูกแบ่งให้ card แต่ละใบใกล้เคียงกัน ตัวเลขยังใช้เป็น<strong>สัดส่วน</strong>ได้ด้วย เช่น ลูกตัวหนึ่ง <code>flex: 1.4</code> อีกตัว <code>flex: 1</code> ตัวแรกจะกว้างกว่าเล็กน้อย เราจะใช้เทคนิคนี้ใน hero section (บทที่ 06)</p>
+
+        <h2>6. <code>flex-wrap</code> — ขึ้นบรรทัดใหม่เมื่อพื้นที่ไม่พอ</h2>
+        <pre><code class="language-css">.features-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}</code></pre>
+        <p>ค่าเริ่มต้นของ Flexbox คือพยายามบีบลูกทุกตัวให้อยู่ในแถวเดียว ถ้าหน้าจอแคบลงแล้ว item เรียงในแถวเดียวไม่พอ <code>flex-wrap: wrap</code> จะอนุญาตให้ item ขึ้นบรรทัดใหม่ได้ ในโปรเจกต์เราจะใช้กับ <code>.nav-links</code> ตอนทำ responsive</p>
+
+        <h2>สรุปเป็นตาราง</h2>
+        <div class="comparison" role="region" aria-label="สรุป property ของ Flexbox" tabindex="0">
+          <table>
+            <thead><tr><th>Property</th><th>ใส่ที่</th><th>หน้าที่</th></tr></thead>
+            <tbody>
+              <tr><td><code>display: flex</code></td><td>parent</td><td>เปิดโหมด Flexbox</td></tr>
+              <tr><td><code>justify-content</code></td><td>parent</td><td>จัดตำแหน่งแนวหลัก (ปกติคือแนวนอน)</td></tr>
+              <tr><td><code>align-items</code></td><td>parent</td><td>จัดตำแหน่งแนวตั้ง</td></tr>
+              <tr><td><code>gap</code></td><td>parent</td><td>ระยะห่างระหว่างลูก</td></tr>
+              <tr><td><code>flex-wrap</code></td><td>parent</td><td>อนุญาตให้ลูกขึ้นบรรทัดใหม่</td></tr>
+              <tr><td><code>flex: 1</code></td><td>child</td><td>ให้ลูกแบ่งพื้นที่ในแถว</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <p>อยากดูค่าอื่น ๆ เพิ่มเติม อ่านได้ที่ <a href="https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Flexbox" target="_blank" rel="noreferrer">MDN: Flexbox</a> แต่สำหรับโปรเจกต์นี้ 6 ตัวนี้เพียงพอแล้ว</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>บอกได้ว่า <code>justify-content: space-between</code> ทำอะไร</li>
+            <li>อธิบายได้ว่าทำไม <code>gap</code> ดีกว่าการใส่ <code>margin</code> ให้ item ทีละตัว</li>
+            <li>บอกได้ว่า property ไหนใส่ที่ parent และตัวไหนใส่ที่ child</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="02_flexbox_mental_model.html" rel="prev">ก่อนหน้า: Flexbox Mental Model: Parent กับ Children</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="04_html_structure.html" rel="next">ถัดไป: โครงสร้าง HTML และ CSS พื้นฐาน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

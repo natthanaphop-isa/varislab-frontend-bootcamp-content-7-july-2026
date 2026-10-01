@@ -9,10 +9,10 @@
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 26 จาก 77</p>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 26/58</p>
     <h1>ดึง Models พร้อม Relations</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
-      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <h2 id="objectives-heading">บทนี้เราจะทำอะไรบ้าง</h2>
       <ul>
         <li>อธิบายได้ว่าทำไม Prisma ไม่โหลด relation มาให้อัตโนมัติ และต้องขอเองอย่างไร</li>
         <li>ใช้ option <code>include</code> ใน <code>findMany()</code> และ <code>findUnique()</code> เพื่อดึงข้อมูลที่ผูกกันมาด้วย</li>
@@ -21,7 +21,7 @@
     </section>
 
     <h2>Relation ไม่ถูกโหลดมาโดย default</h2>
-    <p>หลังจากบทที่แล้ว ฐานข้อมูลของเรามี 3 ตาราง: <code>coffee</code>, <code>flavor</code> และ <code>_CoffeeToFlavor</code> ที่แทนความสัมพันธ์ many-to-many แต่ถ้ายิง <code>GET /coffees</code> ตอนนี้ จะพบว่า response ไม่มี <code>flavors</code> กลับมาเลย — Prisma จงใจ<strong>ไม่ join ตารางให้อัตโนมัติ</strong> เพราะการโหลด relation ทุกครั้งโดยไม่จำเป็นคือต้นทุน query ที่แพงโดยเปล่าประโยชน์ (และ type ที่ได้กลับมาจะบอกตรง ๆ ว่าไม่มี <code>flavors</code> ให้ใช้)</p>
+    <p>หลังจบบทที่แล้ว ฐานข้อมูลมี 3 ตาราง: <code>coffee</code>, <code>flavor</code> และตารางเชื่อม <code>_CoffeeToFlavor</code> แต่ถ้าลองยิง <code>GET /coffees</code> ตอนนี้ response จะยังไม่มี <code>flavors</code> เพราะ Prisma ไม่ join relation ให้เอง เราต้องขอ relation ที่ต้องการอย่างชัดเจน เพื่อไม่ให้ทุก query แบกข้อมูลและต้นทุนที่ไม่จำเป็น</p>
     <p>เมื่อไหร่ที่อยากได้ relation มาด้วย เราต้องระบุอย่างชัดเจนผ่าน option <code>include</code></p>
     <pre><code>return this.prisma.coffee.findMany({
   include: {
@@ -123,11 +123,11 @@ GET http://localhost:3000/coffees
 GET http://localhost:3000/coffees/1</code></div>
     </section>
     <section class="expected-result" aria-labelledby="exercise-result-heading">
-      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <h2 id="exercise-result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
       <p>ทั้งสอง endpoint คืนกาแฟพร้อม property <code>flavors</code> เป็น array ของ object เต็ม ๆ เช่น <code>[{ "id": 1, "name": "chocolate" }, { "id": 2, "name": "vanilla" }]</code> ไม่ใช่ array ว่างหรือหายไปเหมือนก่อนหน้า</p>
     </section>
     <section class="verification" aria-labelledby="exercise-check-heading">
-      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <h2 id="exercise-check-heading">ลองเช็กให้แน่ใจ</h2>
       <ul>
         <li><code>GET /coffees</code> คืนทุกแถวพร้อม <code>flavors</code> ที่ join มาจากตาราง <code>_CoffeeToFlavor</code></li>
         <li><code>GET /coffees/1</code> คืนกาแฟเดียวพร้อม <code>flavors</code> ครบทุกตัวที่ผูกไว้</li>
@@ -144,11 +144,11 @@ GET http://localhost:3000/coffees/1</code></div>
       <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
-      <a class="lesson-navigation__link" href="25_create-a-relation-between-two-models.html" rel="prev">← บทก่อนหน้า</a>
-      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="25_create-a-relation-between-two-models.html" rel="prev">← บทก่อน</a>
+      <a class="lesson-navigation__link" href="index.html">ดูบทเรียนทั้งหมด</a>
       <a class="lesson-navigation__link" href="27_using-nested-writes.html" rel="next">บทถัดไป →</a>
     </nav>
   </main>
-  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+  <footer><p>NestJS Fundamentals Workshop · เนื้อหาตรวจทานล่าสุด 1 กันยายน 2026</p></footer>
 </body>
 </html>

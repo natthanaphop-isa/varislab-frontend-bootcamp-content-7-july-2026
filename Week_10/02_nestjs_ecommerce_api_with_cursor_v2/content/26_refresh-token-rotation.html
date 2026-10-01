@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เพิ่ม refresh token ที่หมุนได้ครั้งเดียว เก็บ hash ด้วย SHA-256 ไม่ใช่ bcrypt แล้วเปิด POST /auth/refresh กับ POST /auth/logout" />
+  <title>Refresh Token ที่หมุนได้ และ Logout</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>Refresh Token ที่หมุนได้ และ Logout</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่าทำไม refresh token ต้องใช้ได้ครั้งเดียว และการหมุนมันช่วยจับกรณี token ถูกขโมยได้อย่างไร</li>
+        <li>เลือกวิธี hash ให้เหมาะกับสิ่งที่ hash — และบอกได้ว่าทำไมการใช้ bcrypt กับ JWT เป็นบั๊กที่เงียบสนิท</li>
+        <li>ทำให้ logout มีผลจริงในระบบที่ไม่มี session ฝั่ง server</li>
+      </ul>
+    </section>
+
+    <h2>ทำไมต้องหมุน</h2>
+    <p>access token ของเราอายุ 15 นาที พอหมดอายุ ผู้ใช้ไม่ควรต้องพิมพ์รหัสผ่านใหม่ — นั่นคืองานของ refresh token ที่อายุ 7 วัน แลกใบใหม่ให้โดยไม่ต้อง login ซ้ำ</p>
+    <p>คำถามที่ตามมาคือ ถ้า refresh token อยู่ได้ 7 วันและใช้ซ้ำได้เรื่อย ๆ แล้วมันต่างอะไรกับ access token อายุ 7 วัน คำตอบคือ<strong>ไม่ต่าง</strong> ถ้าเราปล่อยให้ใช้ซ้ำได้ เราก็แค่เปลี่ยนชื่อของที่รั่วแล้วอันตรายยาวนานเท่าเดิม</p>
+    <p>การหมุน (rotation) ทำให้มันต่างจริง: ทุกครั้งที่แลก เราออก refresh token ใบใหม่และ<strong>ทำให้ใบเดิมใช้ไม่ได้ทันที</strong> ผลที่ได้คือกลไกจับขโมยฟรี ๆ สมมติมีคนขโมย refresh token ของผู้ใช้ไป จะเกิดหนึ่งในสองกรณีนี้เสมอ</p>
+    <div class="comparison" role="region" aria-label="ผลของการหมุน refresh token เมื่อถูกขโมย" tabindex="0">
+      <table>
+        <thead><tr><th>ใครใช้ก่อน</th><th>เกิดอะไรขึ้น</th></tr></thead>
+        <tbody>
+          <tr><td>ขโมยใช้ก่อน</td><td>ขโมยได้ใบใหม่ไป แต่ใบที่ผู้ใช้จริงถืออยู่กลายเป็นใบเก่าทันที — ผู้ใช้จริงจะโดนเด้งออกจากระบบแบบไม่มีสาเหตุ ซึ่งเป็นสัญญาณที่สังเกตได้</td></tr>
+          <tr><td>ผู้ใช้จริงใช้ก่อน</td><td>ใบที่ขโมยถืออยู่กลายเป็นใบเก่าและใช้ไม่ได้ทันที ขโมยหลุดออกจากระบบเอง</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ถ้าไม่หมุน ทั้งสองฝ่ายจะใช้ใบเดียวกันต่อไปได้พร้อมกันเป็นสัปดาห์โดยไม่มีใครรู้เลย</p>
+    <div class="note"><p>ระบบจริงมักเดินต่ออีกขั้น: ถ้าเจอคนเอา refresh token ใบที่<em>ถูกหมุนไปแล้ว</em>มาใช้ ให้ถือว่ามีการขโมยเกิดขึ้นแน่นอน แล้วยกเลิก token ทั้งสายของผู้ใช้คนนั้นทันที เราจะไม่ทำขั้นนั้นในคอร์สนี้ แต่โครงสร้างที่สร้างในบทนี้รองรับมันได้แล้ว</p></div>
+
+    <h2>เก็บอะไรไว้ฝั่ง server</h2>
+    <p>การจะบอกได้ว่า "ใบนี้ใบเก่าแล้ว" แปลว่า server ต้องจำได้ว่าใบล่าสุดคือใบไหน เราจึงเพิ่มคอลัมน์หนึ่งช่องใน <code>User</code> ไว้เก็บ refresh token ใบปัจจุบัน — แต่เก็บเป็น <em>hash</em> ไม่ใช่ตัว token เอง ด้วยเหตุผลเดียวกับรหัสผ่าน: ถ้าฐานข้อมูลหลุด คนที่ได้ไปต้องสวมรอยเป็นผู้ใช้ไม่ได้</p>
+    <p>ทีนี้คำถามสำคัญของบทนี้ — hash ด้วยอะไร</p>
+
+    <h2>ห้าม bcrypt กับ JWT เด็ดขาด</h2>
+    <p>คำตอบที่ดูสมเหตุสมผลที่สุดคือใช้ <code>PasswordService</code> ตัวเดิมที่เขียนไว้แล้ว มันก็ hash เหมือนกัน และเราก็มีมันอยู่แล้ว — <strong>และมันจะพังแบบเงียบสนิท</strong></p>
+    <p>เอกสารของ bcrypt เขียนไว้ตรง ๆ ว่า <em>"Only the first 72 bytes of input are used"</em> — มันอ่านแค่ 72 ไบต์แรกของสิ่งที่ป้อนเข้าไป ส่วนที่เหลือถูกทิ้ง ซึ่งไม่เคยเป็นปัญหากับรหัสผ่านเพราะแทบไม่มีใครตั้งรหัสผ่านยาวขนาดนั้น</p>
+    <p>แต่ JWT ยาวกว่านั้นมาก และที่แย่กว่าคือ <strong>72 ไบต์แรกของ refresh token ทุกใบของผู้ใช้คนเดียวกันเหมือนกันหมด</strong> เพราะมันคือ header ที่คงที่ (<code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</code>) ต่อด้วยต้น payload ที่ขึ้นด้วย <code>{"sub":1,...</code> เหมือนเดิมทุกครั้ง ส่วนที่ทำให้แต่ละใบต่างกันคือ <code>iat</code>, <code>exp</code> และลายเซ็น ซึ่งอยู่<em>หลัง</em>ไบต์ที่ 72 ทั้งหมด</p>
+    <p>ผลคือ <code>bcrypt.compare(ใบเก่า, hashของใบใหม่)</code> จะคืน <code>true</code> — การหมุนไม่เกิดขึ้นจริง ใบเก่ายังใช้ได้ และ logout ก็ไม่มีผล ทั้งหมดนี้โดยที่โค้ดดูถูกต้องทุกบรรทัด ไม่มี error ไม่มี warning ไม่มี test ไหนแดงถ้าไม่ได้ตั้งใจทดสอบกรณีนี้โดยเฉพาะ คุณจะได้เห็นมันกับตาในส่วนตรวจท้ายบท</p>
+    <p>ทางที่ถูกคือ <code>SHA-256</code> จาก <code>node:crypto</code> ที่มากับ Node อยู่แล้ว</p>
+    <div class="comparison" role="region" aria-label="เลือกวิธี hash ให้เหมาะกับสิ่งที่ hash" tabindex="0">
+      <table>
+        <thead><tr><th></th><th>รหัสผ่าน</th><th>refresh token</th></tr></thead>
+        <tbody>
+          <tr><td>ความสุ่มของต้นทาง</td><td>ต่ำ — คนเลือกเอง เดาได้</td><td>สูงมาก — เครื่องสร้าง มีลายเซ็นเข้ารหัสกำกับ</td></tr>
+          <tr><td>สิ่งที่ต้องกัน</td><td>การไล่เดาจำนวนมหาศาล</td><td>การอ่านค่าดิบจากฐานข้อมูลที่หลุด</td></tr>
+          <tr><td>จึงต้องการ</td><td>hash ที่<em>ช้าโดยตั้งใจ</em> + salt → bcrypt</td><td>hash ที่เร็วและไม่ตัดความยาว → SHA-256</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>การทำ bcrypt กับของที่สุ่มมาอยู่แล้วไม่ได้เพิ่มความปลอดภัยเลย เพราะไม่มีใครไล่เดา JWT ทีละใบได้อยู่แล้ว มันแค่ทำให้ทุก request ที่ refresh ช้าลง — และในกรณีนี้ยังพาบั๊กร้ายแรงมาด้วย</p>
+
+    <h2>ทำไม refresh ไม่ต้องมี token แต่ logout ต้องมี</h2>
+    <p><code>POST /auth/refresh</code> ต้องติด <code>@Public()</code> ซึ่งฟังดูขัดความรู้สึก แต่เป็นสิ่งที่ถูก: หน้าที่ของมันคือทำงานตอน access token <em>หมดอายุไปแล้ว</em> ถ้า guard บังคับให้ต้องมี access token ที่ยังไม่หมดอายุก่อน มันก็จะใช้ไม่ได้ในสถานการณ์เดียวที่มันมีไว้เพื่อรับมือ สิ่งที่พิสูจน์ตัวตนของ request นี้คือ refresh token ใน body ไม่ใช่ header</p>
+    <p>ส่วน <code>POST /auth/logout</code> ยังต้องมี access token ตามปกติ เพราะมันคือคำสั่งที่ผู้ใช้ตั้งใจส่งจาก session ที่ยังทำงานอยู่ ถ้า access token หมดอายุไปแล้วก็ให้ refresh ก่อนแล้วค่อย logout — และถ้าไม่ทำอะไรเลย refresh token ก็จะหมดอายุไปเองใน 7 วันอยู่ดี</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <p>รายการด้านล่างคือไฟล์ที่เปลี่ยนใน<strong>โค้ดอ้างอิงของคอร์ส</strong> — ใช้เป็นแผนที่ตอนเทียบงาน ไม่ใช่ข้อบังคับ Cursor ของคุณอาจวางไฟล์หรือตั้งชื่อต่างไปได้ ขอแค่ผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
+    <pre><code>ecommerce-api/
+├── .env / .env.example                  (แก้ไข: เพิ่มสองบรรทัด — เขียนด้วยมือ)
+├── prisma/
+│   ├── schema.prisma                    (แก้ไข: เพิ่มคอลัมน์ใน User)
+│   └── migrations/
+│       └── &lt;timestamp&gt;_add_refresh_token/
+└── src/
+    └── auth/
+        ├── auth.module.ts               (แก้ไข)
+        ├── auth.service.ts              (แก้ไข: refresh, logout และ login คืนสองใบ)
+        ├── auth.controller.ts           (แก้ไข: สองเส้นใหม่)
+        └── dto/refresh.dto.ts           (สร้างใหม่)</code></pre>
+    <ul>
+      <li><strong><code>prisma/schema.prisma</code></strong> — ในโค้ดอ้างอิง: เพิ่ม <code>refreshTokenHash String?</code> ใน <code>User</code> (ว่างได้ เพราะผู้ใช้ที่ยังไม่เคย login ไม่มีค่านี้) · ไม่แตะ model อื่น</li>
+      <li><strong><code>src/auth/auth.service.ts</code></strong> — ในโค้ดอ้างอิง: <code>login</code> เปลี่ยนไปคืนสองใบ, <code>refresh</code> ตรวจแล้วหมุน, <code>logout</code> ล้างค่าเป็น <code>null</code> · hash ของ refresh token ใช้ <code>node:crypto</code> ไม่ใช่ <code>PasswordService</code></li>
+      <li><strong><code>src/auth/auth.controller.ts</code></strong> — ในโค้ดอ้างอิง: <code>POST /auth/refresh</code> ติด <code>@Public()</code> ส่วน <code>POST /auth/logout</code> ไม่ติด และตอบ <code>204</code></li>
+      <li>ไม่มีไฟล์ใน <code>test/</code> เปลี่ยนในบทนี้ และ <code>prisma/seed.ts</code> ไม่ถูกแตะ</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="refresh-heading">
+      <h2 id="refresh-heading">สั่ง Cursor เพิ่ม refresh และ logout</h2>
+      <p>เติมสองบรรทัดนี้ต่อท้าย<strong>ทั้ง</strong> <code>.env</code> และ <code>.env.example</code> ด้วยมือ (ตอนนี้ไฟล์ละแปดบรรทัด)</p>
+      <div class="prompt-example"><code>JWT_REFRESH_SECRET=dev-only-refresh-secret-change-me
+JWT_REFRESH_EXPIRES_IN=604800</code></div>
+      <p>secret ของ refresh ต้อง<strong>ไม่ใช่</strong>ตัวเดียวกับของ access — ถ้าใช้ตัวเดียวกัน ใครที่ถือ access token อยู่จะเอาไปใช้แทน refresh token ได้ทันที เพราะ server ตรวจลายเซ็นผ่านเหมือนกันทั้งคู่ การแยก secret ทำให้ token สองชนิดนี้สลับหน้าที่กันไม่ได้โดยสิ้นเชิง</p>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before refresh token"</code>)</p>
+      <div class="cursor-prompt"><code>เพิ่ม refresh token ที่หมุนได้ พร้อม POST /auth/refresh และ POST /auth/logout ตาม docs/auth-spec.md
+@docs/auth-spec.md @src/auth/auth.service.ts @src/auth/auth.module.ts @prisma/schema.prisma
+
+ผลลัพธ์ที่ต้องได้:
+- POST /auth/login เปลี่ยนเป็นคืน { accessToken, refreshToken } — refreshToken เป็น JWT คนละใบ เซ็นด้วย JWT_REFRESH_SECRET และอายุตาม JWT_REFRESH_EXPIRES_IN
+- หลังผมรัน npx prisma migrate dev --name add-refresh-token ตาราง User มีคอลัมน์ใหม่สำหรับเก็บ hash ของ refresh token ใบล่าสุด (ว่างได้) และ \dt ยังได้ 7 แถวเท่าเดิม ผู้ใช้เดิมไม่หาย
+- hash ของ refresh token ใช้ SHA-256 จาก node:crypto ไม่ใช่ bcrypt — ค่าที่เก็บเป็น hex 64 ตัวอักษร (bcrypt อ่านแค่ 72 ไบต์แรก ซึ่ง JWT ของผู้ใช้คนเดียวกันเหมือนกันหมด การหมุนจะไม่ทำงาน)
+- POST /auth/refresh เรียกได้แม้ไม่มี access token หรือ access token หมดอายุแล้ว — สิ่งที่พิสูจน์ตัวตนคือ refresh token ใน body
+- POST /auth/refresh ด้วย refresh token ที่ถูกต้อง → 200 พร้อม token ใหม่ทั้งสองใบ และ hash ในฐานข้อมูลเปลี่ยนตาม
+- ยิง POST /auth/refresh ซ้ำด้วยใบเดิมที่เพิ่งใช้ไป → 401 (ใบเดียวใช้ได้ครั้งเดียว)
+- POST /auth/logout ต้องมี access token → 204 ไม่มี body และล้าง hash ในฐานข้อมูลเป็น null หลังจากนั้น refresh ด้วยใบล่าสุด → 401
+- npm run test:e2e ยังได้ Tests  11 passed (11)
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่ (node:crypto มากับ Node อยู่แล้ว)
+- ห้ามใช้ bcrypt หรือ PasswordService กับ refresh token
+- ห้ามใช้ cookie และห้ามเปิด credentials ใน CORS — refresh token ส่งมาใน body
+- ห้ามรัน migrate หรือ generate ให้ผมรันเอง
+- ห้ามแตะไฟล์ใน test/ และห้ามแก้ prisma/seed.ts
+- ห้ามใช้ any, as หรือ !</code></div>
+      <p>อ่านโค้ดให้จบก่อน แล้วจึงรันสองคำสั่งนี้</p>
+      <div class="prompt-example"><code>npx prisma migrate dev --name add-refresh-token
+npx prisma generate</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="refresh-review-heading">
+      <h2 id="refresh-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>hash ของ refresh token มาจาก <code>createHash('sha256')</code> — <code>grep -rn "bcrypt" src/</code> ยังต้องเจอไฟล์เดียวคือ <code>password.service.ts</code></li>
+        <li><code>POST /auth/refresh</code> ติด <code>@Public()</code> ส่วน <code>POST /auth/logout</code> ไม่ติด</li>
+        <li>การเทียบ hash ทำกับ<em>ค่าที่ hash แล้ว</em> ทั้งสองฝั่ง ไม่ได้เอา token ดิบไปเทียบกับ hash ตรง ๆ</li>
+        <li><code>refresh</code> ตรวจสองอย่างเสมอ: ลายเซ็นของ token ถูกต้อง <strong>และ</strong> hash ตรงกับที่เก็บไว้ — ถ้าตรวจแค่ลายเซ็น การหมุนจะไม่มีความหมายเลย เพราะใบเก่าก็ลายเซ็นถูกเหมือนกัน</li>
+        <li>คอลัมน์ใหม่เป็น optional (<code>String?</code>) และ <code>migration.sql</code> ไม่มี <code>NOT NULL</code> ที่จะทำให้แถวเดิมพัง</li>
+        <li><code>logout</code> ตอบ <code>204</code> ด้วย <code>@HttpCode(204)</code> และไม่มี body</li>
+        <li><code>diff .env .env.example</code> ไม่มีผลต่าง และ <code>git status</code> ไม่มี <code>prisma/seed.ts</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ใช้ <code>PasswordService</code> ที่มีอยู่แล้วมา hash refresh token เพราะมันดูเป็นการนำโค้ดกลับมาใช้ซ้ำที่ดี — ผลคือ <code>compare</code> คืน <code>true</code> ให้ refresh token ทุกใบของผู้ใช้คนนั้น การหมุนและ logout จึงไม่ทำงาน โดยที่ทุกอย่างดูปกติดี อีกกรณีคือตรวจแค่ลายเซ็นของ refresh token แล้วออกใบใหม่ให้เลยโดยไม่เทียบกับ hash ที่เก็บไว้ ซึ่งแปลว่าใบเก่าทุกใบที่ยังไม่หมดอายุยังใช้ได้อยู่ทั้งหมด</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>// prisma/schema.prisma — เฉพาะบรรทัดที่เพิ่มใน model User
+  refreshTokenHash String?</code></pre>
+      <pre><code>// src/auth/auth.service.ts — เฉพาะส่วนที่เกี่ยวกับ refresh
+// (ConfigService เข้ามาอยู่ใน constructor เพิ่มจาก PrismaService, PasswordService และ JwtService)
+import { createHash } from 'node:crypto';
+
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private async issueTokens(user: {
+    id: number;
+    email: string;
+    role: string;
+  }): Promise&lt;AuthResponseDto&gt; {
+    const payload = { sub: user.id, email: user.email, role: user.role };
+
+    const accessToken = await this.jwt.signAsync(payload);
+    const refreshToken = await this.jwt.signAsync(payload, {
+      secret: this.config.getOrThrow&lt;string&gt;('JWT_REFRESH_SECRET'),
+      expiresIn: Number(this.config.getOrThrow&lt;string&gt;('JWT_REFRESH_EXPIRES_IN')),
+    });
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { refreshTokenHash: this.hashToken(refreshToken) },
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  async refresh(dto: RefreshDto): Promise&lt;AuthResponseDto&gt; {
+    let payload: JwtPayload;
+
+    try {
+      payload = await this.jwt.verifyAsync&lt;JwtPayload&gt;(dto.refreshToken, {
+        secret: this.config.getOrThrow&lt;string&gt;('JWT_REFRESH_SECRET'),
+      });
+    } catch {
+      throw new UnauthorizedException();
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+
+    if (
+      user === null ||
+      user.refreshTokenHash !== this.hashToken(dto.refreshToken)
+    ) {
+      throw new UnauthorizedException();
+    }
+
+    return this.issueTokens(user);
+  }
+
+  async logout(userId: number): Promise&lt;void&gt; {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshTokenHash: null },
+    });
+  }</code></pre>
+      <p>เงื่อนไขสองข้อใน <code>if</code> ของ <code>refresh</code> คือหัวใจของบทนี้ ข้อแรกตรวจว่า token เป็นของจริงที่เราเซ็นเอง ข้อสองตรวจว่ามันเป็น<em>ใบล่าสุด</em> ถ้าขาดข้อสอง ใบเก่าทุกใบที่ยังไม่หมดอายุจะใช้ได้หมด และการหมุนจะกลายเป็นพิธีกรรมที่ไม่ได้ป้องกันอะไร</p>
+      <pre><code>// src/auth/auth.controller.ts — เฉพาะส่วนที่เพิ่ม
+  @Public()
+  @Post('refresh')
+  refresh(@Body() dto: RefreshDto) {
+    return this.authService.refresh(dto);
+  }
+
+  @Post('logout')
+  @HttpCode(204)
+  logout(@CurrentUser() user: JwtPayload) {
+    return this.authService.logout(user.sub);
+  }</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="refresh-result-heading">
+      <h2 id="refresh-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>log ตอน start มีสองเส้นใหม่</p>
+      <pre><code>[RouterExplorer] Mapped {/auth/refresh, POST} route
+[RouterExplorer] Mapped {/auth/logout, POST} route</code></pre>
+      <p>login ครั้งนี้ได้สองใบครบตามสัญญา</p>
+      <pre><code>{"accessToken":"eyJhbGciOiJIUzI1NiIs...","refreshToken":"eyJhbGciOiJIUzI1NiIs..."}</code></pre>
+      <p>แลกใบใหม่ได้สองใบใหม่ แล้วพอเอาใบเดิมมาแลกซ้ำจะได้</p>
+      <pre><code>{"message":"Unauthorized","error":"Unauthorized","statusCode":401}</code></pre>
+      <p>ส่วน <code>POST /auth/logout</code> ตอบ <code>204</code> โดยไม่มี body ซึ่งเป็นสถานะที่ถูกต้องสำหรับ "ทำสำเร็จแล้วและไม่มีอะไรจะบอก"</p>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>คอลัมน์ใหม่มีจริงและว่างได้
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce -c '\d "User"'</code></pre></li>
+        <li>login แล้วเก็บ refresh token ใบแรกไว้
+          <pre><code>R1=$(curl -s -X POST http://localhost:3000/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"student@example.com","password":"secret123"}' \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log(JSON.parse(d).refreshToken))")</code></pre></li>
+        <li>hash ที่เก็บไว้ยาว 64 ตัวอักษร — นั่นคือลายเซ็นของ SHA-256 ไม่ใช่ bcrypt (ซึ่งจะได้ 60 และขึ้นต้น <code>$2b$</code>)
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce \
+  -c 'SELECT id, length("refreshTokenHash") AS len, left("refreshTokenHash", 8) AS head FROM "User";'</code></pre></li>
+        <li>แลกใบใหม่ได้ แล้วใบเดิมใช้ไม่ได้อีก — สองบรรทัดนี้ต้องได้ <code>200</code> แล้ว <code>401</code> ตามลำดับ
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:3000/auth/refresh \
+  -H 'Content-Type: application/json' -d "{\"refreshToken\":\"$R1\"}"
+curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:3000/auth/refresh \
+  -H 'Content-Type: application/json' -d "{\"refreshToken\":\"$R1\"}"</code></pre></li>
+        <li><strong>ดูบั๊กของ bcrypt ด้วยตาตัวเอง</strong> — คำสั่งนี้ hash สตริงหนึ่ง แล้วเอาอีกสตริงที่<em>ต่างกันจริง</em>ไปเทียบ สองสตริงนี้เหมือนกัน 72 ไบต์แรกและต่างกันหลังจากนั้น เหมือนกับที่ refresh token สองใบของผู้ใช้คนเดียวกันเป็น
+          <pre><code>node --input-type=commonjs -e "
+const b = require('bcrypt');
+const a = 'x'.repeat(72) + 'AAA';
+const c = 'x'.repeat(72) + 'BBB';
+b.hash(a, 10).then(h =&gt; b.compare(c, h)).then(r =&gt; console.log('bcrypt says they match:', r));
+"</code></pre>
+          ต้องพิมพ์ <code>bcrypt says they match: true</code> — สองสตริงที่ต่างกันแต่ bcrypt บอกว่าตรงกัน นี่คือเหตุผลทั้งหมดที่เราไม่ใช้มันกับ JWT</li>
+        <li>logout แล้ว refresh ต้องใช้ไม่ได้ (ใช้ access token ใบล่าสุดที่ได้จากการ refresh)
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:3000/auth/logout \
+  -H "Authorization: Bearer $TOKEN"
+docker compose exec db psql -U postgres -d ecommerce \
+  -c 'SELECT id, "refreshTokenHash" IS NULL AS logged_out FROM "User";'</code></pre>
+          ต้องได้ <code>204</code> แล้ว <code>logged_out</code> เป็น <code>t</code></li>
+        <li><code>diff .env .env.example</code> ยังไม่มีผลต่าง (ตอนนี้ไฟล์ละแปดบรรทัด)</li>
+        <li><code>npm run test:e2e</code> ยังได้ <code>Tests  11 passed (11)</code></li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: refresh token rotation and logout"</code></li>
+      </ul>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://github.com/kelektiv/node.bcrypt.js#readme">node.bcrypt.js: ข้อจำกัด 72 ไบต์ (GitHub)</a></li>
+      <li><a href="https://nodejs.org/api/crypto.html#cryptocreatehashalgorithm-options">crypto.createHash (Node.js Docs)</a></li>
+      <li><a href="https://datatracker.ietf.org/doc/html/rfc6749#section-1.5">RFC 6749: Refresh Token</a></li>
+      <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html#token-storage-on-client-side">JSON Web Token Cheat Sheet (OWASP)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="25_current-user-and-private-orders.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="27_roles-and-admin-endpoints.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

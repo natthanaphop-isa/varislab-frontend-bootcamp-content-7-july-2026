@@ -3,257 +3,226 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="เขียน seed script ที่ดึงสินค้าและหมวดหมู่จริงจาก dummyjson ลง PostgreSQL ใน transaction เดียว แล้วตรวจจำนวนแถวด้วย psql" />
-  <title>Seed สินค้าจริงจาก dummyjson</title>
+  <meta name="description" content="สั่ง Cursor เขียน seed script ที่สร้างสินค้า 208 ชิ้นด้วย faker เวอร์ชัน pin ตายตัวและ seed ค่าคงที่ โดยคุณเตรียมข้อมูลหมวดหมู่และสินค้า id 1 ให้เอง" />
+  <title>เขียน Seed Generator ด้วย Faker</title>
   <link rel="stylesheet" href="lesson.css" />
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 9 จาก 24</p>
-    <h1>Seed สินค้าจริงจาก dummyjson</h1>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>เขียน Seed Generator ด้วย Faker</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
       <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
       <ul>
-        <li>เขียน seed script ที่รันนอก NestJS ด้วย <code>tsx</code> และสร้าง <code>PrismaClient</code> พร้อม adapter เอง</li>
-        <li>อธิบายได้ว่าทำไมต้องลบข้อมูลตามลำดับ foreign key และทำไมต้องห่อทั้งหมดไว้ใน transaction</li>
-        <li>ยืนยันด้วย <code>psql</code> ว่าฐานข้อมูลมีสินค้า 194 ชิ้น หมวดหมู่ 24 หมวด และรีวิว 582 รายการ</li>
+        <li>ติดตั้งและ pin เวอร์ชัน <code>@faker-js/faker</code> แล้วสั่งให้ Cursor เขียน seed script ที่ deterministic จากข้อมูลที่คุณให้</li>
+        <li>อธิบายได้ว่าทำไม product id 1 ต้องเป็นค่าคงที่ ไม่ปล่อยให้ faker สุ่ม</li>
+        <li>ยืนยันด้วย SQL ว่าจำนวนสินค้าต่อหมวดตรงกับที่ตั้งใจไว้ (<code>beauty</code>=5, <code>groceries</code>=27, อื่น ๆ=8)</li>
       </ul>
     </section>
 
-    <h2>seed คือสคริปต์ธรรมดา ไม่ใช่ส่วนหนึ่งของแอป</h2>
-    <p>เราเคย seed ฐานข้อมูลมาแล้วใน <a href="../../../Week_08/02_API_Design_in_Nodejs_v1/content/19_seeding_the_database.html">Week_08 บทที่ 19</a> แนวคิดเดิมทั้งหมด: seed คือไฟล์ที่รันด้วยมือเมื่อเราต้องการเติมข้อมูลตั้งต้น ไม่ใช่ provider ของ Nest และไม่ถูกเรียกตอนแอป boot สามข้อที่ต้องคุมให้ดีคือ ลบของเก่าตาม<strong>ลำดับ foreign key</strong>, แทรกทีเดียวหลายแถวด้วย <code>createMany</code> และทำให้รันซ้ำได้ไม่พัง</p>
-    <p>ลำดับการลบของเราคือ <code>review</code> → <code>product</code> → <code>category</code> เสมอ — ลูกก่อนแม่ ถ้าสลับไปลบ <code>category</code> ก่อน PostgreSQL จะปฏิเสธ เพราะยังมีแถวใน <code>Product</code> ที่ <code>categoryId</code> ชี้มาหาอยู่ (foreign key เป็น restrict ตามค่าปริยาย) สังเกตว่าเราไม่พึ่ง <code>onDelete: Cascade</code> ของ <code>Review</code> ให้ลบแทน ทั้งที่มันทำได้ เพราะการเขียนลำดับออกมาชัด ๆ อ่านแล้วเข้าใจเจตนาได้ทันที</p>
+    <h2>ไม่มี dummyjson ให้ดึงอีกแล้ว</h2>
+    <p><code>docs/api-spec.md</code> ที่เราเขียนเองจากโค้ดฝั่ง client กลายเป็นสัญญาเดียวของเราที่มาจากโค้ดฝั่ง client ไม่ใช่จาก dummyjson.com บทนี้พาไปอีกขั้น: <strong>ไม่มีการดึงข้อมูลจากที่ไหนเลย</strong> แคตตาล็อกทั้ง 208 ชิ้นถูก<em>สร้าง</em>ขึ้นในเครื่องของเราเองด้วย <code>@faker-js/faker</code> แล้วเขียนลง PostgreSQL ตรง ๆ ไม่มี <code>fetch</code> ไม่มี network เลยสักบรรทัด ต่างจากเวอร์ชันเดิมของคอร์สที่ยังต้องพึ่ง <code>GET https://dummyjson.com/products?limit=0</code> อยู่</p>
+    <p>ผลที่ได้คือ seed รันได้แม้ไม่มีอินเทอร์เน็ต ไม่มีวันพังเพราะ dummyjson เปลี่ยนข้อมูลหรือ endpoint ล่ม และที่สำคัญที่สุดสำหรับคอร์สนี้: <strong>ทำซ้ำได้เป๊ะทุกครั้ง</strong> — สิ่งที่ dummyjson ให้เราไม่ได้เลย เพราะเราไม่ได้เป็นเจ้าของข้อมูลนั้น</p>
 
-    <h2>ทำไมดึงสดจาก dummyjson ไม่ commit สินค้า 194 ชิ้นไว้ในโปรเจกต์</h2>
-    <p>ไฟล์ใน <code>docs/contract/</code> คือ <strong>ตัวอย่างรูปทรง</strong> ของ response ที่เราใช้เป็นสัญญา (สินค้าหนึ่งชิ้น หนึ่งหน้า หนึ่งรายการหมวดหมู่) ส่วนแคตตาล็อกทั้งก้อนคือ <strong>ข้อมูล</strong> ซึ่งไม่ควรอยู่ใน git — มันใหญ่ เปลี่ยนได้ตลอดโดยไม่กระทบสัญญา และการดึงสดยังทำให้บทที่ 15 (ตรวจสัญญาอัตโนมัติ) เทียบกับของจริงได้ตรงกันมากขึ้น สิ่งที่เราคงไว้เหมือนเดิมเป๊ะ ๆ คือ <code>id</code> ของทุกชิ้น เพราะ React app ลิงก์ด้วย id ตรง ๆ — ถ้า id ขยับ ลิงก์ที่ผู้ใช้บุ๊กมาร์กไว้จะพาไปสินค้าผิดชิ้น</p>
+    <h2>ทำไมต้อง pin <code>@faker-js/faker@10.6.0</code> ให้แน่น</h2>
+    <p>เราพิน Prisma ไว้ที่ <code>7.10.0</code> และพิน image <code>postgres:17</code> มาตั้งแต่ตอนยก PostgreSQL ขึ้น ด้วยเหตุผลเดียวกันทุกครั้ง: เวอร์ชันถัดไปอาจเปลี่ยนพฤติกรรมโดยไม่ประกาศว่าเป็น breaking change faker ก็เหมือนกัน — รายการคำในแต่ละ locale (ชื่อสินค้า, ชื่อบริษัท, ชื่อวัตถุดิบอาหาร) แก้ไขได้ระหว่าง minor version เสมอ และเพราะเราเรียก <code>faker.seed(20260913)</code> แล้วอ่านผลลัพธ์ที่ได้แบบ deterministic ค่าที่สุ่มออกมาจึงผูกกับ<strong>เวอร์ชันที่ติดตั้งจริง</strong> ไม่ใช่แค่กับตัวเลข seed</p>
+    <p>บทนี้ (และขั้นถัดไปที่จะยกตัวอย่างค่าจริงจากสินค้า id 1 หรือจากหมวด groceries) อ้างค่าที่สุ่มมาโดยพิมพ์ตรง ๆ ในเนื้อหา ถ้าใครติดตั้ง faker เวอร์ชันอื่น ต่อให้โค้ดเหมือนกันทุกบรรทัด ค่าที่ได้จะไม่ตรงกับที่คอร์สพิมพ์ไว้เลย คำสั่ง <code>npm i -D @faker-js/faker@10.6.0</code> ติดตั้งเวอร์ชันที่ระบุเป๊ะ ๆ (ตรวจได้จาก <code>node_modules/@faker-js/faker/package.json</code>) แต่ <code>package.json</code> จะบันทึกเป็น <code>^10.6.0</code> ตามธรรมเนียมเดิมของโปรเจกต์นี้ (Prisma และ <code>@prisma/client</code> ก็เขียนด้วย <code>^</code> เหมือนกัน) ตัวที่รับประกันจริง ๆ ว่าใครมา <code>npm ci</code> ต่อจะได้เวอร์ชันเดียวกันคือ <code>package-lock.json</code> ที่ต้อง commit คู่กันเสมอ</p>
 
-    <h2>createMany สามครั้ง ไม่ใช่ create 194 ครั้ง</h2>
-    <p>เขียนแบบวน loop เรียก <code>create</code> ทีละชิ้นก็ได้ผลถูกต้อง แต่หมายถึงการคุยกับฐานข้อมูลอย่างน้อย 194 + 582 รอบ ช้ากว่ากันหลายเท่า <code>createMany</code> ส่งทั้งชุดไปใน statement เดียว</p>
+    <h2>24 หมวดหมู่ กับข้อยกเว้นสองข้อใน <code>COUNT_OVERRIDES</code></h2>
+    <p><code>CATEGORIES</code> คือ array คงที่ 24 คู่ <code>[slug, name]</code> เรียงลำดับตายตัว — บล็อกด้านล่างนี้คือ<strong>โค้ดชิ้นเดียวในบทนี้ที่คุณพิมพ์เอง</strong> เพราะมันคือข้อมูลของสัญญา ไม่ใช่วิธีเขียนโปรแกรม ลำดับนี้สำคัญกว่าที่คิด เพราะ seed จะไล่สร้างสินค้าตามลำดับนี้ทีละหมวด ถ้าสลับลำดับ หมวดถัดจากจุดที่สลับจะได้ค่าสุ่มคนละชุดทันที (อธิบายในหัวข้อ "ที่มาของความ deterministic" ด้านล่าง)</p>
+    <pre><code>const CATEGORIES: Array&lt;[slug: string, name: string]&gt; = [
+  ['beauty', 'Beauty'],
+  ['fragrances', 'Fragrances'],
+  ['furniture', 'Furniture'],
+  ['groceries', 'Groceries'],
+  ['home-decoration', 'Home Decoration'],
+  ['kitchen-accessories', 'Kitchen Accessories'],
+  ['laptops', 'Laptops'],
+  ['mens-shirts', "Men's Shirts"],
+  ['mens-shoes', "Men's Shoes"],
+  ['mens-watches', "Men's Watches"],
+  ['mobile-accessories', 'Mobile Accessories'],
+  ['motorcycle', 'Motorcycle'],
+  ['skin-care', 'Skin Care'],
+  ['smartphones', 'Smartphones'],
+  ['sports-accessories', 'Sports Accessories'],
+  ['sunglasses', 'Sunglasses'],
+  ['tablets', 'Tablets'],
+  ['tops', 'Tops'],
+  ['vehicle', 'Vehicle'],
+  ['womens-bags', "Women's Bags"],
+  ['womens-dresses', "Women's Dresses"],
+  ['womens-jewellery', "Women's Jewellery"],
+  ['womens-shoes', "Women's Shoes"],
+  ['womens-watches', "Women's Watches"],
+];
+
+const COUNT_OVERRIDES: Record&lt;string, number&gt; = { beauty: 5, groceries: 27 };
+const DEFAULT_COUNT = 8;</code></pre>
+    <p>ค่าเริ่มต้นของทุกหมวดคือ <code>DEFAULT_COUNT = 8</code> ชิ้น ยกเว้นสองหมวดที่ตั้งใจทำให้ต่างออกไปเพื่อใช้ตอนต่อ React app เข้ากับ API ของเรา</p>
+    <div class="comparison" role="region" aria-label="เหตุผลของ COUNT_OVERRIDES" tabindex="0">
+      <table>
+        <thead><tr><th>หมวด</th><th>จำนวน</th><th>เหตุผล (ใช้ตอนต่อ React app)</th></tr></thead>
+        <tbody>
+          <tr><td><code>beauty</code></td><td>5</td><td>น้อยกว่า <code>limit</code> เริ่มต้นของทุก endpoint — แสดงผลได้ครบหน้าเดียว ไม่ต้องมี pagination ให้อธิบาย</td></tr>
+          <tr><td><code>groceries</code></td><td>27</td><td>เกิน 20 (limit เริ่มต้น) พอดี ได้สองหน้าจริง: หน้าแรก 20 ชิ้น หน้าที่สองอีก 7 ชิ้น ใช้เดิน pagination ให้เห็นของจริง</td></tr>
+          <tr><td>อีก 22 หมวดที่เหลือ</td><td>8 (<code>DEFAULT_COUNT</code>)</td><td>พอสำหรับสาธิต endpoint ทั่วไป ไม่ต้องมีเหตุผลพิเศษ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>รวมทั้งหมด: 5 + 27 + (22 × 8) = <strong>208 ชิ้น</strong> — ตัวเลขนี้ปรากฏซ้ำในหัวข้อ "ผลลัพธ์ที่คาดหวัง" ด้านล่าง ถ้านับได้ไม่ตรง แปลว่ามีหมวดใดหมวดหนึ่งเพี้ยนจากตารางนี้</p>
+
+    <h2>product id 1 เป็นค่าคงที่ ไม่ปล่อยให้ faker สุ่ม</h2>
+    <p>ทุกชิ้นในแคตตาล็อกสุ่มด้วย faker ยกเว้นชิ้นเดียว: id 1 ขั้นถัดไปจะยกตัวอย่าง mapper output จากสินค้าชิ้นนี้ตรง ๆ และขั้นสั่งซื้อจะคำนวณราคารวมตะกร้าจากราคาชิ้นนี้ — ทุกจุดพิมพ์ค่าตรง ๆ ไว้ในเนื้อหา ถ้าปล่อยให้ faker สุ่มชิ้นนี้ด้วย ค่าที่พิมพ์ไว้ในทุกขั้นถัดไปจะผูกติดกับลำดับการเรียก faker แบบเปราะบางมาก — สลับลำดับ field แค่บรรทัดเดียวในไฟล์ก็ทำให้ค่าที่ได้เปลี่ยนไปทั้งหมด สินค้าชิ้นนี้จึงต้องเป็นค่าคงที่ที่ไม่ขึ้นกับ faker เลย</p>
+    <p>ค่าทั้งหมดของสินค้าชิ้นนี้อยู่ในตารางด้านล่าง — นี่คือ<strong>ข้อมูล</strong>ที่ต้องส่งให้ Cursor ครบทุกช่อง ไม่ใช่โค้ดที่เราต้องเขียนเอง สินค้าชิ้นนี้อยู่ในหมวด <code>beauty</code> ซึ่งเป็นหมวดแรกของ <code>CATEGORIES</code> จึงได้ id 1 พอดี และทุกคอลัมน์ของตาราง <code>Product</code> ต้องมีค่าครบ ยกเว้น <code>categoryId</code> ที่ยังไม่รู้จนกว่าจะ resolve จาก slug ตอนเขียนลงฐานข้อมูล</p>
+    <div class="comparison" role="region" aria-label="ค่าของสินค้า id 1" tabindex="0">
+      <table>
+        <thead><tr><th>field</th><th>ค่า</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><code>1</code></td></tr>
+          <tr><td><code>slug</code> ของหมวด</td><td><code>beauty</code></td></tr>
+          <tr><td><code>title</code></td><td><code>Velvet Matte Lipstick</code></td></tr>
+          <tr><td><code>description</code></td><td><code>Long-wearing matte lipstick with a lightweight, non-drying formula in a true-red shade.</code></td></tr>
+          <tr><td><code>price</code></td><td><code>9.99</code></td></tr>
+          <tr><td><code>discountPercentage</code></td><td><code>10.48</code></td></tr>
+          <tr><td><code>rating</code></td><td><code>4.6</code></td></tr>
+          <tr><td><code>stock</code></td><td><code>42</code></td></tr>
+          <tr><td><code>tags</code></td><td><code>beauty</code>, <code>lipstick</code></td></tr>
+          <tr><td><code>brand</code></td><td><code>Lumina</code></td></tr>
+          <tr><td><code>sku</code></td><td><code>BEA-LUM-001</code></td></tr>
+          <tr><td><code>weight</code></td><td><code>2</code></td></tr>
+          <tr><td><code>width</code> / <code>height</code> / <code>depth</code></td><td><code>3.2</code> / <code>9.5</code> / <code>3.2</code></td></tr>
+          <tr><td><code>warrantyInformation</code></td><td><code>No warranty</code></td></tr>
+          <tr><td><code>shippingInformation</code></td><td><code>Ships in 1-2 business days</code></td></tr>
+          <tr><td><code>availabilityStatus</code></td><td><code>In Stock</code></td></tr>
+          <tr><td><code>returnPolicy</code></td><td><code>30 days return policy</code></td></tr>
+          <tr><td><code>minimumOrderQuantity</code></td><td><code>1</code></td></tr>
+          <tr><td><code>barcode</code></td><td><code>8901234567891</code></td></tr>
+          <tr><td><code>qrCode</code></td><td><code>https://picsum.photos/seed/product-1-qr/200/200</code></td></tr>
+          <tr><td><code>images</code></td><td><code>https://picsum.photos/seed/product-1-a/600/600</code><br /><code>https://picsum.photos/seed/product-1-b/600/600</code></td></tr>
+          <tr><td><code>thumbnail</code></td><td><code>https://picsum.photos/seed/product-1-thumb/300/300</code></td></tr>
+          <tr><td><code>createdAt</code></td><td><code>2026-01-15T08:00:00.000Z</code></td></tr>
+          <tr><td><code>updatedAt</code></td><td><code>2026-08-20T11:30:00.000Z</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>รีวิวสามรายการของสินค้าชิ้นนี้เป็นค่าคงที่เช่นกัน</p>
+    <div class="comparison" role="region" aria-label="รีวิวของสินค้า id 1" tabindex="0">
+      <table>
+        <thead><tr><th>rating</th><th>comment</th><th>date</th><th>reviewerName / reviewerEmail</th></tr></thead>
+        <tbody>
+          <tr><td><code>5</code></td><td><code>Stays on all day, love the finish.</code></td><td><code>2026-06-02T10:15:00.000Z</code></td><td><code>Aom Suksawat</code><br /><code>aom.suksawat@example.com</code></td></tr>
+          <tr><td><code>4</code></td><td><code>Great color but a bit drying on my lips.</code></td><td><code>2026-06-10T14:30:00.000Z</code></td><td><code>Beth Carter</code><br /><code>beth.carter@example.com</code></td></tr>
+          <tr><td><code>5</code></td><td><code>Repurchased three times already.</code></td><td><code>2026-06-18T09:05:00.000Z</code></td><td><code>Nok Chaiyaporn</code><br /><code>nok.chaiyaporn@example.com</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ข้อควรระวังข้อเดียวของสินค้าชิ้นนี้: ชื่อ <code>Velvet Matte Lipstick</code> ต้องถูกนับเป็นชื่อที่ใช้ไปแล้วของหมวด <code>beauty</code> ด้วย ไม่อย่างนั้นสินค้าที่สุ่มถัดไปในหมวดเดียวกันอาจได้ชื่อซ้ำกับมันโดยไม่มีอะไรจับได้</p>
+
+    <h2>ชื่อสินค้าต้องไม่ซ้ำกันภายในหมวดเดียวกัน</h2>
+    <p>สินค้าอีก 207 ชิ้นสุ่มชื่อด้วย faker แต่มีเงื่อนไขหนึ่งข้อที่ต้องรักษาไว้: <strong>ภายในหมวดเดียวกันห้ามมีชื่อซ้ำ</strong> (คนละหมวดชื่อซ้ำกันได้ ไม่ใช่ปัญหา) เพราะหน้าแสดงรายการสินค้าของ React app จะดูเหมือนข้อมูลพังทันทีถ้ามีสินค้าชื่อเดียวกันสองชิ้นวางติดกันในหมวดเดียว วิธีที่ตรงไปตรงมาที่สุดคือเก็บชื่อที่ใช้ไปแล้วของหมวดนั้นไว้ แล้วสุ่มใหม่เมื่อได้ชื่อซ้ำ — จะเขียนด้วยวิธีไหนก็ได้ ขอแค่ผลลัพธ์ในฐานข้อมูลไม่มีชื่อซ้ำในหมวดเดียวกัน</p>
+    <p>หมวด <code>groceries</code> ต้องสุ่มชื่อจากคำศัพท์<strong>อาหาร</strong> (วัตถุดิบ ผลไม้ ผัก) ไม่ใช่ชื่อสินค้าทั่วไป เพราะหมวดนี้คือหมวดที่ใช้เดิน pagination ตอนต่อ React app ให้เห็นของจริงสองหน้า ถ้าชื่อในหมวดของชำกลายเป็นชื่อเฟอร์นิเจอร์หรือเครื่องมือช่าง หน้าจอที่นักเรียนเปิดดูจะดูไม่น่าเชื่อถือทันที ส่วนหมวดอื่นทั้งหมดใช้ชื่อสินค้าทั่วไปได้ และทุกชื่อไม่ว่าหมวดไหนต้องเป็น Title Case (ขึ้นต้นด้วยตัวใหญ่ทุกคำ) ให้เหมือนกันทั้งแคตตาล็อก</p>
+
+    <h2>กติกาของสินค้าอีก 207 ชิ้นที่สุ่ม</h2>
+    <p>สินค้าที่เหลือสุ่มทุก field แต่ไม่ใช่สุ่มแบบปล่อยอิสระ — มีสามข้อที่ต้องคุมไว้ เพราะมันผูกกับสัญญาใน <code>docs/api-spec.md</code> และกับบทถัดไป ๆ</p>
     <ul>
-      <li>เรียกสามครั้งตามลำดับ: <code>category</code> → <code>product</code> → <code>review</code> (แม่ก่อนลูก ตรงข้ามกับลำดับการลบ) เพราะ <code>Product.categoryId</code> ต้องมีหมวดหมู่อยู่ก่อน และ <code>Review.productId</code> ต้องมีสินค้าอยู่ก่อน</li>
-      <li>ระหว่างสองขั้นแรกเราต้องอ่าน <code>Category</code> กลับมาทำ <code>Map</code> จาก <code>slug</code> ไป <code>id</code> เพราะ dummyjson ส่งหมวดหมู่มาเป็น slug string (<code>"category": "beauty"</code>) แต่ตารางเราต้องการเลข <code>categoryId</code></li>
-      <li><code>createMany</code> แทรกตามลำดับของ array ที่ส่งไป จึงได้ลำดับรีวิวเหมือนที่ dummyjson ส่งมา — สำคัญกับบทที่ 11 ที่ต้อง map ออกไปให้เหมือนต้นฉบับ</li>
+      <li><strong>ส่วนลดมีประมาณ 2 ใน 3</strong> — ราว 1 ใน 3 ของสินค้าต้องไม่มีส่วนลดเลย คือ <code>discountPercentage</code> เป็น <code>null</code> ตรงกับคอลัมน์ <code>Float?</code> ใน schema ส่วนที่เหลือได้ตัวเลข 1–25 ข้อนี้สำคัญเพราะ mapper ต้อง<em>ตัดคีย์นี้ทิ้งทั้งคีย์</em>เมื่อเป็น <code>null</code> ถ้าทุกชิ้นมีส่วนลดหมด จะไม่มีข้อมูลให้ทดสอบพฤติกรรมนั้นเลย</li>
+      <li><strong>ทศนิยมต้องไม่เกินสองตำแหน่ง</strong> — ราคา, <code>rating</code>, ส่วนลด และขนาดทั้งสามด้านต้องปัดให้เหลือทศนิยมสองตำแหน่ง ไม่ใช่ค่าที่ลอยมาแบบ <code>12.340000000000002</code> จาก floating-point เพราะค่าพวกนี้ถูกส่งออกไปให้ client ตรง ๆ และ React app เอาไปคูณกับจำนวนชิ้นในตะกร้าต่อ</li>
+      <li><strong>รีวิวชิ้นละ 3 รายการเสมอ</strong> — ทุกชิ้นมีรีวิวสามรายการเท่ากันหมด (rating 1–5, คอมเมนต์สั้น ๆ, วันที่ย้อนหลังไม่เกิน 180 วัน, ชื่อและอีเมลผู้รีวิว) รวมทั้งแคตตาล็อกจึงได้ 624 รีวิวพอดี ซึ่งเป็นตัวเลขที่ใช้ตรวจว่า seed ทำงานครบ</li>
     </ul>
+    <p>อีกสี่ field ต้องสุ่มจาก<strong>ชุดตัวเลือกคงที่</strong> ไม่ใช่ข้อความอิสระ เพราะ React app แสดงค่าพวกนี้เป็นป้ายสถานะ ถ้าได้ประโยคยาว ๆ ที่สุ่มมาแบบอิสระ หน้าจอจะเพี้ยนทันที</p>
+    <div class="comparison" role="region" aria-label="ชุดตัวเลือกคงที่ของสี่ field" tabindex="0">
+      <table>
+        <thead><tr><th>field</th><th>ตัวเลือกที่เป็นไปได้</th></tr></thead>
+        <tbody>
+          <tr><td><code>warrantyInformation</code></td><td><code>No warranty</code>, <code>1 week warranty</code>, <code>1 month warranty</code>, <code>3 months warranty</code>, <code>6 months warranty</code>, <code>1 year warranty</code>, <code>2 year warranty</code>, <code>3 year warranty</code>, <code>5 year warranty</code>, <code>Lifetime warranty</code></td></tr>
+          <tr><td><code>shippingInformation</code></td><td><code>Ships in 1-2 business days</code>, <code>Ships in 3-5 business days</code>, <code>Ships overnight</code>, <code>Ships in 1 week</code>, <code>Ships in 2 weeks</code>, <code>Ships in 1 month</code></td></tr>
+          <tr><td><code>availabilityStatus</code></td><td><code>In Stock</code>, <code>Low Stock</code>, <code>Out of Stock</code> — โดย <code>In Stock</code> ต้องออกบ่อยกว่าอีกสองค่าอย่างชัดเจน</td></tr>
+          <tr><td><code>returnPolicy</code></td><td><code>No return policy</code>, <code>7 days return policy</code>, <code>30 days return policy</code>, <code>60 days return policy</code>, <code>90 days return policy</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ข้อสังเกตเรื่อง <code>availabilityStatus</code>: ตัวช่วยสุ่มของ faker หยิบสมาชิกจาก array แบบ uniform ทุกตัวมีโอกาสเท่ากัน ไม่มี parameter ให้ใส่น้ำหนัก ถ้าอยากให้ &ldquo;มีสินค้า&rdquo; เกิดบ่อยกว่า &ldquo;สินค้าหมด&rdquo; ต้องใส่ <code>'In Stock'</code> ซ้ำหลายครั้งในชุดตัวเลือกเอง — เป็นจุดที่ควรดูตอนรีวิวว่า Cursor ทำหรือเปล่า</p>
 
-    <h2>ทำไมต้องรันด้วย tsx</h2>
-    <p>Prisma generate client ออกมาเป็นไฟล์ <code>.ts</code> ใน <code>src/generated/prisma/</code> แต่ข้างในไฟล์เหล่านั้น import กันด้วยนามสกุล <code>.js</code> (ตามกติกาของ ES module) Node เปล่า ๆ รันไฟล์ <code>.ts</code> ไม่ได้และไล่ import แบบนี้ไม่ถูก ส่วน <code>tsx</code> ทำทั้งสองอย่าง: แปลง TypeScript ให้ตอนรัน และแก้ปัญหา path ให้ด้วย เราจึงเพิ่ม script <code>"db:seed": "tsx prisma/seed.ts"</code> ไว้ใน <code>package.json</code> แล้วเรียกด้วย <code>npm run db:seed</code></p>
-    <p>เพราะสคริปต์นี้อยู่นอก NestJS มันจึงไม่มี <code>ConfigModule</code> มาโหลด <code>.env</code> ให้ ต้อง <code>import 'dotenv/config'</code> เป็นบรรทัดแรกเอง และต้อง <code>new PrismaClient({ adapter: … })</code> เองเหมือนที่ <code>PrismaService</code> ทำ — นี่เป็นข้อยกเว้นเดียวของกฎ <q>ห้าม <code>new PrismaClient</code> ในไฟล์อื่น</q> ใน <code>.cursor/rules/project.mdc</code> เพราะไฟล์นี้ไม่ได้อยู่ใน dependency injection ของ Nest เลย</p>
+    <h2>ที่มาของความ deterministic ทั้งหมด</h2>
+    <p>หัวใจของบทนี้คือ <code>faker.seed(20260913)</code> ต้องถูกเรียก<strong>ครั้งเดียว ก่อนการสุ่มค่าแรก</strong> จากนั้นไล่สร้างสินค้าไปตามลำดับหมวดใน <code>CATEGORIES</code> ทีละหมวด หมวดละเท่าจำนวนที่กำหนดไว้ในตารางด้านบน โดย id ไล่ต่อเนื่องจาก 1 ไปเรื่อย ๆ ไม่ข้ามเลข — เมื่อจุดเริ่มต้นของ RNG เหมือนเดิมและลำดับการหยิบค่าเหมือนเดิม ผลลัพธ์ทุกแถวก็เหมือนเดิมทุกครั้งที่รัน</p>
+    <p>ผลพลอยได้ที่ต้องรู้ไว้: ลำดับของ <code>CATEGORIES</code> และจำนวนต่อหมวด<strong>เปลี่ยนไม่ได้</strong>หลังจากนี้ สลับสองหมวด เพิ่มการสุ่มอีกหนึ่งครั้ง หรือสลับลำดับ field ที่เรียก faker — ทุกอย่างหลังจุดนั้นจะได้ค่าคนละชุดทันที (เป็นคนละลำดับการหยิบจาก RNG ตัวเดิม) นี่คือเหตุผลที่ค่าที่<em>สุ่ม</em>ของสินค้าชิ้นอื่นในเครื่องคุณอาจไม่ตรงกับตัวอย่างในบทหลัง ๆ ถ้า Cursor เรียก faker คนละลำดับกับโค้ดอ้างอิง — และเป็นเหตุผลที่สินค้า id 1 ถึงต้องเป็นค่าคงที่</p>
 
-    <h2>ทำไมต้องห่อด้วย transaction</h2>
-    <p>ขั้นตอนของเราคือ <q>ลบทั้งหมดแล้วเติมใหม่</q> ถ้า fetch ล้มกลางทาง หรือสินค้าชิ้นใดมี slug ที่ไม่มีในตาราง <code>Category</code> แล้ว error ถูก throw หลังลบไปแล้ว เราจะเหลือฐานข้อมูลว่างหรือมีแคตตาล็อกครึ่งเดียว <code>prisma.$transaction(async (tx) =&gt; { … })</code> ทำให้ทุกคำสั่งข้างในสำเร็จพร้อมกันหรือย้อนกลับพร้อมกัน — หลักการเดียวกับ <a href="../../../Week_09/01_nestjs_basic/content/29_use-transactions.html">Week_09 บทที่ 29</a> ข้อสำคัญคือข้างใน block นี้ต้องเรียกผ่าน <code>tx</code> ไม่ใช่ <code>prisma</code> ไม่อย่างนั้นคำสั่งนั้นจะหลุดออกไปนอก transaction</p>
+    <h2>ลบ–เติมใหม่ทั้งชุดในทรานแซกชันเดียว</h2>
+    <p>seed script ต้องรันซ้ำได้ทุกเมื่อ จึงต้องล้างของเดิมก่อนเติมของใหม่เสมอ ลำดับสำคัญเพราะ foreign key: ลบจากลูกไปหาแม่ (<code>Review</code> → <code>Product</code> → <code>Category</code>) แล้วแทรกจากแม่ไปหาลูก (<code>Category</code> → <code>Product</code> → <code>Review</code>) สลับลำดับเมื่อไรจะติด constraint ที่ตั้งไว้ใน schema ทันที</p>
+    <p>ตอนเขียนสินค้าลงตาราง เรารู้แค่ <code>slug</code> ของหมวด แต่คอลัมน์จริงคือ <code>categoryId</code> จึงต้องอ่านหมวดที่เพิ่งแทรกกลับมาก่อน แล้วแปลง slug เป็น id ให้ทุกชิ้น ถ้าเจอ slug ที่ไม่มีอยู่จริงต้อง<strong>โยน error ที่บอกชื่อ slug นั้น</strong> ไม่ใช่ปล่อยให้เขียนค่าว่างลงฐานข้อมูล</p>
+    <p>ทั้งหมดนี้ต้องอยู่ในทรานแซกชันเดียว — <strong>สำเร็จทั้งชุดหรือไม่เปลี่ยนอะไรเลย</strong> ถ้าล้มตอนแทรกสินค้าชิ้นที่ 150 แล้วข้อมูลเก่าถูกลบไปแล้ว ฐานข้อมูลจะเหลือของครึ่ง ๆ กลาง ๆ ที่ไม่ตรงกับสัญญาและไม่มีใครรู้ว่าพังตรงไหน จุดที่ต่างจาก seed เวอร์ชันที่ต้องพึ่ง API ภายนอกคือ: ข้อมูลทั้ง 208 ชิ้นถูกสร้างเสร็จในหน่วยความจำ<em>ก่อน</em>เปิดทรานแซกชันด้วยซ้ำ ไม่มี <code>fetch</code> ไม่มี network อยู่ในนั้นเลย</p>
 
     <h2>เป้าหมายของบทนี้</h2>
     <pre><code>ecommerce-api/
-├── prisma/seed.ts      (สร้างใหม่)
-└── package.json        (แก้ไข: เพิ่ม script db:seed)</code></pre>
+├── package.json        (แก้ไข: เพิ่ม devDependency faker และ script db:seed)
+└── prisma/seed.ts      (สร้างใหม่)</code></pre>
+    <p>ตำแหน่งและชื่อไฟล์ข้างบนมาจากโค้ดอ้างอิง prompt ไม่ได้สั่งว่าต้องวางไฟล์ที่ไหน Cursor อาจเลือกต่างออกไปได้ สิ่งที่ต้องตรงคือข้อในส่วน "ผลลัพธ์ที่ต้องได้" ของ prompt — บทนี้ไม่มีโค้ดอ้างอิงของ seed ให้ลอก มีแต่ข้อมูลกับเงื่อนไข เพราะการเขียน generator เองทีละบรรทัดไม่ใช่สิ่งที่คอร์สนี้ฝึก</p>
     <ul>
-      <li><strong><code>prisma/seed.ts</code></strong> — สัญญา: ต้อง <code>import 'dotenv/config'</code> บรรทัดแรก, ดึง categories และ products ทั้งหมด (<code>limit=0</code>), ลบ–เติมใหม่ภายใน <code>$transaction</code> เดียว และปิดท้ายด้วย <code>console.log</code> บอกจำนวนที่ seed / ต้องไม่ใช้ <code>upsert</code>, ไม่วน <code>create</code> ทีละชิ้น, ไม่ใช้ <code>any</code> และไม่ใช้ <code>!</code></li>
-      <li><strong><code>package.json</code></strong> — สัญญา: ต้องมี <code>"db:seed": "tsx prisma/seed.ts"</code> เพิ่มใน <code>scripts</code> / ต้องไม่เพิ่ม dependency ใหม่และต้องไม่แก้ script เดิม</li>
+      <li><strong><code>package.json</code></strong> — สัญญา: <code>devDependencies</code> ต้องมี <code>@faker-js/faker</code> ที่ resolve เป็น <code>10.6.0</code> เป๊ะ (ดูใน <code>package-lock.json</code>) และ <code>scripts</code> ต้องมี <code>"db:seed": "tsx prisma/seed.ts"</code></li>
+      <li><strong><code>prisma/seed.ts</code></strong> — สัญญา: รันสองรอบได้ข้อมูลเหมือนกันทุกแถว, หมวดหมู่และจำนวนสินค้าต่อหมวดต้องตรงกับที่บทนี้กำหนด, product id 1 ต้องเป็นค่าคงที่ไม่ใช่ค่าที่สุ่ม, ลบ–เติมใหม่ต้องสำเร็จทั้งชุดหรือไม่เปลี่ยนเลย / ต้องไม่ใช้ <code>any</code>, <code>as</code> และ <code>!</code></li>
     </ul>
 
     <section class="workshop" aria-labelledby="exercise-heading">
-      <h2 id="exercise-heading">ให้ Cursor เขียน seed script แล้วรันเอง</h2>
-      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent prompt นี้ยาวที่สุดในคอร์สเพราะมันบอกลำดับการทำงานของ <code>main()</code> เป็นข้อ ๆ — นั่นคือประเด็น: งานที่มีลำดับหลายขั้นต้องเขียนลำดับให้ครบ ไม่ปล่อยให้ AI เดา</p>
-      <div class="cursor-prompt"><code>เขียน seed script ที่ดึงสินค้าและหมวดหมู่จริงจาก dummyjson ลง PostgreSQL
+      <h2 id="exercise-heading">pin faker แล้วให้ Cursor เขียน seed script</h2>
+      <p>ติดตั้ง dependency ก่อนเปิดแชท เพราะ prompt ข้างล่างจะอ้างว่าติดตั้งไว้แล้ว</p>
+      <div class="prompt-example"><code>npm i -D @faker-js/faker@10.6.0</code></div>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent prompt นี้ยาวเพราะต้องยก<em>ข้อมูล</em>จากตารางด้านบนให้ครบทุกค่า (หมวดหมู่ จำนวนต่อหมวด สินค้า id 1) แต่ไม่ได้สั่งว่าโค้ดต้องเขียนอย่างไร ไม่มีชื่อฟังก์ชัน ไม่มี signature — สิ่งที่ตรวจคือผลลัพธ์ที่ต้องได้ โดยเฉพาะการรันสองรอบแล้วได้ข้อมูลเหมือนเดิม</p>
+      <div class="note">
+        <p>ถ้า Cursor เรียก faker ในลำดับต่างจากโค้ดอ้างอิง ค่าที่<strong>สุ่ม</strong>ได้ของสินค้าชิ้นอื่น ๆ จะไม่ตรงกับตัวอย่างที่พิมพ์ไว้ในบทหลัง ๆ — เป็นเรื่องปกติ ให้เทียบกับข้อมูลในฐานข้อมูลของคุณเอง ค่าที่ต้องตรงเป๊ะมีแค่จำนวนแถวและสินค้า id 1</p>
+      </div>
+      <div class="cursor-prompt"><code>เขียน seed script ที่สร้างแคตตาล็อกสินค้าด้วย faker แบบ deterministic ไม่ดึงจากที่ไหนอีกแล้ว
+@package.json
 
-บริบท: @prisma/schema.prisma @src/prisma/prisma.service.ts @package.json @docs/contract/products-page.json @docs/contract/categories.json @.cursor/rules/project.mdc
-schema มี model Category, Product, Review แล้ว migrate และ generate แล้ว Prisma Client อยู่ที่ src/generated/prisma/client.ts
-GET https://dummyjson.com/products/categories คืน array ของ { slug, name, url } จำนวน 24 รายการ
-GET https://dummyjson.com/products?limit=0 คืน { products, total, skip, limit } โดย products คือสินค้าทั้งหมด 194 ชิ้น รูปทรงแต่ละชิ้นตาม docs/contract/products-page.json
-สินค้าแต่ละชิ้นมี reviews 3 รายการ และ field category เป็น slug string ที่ตรงกับ categories
-สินค้าบางชิ้นไม่มี field brand
-script นี้รันนอก NestJS ด้วย tsx (ติดตั้งไว้แล้วเป็น devDependency) จึงต้องสร้าง PrismaClient เองพร้อม adapter แบบเดียวกับ prisma.service.ts และต้อง import 'dotenv/config' บรรทัดแรก
-Node.js เวอร์ชันนี้มี fetch ในตัว ห้ามติดตั้ง axios
-
-โครงสร้าง: สร้าง/แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
-- prisma/seed.ts (สร้างใหม่)
-- package.json (แก้ไข: เพิ่ม script "db:seed": "tsx prisma/seed.ts")
-
-ข้อกำหนดทางเทคนิค:
-- ประกาศ interface DummyCategory, DummyReview, DummyProduct ที่บรรยาย payload ของ dummyjson ให้ครบทุก field ตาม docs/contract (brand เป็น optional)
-- ฟังก์ชัน fetchJson&lt;T&gt;(path: string): Promise&lt;T&gt; ที่ต่อ path เข้ากับ https://dummyjson.com และ throw Error ถ้า response.ok เป็น false
-- ฟังก์ชัน main() ทำงานตามลำดับ: ดึง categories และ products ทั้งหมด (limit=0) แล้วเข้า prisma.$transaction(async (tx) =&gt; { ... }) ซึ่งข้างใน
-  1. ลบข้อมูลเดิมตามลำดับ review, product, category ด้วย deleteMany
-  2. category.createMany จาก slug และ name
-  3. อ่าน category กลับมาแล้วสร้าง Map จาก slug ไป id พร้อมฟังก์ชันช่วยที่ throw Error บอกชื่อ slug ถ้าไม่พบ
-  4. product.createMany โดยส่ง id เดิมของ dummyjson แบน dimensions เป็น width/height/depth และ meta เป็น barcode/qrCode/createdAt/updatedAt (แปลง string เป็น new Date) brand ที่ไม่มีให้เป็น null
-  5. review.createMany จาก flatMap ของ reviews ทุกชิ้น พร้อม productId และ date เป็น new Date
-- ห้ามใช้ upsert ห้ามวน loop create ทีละชิ้น
-- จบด้วย console.log บอกจำนวน categories, products, reviews ที่ seed
-- บรรทัดล่างสุดใช้ top-level await เรียก main() ใน try/finally ที่ finally เรียก prisma.$disconnect()
-- ห้ามใช้ any และห้าม non-null assertion (!)
+ผลลัพธ์ที่ต้องได้:
+- package.json มี script db:seed ที่รัน seed script ด้วย tsx ได้เองโดยไม่ต้อง start แอป NestJS และพิมพ์บรรทัดสุดท้าย Seeded 24 categories, 208 products, 624 reviews
+- รัน npm run db:seed สองรอบติดกัน ได้บรรทัดสรุปเดียวกันและข้อมูลสินค้าเหมือนกันทุกแถว (ข้อมูลเก่าถูกแทนที่ ไม่ซ้อนเพิ่ม) — ค่าสุ่มทั้งหมดมาจาก faker 10.6.0 ที่ seed ด้วย 20260913
+- ถ้าการ seed ล้มกลางทาง ฐานข้อมูลต้องไม่เหลือข้อมูลครึ่ง ๆ กลาง ๆ (สำเร็จทั้งชุดหรือไม่เปลี่ยนเลย)
+- หมวดหมู่ 24 หมวด (slug → name) เรียงตามลำดับนี้: beauty, fragrances, furniture, groceries, home-decoration, kitchen-accessories, laptops, mens-shirts, mens-shoes, mens-watches, mobile-accessories, motorcycle, skin-care, smartphones, sports-accessories, sunglasses, tablets, tops, vehicle, womens-bags, womens-dresses, womens-jewellery, womens-shoes, womens-watches (name เป็น Title Case ของ slug เช่น "Home Decoration", "Men's Shirts", "Women's Jewellery")
+- SELECT count(*) FROM "Product" ได้ 208 และนับตามหมวดได้ groceries 27, beauty 5, หมวดอื่นหมวดละ 8
+- สินค้า id 1 (ชิ้นแรกของ beauty) เป็นค่าคงที่ ไม่สุ่ม: title "Velvet Matte Lipstick", description "Long-wearing matte lipstick with a lightweight, non-drying formula in a true-red shade.", price 9.99, discountPercentage 10.48, rating 4.6, stock 42, brand "Lumina", sku "BEA-LUM-001", tags ["beauty","lipstick"], barcode "8901234567891", width 3.2 height 9.5 depth 3.2 weight 2, warrantyInformation "No warranty", shippingInformation "Ships in 1-2 business days", availabilityStatus "In Stock", returnPolicy "30 days return policy", minimumOrderQuantity 1
+- สินค้า id 1 มี qrCode https://picsum.photos/seed/product-1-qr/200/200, thumbnail https://picsum.photos/seed/product-1-thumb/300/300, images สองรูปคือ .../product-1-a/600/600 และ .../product-1-b/600/600, createdAt 2026-01-15T08:00:00.000Z, updatedAt 2026-08-20T11:30:00.000Z
+- รีวิวสามรายการของสินค้า id 1 เป็นค่าคงที่: (5, "Stays on all day, love the finish.", 2026-06-02T10:15:00.000Z, Aom Suksawat, aom.suksawat@example.com), (4, "Great color but a bit drying on my lips.", 2026-06-10T14:30:00.000Z, Beth Carter, beth.carter@example.com), (5, "Repurchased three times already.", 2026-06-18T09:05:00.000Z, Nok Chaiyaporn, nok.chaiyaporn@example.com)
+- ทุกคอลัมน์ของตาราง Product มีค่าครบทุกแถว ไม่มี NULL ยกเว้น discountPercentage ที่เป็น NULL ได้ และชื่อสินค้าต้องไม่ซ้ำกันภายในหมวดเดียวกัน (SELECT ชื่อซ้ำต่อหมวดต้องได้ 0 แถว)
+- ราคา, rating, discountPercentage, width, height, depth ทุกแถวมีทศนิยมไม่เกินสองตำแหน่ง
+- สินค้าที่สุ่มมี tags สองค่าคือ slug ของหมวดกับคำนามหนึ่งคำ, images 1-4 รูปต่อชิ้น พร้อม thumbnail และ qrCode เป็น URL, createdAt/updatedAt เป็นวันเวลาย้อนหลัง
+- SELECT id, title, price, "discountPercentage", brand FROM "Product" WHERE id = 1 ได้ 1 | Velvet Matte Lipstick | 9.99 | 10.48 | Lumina
+- สินค้าที่เหลือสุ่มด้วย faker: ชื่อไม่ซ้ำในหมวดเดียวกัน (groceries ใช้คำศัพท์อาหาร), ประมาณ 1 ใน 3 ไม่มีส่วนลด ที่เหลือส่วนลด 1-25, ราคา 4-1999, rating 2.5-5, สต็อก 0-100, แบรนด์จากชื่อบริษัท, sku 8 ตัวอักษรพิมพ์ใหญ่, รีวิวชิ้นละ 3 รายการ
+- warrantyInformation, shippingInformation, availabilityStatus, returnPolicy มาจากชุดตัวเลือกคงที่ (เช่น "No warranty", "1 year warranty" / "Ships overnight" / "In Stock", "Low Stock", "Out of Stock" / "30 days return policy") ไม่ใช่ข้อความอิสระ
+- ถ้าเจอ slug ที่ไม่มีในตาราง Category ต้อง throw error ที่บอกชื่อ slug
+- npx oxlint บนไฟล์ seed script ไม่มี output และไม่มี any / as / !
 
 ขอบเขต:
-- ห้ามติดตั้ง dependency ใหม่
-- ห้ามแก้ schema.prisma, prisma7.config.ts หรือไฟล์ใน src/
+- ห้ามติดตั้ง dependency ใหม่ (faker 10.6.0 ติดตั้งไว้แล้ว)
 - ห้ามรัน script ให้ผมรันเอง
 - ยังไม่ต้องสร้าง controller หรือ endpoint ของสินค้า</code></div>
-      <p>ตรวจโค้ดตามหัวข้อถัดไปให้จบก่อน แล้วรันเอง <strong>สองครั้ง</strong> เพื่อพิสูจน์ว่ารันซ้ำได้ไม่พังและไม่เกิดข้อมูลซ้ำ</p>
+      <p>ตรวจโค้ดตามหัวข้อถัดไปให้จบก่อน แล้วรันเอง <strong>สองครั้ง</strong> เพื่อพิสูจน์ว่าไม่ใช่แค่รันซ้ำได้ไม่พัง แต่ deterministic จริง — ได้บรรทัดสรุปและแถวในตารางเหมือนกันเป๊ะทั้งสองครั้ง</p>
       <div class="prompt-example"><code>npm run db:seed
 npm run db:seed</code></div>
     </section>
     <section class="review" aria-labelledby="review-heading">
       <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
       <ul>
-        <li>บรรทัดแรกของไฟล์คือ <code>import 'dotenv/config';</code> — ถ้าอยู่บรรทัดอื่นหรือไม่มี <code>DATABASE_URL</code> จะเป็น <code>undefined</code> ตอนสร้าง client</li>
-        <li>สร้าง client ด้วย <code>new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) })</code> และ import <code>PrismaClient</code> จาก <code>'../src/generated/prisma/client.js'</code> (สังเกต <code>../src/</code> เพราะไฟล์นี้อยู่ในโฟลเดอร์ <code>prisma/</code>)</li>
-        <li>ลำดับ <code>deleteMany</code> คือ <code>review</code> → <code>product</code> → <code>category</code> และทุกคำสั่งข้างใน transaction เรียกผ่าน <code>tx</code> ไม่ใช่ <code>prisma</code></li>
-        <li>มี <code>createMany</code> สามครั้งพอดี ไม่มี <code>upsert</code> และไม่มี <code>for</code>/<code>map</code> ที่เรียก <code>create</code> ทีละชิ้น</li>
-        <li>ส่ง <code>id: product.id</code> ตรง ๆ (ถ้า AI ตัด field นี้ออก id จะหลุดไปเป็นค่าอื่นและ React app จะลิงก์ผิด)</li>
-        <li><code>brand: product.brand ?? null</code> — ใช้ <code>??</code> ไม่ใช่ <code>||</code> (ถ้าใช้ <code>||</code> แบรนด์ที่เป็น string ว่างจะกลายเป็น null ไปด้วย)</li>
-        <li>สาม field ที่เป็นวันเวลาถูกห่อด้วย <code>new Date(...)</code>: <code>createdAt</code>, <code>updatedAt</code> ของสินค้า และ <code>date</code> ของรีวิว — Prisma ต้องการ <code>DateTime</code> ไม่ใช่ string</li>
-        <li>ไม่มี <code>any</code> และไม่มี non-null assertion (<code>!</code>) — การหา id จาก slug ต้องเป็นฟังก์ชันที่ <code>throw Error</code> พร้อมชื่อ slug เมื่อไม่พบ</li>
-        <li><code>package.json</code> มี <code>"db:seed": "tsx prisma/seed.ts"</code> และ dependencies ไม่มีตัวใหม่ (โดยเฉพาะต้องไม่มี <code>axios</code> หรือ <code>node-fetch</code>)</li>
+        <li>หมวดหมู่ 24 หมวดเรียงตามลำดับที่ระบุ และจำนวนสินค้าต่อหมวดตรงตาม prompt</li>
+        <li>faker ถูก seed ด้วยค่าคงที่ก่อนสุ่มทุกค่า — รัน seed สองรอบแล้วข้อมูลสินค้าเหมือนกันทุกแถว</li>
+        <li>product id 1 เป็นค่าคงที่ ไม่มีค่าไหนของมันมาจาก faker</li>
+        <li>ลบและเติมข้อมูลใหม่อยู่ใน transaction เดียว — ล้มกลางทางแล้วฐานข้อมูลไม่เหลือข้อมูลครึ่ง ๆ กลาง ๆ</li>
+        <li>warranty/shipping/availability/returnPolicy มาจากชุดตัวเลือกคงที่ ไม่ใช่ข้อความอิสระจาก faker</li>
+        <li>ไม่มี <code>any</code>, <code>as</code> และ non-null assertion (<code>!</code>) — slug ที่หาไม่เจอต้อง throw error ที่บอกชื่อ slug</li>
+        <li><code>package.json</code> มี <code>@faker-js/faker</code> ใน <code>devDependencies</code> และ script <code>db:seed</code> ที่รัน seed script ด้วย <code>tsx</code></li>
+        <li><code>git status</code> ไม่มีไฟล์ที่ไม่เกี่ยวกับ seed ถูกแก้ (เช่น <code>schema.prisma</code> หรือไฟล์ใน <code>src/</code>)</li>
       </ul>
-      <p><strong>AI มักพลาดตรงนี้:</strong> วน <code>create</code> ทีละชิ้น (ได้ผลถูกแต่ช้ามาก และผิดข้อกำหนดที่เราเขียนไว้) หรือลืม <code>?limit=0</code> แล้วดึงมาแค่ 30 ชิ้นตามค่าปริยายของ dummyjson — ข้อหลังนี้ดูจาก log ไม่ออกเลยถ้าไม่นับแถว การตรวจจำนวนด้วย <code>psql</code> ในหัวข้อถัดไปคือด่านที่จับได้</p>
-      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
-      <pre><code>// prisma/seed.ts
-import 'dotenv/config';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../src/generated/prisma/client.js';
-
-interface DummyCategory {
-  slug: string;
-  name: string;
-  url: string;
-}
-
-interface DummyReview {
-  rating: number;
-  comment: string;
-  date: string;
-  reviewerName: string;
-  reviewerEmail: string;
-}
-
-interface DummyProduct {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  price: number;
-  discountPercentage: number;
-  rating: number;
-  stock: number;
-  tags: string[];
-  brand?: string;
-  sku: string;
-  weight: number;
-  dimensions: { width: number; height: number; depth: number };
-  warrantyInformation: string;
-  shippingInformation: string;
-  availabilityStatus: string;
-  reviews: DummyReview[];
-  returnPolicy: string;
-  minimumOrderQuantity: number;
-  meta: { createdAt: string; updatedAt: string; barcode: string; qrCode: string };
-  images: string[];
-  thumbnail: string;
-}
-
-const SOURCE = 'https://dummyjson.com';
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
-
-async function fetchJson&lt;T&gt;(path: string): Promise&lt;T&gt; {
-  const response = await fetch(`${SOURCE}${path}`);
-  if (!response.ok) {
-    throw new Error(`${path} responded ${response.status}`);
-  }
-  return response.json() as Promise&lt;T&gt;;
-}
-
-async function main() {
-  const categories = await fetchJson&lt;DummyCategory[]&gt;('/products/categories');
-  const { products } = await fetchJson&lt;{ products: DummyProduct[] }&gt;('/products?limit=0');
-
-  await prisma.$transaction(async (tx) =&gt; {
-    await tx.review.deleteMany();
-    await tx.product.deleteMany();
-    await tx.category.deleteMany();
-
-    await tx.category.createMany({
-      data: categories.map(({ slug, name }) =&gt; ({ slug, name })),
-    });
-    const categoryIdBySlug = new Map(
-      (await tx.category.findMany()).map((category) =&gt; [category.slug, category.id]),
-    );
-    const categoryId = (slug: string): number =&gt; {
-      const id = categoryIdBySlug.get(slug);
-      if (id === undefined) {
-        throw new Error(`Unknown category slug: ${slug}`);
-      }
-      return id;
-    };
-
-    await tx.product.createMany({
-      data: products.map((product) =&gt; ({
-        id: product.id,
-        title: product.title,
-        description: product.description,
-        price: product.price,
-        discountPercentage: product.discountPercentage,
-        rating: product.rating,
-        stock: product.stock,
-        tags: product.tags,
-        brand: product.brand ?? null,
-        sku: product.sku,
-        weight: product.weight,
-        width: product.dimensions.width,
-        height: product.dimensions.height,
-        depth: product.dimensions.depth,
-        warrantyInformation: product.warrantyInformation,
-        shippingInformation: product.shippingInformation,
-        availabilityStatus: product.availabilityStatus,
-        returnPolicy: product.returnPolicy,
-        minimumOrderQuantity: product.minimumOrderQuantity,
-        barcode: product.meta.barcode,
-        qrCode: product.meta.qrCode,
-        images: product.images,
-        thumbnail: product.thumbnail,
-        createdAt: new Date(product.meta.createdAt),
-        updatedAt: new Date(product.meta.updatedAt),
-        categoryId: categoryId(product.category),
-      })),
-    });
-
-    await tx.review.createMany({
-      data: products.flatMap((product) =&gt;
-        product.reviews.map((review) =&gt; ({
-          productId: product.id,
-          rating: review.rating,
-          comment: review.comment,
-          date: new Date(review.date),
-          reviewerName: review.reviewerName,
-          reviewerEmail: review.reviewerEmail,
-        })),
-      ),
-    });
-  });
-
-  const reviewCount = products.reduce((count, product) =&gt; count + product.reviews.length, 0);
-  console.log(`Seeded ${categories.length} categories, ${products.length} products, ${reviewCount} reviews`);
-}
-
-try {
-  await main();
-} finally {
-  await prisma.$disconnect();
-}</code></pre>
-      <pre><code>// package.json (เฉพาะบรรทัดที่เพิ่ม ในบล็อก scripts)
-    "db:seed": "tsx prisma/seed.ts",</code></pre>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ปล่อยให้สินค้า id 1 สุ่มไปด้วยแทนที่จะใช้ค่าคงที่จากตารางใน prompt (ได้ผลรันแต่ค่าจะไม่ตรงกับที่บทถัดไปพิมพ์ไว้เลย) หรือสุ่มข้อความอิสระให้ <code>warrantyInformation</code>/<code>returnPolicy</code> แทนการสุ่มจาก array ตัวเลือกที่กำหนด (ทำให้ค่าไม่อยู่ในเซตที่คาดไว้)</p>
       <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
     </section>
     <section class="expected-result" aria-labelledby="exercise-result-heading">
       <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
-      <p>ทั้งสองครั้งต้องได้บรรทัดสรุปเหมือนกันเป๊ะ</p>
+      <p>ทั้งสองครั้งต้องได้บรรทัดสรุปเหมือนกันเป๊ะ (ตัวเลขนี้คือค่าที่รันจริงจากโค้ดอ้างอิงของคอร์ส)</p>
       <pre><code>&gt; ecommerce-api@0.0.1 db:seed
 &gt; tsx prisma/seed.ts
 
-Seeded 24 categories, 194 products, 582 reviews</code></pre>
-      <p>ครั้งแรกใช้เวลาราวสามวินาที ครั้งที่สองเร็วขึ้น (dummyjson ตอบไวขึ้นและ Node อุ่นเครื่องแล้ว) ตัวเลข 582 มาจาก 194 ชิ้น × รีวิวชิ้นละ 3 รายการ ถ้าได้ <code>Seeded 24 categories, 30 products, 90 reviews</code> แปลว่าลืม <code>limit=0</code> ให้แก้ query string แล้วรันใหม่</p>
+Seeded 24 categories, 208 products, 624 reviews</code></pre>
+      <p>624 มาจาก 208 ชิ้น × รีวิวชิ้นละ 3 รายการ ถ้าได้ตัวเลขอื่น ให้กลับไปเทียบ <code>CATEGORIES</code>/<code>COUNT_OVERRIDES</code> กับที่พิมพ์ไว้ในบทนี้ทีละบรรทัด</p>
       <div class="warning">
         <p>สคริปต์นี้ <strong>ลบข้อมูลเดิมทั้งหมด</strong> ก่อนเติมใหม่ทุกครั้ง บนเครื่องเรียนไม่มีปัญหา แต่ห้ามเอาแบบแผนนี้ไปรันกับฐานข้อมูลที่มีข้อมูลจริงของผู้ใช้</p>
       </div>
@@ -261,28 +230,39 @@ Seeded 24 categories, 194 products, 582 reviews</code></pre>
     <section class="verification" aria-labelledby="exercise-check-heading">
       <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
       <ul>
-        <li>นับแถวทั้งสามตารางในคำสั่งเดียว — อย่าเชื่อ <code>console.log</code> ของสคริปต์ตัวเอง ให้ถามฐานข้อมูลตรง ๆ</li>
+        <li>นับสินค้าต่อหมวด เรียงจากมากไปน้อย ต้องเห็น <code>groceries</code> 27, <code>beauty</code> 5 และอีก 22 หมวดที่เหลือ 8 เท่ากันหมด</li>
       </ul>
-      <div class="prompt-example"><code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT (SELECT count(*) FROM "Category") AS categories, (SELECT count(*) FROM "Product") AS products, (SELECT count(*) FROM "Review") AS reviews;'</code></div>
-      <pre><code> categories | products | reviews
-------------+----------+---------
-         24 |      194 |     582
+      <div class="prompt-example"><code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT c.slug, count(*) FROM "Product" p JOIN "Category" c ON c.id = p."categoryId" GROUP BY c.slug ORDER BY count(*) DESC, c.slug;'</code></div>
+      <pre><code>        slug         | count 
+---------------------+-------
+ groceries           |    27
+ fragrances          |     8
+ furniture           |     8
+ ...(อีก 19 หมวดที่เหลือ เรียงตามชื่อ slug)...
+ beauty              |     5
+(24 rows)</code></pre>
+      <ul>
+        <li>รวมทั้งตาราง: <code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT count(*) FROM "Product";'</code> ต้องได้ <code>208</code></li>
+        <li>สินค้า id 1 ต้องตรงกับค่าที่เขียนด้วยมือทุกคีย์: <code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT id, title, price, "discountPercentage", brand FROM "Product" WHERE id = 1;'</code></li>
+      </ul>
+      <pre><code> id |         title         | price | discountPercentage | brand  
+----+-----------------------+-------+--------------------+--------
+  1 | Velvet Matte Lipstick |  9.99 |              10.48 | Lumina
 (1 row)</code></pre>
       <ul>
-        <li>สินค้าที่ไม่มียี่ห้อต้องเป็น NULL ไม่ใช่ string ว่าง: <code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT count(*) FROM "Product" WHERE brand IS NULL;'</code> ต้องได้ <code>92</code></li>
-        <li>หมวดหมู่เรียงตามที่ dummyjson ส่งมา: <code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT id, slug FROM "Category" ORDER BY id LIMIT 3;'</code> ต้องได้ <code>beauty</code>, <code>fragrances</code>, <code>furniture</code> เรียงตามลำดับนี้</li>
-        <li><code>npm run lint</code> ผ่าน แต่ต้องรัน <code>npx oxlint prisma/seed.ts</code> เพิ่มด้วย เพราะ script <code>lint</code> ของ scaffold ครอบแค่ <code>src/</code> กับ <code>test/</code> — ไฟล์ใน <code>prisma/</code> ไม่ถูกตรวจถ้าไม่สั่งเอง (ไม่มี output = ไม่มีปัญหา)</li>
-        <li>commit ด้วย <code>git add -A &amp;&amp; git commit -m "feat: seed from dummyjson"</code></li>
+        <li><code>npm run lint</code> ผ่าน แต่ต้องรัน <code>npx oxlint</code> บนไฟล์ seed ของคุณเพิ่มด้วย (โค้ดอ้างอิงคือ <code>npx oxlint prisma/seed.ts</code>) เพราะ script <code>lint</code> ของ scaffold ครอบแค่ <code>src/</code> กับ <code>test/</code> (ไม่มี output = ไม่มีปัญหา)</li>
+        <li>commit ด้วย <code>git add -A &amp;&amp; git commit -m "feat: faker seed generator (208 products, 24 categories)"</code></li>
       </ul>
       <div class="note">
-        <p>ตัวเลข <code>id</code> ของหมวดหมู่จะไม่ใช่ 1, 2, 3 ถ้าคุณ seed ซ้ำ — รอบแรกได้ 1–24 รอบที่สองได้ 25–48 ไปเรื่อย ๆ เพราะ <code>deleteMany</code> (คือ <code>DELETE</code>) ไม่รีเซ็ต sequence ของ PostgreSQL ให้ (มีแต่ <code>TRUNCATE … RESTART IDENTITY</code> ที่ทำ) ไม่ต้องแก้อะไร: สิ่งที่ต้องตรงคือ<strong>ลำดับ</strong>ของ slug ไม่ใช่ตัวเลข และไม่มี endpoint ไหนในคอร์สนี้ส่ง id ของหมวดหมู่ออกไปให้ client เลย — React app อ้างอิงหมวดหมู่ด้วย slug เท่านั้น</p>
+        <p>รันซ้ำได้ตลอด ผลลัพธ์ที่นับด้วย <code>count(*)</code> และค่าของ id 1 จะเหมือนกันทุกครั้งเพราะ <code>Product.id</code> เป็นเลขที่กำหนดตรง ๆ ไม่ใช่ <code>autoincrement()</code> ส่วน <code>Category.id</code> เป็น <code>SERIAL</code> ที่ไม่รีเซ็ต sequence เวลาลบแถวทั้งตาราง (เหมือนที่อธิบายไว้ตอน migration แรก) รอบที่สองจะได้เลข <code>id</code> ของหมวดหมู่ตั้งแต่ 25 เป็นต้นไป แต่<strong>ลำดับของ slug</strong>ยังตรงเดิม และไม่มี endpoint ไหนในคอร์สนี้ส่ง <code>id</code> ของหมวดหมู่ออกไปให้ client — React app อ้างอิงหมวดหมู่ด้วย slug เท่านั้น</p>
       </div>
     </section>
     <h2>แหล่งอ้างอิง</h2>
     <ul class="source-list">
+      <li><a href="https://fakerjs.dev/guide/usage.html#seeding">Reproducible results: faker.seed() (Faker.js Docs)</a></li>
+      <li><a href="https://fakerjs.dev/api/">API reference: commerce, food, company, string, date (Faker.js Docs)</a></li>
       <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/crud">CRUD: createMany, deleteMany (Prisma Docs)</a></li>
       <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/transactions">Transactions and batch queries (Prisma Docs)</a></li>
-      <li><a href="https://dummyjson.com/docs/products">Products endpoints: limit, skip (DummyJSON Docs)</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
       <a class="lesson-navigation__link" href="08_running-the-first-migration.html" rel="prev">← บทก่อนหน้า</a>

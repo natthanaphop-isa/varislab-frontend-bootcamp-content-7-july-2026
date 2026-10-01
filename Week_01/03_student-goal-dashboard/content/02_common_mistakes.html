@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="รู้จักข้อผิดพลาด 4 แบบที่เจอบ่อยตอนทำ assignment ตั้งแต่ id ไม่ตรงกัน ลืมเชื่อม script ลืม .value ไปจนถึงลืม save หรือ refresh พร้อมวิธีแก้" />
+    <title>ข้อผิดพลาดที่เจอบ่อยจากการทำ Assignment | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 02 · ทบทวนและการ Debug (Recap &amp; Debugging)</p>
+          <h1>ข้อผิดพลาดที่เจอบ่อยจากการทำ Assignment</h1>
+          <p class="lesson-original-title" lang="en">Common Mistakes</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เข้าใจว่า Code Review คือการช่วยกันปรับปรุงโค้ด ไม่ใช่การจับผิด</li>
+            <li>ตรวจได้ว่า <code>id</code> ใน HTML ตรงกับที่ JavaScript เรียกหรือไม่</li>
+            <li>เช็กได้ว่าไฟล์ JavaScript ถูกเชื่อมกับ HTML แล้ว</li>
+            <li>แยกได้ระหว่าง “ตัวกล่อง input” กับ “ค่าที่ผู้ใช้กรอก” (<code>.value</code>)</li>
+            <li>ใช้เช็กลิสต์ 3 ข้อแรกเมื่อหน้าเว็บไม่เปลี่ยนตามที่แก้</li>
+          </ul>
+        </section>
+
+        <h2>Code Review ไม่ใช่การจับผิด</h2>
+        <p>บทนี้เราจะดูข้อผิดพลาดที่มักพบในงาน assignment ของผู้เริ่มต้น ก่อนอ่านต่อ อยากให้มองแบบนี้: <strong>Code Review</strong> คือการช่วยกันดูว่าโค้ดอ่านง่ายไหม มีจุดไหนปรับให้ดีขึ้นได้ไหม และมี bug ที่อาจเกิดขึ้นในอนาคตหรือเปล่า Developer ตัวจริงก็ทำ Code Review กันตลอด การได้รับ feedback จึงเป็นเรื่องปกติมาก และเป็นทางลัดที่ดีที่สุดในการเก่งขึ้น</p>
+        <p>ข้อผิดพลาดด้านล่างนี้เป็นสิ่งที่เจอบ่อยมากในงานของผู้เริ่มต้น ถ้าคุณเคยเจอสักข้อ ไม่ต้องกังวล — ทุกคนเคยเจอมาแล้วทั้งนั้น</p>
+
+        <h2>1. <code>id</code> ใน HTML กับ JavaScript ไม่ตรงกัน</h2>
+        <p>สมมติใน HTML เราเขียนแบบนี้:</p>
+        <pre><code class="language-html">&lt;p id="summary"&gt;ข้อความเดิม&lt;/p&gt;</code></pre>
+        <p>แต่ใน JavaScript เขียนว่า:</p>
+        <pre><code class="language-javascript">const summary = document.getElementById("profileSummary");</code></pre>
+        <p>JavaScript กำลังหา element ที่มี id ชื่อ <code>profileSummary</code> แต่ใน HTML ไม่มี id นี้เลย (มีแค่ <code>summary</code>) ผลคือมันหา element ไม่เจอ และตัวแปร <code>summary</code> จะได้ค่าเป็น <code>null</code> — พอเราเอาไปใช้ต่อ เช่น <code>summary.textContent = "..."</code> โค้ดจะพังทันที</p>
+        <p><strong>วิธีแก้:</strong> ชื่อ id ใน HTML และใน JavaScript ต้องตรงกัน 100% ทั้งตัวสะกดและตัวพิมพ์เล็ก–ใหญ่</p>
+        <pre><code class="language-javascript">const summary = document.getElementById("summary");</code></pre>
+
+        <div class="warning">
+          <p><code>id</code> แยกตัวพิมพ์เล็ก–ใหญ่ <code>studentList</code>, <code>studentlist</code> และ <code>StudentList</code> ถือเป็นคนละชื่อกัน วิธีที่ปลอดภัยคือ copy ชื่อ id จาก HTML มาวางใน JavaScript แทนการพิมพ์ใหม่</p>
+        </div>
+
+        <h2>2. ลืมเชื่อมไฟล์ JavaScript</h2>
+        <p>ในไฟล์ HTML ต้องมีบรรทัดนี้ (ปกติวางไว้ก่อนปิด <code>&lt;/body&gt;</code>):</p>
+        <pre><code class="language-html">&lt;script src="script.js"&gt;&lt;/script&gt;</code></pre>
+        <p>ถ้าไม่มีบรรทัดนี้ เบราว์เซอร์จะไม่รู้จักไฟล์ <code>script.js</code> เลย ปุ่มจะกดไม่ทำงาน ถึงแม้โค้ดใน <code>script.js</code> จะถูกทุกบรรทัดก็ตาม ให้เช็กด้วยว่าชื่อไฟล์ใน <code>src</code> ตรงกับชื่อไฟล์จริง (เช่น ไม่ใช่ <code>scripts.js</code> ทั้งที่ไฟล์ชื่อ <code>script.js</code>)</p>
+
+        <h2>3. ลืม <code>.value</code></h2>
+        <p>ถ้าเราต้องการค่าที่ผู้ใช้กรอก ต้องเขียนแบบนี้:</p>
+        <pre><code class="language-javascript">const name = nameInput.value;</code></pre>
+        <p>ไม่ใช่แบบนี้:</p>
+        <pre><code class="language-javascript">const name = nameInput;</code></pre>
+        <p>เพราะ <code>nameInput</code> คือ <strong>ตัวกล่อง input</strong> ทั้งกล่อง ส่วน <code>nameInput.value</code> คือ <strong>ข้อความที่ผู้ใช้กรอกในกล่องนั้น</strong> ลองนึกภาพกล่องจดหมาย: <code>nameInput</code> คือตัวกล่อง ส่วน <code>.value</code> คือจดหมายที่อยู่ข้างใน</p>
+
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>เขียนว่า</th><th>ได้อะไร</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>nameInput</code></td><td>element <code>&lt;input&gt;</code> ทั้งตัว</td></tr>
+              <tr><td><code>nameInput.value</code></td><td>ข้อความที่ผู้ใช้พิมพ์ในช่องนั้น</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>4. ไม่ได้ save ไฟล์ หรือไม่ได้ refresh เบราว์เซอร์</h2>
+        <p>ข้อนี้ฟังดูง่าย แต่เป็นสาเหตุอันดับต้น ๆ ของอาการ “แก้แล้วแต่หน้าเว็บไม่เปลี่ยน” ทุกครั้งที่หน้าเว็บไม่เปลี่ยนตามที่แก้ ให้เช็ก 3 อย่างแรกนี้ก่อนเสมอ:</p>
+        <ol>
+          <li><strong>Save file</strong> แล้วหรือยัง (ใน VS Code แท็บไฟล์ที่ยังไม่ save จะมีจุดวงกลมแสดงอยู่)</li>
+          <li><strong>Refresh browser</strong> แล้วหรือยัง</li>
+          <li><strong>แก้ถูกไฟล์</strong> หรือเปล่า (เช่น เปิดไฟล์ในโฟลเดอร์หนึ่ง แต่เบราว์เซอร์เปิดอีกโฟลเดอร์หนึ่งอยู่)</li>
+        </ol>
+
+        <div class="note">
+          <p>ข้อ 3 เจอบ่อยมากเมื่อมีโฟลเดอร์หน้าตาคล้ายกันหลายชุด เช่น <code>start/</code> และ <code>finish/</code> ให้ดู path ในแถบที่อยู่ของเบราว์เซอร์ว่าตรงกับไฟล์ที่คุณกำลังแก้ใน editor หรือไม่</p>
+        </div>
+
+        <h2>ลองทำให้พังเอง</h2>
+        <p>วิธีจำข้อผิดพลาดเหล่านี้ได้ดีที่สุดคือลองทำให้เกิดขึ้นเองแล้วดูอาการ เปิดงานหน้าเว็บที่มี form หรือปุ่มที่คุณเคยทำไว้ แล้วลองทีละข้อ (อย่าลืมแก้กลับหลังลองแต่ละข้อ):</p>
+        <ol>
+          <li>เปลี่ยนชื่อ id ใน JavaScript ให้สะกดผิดหนึ่งตัวอักษร แล้วลองใช้งานหน้าเว็บ</li>
+          <li>ลบ (หรือ comment) บรรทัด <code>&lt;script src="script.js"&gt;&lt;/script&gt;</code> แล้วลองกดปุ่ม</li>
+          <li>ลบ <code>.value</code> ออกจากบรรทัดที่อ่านค่าจาก input แล้วดูว่าข้อความที่แสดงออกมาเป็นอะไร</li>
+        </ol>
+        <p>สังเกตว่าบางข้อหน้าเว็บ “เงียบ” ไม่บอกอะไรเลย ในบทถัดไปเราจะเรียนวิธีไล่หาสาเหตุอย่างเป็นขั้นตอน แทนการเดาไปเรื่อย ๆ</p>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่าทำไม <code>getElementById</code> ถึงได้ <code>null</code> เมื่อ id ไม่ตรงกัน</li>
+            <li>รู้ว่าต้องมี <code>&lt;script src="script.js"&gt;&lt;/script&gt;</code> ใน HTML และชื่อไฟล์ต้องตรงกับไฟล์จริง</li>
+            <li>แยกได้ว่า <code>nameInput</code> กับ <code>nameInput.value</code> ต่างกันอย่างไร</li>
+            <li>จำเช็กลิสต์ 3 ข้อได้: save แล้วหรือยัง, refresh แล้วหรือยัง, แก้ถูกไฟล์หรือเปล่า</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="01_recap_and_goals.html" rel="prev">ก่อนหน้า: ทบทวนพื้นฐานและเป้าหมายของคอร์ส</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="03_debugging_steps.html" rel="next">ถัดไป: Debug อย่างเป็นขั้นตอนด้วย console.log</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

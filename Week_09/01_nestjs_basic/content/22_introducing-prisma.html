@@ -9,10 +9,10 @@
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 22 จาก 77</p>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 22/58</p>
     <h1>รู้จัก Prisma และ PrismaService</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
-      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <h2 id="objectives-heading">บทนี้เราจะทำอะไรบ้าง</h2>
       <ul>
         <li>ติดตั้ง dependencies ที่จำเป็นสำหรับใช้ Prisma กับ PostgreSQL ใน NestJS และอธิบายหน้าที่ของแต่ละแพ็กเกจ</li>
         <li>ตั้งค่า <code>schema.prisma</code>, <code>prisma7.config.ts</code> และ <code>.env</code> ให้ชี้ไปยังฐานข้อมูลใน Docker ของบทที่ 20</li>
@@ -22,7 +22,7 @@
 
     <h2>Prisma คือสะพานระหว่าง TypeScript กับ SQL</h2>
     <p><strong>Prisma</strong> เป็น ORM สำหรับ Node.js/TypeScript ที่ให้เรานิยามโครงสร้างตารางในไฟล์ <code>schema.prisma</code> แล้ว generate <em>Prisma Client</em> ที่รู้จักทุกตารางและทุกคอลัมน์ของเราออกมาเป็น TypeScript — query จึงมี autocomplete และถูก type check ตั้งแต่ตอนเขียน ไม่ต้องพิมพ์ SQL ดิบทุกครั้ง NestJS ไม่ได้มีแพ็กเกจ integration แยกสำหรับ Prisma เพราะไม่จำเป็น: เราแค่ห่อ <code>PrismaClient</code> ไว้ใน provider ปกติของ Nest แล้วปล่อยให้ระบบ DI ฉีดมันไปยัง service ไหนก็ได้</p>
-    <p>เริ่มจากติดตั้ง 4 แพ็กเกจ โดยล็อกเวอร์ชันแบบเจาะจงเหมือนที่ทำในคอร์ส API Design ของ Week 8 — CLI ของ Prisma ปรับพฤติกรรมระหว่างเวอร์ชันอยู่เรื่อย ๆ การล็อกเวอร์ชันทำให้ทุกคนในคลาสได้ผลลัพธ์เดียวกัน</p>
+    <p>เริ่มจากติดตั้ง 4 แพ็กเกจ โดยล็อกเวอร์ชันแบบเจาะจงเหมือนที่ทำในคอร์ส API Design in Node.js — CLI ของ Prisma ปรับพฤติกรรมระหว่างเวอร์ชันอยู่เรื่อย ๆ การล็อกเวอร์ชันทำให้ทุกคนที่เรียนคอร์สนี้ได้ผลลัพธ์เดียวกัน</p>
     <pre><code>npm install @prisma/client@7.10.0 @prisma/adapter-pg@7.10.0 dotenv
 npm install -D prisma@7.10.0</code></pre>
     <div class="comparison" role="region" aria-label="แพ็กเกจที่ติดตั้งและหน้าที่" tabindex="0">
@@ -32,7 +32,7 @@ npm install -D prisma@7.10.0</code></pre>
           <tr><td><code>prisma</code></td><td>CLI สำหรับงานตอนพัฒนา: init, generate, db push, migrate</td><td>เป็น dev dependency ไม่ถูกใช้ตอนแอปรันจริง</td></tr>
           <tr><td><code>@prisma/client</code></td><td>runtime ของ Prisma Client ที่โค้ดเราเรียกใช้ตอนแอปทำงาน</td><td>ต้องเวอร์ชันเดียวกับ <code>prisma</code> เสมอ ไม่เช่นนั้น generate แล้วรันไม่ขึ้น</td></tr>
           <tr><td><code>@prisma/adapter-pg</code></td><td>driver adapter ที่เชื่อม Prisma เข้ากับ driver <code>pg</code> และเปิด connection pool ของ PostgreSQL ให้ข้างใน</td><td>Prisma 7 ต้องมี adapter เสมอ — ถ้าลืมส่ง <code>adapter</code> ตอน <code>new PrismaClient()</code> จะ throw ทันที</td></tr>
-          <tr><td><code>dotenv</code></td><td>อ่านไฟล์ <code>.env</code> เข้า <code>process.env</code></td><td>ใช้ชั่วคราวจนถึงบทที่ 42 ที่เราจะย้ายหน้าที่นี้ให้ <code>ConfigModule</code></td></tr>
+          <tr><td><code>dotenv</code></td><td>อ่านไฟล์ <code>.env</code> เข้า <code>process.env</code></td><td>ใช้ชั่วคราวจนถึงบทที่ 33 ที่เราจะย้ายหน้าที่นี้ให้ <code>ConfigModule</code></td></tr>
         </tbody>
       </table>
     </div>
@@ -61,7 +61,7 @@ datasource db {
     <p>เปิดไฟล์ <code>.env</code> ที่ <code>prisma init</code> สร้างไว้ จะเห็นค่า <code>DATABASE_URL</code> ตัวอย่างที่ชี้ไป Prisma Postgres — ลบทิ้งแล้วแทนด้วย connection string ที่ประกอบจากค่าเดียวกับใน <code>docker-compose.yml</code> ของบทที่ 20 (user <code>postgres</code>, รหัสผ่าน <code>pass123</code>, พอร์ต 5432, database <code>postgres</code>)</p>
     <pre><code># .env
 DATABASE_URL="postgresql://postgres:pass123@localhost:5432/postgres"</code></pre>
-    <div class="warning"><p>ไฟล์ <code>.env</code> มี credentials จริง ห้าม commit ขึ้น repository — <code>prisma init</code> เพิ่ม <code>.env</code> ลง <code>.gitignore</code> ให้แล้ว แต่ให้ตรวจด้วย <code>git status</code> ว่าไฟล์ไม่โผล่ในรายการจริง ๆ ในบทที่ 42 เราจะย้ายการโหลด <code>.env</code> ไปให้ <code>ConfigModule</code> และบทที่ 44 จะ validate ว่าค่านี้มีอยู่จริงก่อนแอป start</p></div>
+    <div class="warning"><p>ไฟล์ <code>.env</code> มี credentials จริง ห้าม commit ขึ้น repository — <code>prisma init</code> เพิ่ม <code>.env</code> ลง <code>.gitignore</code> ให้แล้ว แต่ให้ตรวจด้วย <code>git status</code> ว่าไฟล์ไม่โผล่ในรายการจริง ๆ ในบทที่ 33 เราจะย้ายการโหลด <code>.env</code> ไปให้ <code>ConfigModule</code> และบทที่ 34 จะ validate ว่าค่านี้มีอยู่จริงก่อนแอป start</p></div>
     <p>ส่วน <code>prisma7.config.ts</code> คือไฟล์ตั้งค่าของ Prisma CLI: บอกว่า schema อยู่ไหน จะเก็บ migrations ไว้ที่ไหน และจะต่อฐานข้อมูลด้วย URL อะไร ไฟล์ที่ <code>prisma init</code> สร้างให้ใช้ได้เลยโดยไม่ต้องแก้ — สังเกตบรรทัดแรก <code>import "dotenv/config"</code> ที่ทำให้ค่าใน <code>.env</code> ถูกโหลดก่อน <code>process.env["DATABASE_URL"]</code> จะถูกอ่าน (Prisma CLI ไม่โหลด <code>.env</code> ให้เอง)</p>
     <pre><code>// prisma7.config.ts — สร้างโดย prisma init
 import "dotenv/config";
@@ -132,7 +132,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
   providers: [AppService],
 })
 export class AppModule {}</code></pre>
-    <p>เหลืออีกจุดเดียว: ตอนรัน Nest ไม่มีใครโหลด <code>.env</code> เข้า <code>process.env</code> ให้ จึงต้องเพิ่ม <code>import 'dotenv/config';</code> ไว้เป็น<strong>บรรทัดแรกสุด</strong>ของ <code>src/main.ts</code> ชั่วคราว (บทที่ 42 จะแทนที่บรรทัดนี้ด้วย <code>ConfigModule.forRoot()</code> ซึ่งเป็นวิธีของ Nest เอง)</p>
+    <p>เหลืออีกจุดเดียว: ตอนรัน Nest ไม่มีใครโหลด <code>.env</code> เข้า <code>process.env</code> ให้ จึงต้องเพิ่ม <code>import 'dotenv/config';</code> ไว้เป็น<strong>บรรทัดแรกสุด</strong>ของ <code>src/main.ts</code> ชั่วคราว (บทที่ 33 จะแทนที่บรรทัดนี้ด้วย <code>ConfigModule.forRoot()</code> ซึ่งเป็นวิธีของ Nest เอง)</p>
     <pre><code>// src/main.ts
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
@@ -153,11 +153,11 @@ docker-compose up -d
 npm run start:dev</code></div>
     </section>
     <section class="expected-result" aria-labelledby="exercise-result-heading">
-      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <h2 id="exercise-result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
       <p>แอป start ขึ้นตามปกติโดยมี log ของ <code>InstanceLoader</code> แสดงว่า <code>PrismaModule dependencies initialized</code> และไม่มี error ใด ๆ จากการเชื่อมต่อ หากลืมเปิด Docker หรือรหัสผ่านใน <code>DATABASE_URL</code> ไม่ตรง แอปจะยัง <strong>start ได้ตามปกติ</strong> เพราะ connection pool ของ <code>@prisma/adapter-pg</code> เป็นแบบ lazy — <code>$connect()</code> ใน <code>onModuleInit</code> จะไม่ throw ทันที ปัญหาจะโผล่ก็ต่อเมื่อมี query แรกเข้ามาจริง ๆ (เช่นยิง <code>GET /coffees</code>) นี่เป็นพฤติกรรมที่ต่างจาก Prisma รุ่นก่อนหน้าที่ไม่ใช้ driver adapter</p>
     </section>
     <section class="verification" aria-labelledby="exercise-check-heading">
-      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <h2 id="exercise-check-heading">ลองเช็กให้แน่ใจ</h2>
       <ul>
         <li><code>package.json</code> มี <code>@prisma/client</code>, <code>@prisma/adapter-pg</code>, <code>dotenv</code> ใน dependencies และ <code>prisma</code> ใน devDependencies ทุกตัวเป็นเวอร์ชัน 7.10.0</li>
         <li>โฟลเดอร์ <code>src/generated/prisma</code> ถูกสร้างหลัง <code>npx prisma generate</code> และ <code>.gitignore</code> มีทั้ง <code>.env</code> และ <code>/src/generated/prisma</code></li>
@@ -176,11 +176,11 @@ npm run start:dev</code></div>
       <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
-      <a class="lesson-navigation__link" href="21_how-to-visualize-your-postgres-database-gui.html" rel="prev">← บทก่อนหน้า</a>
-      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="21_how-to-visualize-your-postgres-database-gui.html" rel="prev">← บทก่อน</a>
+      <a class="lesson-navigation__link" href="index.html">ดูบทเรียนทั้งหมด</a>
       <a class="lesson-navigation__link" href="23_creating-a-prisma-model.html" rel="next">บทถัดไป →</a>
     </nav>
   </main>
-  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+  <footer><p>NestJS Fundamentals Workshop · เนื้อหาตรวจทานล่าสุด 1 กันยายน 2026</p></footer>
 </body>
 </html>

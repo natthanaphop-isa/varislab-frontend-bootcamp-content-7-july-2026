@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="รู้จัก object สำหรับเก็บข้อมูลหนึ่งชิ้นที่มีหลายรายละเอียด และการรวม array กับ object เป็น array of objects ที่เจอบ่อยในเว็บจริง" />
+    <title>Object และ Array of Objects | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 05 · ข้อมูลหลายรายการ (Arrays, Objects &amp; Loops)</p>
+          <h1>Object และ Array of Objects</h1>
+          <p class="lesson-original-title" lang="en">Objects</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายได้ว่า object คืออะไรและต่างจาก array อย่างไร</li>
+            <li>สร้าง object ที่มีหลาย field ด้วยรูปแบบ <code>key: value</code></li>
+            <li>อ่านค่าใน object ด้วย dot notation (<code>student.name</code>) และ bracket notation (<code>student["name"]</code>)</li>
+            <li>สร้าง array of objects สำหรับเก็บข้อมูลหลายรายการที่แต่ละรายการมีหลายรายละเอียด</li>
+          </ul>
+        </section>
+
+        <h2>Object คืออะไร</h2>
+        <p>นักเรียนหนึ่งคนไม่ได้มีแค่ชื่อ แต่มีทั้งชื่อ เป้าหมาย และระดับพื้นฐาน ถ้าเก็บเป็นตัวแปรแยก 3 ตัว ข้อมูลของคนเดียวกันจะกระจัดกระจาย <strong>Object</strong> คือข้อมูลหนึ่งชิ้นที่รวมรายละเอียดหลายอย่างไว้ด้วยกัน</p>
+        <pre><code class="language-javascript">const student = {
+  name: "Man",
+  goal: "เปลี่ยนสายงานเป็น Developer",
+  level: "เริ่มจากศูนย์",
+};</code></pre>
+        <p>สังเกต syntax:</p>
+        <ul>
+          <li>object เริ่มด้วย <code>{</code> และจบด้วย <code>}</code></li>
+          <li>ข้างในเป็นคู่ <code>key: value</code> เช่น <code>name: "Man"</code> เรียกแต่ละคู่ว่า <strong>field</strong> (หรือ property)</li>
+          <li>แต่ละ field คั่นด้วยจุลภาค <code>,</code></li>
+        </ul>
+        <p>ดังนั้น object เหมาะกับข้อมูลที่มีหลาย field</p>
+
+        <h2>อ่านค่าใน object</h2>
+        <p>วิธีที่ใช้บ่อยที่สุดคือ <strong>dot notation</strong> — ชื่อ object ตามด้วยจุดและชื่อ field:</p>
+        <pre><code class="language-javascript">console.log(student.name);  // Man
+console.log(student.goal);  // เปลี่ยนสายงานเป็น Developer
+console.log(student.level); // เริ่มจากศูนย์</code></pre>
+        <p>อีกวิธีคือ <strong>bracket notation</strong> — ใส่ชื่อ field เป็นข้อความในวงเล็บเหลี่ยม ได้ผลเหมือนกัน:</p>
+        <pre><code class="language-javascript">console.log(student["goal"]); // เปลี่ยนสายงานเป็น Developer</code></pre>
+        <p>ในคอร์สนี้เราจะใช้ dot notation เป็นหลัก เพราะอ่านง่ายกว่า</p>
+
+        <div class="warning">
+          <p>ถ้าสะกดชื่อ field ผิด เช่น <code>student.nmae</code> หรือ <code>student.Name</code> จะได้ <code>undefined</code> โดยไม่มี error เตือน เวลาเห็น <code>undefined</code> บนหน้าเว็บ ให้ <code>console.log(student)</code> ดูทั้ง object แล้วเทียบชื่อ field ทีละตัว</p>
+        </div>
+
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th></th><th>Array</th><th>Object</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>ใช้เก็บ</td><td>รายการหลายชิ้น</td><td>ข้อมูลหนึ่งชิ้นที่มีหลายรายละเอียด</td></tr>
+              <tr><td>วงเล็บ</td><td><code>[ ]</code></td><td><code>{ }</code></td></tr>
+              <tr><td>หยิบข้อมูลด้วย</td><td>index ตัวเลข เช่น <code>goals[0]</code></td><td>ชื่อ field เช่น <code>student.name</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Array of Objects</h2>
+        <p>ในเว็บจริงเรามักใช้ array และ object พร้อมกัน: <strong>array</strong> เก็บรายการหลายคน และแต่ละคนเป็น <strong>object</strong></p>
+        <pre><code class="language-javascript">const students = [
+  {
+    name: "Man",
+    goal: "เปลี่ยนสายงานเป็น Developer",
+    level: "เริ่มจากศูนย์",
+  },
+  {
+    name: "Jane",
+    goal: "สร้าง Portfolio",
+    level: "เคยเรียนมาบ้าง",
+  },
+  {
+    name: "Pond",
+    goal: "เข้าใจ Full-Stack",
+    level: "เคยทำโปรเจกต์เล็ก ๆ",
+  },
+];</code></pre>
+        <p>นี่คือ list ของนักเรียนหลายคน แต่ละคนเป็น object ที่มี <code>name</code>, <code>goal</code> และ <code>level</code> เราหยิบข้อมูลได้โดยรวมสองวิธีเข้าด้วยกัน — เลือกคนด้วย index แล้วเลือก field ด้วยจุด:</p>
+        <pre><code class="language-javascript">console.log(students[0].name); // Man
+console.log(students[1].goal); // สร้าง Portfolio
+console.log(students.length);  // 3</code></pre>
+
+        <p>โครงสร้างแบบนี้เจอบ่อยมากใน Web Application เช่น list ของสินค้า, list ของ user, list ของ course, list ของ job application หรือ list ของ transaction</p>
+
+        <div class="warning">
+          <p>จุดที่พิมพ์พลาดบ่อยใน array of objects คือ<strong>ลืมจุลภาคระหว่าง object</strong> (หลัง <code>}</code> ของแต่ละคน) หรือวงเล็บไม่ครบคู่ ซึ่งจะทำให้เกิด <code>SyntaxError</code> ใน Console และโค้ดทั้งไฟล์จะไม่ทำงานเลย ให้ดูเลขบรรทัดที่ error บอก แล้วเช็กบรรทัดนั้นและบรรทัดก่อนหน้า</p>
+        </div>
+
+        <div class="note">
+          <p>object แต่ละตัวใน array ไม่จำเป็นต้องมี field เท่ากันเสมอไป และค่าของ field เป็น array ได้ด้วย เช่น <code>lessons: ["lesson-1", "lesson-2", "lesson-3"]</code> แต่เวลาจะนำไปแสดงผลแบบเดียวกันทุกตัว การให้ทุก object มี field ชุดเดียวกันจะช่วยให้ไม่เจอ <code>undefined</code> โผล่มาบางการ์ด</p>
+        </div>
+
+        <h2>ลองทำ</h2>
+        <ol>
+          <li>สร้าง object ของตัวคุณเองที่มี <code>name</code>, <code>goal</code> และ <code>level</code> แล้ว <code>console.log</code> ทีละ field</li>
+          <li>สร้าง array <code>students</code> ตามตัวอย่างด้านบน แล้วเพิ่ม object ของคุณเป็นคนที่ 4</li>
+          <li><code>console.log</code> ชื่อของคนสุดท้าย และจำนวนนักเรียนทั้งหมด</li>
+        </ol>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า object = ข้อมูลหนึ่งชิ้นที่มีหลายรายละเอียด</li>
+            <li>สร้าง object ด้วย <code>{ key: value }</code> และอ่านค่าด้วย <code>object.field</code> ได้</li>
+            <li>สร้าง array of objects และอ่านค่าอย่าง <code>students[0].name</code> ได้</li>
+            <li>รู้ว่าชื่อ field ที่สะกดผิดจะได้ <code>undefined</code></li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="04_arrays.html" rel="prev">ก่อนหน้า: Array: เก็บข้อมูลหลายรายการ</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="06_foreach_loop.html" rel="next">ถัดไป: วนลูปด้วย forEach</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

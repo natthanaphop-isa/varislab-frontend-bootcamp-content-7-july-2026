@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="คู่มือเรียนจัด layout ด้วย Flexbox ผ่านการสร้าง Landing Page ของ Bootcamp ตั้งแต่ navbar, hero, feature cards, pricing cards ไปจนถึง responsive เบื้องต้น"
+    />
+    <title>Flexbox Layout: สารบัญบทเรียน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <header class="course-header">
+        <h1>Flexbox Layout</h1>
+        <p>
+          เมื่อเรารู้แล้วว่าทุก element คือกล่อง คำถามถัดไปคือ "ถ้ามีกล่องหลายใบ จะจัดวางมันยังไง?" ในคอร์สนี้เราจะตอบด้วย
+          Flexbox ผ่านการสร้าง Landing Page ของ Full-Stack Bootcamp หนึ่งหน้า — navbar ที่ logo อยู่ซ้ายเมนูอยู่ขวา,
+          hero section แบบซ้าย-ขวา, feature cards และ pricing cards ที่กว้างเท่ากัน โดยใช้ <code>display: flex</code>,
+          <code>justify-content</code>, <code>align-items</code>, <code>gap</code>, <code>flex: 1</code> และปิดท้ายด้วย
+          responsive เบื้องต้นด้วย <code>@media</code> และ <code>flex-wrap</code>
+        </p>
+      </header>
+
+      <section>
+        <h2>สิ่งที่ต้องเตรียม</h2>
+        <ul>
+          <li>Code editor (เช่น VS Code) และเบราว์เซอร์สำหรับเปิดไฟล์ <code>index.html</code></li>
+          <li>พื้นฐาน Semantic HTML และ CSS Box Model (<code>padding</code>, <code>margin</code>, <code>max-width</code>)</li>
+          <li>โฟลเดอร์โปรเจกต์ของคอร์สนี้: <code>start/</code> คือโค้ดฉบับร่าง และ <code>finish/</code> คือโค้ดฉบับสมบูรณ์ ใช้เทียบกับของเราเมื่อทำตามคู่มือจบ</li>
+        </ul>
+      </section>
+
+      <div class="chapter-list">
+        <section class="chapter-card">
+          <h2>1. พื้นฐาน Flexbox — Flexbox Fundamentals</h2>
+          <ol>
+            <li><a href="01_intro_and_project.html">ภาพรวมบทเรียนและโปรเจกต์ — Intro &amp; Project Overview</a></li>
+            <li><a href="02_flexbox_mental_model.html">Flexbox Mental Model: Parent กับ Children — Flexbox Mental Model</a></li>
+            <li><a href="03_flexbox_properties.html">Property หลักของ Flexbox ที่ควรรู้ — Flexbox Properties</a></li>
+          </ol>
+        </section>
+
+        <section class="chapter-card">
+          <h2>2. สร้าง Landing Page ด้วย Flexbox — Building the Page</h2>
+          <ol start="4">
+            <li><a href="04_html_structure.html">โครงสร้าง HTML และ CSS พื้นฐาน — HTML Structure &amp; Base Styles</a></li>
+            <li><a href="05_navbar.html">สร้าง Navbar ด้วย Flexbox — Navbar with Flexbox</a></li>
+            <li><a href="06_hero_section.html">Hero Section แบบซ้าย-ขวา และ Flex Ratio — Hero Layout &amp; Flex Ratio</a></li>
+            <li><a href="07_feature_cards.html">Feature Cards เรียงแถวด้วย flex: 1 — Feature Cards</a></li>
+            <li><a href="08_pricing_and_footer.html">Pricing Section และ Footer — Pricing Cards &amp; Footer</a></li>
+          </ol>
+        </section>
+
+        <section class="chapter-card">
+          <h2>3. Responsive และฝึกฝน — Responsive &amp; Practice</h2>
+          <ol start="9">
+            <li><a href="09_responsive_basics.html">Responsive เบื้องต้นด้วย @media และ flex-wrap — Basic Responsive Layout</a></li>
+            <li><a href="10_errors_and_challenges.html">Error ที่เจอบ่อย และ Mini Challenge — Common Errors &amp; Mini Challenges</a></li>
+            <li><a href="11_wrap_up_and_homework.html">สรุปบทเรียนและการบ้าน — Wrap Up &amp; Homework</a></li>
+          </ol>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

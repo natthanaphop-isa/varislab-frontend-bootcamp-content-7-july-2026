@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สรุป flow รับข้อมูล ตรวจสอบ และแสดงผลของฟอร์ม ทบทวน concept สำคัญ พร้อมการบ้าน Personal Inquiry Form, คำถาม reflection และแบบทดสอบตัวเอง" />
+    <title>สรุปบทเรียนและการบ้าน | สร้างฟอร์มรับข้อมูลคอร์ส</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 10 · ฝึกฝนและสรุป (Practice &amp; Wrap Up)</p>
+          <h1>สรุปบทเรียนและการบ้าน</h1>
+          <p class="lesson-original-title" lang="en">Wrap Up &amp; Homework</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบาย flow ของฟอร์มตั้งแต่ผู้ใช้กรอกข้อมูลจนถึงแสดงผล</li>
+            <li>ทบทวน concept HTML, CSS และ JavaScript ที่ได้ใช้ในโปรเจกต์</li>
+            <li>รู้ requirement ของการบ้าน Personal Inquiry Form</li>
+          </ul>
+        </section>
+
+        <h2>เราทำอะไรไปบ้าง</h2>
+        <p>เราขยับจากหน้าเว็บที่แสดงข้อมูลเฉย ๆ ไปสู่หน้าเว็บที่<strong>รับข้อมูลจากผู้ใช้ได้</strong>แล้ว:</p>
+        <ul>
+          <li>ใช้ <strong>HTML Form</strong> เพื่อรับข้อมูล</li>
+          <li>ใช้ <strong>CSS</strong> ทำให้ฟอร์มดูเป็นระบบ และบอกสถานะด้วย <code>:focus</code></li>
+          <li>ใช้ <strong>JavaScript</strong> อ่านค่าจาก input เก็บไว้ในตัวแปร ตรวจสอบเงื่อนไขด้วย <code>if</code> และแสดงผลลัพธ์บนหน้าเว็บ</li>
+        </ul>
+
+        <h2>Flow ที่ต้องจำให้ได้</h2>
+        <p>ถ้ายังจำ syntax ไม่ได้ทั้งหมด ไม่เป็นไร แต่ขอให้จำ flow นี้:</p>
+        <blockquote><strong>ผู้ใช้กรอกข้อมูล → กดปุ่ม submit → JavaScript อ่านค่า → ตรวจสอบ → แสดงผล</strong></blockquote>
+        <p>Web Application จำนวนมากใช้ pattern เดียวกันนี้ และมันคือ logic พื้นฐานที่จะต่อยอดไปสู่ React Form, API Request, Backend Validation และ Database ในอนาคต</p>
+
+        <h2>ทบทวน concept</h2>
+        <div class="comparison" role="region" aria-label="ทบทวน concept ทั้งหมด" tabindex="0">
+          <table>
+            <thead><tr><th>Concept</th><th>ใช้ทำอะไร</th><th>บทเรียน</th></tr></thead>
+            <tbody>
+              <tr><td><code>form</code>, <code>label</code>, <code>input</code></td><td>พื้นที่รับข้อมูล, ป้ายบอกช่อง, ช่องกรอกสั้น</td><td>02</td></tr>
+              <tr><td><code>select</code>, <code>textarea</code>, <code>button type="submit"</code></td><td>ช่องเลือก, ช่องข้อความยาว, ปุ่มส่งฟอร์ม</td><td>03</td></tr>
+              <tr><td>selector หลายตัว, <code>:focus</code></td><td>สไตล์ช่องกรอกทุกแบบพร้อมกัน, บอกว่ากำลังกรอกช่องไหน</td><td>04</td></tr>
+              <tr><td><code>const</code>, <code>document.getElementById</code></td><td>หยิบ element จาก HTML มาเก็บในตัวแปร</td><td>05</td></tr>
+              <tr><td><code>addEventListener</code>, <code>event.preventDefault()</code></td><td>ดักการส่งฟอร์ม และหยุดการ reload หน้า</td><td>05</td></tr>
+              <tr><td><code>.value</code>, <code>textContent</code></td><td>อ่านค่าที่ผู้ใช้กรอก, เขียนข้อความลงหน้าเว็บ</td><td>05</td></tr>
+              <tr><td>Template literal</td><td>ประกอบข้อความกับตัวแปรให้อ่านง่าย</td><td>06</td></tr>
+              <tr><td><code>.trim()</code>, <code>if</code>, <code>||</code>, <code>return</code></td><td>ตรวจข้อมูลว่าง และหยุดเมื่อไม่ผ่าน</td><td>07</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>การบ้าน: Personal Inquiry Form</h2>
+        <p>สร้างหรือปรับฟอร์มจากโปรเจกต์นี้ให้เป็นฟอร์มของตัวเอง ตัวอย่างหัวข้อ:</p>
+        <ul>
+          <li>Developer Goal Form</li>
+          <li>Portfolio Contact Form</li>
+          <li>Job Application Mini Form</li>
+          <li>Course Inquiry Form</li>
+        </ul>
+
+        <h3>Requirements</h3>
+        <ol>
+          <li>มี input สำหรับชื่อ</li>
+          <li>มี input สำหรับเป้าหมาย</li>
+          <li>มี select สำหรับเลือกระดับพื้นฐาน</li>
+          <li>เพิ่มช่องใหม่อย่างน้อย 1 ช่อง เช่น email, phone, skill หรือ expected role</li>
+          <li>เมื่อกด submit ต้องแสดงผลลัพธ์บนหน้าเว็บ</li>
+          <li>ต้องมี validation ว่าช่องสำคัญต้องไม่ว่าง</li>
+          <li>ปรับ style ให้ดูเป็นของตัวเอง</li>
+        </ol>
+        <div class="note">
+          <p>Challenge 1–4 ในบทที่ 9 ครอบคลุม requirement ข้อ 4–6 เกือบทั้งหมดแล้ว ถ้าทำ challenge ครบ คุณเหลือแค่ตกแต่ง style ให้เป็นของตัวเอง</p>
+        </div>
+
+        <h3>Reflection</h3>
+        <p>ตอบคำถามสั้น ๆ ส่งมาพร้อมการบ้าน:</p>
+        <ol>
+          <li>เข้าใจคำว่า variable เพิ่มขึ้นอย่างไร?</li>
+          <li><code>if</code> ใช้ทำอะไร?</li>
+          <li><code>.value</code> ใช้ทำอะไร?</li>
+          <li>เจอ error อะไร และแก้อย่างไร?</li>
+          <li>อยากให้ review จุดไหนของโค้ด?</li>
+        </ol>
+
+        <h2>แบบทดสอบตัวเอง</h2>
+        <p>ลองตอบในใจก่อน แล้วย้อนกลับไปเช็กในบทที่เกี่ยวข้อง</p>
+        <ol>
+          <li>
+            <p>HTML form ใช้ทำอะไร?</p>
+            <p>A. ใช้รับข้อมูลจากผู้ใช้<br />B. ใช้เปลี่ยนสีพื้นหลังเท่านั้น<br />C. ใช้เก็บข้อมูลลง database โดยอัตโนมัติ<br />D. ใช้แทน browser</p>
+          </li>
+          <li>
+            <p><code>.value</code> ใช้สำหรับอะไร?</p>
+            <p>A. อ่านค่าที่ผู้ใช้กรอกหรือเลือกใน input<br />B. เปลี่ยนสีของปุ่ม<br />C. สร้างไฟล์ใหม่<br />D. เปิด browser</p>
+          </li>
+          <li>
+            <p><code>event.preventDefault()</code> ในโปรเจกต์นี้ใช้เพื่ออะไร?</p>
+            <p>A. ป้องกันไม่ให้ form refresh หน้าเว็บทันที<br />B. ทำให้ปุ่มใหญ่ขึ้น<br />C. เปลี่ยน font<br />D. ลบข้อมูลใน database</p>
+          </li>
+          <li>
+            <p><code>if</code> ใช้ทำอะไร?</p>
+            <p>A. ใช้ตรวจสอบเงื่อนไข<br />B. ใช้จัดสี<br />C. ใช้สร้าง HTML file<br />D. ใช้เปิด Terminal</p>
+          </li>
+          <li>
+            <p>ถ้า JavaScript อ่านค่า input ไม่ได้ ควรเช็กอะไรเป็นอย่างแรก?</p>
+            <p>A. id ใน HTML ตรงกับ JavaScript หรือไม่<br />B. สีพื้นหลังสวยหรือไม่<br />C. ชื่อ folder ยาวเกินไปหรือไม่<br />D. มีรูปภาพหรือไม่</p>
+          </li>
+        </ol>
+
+        <div class="verification">
+          <ul>
+            <li>พูด flow ผู้ใช้กรอกข้อมูล → submit → อ่านค่า → ตรวจสอบ → แสดงผล ได้โดยไม่ต้องดูโน้ต</li>
+            <li>โปรเจกต์ Course Inquiry Form ทำงานครบ: validation ทำงาน และแสดงข้อความสรุปได้</li>
+            <li>การบ้านผ่าน requirement ครบทั้ง 7 ข้อ</li>
+            <li>ตอบคำถาม reflection ครบ 5 ข้อ</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="09_mini_challenges.html" rel="prev">ก่อนหน้า: Mini Challenge</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

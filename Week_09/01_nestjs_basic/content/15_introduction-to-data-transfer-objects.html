@@ -9,10 +9,10 @@
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 15 จาก 77</p>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 15/58</p>
     <h1>รู้จัก Data Transfer Objects (DTO)</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
-      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <h2 id="objectives-heading">บทนี้เราจะทำอะไรบ้าง</h2>
       <ul>
         <li>อธิบายได้ว่า DTO คืออะไรและต่างจาก entity อย่างไร</li>
         <li>สร้าง DTO class ด้วย Nest CLI และใช้แทน <code>any</code> ใน <code>@Body()</code></li>
@@ -78,11 +78,11 @@ nest g class coffees/dto/update-coffee.dto --no-spec
 # แก้ controller + service ให้รับ CreateCoffeeDto / UpdateCoffeeDto</code></div>
     </section>
     <section class="expected-result" aria-labelledby="exercise-result-heading">
-      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <h2 id="exercise-result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
       <p>โค้ดคอมไพล์ผ่านและ editor เริ่มช่วย autocomplete ชื่อ property ของ payload ได้ พฤติกรรม runtime ยังเหมือนเดิมทุกอย่าง (ยังไม่มี validation) แต่ตอนนี้ทุกคนที่อ่านโค้ดรู้ทันทีว่า <code>POST /coffees</code> คาดหวัง <code>name</code>, <code>brand</code> และ <code>flavors</code></p>
     </section>
     <section class="verification" aria-labelledby="exercise-check-heading">
-      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <h2 id="exercise-check-heading">ลองเช็กให้แน่ใจ</h2>
       <ul>
         <li>ไม่มี <code>@Body() body</code> ที่เป็น <code>any</code> เหลืออยู่ใน <code>coffees.controller.ts</code></li>
         <li>ลองพิมพ์ <code>createCoffeeDto.</code> ใน editor แล้วเห็น autocomplete ของ <code>name</code>, <code>brand</code>, <code>flavors</code></li>
@@ -96,11 +96,11 @@ nest g class coffees/dto/update-coffee.dto --no-spec
       <li><a href="https://docs.nestjs.com/techniques/validation">Validation (NestJS)</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
-      <a class="lesson-navigation__link" href="14_encompass-business-domain-in-modules.html" rel="prev">← บทก่อนหน้า</a>
-      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="14_encompass-business-domain-in-modules.html" rel="prev">← บทก่อน</a>
+      <a class="lesson-navigation__link" href="index.html">ดูบทเรียนทั้งหมด</a>
       <a class="lesson-navigation__link" href="16_validate-input-data-with-data-transfer-objects.html" rel="next">บทถัดไป →</a>
     </nav>
   </main>
-  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+  <footer><p>NestJS Fundamentals Workshop · เนื้อหาตรวจทานล่าสุด 1 กันยายน 2026</p></footer>
 </body>
 </html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="merge feature branch กลับเข้า main เข้าใจ fast-forward merge push งานล่าสุดขึ้น GitHub และลบ branch ที่ merge แล้วด้วย git branch -d" />
+    <title>Merge Feature กลับเข้า main | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 12 · Branch และ Merge (Branch &amp; Merge)</p>
+          <h1>Merge Feature กลับเข้า main</h1>
+          <p class="lesson-original-title" lang="en">Merge into Main</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>merge feature branch เข้า <code>main</code> ในทิศทางที่ถูกต้อง</li>
+            <li>อธิบายความหมายของ fast-forward merge</li>
+            <li>push งานหลัง merge ขึ้น GitHub</li>
+            <li>ลบ branch ที่ merge แล้วอย่างปลอดภัยด้วย <code>git branch -d</code></li>
+            <li>ทำ feature branch workflow ครบวงจรได้</li>
+          </ul>
+        </section>
+
+        <h2>ตรวจสอบก่อน Merge</h2>
+        <p>ก่อน merge ต้องแน่ใจว่าเรายืนอยู่บน <code>main</code>:</p>
+        <pre><code class="language-bash">git branch</code></pre>
+        <p>ควรเห็น:</p>
+        <pre><code class="language-text">  feature/add-projects-section
+* main</code></pre>
+        <p>ถ้า <code>*</code> ยังอยู่หน้า feature branch ให้รัน <code>git switch main</code> ก่อน</p>
+
+        <h2>Merge Feature กลับเข้า main</h2>
+        <pre><code class="language-bash">git merge feature/add-projects-section</code></pre>
+        <p>Mental model ของคำสั่งนี้:</p>
+        <pre><code class="language-text">เราอยู่ที่ main
+        ↓
+นำงานจาก feature/add-projects-section
+        ↓
+เข้ามารวมใน main</code></pre>
+        <p>ผลลัพธ์จะคล้าย (commit ID และตัวเลขในเครื่องคุณอาจต่างออกไป):</p>
+        <pre><code class="language-text">Updating f18ad55..7f2a1b3
+Fast-forward
+ index.html | 9 +++++++++
+ 1 file changed, 9 insertions(+)</code></pre>
+        <p>refresh หน้าเว็บ — <strong>Projects Section กลับมาแล้ว</strong> เพราะตอนนี้ feature ถูก merge เข้า <code>main</code> เรียบร้อย</p>
+
+        <div class="warning">
+          <p>
+            <strong>merge ผิดทิศทาง</strong> เป็นความผิดพลาดที่พบบ่อย ถ้าเรายืนอยู่บน feature branch แล้วรัน <code>git merge main</code>
+            จะเป็นการนำ <code>main</code> เข้า feature branch ไม่ใช่นำ feature เข้า <code>main</code> ก่อน merge ให้ถามตัวเองว่า
+            “ต้องการให้งานเข้า branch ไหน?” แล้วย้ายไป<strong>branch ปลายทาง</strong>ก่อน จากนั้นจึง merge <strong>branch ต้นทาง</strong>เข้ามา
+          </p>
+        </div>
+
+        <h2>Fast-forward Merge คืออะไร</h2>
+        <p>
+          คำว่า <code>Fast-forward</code> ในผลลัพธ์หมายความว่า หลังจากสร้าง feature branch แล้ว <strong>ไม่มี commit ใหม่เกิดขึ้นบน <code>main</code></strong>
+          Git จึงไม่ต้องผสมอะไรเลย แค่เลื่อนป้าย <code>main</code> ไปชี้ที่ commit ล่าสุดของ feature branch ได้ทันที
+        </p>
+        <pre><code class="language-text">ก่อน Merge
+
+A ← B ← C ← D
+        ↑   ↑
+     main   feature/add-projects-section</code></pre>
+        <pre><code class="language-text">หลัง Merge (fast-forward)
+
+A ← B ← C ← D
+            ↑
+          main
+          feature/add-projects-section</code></pre>
+        <p>
+          ในที่นี้ <code>A</code>, <code>B</code>, <code>C</code> คือ 3 commit แรก และ <code>D</code> คือ <code>Add projects section</code>
+          ถ้าลองรัน <code>git log --oneline --graph --all</code> ตอนนี้จะเห็นว่า <code>main</code> กับ feature branch ชี้ที่ commit เดียวกันแล้ว
+        </p>
+
+        <div class="note">
+          <p>สำหรับผู้เริ่มต้น ยังไม่ต้องจำรายละเอียดของ merge strategy แบบอื่น ๆ แค่เข้าใจว่า feature ถูกนำเข้ามาใน <code>main</code> สำเร็จแล้วก็พอ</p>
+        </div>
+
+        <h2>Push หลัง Merge</h2>
+        <p>ตอนนี้ <code>main</code> ในเครื่องมี feature ใหม่แล้ว แต่ GitHub ยังไม่มี ส่งขึ้นไป:</p>
+        <pre><code class="language-bash">git push</code></pre>
+        <p>ใช้แค่ <code>git push</code> ได้เลย เพราะเราตั้ง <code>-u</code> ไว้ตอน push ครั้งแรกแล้ว จากนั้น refresh หน้า GitHub แล้วตรวจสอบ:</p>
+        <div class="expected-result">
+          <ul>
+            <li><code>index.html</code> บน GitHub มี Projects Section</li>
+            <li>commit <code>Add projects section</code> ปรากฏใน commit history</li>
+            <li>branch หลัก (<code>main</code>) บน GitHub มีโค้ดล่าสุด</li>
+          </ul>
+        </div>
+
+        <h2>ลบ Branch ที่ Merge แล้ว</h2>
+        <p>หลังจาก feature ถูก merge แล้ว เราไม่ต้องใช้ feature branch อีก ลบ local branch ได้ด้วย:</p>
+        <pre><code class="language-bash">git branch -d feature/add-projects-section</code></pre>
+        <pre><code class="language-text">Deleted branch feature/add-projects-section (was 7f2a1b3).</code></pre>
+        <p>ตรวจสอบ:</p>
+        <pre><code class="language-bash">git branch</code></pre>
+        <p>ควรเหลือ:</p>
+        <pre><code class="language-text">* main</code></pre>
+        <p>
+          การลบ branch <strong>ไม่ได้ลบโค้ด</strong>ที่ merge เข้า <code>main</code> แล้ว branch เป็นเหมือนป้ายที่ชี้ไปยังเส้นทางการพัฒนา
+          เมื่องานถูกนำเข้า <code>main</code> เรียบร้อย commit เหล่านั้นก็อยู่ใน <code>main</code> แล้ว เราจึงลบป้ายที่ไม่ใช้งานทิ้งได้ — refresh หน้าเว็บดู Projects Section ยังอยู่ครบ
+        </p>
+
+        <div class="warning">
+          <p>
+            ถ้า <code>git branch -d</code> ปฏิเสธและบอกว่า branch ยังไม่ถูก merge (<code>not fully merged</code>) แปลว่างานบน branch นั้นยังไม่อยู่ใน <code>main</code>
+            ให้ <code>git switch main</code> แล้ว <code>git merge</code> branch นั้นก่อน จากนั้นค่อยลบ <strong>อย่าเพิ่งใช้ <code>git branch -D</code></strong> (ตัว D ใหญ่)
+            เพราะเป็นการบังคับลบ (force delete) ซึ่งอาจทำให้งานที่ยังไม่ merge เข้าถึงได้ยาก
+          </p>
+        </div>
+
+        <h2>Workflow ของ Feature Branch</h2>
+        <p>นี่คือชุดคำสั่งที่เราจะใช้ซ้ำกับทุก feature (แทน <code>feature-name</code> ด้วยชื่อ feature จริง):</p>
+        <pre><code class="language-bash"># 1. สร้างและย้ายไป feature branch
+git switch -c feature/feature-name
+
+# 2. แก้ไขโค้ด แล้ว commit
+git status
+git add .
+git commit -m "Add new feature"
+
+# 3. กลับ main
+git switch main
+
+# 4. merge feature เข้า main
+git merge feature/feature-name
+
+# 5. push ขึ้น GitHub
+git push
+
+# 6. ลบ branch ที่ merge แล้ว
+git branch -d feature/feature-name</code></pre>
+
+        <div class="verification">
+          <ul>
+            <li><code>git merge feature/add-projects-section</code> บน <code>main</code> สำเร็จ และเห็นคำว่า <code>Fast-forward</code></li>
+            <li>หน้าเว็บบน <code>main</code> มี Projects Section</li>
+            <li><code>git push</code> สำเร็จ และ GitHub มี commit <code>Add projects section</code></li>
+            <li><code>git branch</code> เหลือแค่ <code>* main</code></li>
+            <li>อธิบายได้ว่าทำไมต้อง switch ไป branch ปลายทางก่อน merge</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="11_develop_on_feature_branch.html" rel="prev">ก่อนหน้า: พัฒนา Feature บน Branch แยก</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="13_merge_conflict.html" rel="next">ถัดไป: รู้จัก Merge Conflict</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

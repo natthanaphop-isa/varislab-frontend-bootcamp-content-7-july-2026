@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ขัดเกลาหน้า landing page ด้วย section rhythm, section header ที่ใช้ซ้ำ, hover, visual hierarchy และลิงก์ navbar ที่กระโดดไปแต่ละ section ได้จริง" />
+    <title>ขัดเกลา UI ให้ดูเป็นมืออาชีพ | Responsive Layout Lab: Flexbox + CSS Grid</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 07 · ขัดเกลา UI และ Responsive (UI Polish &amp; Responsive)</p>
+          <h1>ขัดเกลา UI ให้ดูเป็นมืออาชีพ</h1>
+          <p class="lesson-original-title" lang="en">UI Polish</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ทำระยะห่างระหว่าง section ให้สม่ำเสมอ (section rhythm)</li>
+            <li>ปรับ <code>.section-header</code> ที่ใช้ร่วมกันหลาย section ในจุดเดียว</li>
+            <li>อธิบาย visual hierarchy ของหน้าเว็บได้</li>
+            <li>ทำให้ลิงก์ใน navbar กระโดดไปยัง section ที่ถูกต้อง</li>
+          </ul>
+        </section>
+
+        <p>UI ที่ดูดีไม่ได้มาจากสีอย่างเดียว แต่มาจาก <strong>spacing</strong>, <strong>typography</strong> และ <strong>visual hierarchy</strong> บทนี้เราจะเก็บรายละเอียดเล็ก ๆ ที่ทำให้หน้าเว็บดู professional ขึ้น</p>
+
+        <h2>1. Section rhythm</h2>
+        <p>แต่ละ section ควรมีระยะห่างที่สม่ำเสมอ ถ้าระยะห่างไม่เท่ากัน หน้าเว็บจะดูไม่เป็นระบบ แม้ code จะถูกก็ตาม ตอนนี้ hero, features, curriculum, audience และ CTA ต่างมี <code>margin-bottom: 72px</code> แล้ว แต่ <strong><code>.pricing-section</code> ยังไม่มี</strong> ให้เพิ่ม:</p>
+        <pre><code class="language-css">/* Pricing */
+.pricing-section {
+    margin-bottom: 72px;
+}</code></pre>
+        <p>ถ้าไม่เพิ่ม กล่อง CTA จะชิดกับ pricing cards มากกว่าระยะระหว่าง section อื่น ๆ</p>
+        <div class="note">
+          <p>อีกวิธีเขียนที่ได้ผลเหมือนกันคือรวม selector ไว้ในที่เดียว:</p>
+          <pre><code class="language-css">.features-section,
+.curriculum-section,
+.audience-section,
+.pricing-section {
+    margin-bottom: 72px;
+}</code></pre>
+          <p>ในไฟล์ <code>finish/</code> เลือกเขียนแยกไว้ในหมวดของแต่ละ section แทน เพื่อให้เปิดหมวดไหนก็เห็น style ของ section นั้นครบ — เลือกแบบใดแบบหนึ่งก็ได้ แต่อย่าเขียนซ้ำทั้งสองแบบ</p>
+        </div>
+
+        <h2>2. Section header ที่ใช้ซ้ำ</h2>
+        <p>ตอนนี้มี 3 section ที่ใช้ <code>.section-header</code> ร่วมกัน (curriculum, audience, pricing) การ reuse class ช่วยให้ style consistent และลด code ซ้ำ — แก้ที่เดียว ทุก section เปลี่ยนตาม หา <code>.section-header</code> เดิมใน <code>style.css</code> แล้ว<strong>แทนที่</strong>ด้วยชุดนี้:</p>
+        <pre><code class="language-css">.section-header {
+    max-width: 680px;
+    margin-bottom: 32px;
+}
+
+.section-header h2 {
+    margin: 0 0 16px;
+    font-size: 40px;
+    line-height: 1.2;
+}
+
+.section-header p {
+    margin: 0;
+    color: #cbd5e1;
+    line-height: 1.7;
+}</code></pre>
+        <div class="comparison" role="region" aria-label="การเปลี่ยนแปลงของ section-header" tabindex="0">
+          <table>
+            <thead><tr><th>Property</th><th>เดิม</th><th>ใหม่</th><th>เหตุผล</th></tr></thead>
+            <tbody>
+              <tr><td><code>max-width</code></td><td>640px</td><td>680px</td><td>ให้คำอธิบายภาษาไทยยาว ๆ ไม่ตัดบรรทัดถี่เกินไป แต่ยังไม่ยาวจนอ่านยาก</td></tr>
+              <tr><td><code>margin-bottom</code></td><td>28px</td><td>32px</td><td>เว้นระยะหัวข้อกับ card ให้โปร่งขึ้น</td></tr>
+              <tr><td><code>h2</code> <code>margin</code></td><td>0</td><td>0 0 16px</td><td>ตอนนี้หัวข้อมีคำอธิบายตามมา จึงต้องมีระยะด้านล่าง</td></tr>
+              <tr><td><code>h2</code> <code>font-size</code></td><td>36px</td><td>40px + <code>line-height: 1.2</code></td><td>หัวข้อ section เด่นขึ้น และบรรทัดไม่ห่างเกินเมื่อขึ้นบรรทัดใหม่</td></tr>
+              <tr><td><code>p</code></td><td>—</td><td>สีเทาอ่อน <code>line-height: 1.7</code></td><td>คำอธิบายเด่นน้อยกว่าหัวข้อ และอ่านสบายตา</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>เพื่อให้ทุก section หัวข้อครบชุดเหมือนกัน เพิ่มคำอธิบายใต้หัวข้อของ Pricing Section ใน <code>index.html</code>:</p>
+        <pre><code class="language-html">&lt;div class="section-header"&gt;
+  &lt;p class="eyebrow"&gt;Pricing&lt;/p&gt;
+
+  &lt;h2&gt;เลือกรูปแบบการเรียนที่เหมาะกับคุณ&lt;/h2&gt;
+
+  &lt;p&gt;
+    เรียนสดแบบเข้มข้น พร้อม project, code review และการเตรียม portfolio
+    สำหรับเส้นทาง Software Developer
+  &lt;/p&gt;
+&lt;/div&gt;</code></pre>
+
+        <h2>3. Card hover</h2>
+        <p>เราใส่ hover ให้ card ไปแล้วในบทก่อนหน้า:</p>
+        <pre><code class="language-css">.curriculum-card:hover {
+    border-color: #38bdf8;
+}
+
+.audience-card:hover {
+    border-color: #38bdf8;
+}</code></pre>
+        <p>Hover เป็นรายละเอียดเล็ก ๆ ที่ช่วยให้ผู้ใช้รู้สึกว่า card มี interaction แม้ยังไม่ได้ใช้ JavaScript ถ้าชอบเขียนสั้นก็รวมเป็น <code>.curriculum-card:hover, .audience-card:hover { … }</code> ได้เช่นกัน</p>
+
+        <h2>4. Visual hierarchy</h2>
+        <p>หน้าเว็บที่ดีต้องทำให้ผู้ใช้รู้ว่าอะไรสำคัญก่อนหลัง ไม่ใช่ทุกอย่างขนาดเท่ากันหมด ลองไล่ดูหน้าของเราตามลำดับนี้:</p>
+        <div class="comparison" role="region" aria-label="visual hierarchy ของหน้า" tabindex="0">
+          <table>
+            <thead><tr><th>Element</th><th>บทบาท</th><th>ในหน้าของเรา</th></tr></thead>
+            <tbody>
+              <tr><td><code>h1</code></td><td>เด่นที่สุด</td><td>52px ใน hero</td></tr>
+              <tr><td><code>h2</code></td><td>หัวข้อ section</td><td>40px ใน <code>.section-header</code>, 36px ใน CTA</td></tr>
+              <tr><td><code>h3</code></td><td>หัวข้อ card</td><td>22px ใน curriculum card</td></tr>
+              <tr><td><code>p</code></td><td>คำอธิบาย</td><td>สี <code>#cbd5e1</code> อ่อนกว่าหัวข้อ</td></tr>
+              <tr><td><code>.eyebrow</code></td><td>label เล็ก ๆ</td><td>ตัวพิมพ์ใหญ่ สีฟ้า ตัวหนา</td></tr>
+              <tr><td>button</td><td>action</td><td><code>.primary-button</code> สีฟ้าทึบ มุมโค้งเต็ม</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>5. ทำให้ลิงก์ใน navbar ใช้งานได้จริง</h2>
+        <p>ตอนนี้ลิงก์ใน navbar ยังเป็น <code>href="#"</code> คลิกแล้วไม่ไปไหน เราจะใส่ <code>id</code> ให้ section ปลายทาง แล้วให้ลิงก์ชี้ไปด้วย <code>#id</code>:</p>
+        <pre><code class="language-html">&lt;div class="nav-links"&gt;
+  &lt;a href="#overview"&gt;Overview&lt;/a&gt;
+  &lt;a href="#curriculum"&gt;Curriculum&lt;/a&gt;
+  &lt;a href="#pricing"&gt;Pricing&lt;/a&gt;
+&lt;/div&gt;</code></pre>
+        <p>แล้วเพิ่ม <code>id</code> ให้ section ที่เกี่ยวข้อง (<code>id="curriculum"</code> ใส่ไว้แล้วตั้งแต่บทที่ 03):</p>
+        <pre><code class="language-html">&lt;section id="overview" class="hero-section"&gt;
+  ...
+  &lt;a class="primary-button" href="#pricing"&gt;ดูรายละเอียดคอร์ส&lt;/a&gt;
+  ...
+&lt;/section&gt;
+
+&lt;section id="curriculum" class="curriculum-section"&gt;...&lt;/section&gt;
+
+&lt;section id="pricing" class="pricing-section"&gt;...&lt;/section&gt;</code></pre>
+        <p>ปุ่ม “ดูรายละเอียดคอร์ส” ใน hero ก็เปลี่ยนให้พาไปที่ Pricing ด้วย ส่วนปุ่มใน CTA ยังเป็น <code>href="#"</code> เพราะยังไม่มีหน้าสมัครจริง</p>
+        <p>สุดท้าย เพิ่ม rule นี้ในส่วน Base (ต่อจาก <code>body</code>) เป็นค่าเริ่มต้นของลิงก์ทั้งหน้า:</p>
+        <pre><code class="language-css">a {
+    color: inherit;
+}</code></pre>
+        <p>ลิงก์ในเบราว์เซอร์มีสีเริ่มต้นเป็นน้ำเงิน/ม่วง ซึ่งแทบมองไม่เห็นบนพื้นหลังสีเข้ม <code>color: inherit</code> ให้ลิงก์ใช้สีเดียวกับข้อความรอบ ๆ ไว้ก่อน แล้วลิงก์ที่ต้องการสีเฉพาะ (เช่น <code>.nav-links a</code> หรือ <code>.primary-button</code>) ก็กำหนดทับเองได้</p>
+
+        <div class="warning">
+          <p>ค่าใน <code>href</code> ต้องมี <code>#</code> นำหน้า แต่ค่าใน <code>id</code> <strong>ไม่ต้องมี</strong> — <code>href="#pricing"</code> คู่กับ <code>id="pricing"</code> ถ้าเขียน <code>id="#pricing"</code> หรือสะกดไม่ตรงกัน ลิงก์จะไม่กระโดด และ <code>id</code> ต้องไม่ซ้ำกันในหน้าเดียว</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>ระยะห่างระหว่างทุก section เท่ากัน รวมถึง pricing กับ CTA</li>
+            <li>หัวข้อของ curriculum, audience และ pricing ขนาดเท่ากัน และทุกอันมีคำอธิบายใต้หัวข้อ</li>
+            <li>คลิก Overview / Curriculum / Pricing ใน navbar แล้วหน้ากระโดดไปถูก section และปุ่มใน hero พาไป Pricing</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="06_cta_section.html" rel="prev">ก่อนหน้า: เพิ่ม Final CTA Section</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="08_responsive_grid.html" rel="next">ถัดไป: ทำ Grid ให้ Responsive</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="รวมปัญหาที่มือใหม่เจอบ่อยเวลาใช้ Git ตั้งแต่ not a git repository จนถึงลบ branch ไม่ได้ พร้อมสาเหตุและวิธีแก้" />
+    <title>ปัญหาที่พบบ่อยและวิธีแก้ | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 14 · แก้ปัญหาและสรุป (Troubleshooting &amp; Wrap Up)</p>
+          <h1>ปัญหาที่พบบ่อยและวิธีแก้</h1>
+          <p class="lesson-original-title" lang="en">Common Problems</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>จำแนกสาเหตุของ error ที่พบบ่อยจากข้อความของ Git</li>
+            <li>แก้ปัญหาพื้นฐานได้ด้วยตัวเองโดยเริ่มจาก <code>git status</code></li>
+            <li>หลีกเลี่ยงการ merge ผิดทิศทางและการบังคับลบ branch</li>
+          </ul>
+        </section>
+
+        <p>บทนี้ใช้เป็น “คู่มือฉุกเฉิน” ได้ตลอด เมื่อเจอข้อความแปลก ๆ ให้เลื่อนหาหัวข้อที่ตรงกัน และจำไว้ว่าจุดเริ่มต้นของการแก้ปัญหาแทบทุกครั้งคือ <code>git status</code></p>
+
+        <h2>ปัญหาที่ 1: fatal: not a git repository</h2>
+        <p><strong>สาเหตุ:</strong> อยู่ผิดโฟลเดอร์ หรือยังไม่ได้รัน <code>git init</code></p>
+        <p>ตรวจสอบตำแหน่งปัจจุบัน:</p>
+        <pre><code class="language-bash">pwd</code></pre>
+        <p>ดูไฟล์ในโฟลเดอร์:</p>
+        <pre><code class="language-bash"># macOS หรือ Linux
+ls
+
+# Windows (PowerShell)
+dir</code></pre>
+        <p>เข้าโฟลเดอร์โปรเจกต์ แล้วลองใหม่:</p>
+        <pre><code class="language-bash">cd developer-profile-page
+git status</code></pre>
+
+        <h2>ปัญหาที่ 2: Author identity unknown</h2>
+        <p><strong>สาเหตุ:</strong> ยังไม่ได้ตั้งชื่อและอีเมลให้ Git แก้ด้วย:</p>
+        <pre><code class="language-bash">git config --global user.name "Your Name"
+git config --global user.email "your-email@example.com"</code></pre>
+        <p>จากนั้น commit ใหม่อีกครั้ง</p>
+
+        <h2>ปัญหาที่ 3: nothing to commit</h2>
+        <pre><code class="language-text">nothing to commit, working tree clean</code></pre>
+        <p><strong>สาเหตุที่เป็นไปได้:</strong></p>
+        <ul>
+          <li>ยังไม่ได้แก้ไฟล์</li>
+          <li>แก้แล้วแต่ยังไม่ได้ save</li>
+          <li>การเปลี่ยนแปลงถูก commit ไปแล้ว</li>
+        </ul>
+        <p>ตรวจสอบด้วย <code>git status</code> และดูว่าแท็บใน VS Code ยังมีจุดกลม (ยังไม่ save) หรือไม่</p>
+
+        <h2>ปัญหาที่ 4: ลืม git add</h2>
+        <p>ถ้ารัน <code>git commit</code> แล้วไม่มีอะไรถูก commit (เช่นเห็น <code>no changes added to commit</code>) ให้ตรวจสอบ:</p>
+        <pre><code class="language-bash">git status</code></pre>
+        <p>เพิ่มไฟล์เข้า staging area:</p>
+        <pre><code class="language-bash">git add .</code></pre>
+        <p>แล้ว commit:</p>
+        <pre><code class="language-bash">git commit -m "Update profile page"</code></pre>
+
+        <h2>ปัญหาที่ 5: remote origin already exists</h2>
+        <p><strong>สาเหตุ:</strong> เคยเพิ่ม remote ชื่อ <code>origin</code> ไปแล้ว ตรวจสอบ:</p>
+        <pre><code class="language-bash">git remote -v</code></pre>
+        <p>ถ้า URL ผิด ให้เปลี่ยนเป็น URL ที่ถูกต้อง (แทน <code>NEW_REPOSITORY_URL</code> ด้วย URL ของคุณ):</p>
+        <pre><code class="language-bash">git remote set-url origin NEW_REPOSITORY_URL</code></pre>
+
+        <h2>ปัญหาที่ 6: สร้างหรือสลับ Branch ขณะที่ยังมีไฟล์ไม่ได้ commit</h2>
+        <p>ก่อนสลับ branch ให้ตรวจสอบเสมอ:</p>
+        <pre><code class="language-bash">git status</code></pre>
+        <p>ถ้ายังมีไฟล์ที่แก้ค้างอยู่ ให้ add และ commit งานปัจจุบันให้เรียบร้อยก่อนสร้างหรือสลับ branch เพื่อให้แต่ละ branch แยกงานกันชัดเจน</p>
+
+        <h2>ปัญหาที่ 7: Merge ผิดทิศทาง</h2>
+        <p>ถ้ายืนอยู่บน feature branch แล้วรัน:</p>
+        <pre><code class="language-bash">git merge main</code></pre>
+        <p>คำสั่งนี้จะนำ <code>main</code> เข้า feature branch <strong>ไม่ใช่</strong>นำ feature เข้า <code>main</code> วิธีที่ต้องการในคู่มือนี้คือ:</p>
+        <pre><code class="language-bash">git switch main
+git merge feature/add-projects-section</code></pre>
+        <p>คำถามที่ต้องถามตัวเองก่อน merge ทุกครั้ง:</p>
+        <pre><code class="language-text">เราต้องการให้งานเข้า Branch ไหน?</code></pre>
+        <p>ให้ย้ายไป branch <strong>ปลายทาง</strong>ก่อน แล้วจึง merge branch <strong>ต้นทาง</strong>เข้ามา</p>
+
+        <h2>ปัญหาที่ 8: ลบ Branch ไม่ได้</h2>
+        <p><strong>สาเหตุ:</strong> ข้อความบอกว่า branch ยังไม่ถูก merge (<code>not fully merged</code>) ให้ merge ก่อน:</p>
+        <pre><code class="language-bash">git switch main
+git merge feature/branch-name</code></pre>
+        <p>จากนั้นค่อยลบ:</p>
+        <pre><code class="language-bash">git branch -d feature/branch-name</code></pre>
+
+        <div class="warning">
+          <p>ยังไม่ควรใช้ <code>git branch -D</code> (ตัว D ใหญ่) เพราะเป็น force delete ที่ลบได้แม้ branch ยังไม่ merge และอาจทำให้งานที่ยังไม่ merge เข้าถึงได้ยาก</p>
+        </div>
+
+        <div class="note">
+          <p>นอกจากนี้ ถ้าลืม <code>-m</code> ตอน commit แล้วติดอยู่ในหน้าจอ editor ให้กด <code>Esc</code> พิมพ์ <code>:q!</code> แล้ว Enter และถ้า push แล้วถูกถาม password ให้ดูหมายเหตุเรื่องการยืนยันตัวตนในบทเรียนที่ 09</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>รู้ว่า <code>fatal: not a git repository</code> ให้เช็กด้วย <code>pwd</code> ก่อน</li>
+            <li>รู้ว่า <code>Author identity unknown</code> แก้ด้วย <code>git config --global</code></li>
+            <li>แยกได้ระหว่าง “ไม่มีอะไรเปลี่ยน” กับ “ลืม <code>git add</code>”</li>
+            <li>รู้วิธีแก้ URL ของ <code>origin</code> ด้วย <code>git remote set-url</code></li>
+            <li>merge ในทิศทางที่ถูกต้อง และลบ branch ด้วย <code>-d</code> ไม่ใช่ <code>-D</code></li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="13_merge_conflict.html" rel="prev">ก่อนหน้า: รู้จัก Merge Conflict</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="15_wrap_up.html" rel="next">ถัดไป: สรุปบทเรียน แบบฝึกหัด และการบ้าน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

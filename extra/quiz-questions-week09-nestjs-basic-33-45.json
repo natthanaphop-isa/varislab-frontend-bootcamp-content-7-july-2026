@@ -1,0 +1,140 @@
+{
+  "questions": [
+    {
+      "prompt": "เหตุใด PrismaService จึงอ่าน DATABASE_URL ได้หลังลบ import 'dotenv/config' ออกจาก main.ts?",
+      "choices": [
+        "เพราะ Prisma CLI ส่งค่า DATABASE_URL เข้า constructor ของทุก service ให้อัตโนมัติ",
+        "เพราะ ConfigModule.forRoot() โหลด .env ก่อน Nest สร้าง providers และ PrismaService อ่านค่าภายใน constructor",
+        "เพราะลำดับ PrismaModule ใน imports ต้องอยู่ก่อน ConfigModule เสมอ"
+      ],
+      "correctChoice": 2,
+      "explanation": "ConfigModule.forRoot() โหลดและ merge ค่า .env เข้ากับ process.env ระหว่างประเมิน imports ก่อนเข้าสู่ DI phase ดังนั้น PrismaService ที่อ่านค่าใน constructor จึงเห็น DATABASE_URL ส่วน Prisma CLI ยังต้องโหลด env แยกเพราะทำงานนอก NestJS"
+    },
+    {
+      "prompt": "Config schema นี้จะทำให้แอปมีพฤติกรรมอย่างไร?",
+      "body": "<pre><code>validationSchema: Joi.object({\n  DATABASE_URL: Joi.string().required(),\n  PORT: Joi.number().default(3000),\n})</code></pre>",
+      "choices": [
+        "แอปหยุดตั้งแต่ bootstrap เมื่อ DATABASE_URL หายหรือ PORT ไม่ใช่ตัวเลข และใช้ PORT 3000 เมื่อไม่ได้กำหนด",
+        "แอปเปิดตามปกติเสมอ แล้วตรวจค่าเหล่านี้เมื่อมี request แรกเข้ามา",
+        "Joi แปลง DATABASE_URL เป็น URL object และบังคับให้กำหนด PORT ทุกครั้ง"
+      ],
+      "correctChoice": 1,
+      "explanation": "validationSchema ตรวจ environment variables ระหว่าง bootstrap ตามแนวคิด fail fast โดย DATABASE_URL เป็นค่าบังคับ ส่วน PORT ต้องเป็น number และมีค่า default 3000"
+    },
+    {
+      "prompt": "ข้อใดเป็นเหตุผลหลักที่ควรโหลด custom configuration แล้วอ่านผ่าน ConfigService?",
+      "body": "<pre><code>ConfigModule.forRoot({\n  isGlobal: true,\n  load: [appConfig],\n});\n\nconst port = configService.get&lt;number&gt;('port', 3000);</code></pre>",
+      "choices": [
+        "ทำให้ environment variables ถูก commit เข้า repository ได้อย่างปลอดภัย",
+        "ทำให้ทุก module สร้าง ConfigService instance ของตัวเองเพื่อแยกค่าออกจากกัน",
+        "รวมการอ่านค่า การแปลงชนิด และ default ไว้จุดเดียว พร้อมให้ providers mock dependency ผ่าน DI ได้ง่าย"
+      ],
+      "correctChoice": 3,
+      "explanation": "Custom configuration factory จัดโครงสร้างและแปลงค่าจาก process.env ไว้ส่วนกลาง ส่วน ConfigService เป็น dependency ที่ inject และ mock ได้ พร้อมอ่านค่าซ้อนกันด้วย dot notation เช่น database.url"
+    },
+    {
+      "prompt": "ต้องย้าย ValidationPipe แบบ global จาก main.ts เข้า DI container โดยยังรักษา options เดิมทั้งหมด ควรตั้งค่าอย่างไร?",
+      "choices": [
+        "ประกาศ { provide: APP_PIPE, useClass: ValidationPipe } เพราะ Nest จะคัดลอก options จาก main.ts ให้อัตโนมัติ",
+        "ประกาศ { provide: APP_PIPE, useFactory: () =&gt; new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true, transformOptions: { enableImplicitConversion: true } }) }",
+        "เพิ่ม ValidationPipe ใน imports ของ AppModule และคง app.useGlobalPipes() ไว้ด้วย"
+      ],
+      "correctChoice": 2,
+      "explanation": "APP_PIPE ทำให้ pipe ถูกสร้างใน DI container และ useFactory เปิดทางให้ส่ง options เดิมครบ หากใช้ useClass อย่างเดียวจะเทียบเท่ากับ new ValidationPipe() เปล่า ๆ ทำให้ validation options สำคัญหายไป"
+    },
+    {
+      "prompt": "ใน HttpExceptionFilter ควรตรวจตัวแปรใดเพื่อรองรับ payload ของ exception ที่อาจเป็น string หรือ object?",
+      "body": "<pre><code>const response = ctx.getResponse&lt;Response&gt;();\nconst exceptionResponse = exception.getResponse();</code></pre>",
+      "choices": [
+        "ตรวจ typeof exceptionResponse เพราะค่านี้คือ payload เดิมของ HttpException",
+        "ตรวจ typeof response เพราะ Express Response อาจเป็น string",
+        "ตรวจ typeof ctx เพราะ ArgumentsHost จะเปลี่ยนชนิดตาม status code"
+      ],
+      "correctChoice": 1,
+      "explanation": "exception.getResponse() คืน payload ที่อาจเป็น string หรือ object ส่วน response เป็น Express Response object จึงต้อง branch จาก typeof exceptionResponse ก่อนจัดรูป error และเติม timestamp"
+    },
+    {
+      "prompt": "เหตุใด ApiKeyGuard ที่ใช้ Reflector และ ConfigService จึงควรลงทะเบียนผ่าน APP_GUARD?",
+      "choices": [
+        "เพราะ APP_GUARD ทำให้ guard ทำงานหลัง route handler จึงอ่าน metadata ได้",
+        "เพราะ guard ที่สร้างด้วย new ใน main.ts อยู่นอก DI container แต่ APP_GUARD ทำให้ Nest inject dependencies และใช้ guard แบบ global ได้",
+        "เพราะ @Public() ใช้งานได้เฉพาะกับ guards ที่ประกาศใน controllers array"
+      ],
+      "correctChoice": 2,
+      "explanation": "การลงทะเบียน { provide: APP_GUARD, useClass: ApiKeyGuard } ให้ Nest สร้าง guard ผ่าน DI จึง inject Reflector และ ConfigService ได้ ขณะเดียวกัน guard ยังครอบคลุมทั้งแอปและข้าม handler ที่มี isPublic metadata ได้"
+    },
+    {
+      "prompt": "TimeoutInterceptor ควรจัดการ error ใน RxJS pipeline อย่างไร?",
+      "body": "<pre><code>return next.handle().pipe(\n  timeout(3000),\n  catchError(err =&gt; /* ... */),\n);</code></pre>",
+      "choices": [
+        "แปลง error ทุกชนิดเป็น RequestTimeoutException เพื่อให้ response สม่ำเสมอ",
+        "คืนค่า null เมื่อเกิด TimeoutError แล้วปล่อย request สำเร็จด้วย status 200",
+        "แปลงเฉพาะ TimeoutError เป็น RequestTimeoutException และโยน error ชนิดอื่นต่อโดยไม่เปลี่ยน"
+      ],
+      "correctChoice": 3,
+      "explanation": "timeout(3000) สร้าง TimeoutError เมื่อ stream ไม่ emit ภายในเวลา ตัว interceptor ควรแปลงเฉพาะกรณีนี้เป็น HTTP 408 ส่วน error อื่นต้องถูก rethrow เพื่อรักษาความหมายเดิมและให้ exception layer จัดการต่อ"
+    },
+    {
+      "prompt": "ค่าที่เมธอด transform() ของ custom pipe คืนออกมามีผลอย่างไร?",
+      "body": "<pre><code>transform(value: string, metadata: ArgumentMetadata) {\n  const val = parseInt(value, 10);\n  if (isNaN(val)) throw new BadRequestException();\n  return val;\n}</code></pre>",
+      "choices": [
+        "เป็นค่าที่ route handler ได้รับจริง จึงทำให้ id เปลี่ยนจาก string เป็น number",
+        "เป็น response body ที่ Nest ส่งกลับ client ทันที",
+        "เป็น metadata ใหม่ที่ Nest นำไปบันทึกไว้บน controller"
+      ],
+      "correctChoice": 1,
+      "explanation": "Pipe ทำงานกับ argument ก่อนถึง handler ค่าที่ transform() คืนจะถูกส่งต่อเป็น argument จริง ส่วนการ throw BadRequestException จะหยุด request ก่อนเข้า handler และตอบ 400"
+    },
+    {
+      "prompt": "เพราะเหตุใด LoggingMiddleware จึงฟัง event finish ของ response และยังต้องเรียก next()?",
+      "choices": [
+        "finish ใช้วัดเวลาจนส่ง response เสร็จ ส่วน next() ส่งการควบคุมไปยัง guard, interceptor, pipe และ handler",
+        "finish ทำให้ middleware ทำงานหลัง exception filter ส่วน next() ใช้สร้าง response object",
+        "finish ใช้ยกเลิก request ที่ช้า ส่วน next() ใช้ restart middleware ตั้งแต่ต้น"
+      ],
+      "correctChoice": 1,
+      "explanation": "การฟัง finish ทำให้เวลาที่วัดครอบคลุม request-response pipeline ทั้งหมด หาก middleware ไม่ได้จบ response เองก็ต้องเรียก next() ไม่เช่นนั้น request จะค้างและไม่มี response กลับ"
+    },
+    {
+      "prompt": "ใน factory ของ custom param decorator พารามิเตอร์ data และ ctx มีหน้าที่อะไร?",
+      "body": "<pre><code>export const Protocol = createParamDecorator(\n  (data: unknown, ctx: ExecutionContext) =&gt; {\n    const request = ctx.switchToHttp().getRequest();\n    return request.protocol;\n  },\n);</code></pre>",
+      "choices": [
+        "data คือ request body ส่วน ctx คือ response body",
+        "data รับค่าที่ส่งตอนเรียก decorator ส่วน ctx ใช้เข้าถึง execution context และ HTTP request",
+        "data เก็บ metadata ของ TypeScript ส่วน ctx ใช้ register decorator ใน module"
+      ],
+      "correctChoice": 2,
+      "explanation": "ค่าที่ใส่ในวงเล็บ เช่น @Protocol('https') จะเข้ามาทาง data ส่วน ExecutionContext ใช้เข้าถึง request ปัจจุบัน ค่าที่ factory return คือ argument ที่ handler ได้รับ"
+    },
+    {
+      "prompt": "หลังเพิ่ม @nestjs/swagger/plugin ใน nest-cli.json แล้ว Swagger UI ยังไม่แสดง schema ของ DTO ควรตรวจอะไรเป็นอันดับแรก?",
+      "choices": [
+        "เปลี่ยน DTO ทุกไฟล์ให้ลงท้ายด้วย .controller.ts",
+        "ย้าย SwaggerModule.setup() ไปไว้หลัง app.listen()",
+        "restart dev server เพราะ CLI plugin ทำงานตอน compile และตรวจว่าไฟล์ใช้ suffix .dto.ts หรือ .entity.ts"
+      ],
+      "correctChoice": 3,
+      "explanation": "Swagger CLI plugin วิเคราะห์และฝัง metadata ระหว่าง compile จึงต้อง restart หลังแก้ nest-cli.json และโดย default จะประมวลผลไฟล์ที่ลงท้าย .dto.ts กับ .entity.ts"
+    },
+    {
+      "prompt": "วิธีใดทำให้ UpdateCoffeeDto แสดง properties แบบ optional ใน Swagger และยังคง validation แบบ partial?",
+      "choices": [
+        "เปลี่ยนไป import PartialType จาก @nestjs/swagger และใช้ @ApiProperty เฉพาะรายละเอียดที่ plugin อนุมานไม่ได้",
+        "คง PartialType จาก @nestjs/mapped-types แล้วลบ Swagger CLI plugin",
+        "เปลี่ยน UpdateCoffeeDto เป็น interface และใส่ @ApiTags ให้ทุก property"
+      ],
+      "correctChoice": 1,
+      "explanation": "PartialType จาก @nestjs/swagger ทำให้ properties เป็น optional พร้อมลงทะเบียน OpenAPI metadata และยังสืบทอด validation rules เหมือนเดิม ส่วน @ApiProperty เหมาะกับ description, example หรือข้อมูลที่อนุมานจาก type ไม่ได้"
+    },
+    {
+      "prompt": "ข้อใดเป็นการเขียน Swagger documentation ที่ตรงกับพฤติกรรมจริงของแอป?",
+      "choices": [
+        "ใส่ @ApiForbiddenResponse บน GET /coffees ที่ติด @Public() เพื่อบอกว่า API อาจเปลี่ยนในอนาคต",
+        "ใส่ @ApiNotFoundResponse บน GET /coffees/:id, @ApiForbiddenResponse บน POST /coffees และ @ApiTags('coffees') บน controller",
+        "ใส่ @ApiResponse({ status: 200 }) ทุก handler เพราะ decorator จะเปลี่ยน status จริงให้ตรงกับเอกสาร"
+      ],
+      "correctChoice": 2,
+      "explanation": "เอกสารควรประกาศเฉพาะ response ที่โค้ดตอบได้จริง: findOne อาจ throw 404 และ create ที่ guard คุมอาจตอบ 403 ส่วน @ApiTags ระดับ controller จัดทุก endpoint เข้าหมวด coffees โดย decorator เอกสารไม่เปลี่ยน runtime behavior"
+    }
+  ]
+}

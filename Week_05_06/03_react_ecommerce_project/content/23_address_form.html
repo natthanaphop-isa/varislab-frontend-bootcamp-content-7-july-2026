@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="สร้างฟอร์มที่อยู่จัดส่งด้วย react-hook-form + zodResolver ต่อยอดแนวคิด uncontrolled forms จาก Week 4" />
+    <meta name="description" content="สร้างฟอร์มที่อยู่จัดส่งด้วย react-hook-form + zodResolver ต่อยอดแนวคิด uncontrolled forms จากคอร์ส React พื้นฐาน" />
     <title>ฟอร์มที่อยู่ด้วย react-hook-form | สร้างเว็บ E-commerce ด้วย React</title>
     <link rel="stylesheet" href="lesson.css" />
   </head>
@@ -16,11 +16,11 @@
           <p class="lesson-original-title" lang="en">Address Form</p>
         </header>
 
-        <p>schema พร้อมแล้วจากบทที่แล้ว บทนี้เราจะสร้างฟอร์มที่อยู่จัดส่งตัวจริง — และได้เจอกับ <strong>react-hook-form</strong> ซึ่งเป็น library จัดการฟอร์มที่ครองตลาด React มาหลายปี ก่อนเขียนโค้ด มาทำความเข้าใจกันก่อนว่ามันแก้ปัญหาอะไร เพราะปรัชญาของมันต่อตรงกับสิ่งที่คุณเรียนมาแล้วใน Week 4 พอดี</p>
+        <p>schema พร้อมแล้วจากบทที่แล้ว บทนี้เราจะสร้างฟอร์มที่อยู่จัดส่งตัวจริง — และได้เจอกับ <strong>react-hook-form</strong> ซึ่งเป็น library จัดการฟอร์มที่ครองตลาด React มาหลายปี ก่อนเขียนโค้ด มาทำความเข้าใจกันก่อนว่ามันแก้ปัญหาอะไร เพราะปรัชญาของมันต่อตรงกับสิ่งที่คุณเรียนมาแล้วในคอร์ส React พื้นฐาน พอดี</p>
 
         <h2>ปรัชญาของ react-hook-form: uncontrolled แต่สบายกว่า</h2>
 
-        <p>ย้อนกลับไปบท Hooks และบท Uncontrolled Forms ของ Week 4 — ตอนนั้นเราสรุปกันว่าฟอร์มมาตรฐานควรเป็น <em>uncontrolled</em>: ปล่อยให้ DOM เก็บค่าของ input เอง แล้วค่อยไปอ่านค่าทีเดียวตอน submit ส่วน <em>controlled form</em> (ผูกทุก input กับ <code>useState</code>) เก็บไว้ใช้เมื่อจำเป็นจริง ๆ เช่นต้องตอบสนองทุกตัวอักษรที่พิมพ์ เหตุผลเรื่อง performance ก็ชัดเจน: controlled form ทำให้ทั้งฟอร์ม re-render <em>ทุกครั้งที่กดคีย์บอร์ดหนึ่งที</em> ในขณะที่ uncontrolled ไม่ re-render อะไรเลยระหว่างพิมพ์</p>
+        <p>ย้อนกลับไปบท Hooks และบท Uncontrolled Forms ของคอร์ส React พื้นฐาน — ตอนนั้นเราสรุปกันว่าฟอร์มมาตรฐานควรเป็น <em>uncontrolled</em>: ปล่อยให้ DOM เก็บค่าของ input เอง แล้วค่อยไปอ่านค่าทีเดียวตอน submit ส่วน <em>controlled form</em> (ผูกทุก input กับ <code>useState</code>) เก็บไว้ใช้เมื่อจำเป็นจริง ๆ เช่นต้องตอบสนองทุกตัวอักษรที่พิมพ์ เหตุผลเรื่อง performance ก็ชัดเจน: controlled form ทำให้ทั้งฟอร์ม re-render <em>ทุกครั้งที่กดคีย์บอร์ดหนึ่งที</em> ในขณะที่ uncontrolled ไม่ re-render อะไรเลยระหว่างพิมพ์</p>
 
         <p>แต่ uncontrolled แบบดิบ ๆ (อ่าน <code>FormData</code> เองตอน submit) ก็มีงานน่าเบื่อ: ต้องแปลงค่าเป็น type ที่ถูกต้องเอง ต้อง validate เอง ต้องจัดการแสดง error ต่อ field เอง <strong>react-hook-form คือ uncontrolled form ที่มีคนทำงานน่าเบื่อพวกนั้นให้หมดแล้ว</strong>:</p>
 

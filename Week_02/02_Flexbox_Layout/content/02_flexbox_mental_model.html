@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เข้าใจหลักคิดสำคัญของ Flexbox ว่าต้องใส่ display: flex ที่ parent container แล้วมันจะจัด layout ของ children ข้างใน" />
+    <title>Flexbox Mental Model: Parent กับ Children | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 02 · พื้นฐาน Flexbox (Flexbox Fundamentals)</p>
+          <h1>Flexbox Mental Model: Parent กับ Children</h1>
+          <p class="lesson-original-title" lang="en">Flexbox Mental Model</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>แยกได้ว่า element ไหนคือ parent container และ element ไหนคือ child item</li>
+            <li>อธิบายได้ว่าทำไม <code>display: flex</code> ต้องใส่ที่ parent ไม่ใช่ที่ลูกแต่ละตัว</li>
+            <li>บอกได้ว่า Flexbox เหมาะกับ layout แบบไหน</li>
+          </ul>
+        </section>
+
+        <h2>ประโยคเดียวที่ต้องจำ</h2>
+        <pre><code class="language-text">Flexbox ต้องใส่ที่ parent container
+แล้วมันจะจัด layout ของ children ข้างใน</code></pre>
+        <p>ถ้าจำประโยคนี้ได้ ปัญหาส่วนใหญ่ตอนเริ่มใช้ Flexbox จะหายไปเลย</p>
+
+        <h2>ตัวอย่าง: card 3 ใบ</h2>
+        <p>สมมติเรามี HTML แบบนี้:</p>
+        <pre><code class="language-html">&lt;div class="card-row"&gt;
+  &lt;article class="card"&gt;Card 1&lt;/article&gt;
+  &lt;article class="card"&gt;Card 2&lt;/article&gt;
+  &lt;article class="card"&gt;Card 3&lt;/article&gt;
+&lt;/div&gt;</code></pre>
+        <p>ปกติ <code>&lt;article&gt;</code> เป็น block element แต่ละใบจึงกินความกว้างเต็มแถว และเรียงต่อกันลงมาเป็นบน-ล่าง ถ้าเราอยากให้ card 3 ใบนี้เรียงอยู่ในแถวเดียวกัน เราไม่ได้ไปใส่ <code>display: flex</code> ที่ <code>.card</code> ทีละใบ แต่ใส่ที่ <strong>กล่องที่ครอบ card ทั้งหมด</strong>:</p>
+        <pre><code class="language-css">.card-row {
+  display: flex;
+}</code></pre>
+
+        <h2>กล่องแม่ กับ กล่องลูก</h2>
+        <ul>
+          <li><code>.card-row</code> คือ <strong>กล่องแม่</strong> (parent / flex container)</li>
+          <li><code>.card</code> แต่ละใบคือ <strong>กล่องลูก</strong> (children / flex items)</li>
+        </ul>
+        <p>เมื่อใส่ <code>display: flex;</code> ที่กล่องแม่ เหมือนเรากำลังบอกกล่องแม่ว่า:</p>
+        <blockquote>ช่วยจัดลูก ๆ ข้างในกล่องนี้ให้เป็น layout แบบ flex ให้หน่อย</blockquote>
+        <p>ผลคือลูกโดยตรงทุกตัวของ <code>.card-row</code> จะเรียงต่อกันเป็นแถวแนวนอน</p>
+
+        <div class="note">
+          <p>Flexbox มีผลกับ <strong>ลูกโดยตรง</strong> (direct children) เท่านั้น ถ้าข้างใน <code>.card</code> มี <code>&lt;h2&gt;</code> กับ <code>&lt;p&gt;</code> สองตัวนี้ไม่ได้ถูกจัดเรียงด้วย flex ของ <code>.card-row</code> ถ้าอยากจัดข้างใน card ด้วย ต้องใส่ <code>display: flex</code> ที่ <code>.card</code> เพิ่มอีกชั้น</p>
+        </div>
+
+        <h2>element หนึ่งตัวเป็นได้ทั้งแม่และลูก</h2>
+        <p>ในโปรเจกต์ของเรา navbar มีโครงแบบนี้:</p>
+        <pre><code class="language-html">&lt;nav class="navbar"&gt;
+  &lt;p class="logo"&gt;Varis Lab&lt;/p&gt;
+
+  &lt;div class="nav-links"&gt;
+    &lt;a href="#"&gt;Overview&lt;/a&gt;
+    &lt;a href="#"&gt;Curriculum&lt;/a&gt;
+    &lt;a href="#"&gt;Pricing&lt;/a&gt;
+  &lt;/div&gt;
+&lt;/nav&gt;</code></pre>
+        <ul>
+          <li><code>.navbar</code> เป็น parent ของ <code>.logo</code> และ <code>.nav-links</code></li>
+          <li><code>.nav-links</code> เป็น <em>ลูก</em> ของ <code>.navbar</code> และในเวลาเดียวกันก็เป็น <em>แม่</em> ของลิงก์ 3 ตัว</li>
+        </ul>
+        <p>เราจึงใส่ <code>display: flex</code> ได้ทั้งที่ <code>.navbar</code> (จัด logo กับกลุ่มเมนู) และที่ <code>.nav-links</code> (จัดลิงก์ 3 ตัว) เราจะทำจริงในบทที่ 05</p>
+
+        <h2>Flexbox เหมาะกับอะไร</h2>
+        <p>Flexbox เก่งเรื่องการจัดกล่องเรียงกันใน<strong>แนวเดียว</strong> (แนวนอนหรือแนวตั้ง) เช่น:</p>
+        <ul>
+          <li>navbar (logo + เมนู)</li>
+          <li>layout ซ้าย-ขวา เช่น hero section</li>
+          <li>card ที่เรียงเป็นแถว</li>
+          <li>layout แนวตั้งเมื่อหน้าจอเล็ก</li>
+        </ul>
+
+        <div class="warning">
+          <p><strong>ผิดบ่อย:</strong> ใส่ <code>display: flex</code> ที่ <code>.card</code> แล้วสงสัยว่าทำไม card ยังเรียงบน-ล่างอยู่ — เพราะ card คือลูก ต้องย้ายไปใส่ที่กล่องแม่ที่ครอบ card ทั้งหมด</p>
+        </div>
+
+        <h2>ลองทำ</h2>
+        <p>สร้างไฟล์ทดลองเล็ก ๆ ใส่ HTML <code>.card-row</code> ด้านบน เปิดในเบราว์เซอร์ดูก่อน แล้วค่อยเพิ่ม CSS <code>.card-row { display: flex; }</code> แล้ว refresh สังเกตว่า card เปลี่ยนจากเรียงบน-ล่าง เป็นเรียงซ้าย-ขวา จากนั้นลองย้าย <code>display: flex</code> ไปใส่ที่ <code>.card</code> แทน แล้วดูว่าเกิดอะไรขึ้น</p>
+
+        <div class="verification">
+          <ul>
+            <li>ชี้ได้ว่าใน HTML ตัวอย่าง อะไรคือ parent และอะไรคือ children</li>
+            <li>อธิบายได้ว่า <code>display: flex</code> มีผลกับลูกโดยตรงเท่านั้น</li>
+            <li>บอกได้ว่า <code>.nav-links</code> เป็นทั้งลูกและแม่ได้อย่างไร</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="01_intro_and_project.html" rel="prev">ก่อนหน้า: ภาพรวมบทเรียนและโปรเจกต์</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="03_flexbox_properties.html" rel="next">ถัดไป: Property หลักของ Flexbox ที่ควรรู้</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

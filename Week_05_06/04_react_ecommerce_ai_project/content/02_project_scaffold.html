@@ -76,7 +76,7 @@ node -v</code></pre>
 
         <ul>
           <li><strong><code>index.html</code> คือประตูหน้าแอป</strong> — เบราว์เซอร์โหลดไฟล์นี้ก่อน แล้วเจอ <code>&lt;script type=&quot;module&quot; src=&quot;/src/main.tsx&quot;&gt;</code> ซึ่งลากโค้ดทั้งแอปเข้ามา นี่คือเหตุผลที่แอปแบบนี้เรียกว่า SPA (Single-Page Application) — HTML มีหน้าเดียว ที่เหลือ React จัดการ</li>
-          <li><strong><code>src/main.tsx</code></strong> — จับ React ยึดกับ <code>&lt;div id=&quot;root&quot;&gt;</code> ใน index.html แล้ว render <code>&lt;App /&gt;</code> ครอบด้วย <code>StrictMode</code> แบบเดียวกับที่เจอใน Week 4</li>
+          <li><strong><code>src/main.tsx</code></strong> — จับ React ยึดกับ <code>&lt;div id=&quot;root&quot;&gt;</code> ใน index.html แล้ว render <code>&lt;App /&gt;</code> ครอบด้วย <code>StrictMode</code> แบบเดียวกับที่เจอในคอร์ส React พื้นฐาน</li>
           <li><strong>tsconfig สามไฟล์</strong> — โค้ดในเบราว์เซอร์ (<code>src/</code>) กับโค้ดที่รันบน Node (ไฟล์ config) อยู่คนละสภาพแวดล้อม จึงแยกการตั้งค่ากันคนละไฟล์ โดยมี <code>tsconfig.json</code> เป็นแม่ที่อ้างถึงทั้งคู่ ไฟล์ที่เราจะแก้บ่อยคือ <code>tsconfig.app.json</code></li>
         </ul>
 

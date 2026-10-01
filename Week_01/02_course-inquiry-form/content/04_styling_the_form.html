@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ตกแต่งฟอร์มให้ดูเป็นมืออาชีพด้วย CSS: จัดการ์ดให้อยู่กลางจอ, เลือก input, select, textarea พร้อมกัน, ทำ focus state และกล่องผลลัพธ์" />
+    <title>ตกแต่งฟอร์มด้วย CSS | สร้างฟอร์มรับข้อมูลคอร์ส</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 04 · สร้างฟอร์มด้วย HTML และ CSS (Form Structure &amp; Styling)</p>
+          <h1>ตกแต่งฟอร์มด้วย CSS</h1>
+          <p class="lesson-original-title" lang="en">Styling the Form</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>จัดการ์ดฟอร์มให้อยู่กลางหน้าจอด้วย flexbox</li>
+            <li>เลือก element หลายตัวพร้อมกันด้วย selector ที่คั่นด้วย comma</li>
+            <li>ใช้ <code>:focus</code> และ <code>:hover</code> บอกสถานะให้ผู้ใช้เห็น</li>
+            <li>มีไฟล์ <code>style.css</code> ที่สมบูรณ์ของโปรเจกต์</li>
+          </ul>
+        </section>
+
+        <p>บทนี้ไม่ได้ต้องการให้คุณจำ property ทั้งหมด แต่อยากให้เห็นแนวคิดสำคัญ 2–3 อย่างที่ใช้บ่อยมากกับฟอร์มจริง เราจะเขียน <code>style.css</code> ทีละส่วน แล้วดูไฟล์เต็มตอนท้าย</p>
+
+        <h2>Step 3.1: พื้นฐานของหน้า</h2>
+        <pre><code class="language-css">* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+</code></pre>
+        <ul>
+          <li><code>* { box-sizing: border-box; }</code> — ให้ <code>width</code> ของทุก element รวม <code>padding</code> และ <code>border</code> ไว้ด้วย สำคัญมากกับช่องกรอกที่เราจะตั้ง <code>width: 100%</code> ไม่อย่างนั้นช่องจะล้นการ์ด</li>
+          <li><code>body</code> — ลบ margin เริ่มต้นของ browser และตั้งพื้นหลังสีเข้มกับตัวอักษรสีขาว</li>
+        </ul>
+
+        <h2>Step 3.2: จัดการ์ดให้อยู่กลางจอ</h2>
+        <pre><code class="language-css">.page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+}
+
+.form-card {
+  width: 520px;
+  padding: 32px;
+  border-radius: 24px;
+  background: #1e293b;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+</code></pre>
+        <p><code>.page</code> สูงอย่างน้อยเต็มจอ (<code>100vh</code>) และใช้ flexbox — <code>justify-content: center</code> จัดกลางแนวนอน, <code>align-items: center</code> จัดกลางแนวตั้ง ส่วน <code>.form-card</code> คือตัวการ์ดที่มีมุมโค้งและเงา</p>
+
+        <h2>Step 3.3: หัวการ์ดและระยะห่างของแต่ละช่อง</h2>
+        <pre><code class="language-css">.label {
+  margin: 0 0 12px;
+  color: #38bdf8;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+}
+
+.description {
+  margin: 0 0 24px;
+  color: #cbd5e1;
+  line-height: 1.7;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: #e2e8f0;
+  font-weight: bold;
+}
+</code></pre>
+        <ul>
+          <li><code>.form-group</code> — เว้นระยะด้านล่างของทุกช่อง ฟอร์มจึงไม่อัดแน่น (นี่คือเหตุผลที่เราห่อแต่ละช่องด้วย <code>div</code> ในบทก่อน)</li>
+          <li><code>label { display: block; }</code> — ปกติ <code>label</code> เป็น inline คืออยู่บรรทัดเดียวกับช่องกรอก การตั้งเป็น <code>block</code> ทำให้ label อยู่บรรทัดของตัวเอง แล้วช่องกรอกลงมาอยู่ด้านล่าง</li>
+        </ul>
+
+        <div class="warning">
+          <p>ระวังชื่อที่คล้ายกัน: <code>.label</code> (มีจุด) คือ <strong>class</strong> ของป้าย "Varis Lab Bootcamp" ส่วน <code>label</code> (ไม่มีจุด) คือ<strong>แท็ก</strong> <code>&lt;label&gt;</code> ทุกตัวในฟอร์ม ลืมจุดตัวเดียว สไตล์จะไปผิดที่</p>
+        </div>
+
+        <h2>Step 3.4: เลือกหลาย element พร้อมกัน</h2>
+        <p><code>input</code>, <code>select</code> และ <code>textarea</code> เป็นช่องรับข้อมูลเหมือนกัน เราจึงอยากให้หน้าตาเหมือนกัน แทนที่จะเขียน 3 รอบ ให้<strong>คั่น selector ด้วย comma</strong> แล้วเขียนครั้งเดียว:</p>
+        <pre><code class="language-css">input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #0f172a;
+  color: white;
+  font-size: 16px;
+}
+</code></pre>
+
+        <h2>Step 3.5: focus state — บอกผู้ใช้ว่ากำลังกรอกช่องไหน</h2>
+        <pre><code class="language-css">input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+</code></pre>
+        <p><code>:focus</code> คือสถานะตอนที่ผู้ใช้คลิก (หรือกด Tab) เข้าไปในช่องกรอก เราเอา <code>outline</code> เริ่มต้นของ browser ออก แล้วเปลี่ยนสีขอบเป็นสีฟ้าแทน นี่คือตัวอย่างเล็ก ๆ ของ <strong>UX (user experience)</strong> — ทำให้ผู้ใช้รู้ว่าตอนนี้กำลังกรอกช่องไหนอยู่</p>
+
+        <div class="note">
+          <p>ถ้าใช้ <code>outline: none</code> ต้องใส่สไตล์อื่นแทนเสมอ (อย่างที่เราเปลี่ยน <code>border-color</code>) เพราะผู้ใช้ที่กรอกฟอร์มด้วยคีย์บอร์ดต้องมองเห็นว่าช่องไหนกำลังถูกเลือก</p>
+        </div>
+
+        <h2>Step 3.6: ปุ่มและกล่องผลลัพธ์</h2>
+        <pre><code class="language-css">button {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 24px;
+  background: #38bdf8;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #7dd3fc;
+}
+
+.result-box {
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: 16px;
+  background: #0f172a;
+  color: #cbd5e1;
+  line-height: 1.7;
+}
+</code></pre>
+        <ul>
+          <li><code>border-radius: 999px</code> — ค่าที่ใหญ่มากทำให้ปุ่มโค้งมนเป็นทรงแคปซูล</li>
+          <li><code>cursor: pointer</code> — เปลี่ยนเมาส์เป็นรูปมือ บอกว่ากดได้</li>
+          <li><code>button:hover</code> — สีปุ่มสว่างขึ้นเมื่อเอาเมาส์ไปวาง</li>
+          <li><code>.result-box</code> — กล่องสีเข้มด้านล่างฟอร์ม ที่ JavaScript จะเขียนข้อความลงไป</li>
+        </ul>
+
+        <h2>style.css ฉบับสมบูรณ์</h2>
+        <pre><code class="language-css">* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+}
+
+.form-card {
+  width: 520px;
+  padding: 32px;
+  border-radius: 24px;
+  background: #1e293b;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.label {
+  margin: 0 0 12px;
+  color: #38bdf8;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+}
+
+.description {
+  margin: 0 0 24px;
+  color: #cbd5e1;
+  line-height: 1.7;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: #e2e8f0;
+  font-weight: bold;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #0f172a;
+  color: white;
+  font-size: 16px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+
+button {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 24px;
+  background: #38bdf8;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #7dd3fc;
+}
+
+.result-box {
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: 16px;
+  background: #0f172a;
+  color: #cbd5e1;
+  line-height: 1.7;
+}
+</code></pre>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>พื้นหลังสีน้ำเงินเข้ม มีการ์ดกว้าง 520px อยู่กลางจอ ป้าย "VARIS LAB BOOTCAMP" เป็นตัวพิมพ์ใหญ่สีฟ้า ช่องกรอกทุกช่องกว้างเต็มการ์ด ขอบกลายเป็นสีฟ้าเมื่อคลิกเข้าไป ปุ่มทรงแคปซูลสีฟ้าที่สว่างขึ้นเมื่อ hover และกล่องผลลัพธ์สีเข้มด้านล่าง</p>
+        </section>
+
+        <div class="verification">
+          <ul>
+            <li>การ์ดอยู่กลางจอทั้งแนวนอนและแนวตั้ง</li>
+            <li>คลิกหรือกด Tab ไล่ช่องแล้วเห็นขอบสีฟ้าเปลี่ยนตามช่องที่ focus อยู่</li>
+            <li>อธิบายได้ว่า <code>input, select, textarea { … }</code> ต่างจากเขียน 3 กฎแยกกันอย่างไร (ผลเหมือนกัน แต่สั้นกว่าและแก้ที่เดียว)</li>
+            <li>แยกได้ว่า <code>.label</code> กับ <code>label</code> เลือกอะไรต่างกัน</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="03_select_textarea_button.html" rel="prev">ก่อนหน้า: select, textarea, button และกล่องผลลัพธ์</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="05_reading_form_values.html" rel="next">ถัดไป: อ่านค่าจากฟอร์มด้วย JavaScript</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

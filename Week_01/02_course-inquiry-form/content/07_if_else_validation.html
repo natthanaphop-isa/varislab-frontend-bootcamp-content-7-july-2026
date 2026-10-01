@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เพิ่ม validation ให้ฟอร์มด้วย .trim(), if, || และ return เพื่อไม่ให้ส่งข้อมูลสำคัญที่ว่าง และใส่ข้อความสำรองเมื่อไม่มีข้อความเพิ่มเติม" />
+    <title>ตรวจสอบข้อมูลด้วย if/else | สร้างฟอร์มรับข้อมูลคอร์ส</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 07 · เริ่มคิดแบบ JavaScript (Thinking in JavaScript)</p>
+          <h1>ตรวจสอบข้อมูลด้วย if/else</h1>
+          <p class="lesson-original-title" lang="en">if/else Validation</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ตัดช่องว่างหน้าหลังข้อความด้วย <code>.trim()</code></li>
+            <li>เขียนเงื่อนไขด้วย <code>if</code>, <code>===</code> และ <code>||</code> เพื่อเช็กว่าช่องสำคัญว่างหรือไม่</li>
+            <li>ใช้ <code>return</code> หยุดการทำงานของ function เมื่อข้อมูลไม่ครบ</li>
+            <li>ใช้ <code>||</code> กำหนดข้อความสำรองเมื่อค่าว่าง และได้ <code>script.js</code> ฉบับสมบูรณ์</li>
+          </ul>
+        </section>
+
+        <p>นี่คือส่วนที่สำคัญที่สุดของโปรเจกต์ เพราะเราเริ่มเขียน <strong>logic</strong> จริง ๆ แล้ว ในเว็บจริงเราไม่ควรปล่อยให้ผู้ใช้กดส่งฟอร์มทั้งที่ยังไม่กรอกข้อมูลสำคัญ เราจึงต้อง<strong>ตรวจสอบเงื่อนไขก่อน</strong> — ขั้นตอนนี้เรียกว่า <strong>validation</strong></p>
+
+        <h2>Step 6: script.js ฉบับสมบูรณ์</h2>
+        <p>แก้ <code>script.js</code> ให้เป็นแบบนี้ แล้วเราจะไล่อธิบายทีละส่วน:</p>
+        <pre><code class="language-javascript">const inquiryForm = document.getElementById("inquiryForm");
+const fullNameInput = document.getElementById("fullName");
+const goalInput = document.getElementById("goal");
+const levelSelect = document.getElementById("level");
+const messageInput = document.getElementById("message");
+const resultBox = document.getElementById("result");
+
+inquiryForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const fullName = fullNameInput.value.trim();
+  const goal = goalInput.value.trim();
+  const level = levelSelect.value;
+  const message = messageInput.value.trim();
+
+  if (fullName === "" || goal === "" || level === "") {
+    resultBox.textContent =
+      "กรุณากรอกชื่อ เป้าหมาย และเลือกระดับพื้นฐานให้ครบก่อนส่งข้อมูล";
+    return;
+  }
+
+  resultBox.textContent = `สวัสดีครับคุณ ${fullName}
+เป้าหมายของคุณคือ ${goal}
+ระดับพื้นฐานตอนนี้คือ ${level}
+ข้อความเพิ่มเติม: ${message || "ไม่มีข้อความเพิ่มเติม"}`;
+});
+</code></pre>
+        <p>เทียบกับบทที่แล้ว มีของใหม่ 4 อย่าง: <code>.trim()</code>, บล็อก <code>if</code>, <code>return</code> และ <code>${message || "…"}</code></p>
+
+        <h2>.trim() — ตัดช่องว่างหน้าหลัง</h2>
+        <pre><code class="language-javascript">const fullName = fullNameInput.value.trim();
+</code></pre>
+        <p><code>.trim()</code> ตัดช่องว่าง (space, tab, ขึ้นบรรทัดใหม่) ที่อยู่<strong>หน้าและหลัง</strong>ข้อความออก เช่น <code>"  Man  "</code> จะกลายเป็น <code>"Man"</code></p>
+        <p>เหตุผลสำคัญ: ถ้าผู้ใช้กด spacebar หลายครั้งแต่ไม่ได้พิมพ์อะไรจริง ๆ ค่าที่ได้คือ <code>"   "</code> ซึ่ง<em>ไม่ใช่</em>ข้อความว่างในสายตา JavaScript หลัง <code>.trim()</code> มันจะกลายเป็น <code>""</code> และถูกจับได้ว่าว่างจริง</p>
+        <p>สังเกตว่า <code>level</code> ไม่ได้ใส่ <code>.trim()</code> เพราะค่ามาจาก <code>value</code> ของ <code>option</code> ที่เรากำหนดเองอยู่แล้ว ผู้ใช้พิมพ์ช่องว่างเข้าไปไม่ได้</p>
+
+        <h2>if — "ถ้า"</h2>
+        <pre><code class="language-javascript">if (fullName === "" || goal === "" || level === "") {
+  resultBox.textContent =
+    "กรุณากรอกชื่อ เป้าหมาย และเลือกระดับพื้นฐานให้ครบก่อนส่งข้อมูล";
+  return;
+}
+</code></pre>
+        <p><code>if</code> แปลว่า "ถ้า" — โค้ดในวงเล็บปีกกา <code>{ }</code> จะทำงาน<strong>เฉพาะเมื่อเงื่อนไขในวงเล็บ <code>( )</code> เป็นจริง</strong></p>
+        <ul>
+          <li><code>===</code> — เปรียบเทียบว่า "เท่ากันหรือไม่" <code>fullName === ""</code> คือถาม "ชื่อเป็นข้อความว่างใช่ไหม"</li>
+          <li><code>||</code> — แปลว่า <strong>"หรือ"</strong> ถ้ามีข้อใดข้อหนึ่งเป็นจริง เงื่อนไขทั้งหมดก็เป็นจริง</li>
+        </ul>
+        <p>แปลเงื่อนไขนี้เป็นภาษาคนได้ว่า:</p>
+        <blockquote>ถ้า <code>fullName</code> ว่าง <strong>หรือ</strong> <code>goal</code> ว่าง <strong>หรือ</strong> <code>level</code> ว่าง (ยังไม่ได้เลือกระดับพื้นฐาน) → ให้แสดงข้อความเตือนผู้ใช้ แล้วหยุดการทำงาน</blockquote>
+        <p>จำได้ไหมว่าในบทที่ 3 เราตั้ง <code>&lt;option value=""&gt;</code> ให้ตัวเลือกแรก — นี่แหละคือที่มาของ <code>level === ""</code></p>
+
+        <div class="warning">
+          <p>ใช้ <code>===</code> (เท่ากับสามตัว) สำหรับเปรียบเทียบ ส่วน <code>=</code> ตัวเดียวคือการ<strong>กำหนดค่า</strong>ให้ตัวแปร ถ้าเขียน <code>if (fullName = "")</code> จะไม่ใช่การเช็กแต่เป็นการพยายามเปลี่ยนค่า และกับตัวแปร <code>const</code> จะเกิด error</p>
+        </div>
+
+        <h2>return — หยุดตรงนี้</h2>
+        <p><code>return</code> ในที่นี้แปลว่า <strong>หยุดการทำงานของ function ตรงนี้เลย</strong> ถ้าข้อมูลยังไม่ครบ เราไม่ต้องการให้ JavaScript ทำงานต่อไปถึงส่วนแสดงผลลัพธ์ด้านล่าง ซึ่งจะไปเขียนทับข้อความเตือน</p>
+        <p>ถ้าลืม <code>return</code> โค้ดจะเขียนข้อความเตือนก่อน แล้ววิ่งต่อไปเขียนข้อความสรุปทับทันที ผู้ใช้จะไม่เคยเห็นข้อความเตือนเลย</p>
+
+        <h2>แล้ว else อยู่ไหน?</h2>
+        <p>เราเขียนแบบ <code>if</code> + <code>else</code> ตรง ๆ ก็ได้ผลเหมือนกัน:</p>
+        <pre><code class="language-javascript">if (fullName === "" || goal === "" || level === "") {
+  resultBox.textContent =
+    "กรุณากรอกชื่อ เป้าหมาย และเลือกระดับพื้นฐานให้ครบก่อนส่งข้อมูล";
+} else {
+  resultBox.textContent = `สวัสดีครับคุณ ${fullName} …`;
+}
+</code></pre>
+        <p>แต่การใช้ <code>if</code> + <code>return</code> ทำให้ส่วน <code>else</code> ไม่จำเป็น เพราะถ้าโค้ดวิ่งมาถึงบรรทัดหลัง <code>if</code> ได้ แปลว่าข้อมูลผ่านการตรวจแล้วแน่นอน เทคนิค "เช็กกรณีผิดก่อนแล้วออกเลย" นี้ทำให้โค้ดไม่ต้องซ้อนวงเล็บหลายชั้น</p>
+
+        <h2>${message || "ไม่มีข้อความเพิ่มเติม"} — ข้อความสำรอง</h2>
+        <p>ช่องข้อความเพิ่มเติมเป็นช่อง<strong>ไม่บังคับ</strong> จึงไม่อยู่ในเงื่อนไข <code>if</code> แต่ถ้าผู้ใช้ไม่ได้กรอก ผลลัพธ์จะเป็น "ข้อความเพิ่มเติม: " แล้วว่างเปล่า ดูไม่ดี เราจึงเขียน:</p>
+        <pre><code class="language-javascript">${message || "ไม่มีข้อความเพิ่มเติม"}
+</code></pre>
+        <p>ตรงนี้ <code>||</code> ทำหน้าที่ต่างจากใน <code>if</code> เล็กน้อย: มันแปลว่า <strong>"ใช้ค่าทางซ้าย ถ้าค่าทางซ้ายว่าง ให้ใช้ค่าทางขวาแทน"</strong></p>
+        <ul>
+          <li>ถ้า <code>message</code> เป็น <code>"อยากทำ Portfolio"</code> → แสดง <code>อยากทำ Portfolio</code></li>
+          <li>ถ้า <code>message</code> เป็น <code>""</code> → แสดง <code>ไม่มีข้อความเพิ่มเติม</code></li>
+        </ul>
+        <div class="note">
+          <p>ที่ทำงานแบบนี้ได้เพราะ JavaScript มองข้อความว่าง <code>""</code> ว่าเป็น "เท็จ" (falsy) เมื่อใช้กับ <code>||</code> ตอนนี้แค่จำไว้ว่า <code>ค่า || ค่าสำรอง</code> คือวิธีสั้น ๆ ในการใส่ค่าเริ่มต้นให้ค่าที่อาจว่าง</p>
+        </div>
+
+        <h2>ทดสอบทุกกรณี</h2>
+        <div class="comparison" role="region" aria-label="กรณีทดสอบ validation" tabindex="0">
+          <table>
+            <thead><tr><th>สิ่งที่ทำ</th><th>ผลที่ควรเห็น</th></tr></thead>
+            <tbody>
+              <tr><td>กดส่งโดยไม่กรอกอะไรเลย</td><td>ข้อความเตือน "กรุณากรอกชื่อ เป้าหมาย และเลือกระดับพื้นฐานให้ครบก่อนส่งข้อมูล"</td></tr>
+              <tr><td>พิมพ์แต่ spacebar ในช่องชื่อ กรอกช่องอื่นครบ</td><td>ข้อความเตือน (เพราะ <code>.trim()</code>)</td></tr>
+              <tr><td>กรอกชื่อและเป้าหมาย แต่ไม่เลือกระดับพื้นฐาน</td><td>ข้อความเตือน</td></tr>
+              <tr><td>กรอกครบ 3 ช่องสำคัญ ไม่กรอกข้อความเพิ่มเติม</td><td>ข้อความสรุป ลงท้ายด้วย "ข้อความเพิ่มเติม: ไม่มีข้อความเพิ่มเติม"</td></tr>
+              <tr><td>กรอกครบทุกช่อง</td><td>ข้อความสรุปพร้อมข้อความเพิ่มเติมที่พิมพ์ไว้</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>ตอนนี้ <code>index.html</code>, <code>style.css</code> และ <code>script.js</code> ของคุณเสร็จสมบูรณ์แล้ว — flow ครบ: รับข้อมูล → ตรวจสอบ → ประมวลผล → แสดงผล</p>
+
+        <div class="verification">
+          <ul>
+            <li>ทดสอบครบทั้ง 5 กรณีในตารางและได้ผลตรงตามที่ควรเป็น</li>
+            <li>อธิบายได้ว่าทำไมต้องใส่ <code>.trim()</code></li>
+            <li>อ่านเงื่อนไข <code>if</code> ออกมาเป็นภาษาคนได้ และบอกได้ว่า <code>||</code> แปลว่าอะไร</li>
+            <li>บอกได้ว่าถ้าลบ <code>return</code> ออกจะเกิดอะไรขึ้น</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="06_template_literals.html" rel="prev">ก่อนหน้า: ประกอบข้อความด้วย Template Literal</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="08_common_errors.html" rel="next">ถัดไป: Error ที่เจอบ่อยและวิธีแก้</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

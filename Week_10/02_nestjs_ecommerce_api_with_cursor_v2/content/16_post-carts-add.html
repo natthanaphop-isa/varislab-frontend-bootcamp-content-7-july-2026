@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง OrdersService ที่อ่านสินค้าและบันทึกคำสั่งซื้อใน transaction เดียวให้ยอดตรงกับ docs/api-spec.md แล้วเปิด route POST /carts/add ด้วย CartsController พร้อมพิสูจน์ 201, 400, 404 และการ rollback ด้วย curl, psql และ e2e test" />
+  <title>สร้างคำสั่งซื้อและเปิด POST /carts/add</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>สร้างคำสั่งซื้อและเปิด POST /carts/add</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>คำนวณ <code>total</code>, <code>discountedPrice</code> และ <code>discountedTotal</code> ด้วยกติกาเดียวกันทุก field (ปัดทศนิยม 2 ตำแหน่งเสมอ ไม่มีข้อยกเว้น)</li>
+        <li>ใช้ interactive transaction อ่านสินค้าและเขียนคำสั่งซื้อในก้อนเดียว และอธิบายได้ว่า rollback เกิดตอนไหน</li>
+        <li>เขียน mapper แปลง <code>Order</code> + <code>OrderItem</code> เป็น response ตามสัญญา โดยไม่ปล่อยข้อมูลส่วนตัวหลุดออกไป</li>
+        <li>เปิด route <code>POST /carts/add</code> ให้ตรงกับ path ที่ React app เรียกโดยไม่แก้ฝั่ง frontend และอธิบายได้ว่าทำไมไฟล์ controller ชื่อ <code>carts</code> แต่ module และ service ใช้คำว่า <code>orders</code></li>
+        <li>พิสูจน์ทั้งสี่พฤติกรรมด้วย curl (201, 400 ขาด <code>userId</code>, 404 สินค้าไม่มีจริงพร้อม rollback, 400 email ผิดรูป) แล้วปิดท้ายด้วย e2e test ที่สั่ง Cursor เขียนให้ในแชทแยก</li>
+      </ul>
+    </section>
+
+    <div class="note"><p>บทนี้ยาวกว่าบทอื่นเพราะมันคือ endpoint เดียวที่<strong>เขียน</strong>ข้อมูลลงฐานข้อมูล และการแยกส่วนคิดเงินออกจากส่วนเปิด route ทำให้ตรวจงานยากขึ้นโดยไม่ได้อะไรกลับมา เราจึงทำทั้งเส้นในบทเดียว แต่แบ่งเป็น <strong>prompt สามอันในสามแชท</strong>: service ที่คิดเงิน → controller ที่เปิด route → e2e test ที่ตัดสินว่าทั้งสองอันถูกตามสัญญาหรือไม่</p></div>
+
+<h2>เลขทุกตัวใน response มาจากไหน</h2>
+    <p>ก่อนเขียนโค้ด ต้องถอดสูตรจาก <code>docs/api-spec.md</code> ให้ครบก่อน ตัวอย่างที่ใช้อ้างอิงตลอดบทนี้คือสินค้า id 1 (Velvet Matte Lipstick) ราคา <code>9.99</code> ส่วนลด <code>10.48</code> เปอร์เซ็นต์ จำนวน <code>2</code> ชิ้น</p>
+    <div class="comparison" role="region" aria-label="สูตรคำนวณยอดของคำสั่งซื้อ" tabindex="0">
+      <table>
+        <thead><tr><th>Field</th><th>สูตร</th><th>ตัวอย่าง</th></tr></thead>
+        <tbody>
+          <tr><td><code>products[].total</code></td><td><code>price × quantity</code> ปัด 2 ตำแหน่ง</td><td><code>9.99 × 2 = 19.98</code></td></tr>
+          <tr><td><code>products[].discountedPrice</code></td><td><code>round2(total × (1 − discountPercentage / 100))</code></td><td><code>19.98 × 0.8952 = 17.886096</code> → <code>17.89</code></td></tr>
+          <tr><td><code>total</code></td><td>ผลรวม <code>total</code> ของทุกรายการ ปัด 2 ตำแหน่ง</td><td><code>19.98</code></td></tr>
+          <tr><td><code>discountedTotal</code></td><td>ผลรวม <code>discountedPrice</code> ของทุกรายการ</td><td><code>17.89</code></td></tr>
+          <tr><td><code>totalProducts</code></td><td>จำนวน<em>รายการ</em> ใน <code>products[]</code></td><td><code>1</code></td></tr>
+          <tr><td><code>totalQuantity</code></td><td>ผลรวม <code>quantity</code> ของทุกรายการ</td><td><code>2</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>จุดที่ต้องระวังที่สุดคือบรรทัดที่สอง: <code>discountedPrice</code> ปัดด้วย <code>round2</code> เหมือน field ตัวเงินอื่น ๆ ทุกตัว ไม่มี field ไหนปัดเป็นจำนวนเต็มเป็นกรณีพิเศษ ค่าที่ถูกคือ <code>17.89</code> ไม่ใช่ <code>18</code> — เราออกแบบระบบเงินของเราเองให้สม่ำเสมอในทุก field ไม่ได้ลอกพฤติกรรมจากที่อื่นมา ถ้าใครเคยเห็นตัวอย่างที่ปัดเป็นจำนวนเต็มมาก่อน (จาก API อื่นที่เคยใช้) ต้องเปลี่ยนความเคยชินตรงนี้</p>
+    <p>ส่วน <code>total</code> ใช้การปัดสองตำแหน่งผ่าน helper <code>round2</code> เพราะเลขทศนิยมแบบ floating point ทำให้การบวกราคาสะสมเพี้ยนได้ (เช่น <code>0.1 + 0.2</code> ได้ <code>0.30000000000000004</code>) และ <code>totalProducts</code> นับ<em>จำนวนบรรทัด</em> ไม่ใช่จำนวนชิ้น — สั่งสินค้าตัวเดียว 2 ชิ้นจะได้ <code>totalProducts: 1</code> กับ <code>totalQuantity: 2</code> — และ <code>discountedPrice</code> ก็เรียก <code>round2</code> ตัวเดียวกันนี้ ไม่มี helper แยกสำหรับมันเอง</p>
+
+    <h2>อ่านและเขียนในก้อนเดียวด้วย interactive transaction</h2>
+    <p>การสร้างคำสั่งซื้อต้องทำสองอย่าง: อ่านราคาสินค้าจากตาราง <code>Product</code> แล้วเขียน <code>Order</code> พร้อมรายการลงไป ถ้าปล่อยสองอย่างนี้อยู่นอก transaction จะเกิดปัญหาสองแบบ — ราคาถูกแก้ระหว่างที่เราอ่านเสร็จแต่ยังไม่เขียน (ใบเสร็จได้ราคาผีที่ไม่มีอยู่จริงในช่วงเวลาใดเลย) และถ้าการเขียนพังกลางทางก็จะเหลือข้อมูลค้างครึ่ง ๆ</p>
+    <p>คำตอบคือ <strong>interactive transaction</strong> แบบเดียวกับบทเรื่องทรานแซกชันของคอร์ส NestJS Fundamentals: <code>this.prisma.$transaction(async (tx) =&gt; { … })</code> ทุก query ข้างในต้องเรียกผ่าน <code>tx</code> ไม่ใช่ <code>this.prisma</code> ไม่งั้น query นั้นจะหลุดออกไปอยู่นอก transaction เงียบ ๆ</p>
+    <p>สิ่งที่ทำให้ pattern นี้สวยคือการจัดการ error: ถ้ามี id สินค้าที่ไม่มีจริง เรา <code>throw new NotFoundException(...)</code> ข้างใน callback ได้เลย Prisma จะ rollback ทุกอย่างให้อัตโนมัติเพราะ callback reject และ Nest จะแปลง exception ตัวนั้นเป็น response <code>404</code> ให้เอง เราจึงไม่ต้องเขียนโค้ดลบข้อมูลที่เพิ่งสร้างเลยแม้แต่บรรทัดเดียว</p>
+    <p>การเขียน <code>Order</code> กับ <code>OrderItem</code> ใช้ nested write (บทเรื่องความสัมพันธ์ของคอร์ส NestJS Fundamentals) คือ <code>items: { create: items }</code> ข้างใน <code>tx.order.create()</code> — Prisma ออก INSERT ให้ทั้งใบและทุกบรรทัดในคำสั่งเดียว โดยเติม <code>orderId</code> ให้เองหลังได้ id ของ <code>Order</code> ส่วน <code>include: { items: { orderBy: { id: 'asc' } } }</code> ทำให้ได้รายการกลับมาพร้อมกันในลำดับที่เขียนลงไป — ไม่ต้อง query ซ้ำ และ <code>products[]</code> ใน response เรียงตรงกับที่ client ส่งมา</p>
+    <div class="note"><p>เราอ่านสินค้าทั้งหมดด้วย <code>findMany({ where: { id: { in: ids } } })</code> ครั้งเดียวแล้วทำ <code>Map</code> จาก id ไปหา product ไม่ใช่ loop <code>findUnique</code> ทีละตัว — ตะกร้า 10 รายการจึงเป็น 1 query ไม่ใช่ 10 query ส่วนการวน <code>dto.products.map(...)</code> ต่อจากนั้นทำให้ลำดับของ response ตรงกับลำดับที่ client ส่งมาเสมอ ไม่ใช่ลำดับที่ฐานข้อมูลคืนแถวมา</p></div>
+    <p>อีกเรื่องที่ตั้งใจ<strong>ไม่</strong>ทำ: เราไม่ลด <code>stock</code> ของสินค้า เพราะ React app อ่าน stock จาก <code>GET /products/:id</code> ใหม่ทุกครั้งที่เปิดหน้าสินค้า ถ้าเราลด stock ขึ้นมาเอง พฤติกรรมของแอปจะเปลี่ยนไปจากเดิมทันทีทั้งที่เราไม่ได้แก้ frontend — ขัดกับเป้าหมายของคอร์สนี้</p>
+
+    <h2>mapper กันข้อมูลส่วนตัวหลุด</h2>
+    <p>แถวที่ Prisma คืนมามีมากกว่าที่สัญญาอนุญาตให้ส่งออก: <code>Order</code> มี <code>address</code>, <code>email</code>, <code>phone</code>, <code>createdAt</code> ที่สัญญาของเรา (<code>docs/api-spec.md</code>) ไม่ได้กำหนดให้ส่งออกไป และ <code>OrderItem</code> มี <code>id</code> ของตัวเองซึ่ง<strong>ไม่ใช่</strong> <code>products[].id</code> ที่ client ต้องการ — client ต้องการ <code>productId</code> เพราะมันใช้ค่านั้นลิงก์ไปหน้าสินค้า</p>
+    <p>เราจึงใช้ mapper แบบเดียวกับตอนแปลงแถวสินค้าเป็นรูปทรงตามสัญญา คือฟังก์ชันบริสุทธิ์ที่แปลงแถวเป็น response DTO ทีละ field อย่างชัดเจน ข้อดีคือ field ที่เพิ่มใน schema วันหลังจะไม่รั่วออก API เอง เพราะถ้าไม่เขียนไว้ใน mapper มันก็ไม่ถูกส่ง</p>
+
+    <h2>path มาจาก client ไม่ใช่จากเรา</h2>
+    <p>ถ้าออกแบบ API ใหม่ตั้งแต่ต้น การสั่งซื้อควรเป็น <code>POST /orders</code> แต่คอร์สนี้มีข้อจำกัดที่ชัดเจน: React app เรียก <code>POST /carts/add</code> และเราสัญญาว่าจะไม่แก้โค้ด frontend นอกจาก base URL ดังนั้น path ต้องเป็น <code>/carts/add</code> เป๊ะ ๆ — พลาดตัวเดียวก็ได้ 404 ทุกครั้งที่กดสั่งซื้อ</p>
+    <p>ทางออกคือแยกสองเรื่องนี้ออกจากกัน: <strong>path เป็นเรื่องของสัญญากับ client</strong> จึงตั้งชื่อไฟล์ controller ตาม path (<code>carts.controller.ts</code> + <code>@Controller('carts')</code>) ส่วน <strong>module และ service เป็นเรื่องของ domain</strong> คือการสั่งซื้อ จึงใช้คำว่า <code>orders</code> (<code>orders.module.ts</code>, <code>orders.service.ts</code>) โครงสร้างนี้บอกคนอ่านโค้ดคนต่อไปได้ทันทีว่า "ชื่อ carts มาจากข้อจำกัดภายนอก ไม่ใช่จากวิธีที่เราคิดเรื่องธุรกิจ"</p>
+    <div class="note"><p>ทั้งสองไฟล์อยู่ในโฟลเดอร์ <code>src/orders/</code> เดียวกัน ตามหลักการรวม domain ไว้ใน module เดียวจากคอร์ส NestJS Fundamentals — คนหาโค้ดเรื่องคำสั่งซื้อจะเจอทุกอย่างในที่เดียว แม้ route จะชื่อ <code>/carts</code></p></div>
+
+    <h2>ทวนของเดิม: @Body และ status 201</h2>
+    <p>คอร์ส NestJS Fundamentals วางพื้นไว้แล้วสองข้อที่ใช้ตรง ๆ ในบทนี้ ข้อแรก <code>@Body() dto: AddCartDto</code> — การ<em>ประกาศชนิด</em>ของ parameter ให้เป็น class ของ DTO คือสิ่งที่ทำให้ <code>ValidationPipe</code> รู้ว่าต้องเอา rule ชุดไหนมาตรวจ ถ้าเขียนเป็น <code>@Body() dto: any</code> หรือลืมใส่ชนิด DTO ทั้งชุดที่เขียน validation ไว้จะไม่ทำงานเลยแม้แต่ข้อเดียว และไม่มี error ใด ๆ เตือน</p>
+    <p>ข้อสอง handler ที่เป็น <code>@Post()</code> ของ Nest ตอบ <code>201 Created</code> เป็นค่าเริ่มต้นอยู่แล้ว ตรงกับสัญญาที่เราออกแบบไว้ใน <code>docs/api-spec.md</code> พอดี จึง<strong>ไม่ต้อง</strong>ใส่ <code>@HttpCode()</code> — ใส่ <code>@HttpCode(200)</code> ไปจะกลายเป็นการทำสัญญาเสียเอง</p>
+    <p>สุดท้าย <code>OrdersModule</code> ต้องถูก import เข้า <code>AppModule</code> ไม่ทำขั้นนี้ Nest จะไม่รู้จัก controller ตัวใหม่ และจะไม่มีบรรทัด <code>Mapped {/carts/add, POST}</code> ใน log ตอน start — ซึ่งเป็นวิธีตรวจที่เร็วที่สุดว่าลืมหรือไม่ลืม</p>
+
+        <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+├── src/
+│   ├── app.module.ts                   (แก้ไข: เพิ่ม OrdersModule ต่อจาก ProductsModule)
+│   └── orders/
+│       ├── cart.mapper.ts              (สร้างใหม่)
+│       ├── carts.controller.ts         (สร้างใหม่)
+│       ├── orders.module.ts            (สร้างใหม่)
+│       ├── orders.service.ts           (สร้างใหม่)
+│       └── dto/
+│           └── cart-response.dto.ts    (สร้างใหม่)
+└── test/
+    └── orders.e2e-spec.ts              (สร้างใหม่ ด้วย prompt แยกในแชทที่สาม)</code></pre>
+    <p>ชื่อไฟล์และหน้าที่ด้านล่างมาจากโค้ดอ้างอิงของคอร์ส — Cursor อาจตั้งชื่อหรือแบ่งไฟล์ต่างออกไปได้ ขอแค่ไม่แตะไฟล์ที่ไม่เกี่ยวกับเป้าหมายและผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
+    <ul>
+      <li><strong><code>src/orders/dto/cart-response.dto.ts</code></strong> — สัญญา: ต้องมีแค่ชนิดข้อมูลของ response ตามสัญญา (<code>CartProductResponseDto</code>, <code>CartResponseDto</code>) · ต้องไม่มี decorator และไม่มี method</li>
+      <li><strong><code>src/orders/cart.mapper.ts</code></strong> — สัญญา: ต้อง export <code>toCartResponse()</code> ที่ map <code>products[].id</code> จาก <code>item.productId</code> · ต้องไม่ส่ง <code>address</code>, <code>email</code>, <code>phone</code>, <code>createdAt</code> ออกไป และไม่แตะฐานข้อมูล</li>
+      <li><strong><code>src/orders/orders.service.ts</code></strong> — สัญญา: ต้องทำทั้งการอ่านสินค้าและการเขียนคำสั่งซื้อใน <code>$transaction</code> เดียว, ต้อง throw <code>NotFoundException</code> ด้วยข้อความเดียวกับ <code>ProductsService</code> · ต้องไม่แก้ <code>stock</code>, ไม่ใช้ <code>any</code>, ไม่ใช้ <code>as</code></li>
+      <li><strong><code>src/orders/carts.controller.ts</code></strong> — สัญญา: ต้องเป็น <code>@Controller('carts')</code> กับ <code>@Post('add')</code> และรับ body ด้วย <code>@Body() dto: AddCartDto</code> · ต้องไม่ใส่ <code>@HttpCode()</code>, ไม่คิดเลขหรือแตะ Prisma ใน controller</li>
+      <li><strong><code>src/orders/orders.module.ts</code></strong> — สัญญา: ต้องประกาศ <code>controllers: [CartsController]</code> และ <code>providers: [OrdersService]</code> · ต้องไม่ import <code>PrismaModule</code> ซ้ำ (ตอนตั้งค่า Prisma ทำให้มันเป็น global module แล้ว)</li>
+      <li><strong><code>src/app.module.ts</code></strong> — สัญญา: ต้องเพิ่ม <code>OrdersModule</code> ต่อจาก <code>ProductsModule</code> ใน <code>imports</code> · ต้องไม่แตะ <code>ConfigModule</code>, <code>controllers</code> หรือ <code>providers</code> เดิม</li>
+      <li><strong><code>test/orders.e2e-spec.ts</code></strong> — สัญญา: ไฟล์<strong>ใหม่</strong>ที่มี <code>it()</code> เดียวสำหรับ <code>POST /carts/add</code> และเทียบ receipt ทั้งก้อนด้วย <code>toEqual</code> · <code>test/products.e2e-spec.ts</code> ไม่ถูกแตะเลย · ไฟล์นี้มาจาก prompt แยกในแชทที่สาม ไม่ใช่สองแชทแรก เพราะ agent ที่เขียน endpoint ไม่ควรเป็นตัวเดียวกับที่เขียน test ซึ่งใช้ตัดสินว่า endpoint นั้นถูกหรือผิด</li>
+    </ul>
+
+<section class="workshop" aria-labelledby="service-heading">
+      <h2 id="service-heading">สั่ง Cursor เขียน OrdersService</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before orders service"</code>) — prompt แรกของบทนี้ยาวที่สุดในคอร์ส เพราะมันต้องบอกทั้งสูตรคำนวณ ทั้งผลลัพธ์ที่ต้องได้เมื่อ transaction ล้ม และยกไฟล์ <code>@src/products/products.service.ts</code> กับ <code>@src/products/product.mapper.ts</code> เป็นแบบอย่างของสไตล์โปรเจกต์ ให้ AI ไม่ต้องเดา</p>
+      <p>ก่อนส่ง อ่าน<a href="01_what-well-be-building.html">กติกาของคอร์ส</a>อีกครั้ง: AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้ — ถ้าอธิบายไม่ได้ แปลว่ายังไม่ผ่านบทนี้</p>
+      <div class="cursor-prompt"><code>สร้าง OrdersService ที่บันทึกคำสั่งซื้อใน transaction และคืน cart ตามรูปทรงใน docs/api-spec.md
+
+ผลลัพธ์ที่ต้องได้:
+- มี service ที่รับ AddCartDto แล้วคืน receipt ตามรูปทรง "Order receipt" ใน docs/api-spec.md — สินค้า id 1 จำนวน 2 ชิ้นต้องได้ total 19.98, discountedPrice 17.89 (ไม่ใช่ 18), discountedTotal 17.89, totalProducts 1, totalQuantity 2
+- total ของรายการ = price × quantity และ discountedPrice = total × (1 − discountPercentage / 100) สินค้าที่ไม่มีส่วนลดให้ถือว่าส่วนลดเป็น 0 (discountedPrice เท่ากับ total)
+- total ของ cart = ผลรวม total ทุกรายการ, discountedTotal = ผลรวม discountedPrice, totalProducts = จำนวนรายการ, totalQuantity = ผลรวม quantity
+- ตัวเลขเงินทุก field ปัดทศนิยม 2 ตำแหน่งเหมือนกันหมด ไม่มี field ไหนปัดเป็นจำนวนเต็ม
+- products[].id ใน receipt คือ id ของสินค้า (ไม่ใช่ id ของแถว OrderItem) และเรียงตามลำดับที่ client ส่งมา
+- สินค้าที่ไม่มีส่วนลด → ไม่มี key discountPercentage ในรายการนั้นเลย (ไม่ใช่ null)
+- receipt ไม่มี address, email, phone หรือ createdAt
+- ถ้ามี id สินค้าที่ไม่มีจริงแม้แต่ตัวเดียว → NotFoundException ข้อความ Product ${id} not found (ตรงตัวอักษรเหมือน GET /products/:id) และไม่มีแถว Order หรือ OrderItem ถูกบันทึกเลย (การอ่านสินค้าและการเขียนคำสั่งซื้อต้องอยู่ใน transaction เดียวกัน)
+- stock ของสินค้าไม่เปลี่ยน
+- npm run build และ npm run lint ผ่าน
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ยังไม่ต้องสร้าง controller หรือ module — เป็น prompt ถัดไปในแชทใหม่
+- ห้ามเขียน test — e2e test เป็น prompt แยกอีกอันในแชทถัดไป</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="service-review-heading">
+      <h2 id="service-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>การอ่านสินค้าและการเขียนคำสั่งซื้ออยู่ใน transaction <strong>เดียวกัน</strong> และทุก query ข้างในวิ่งผ่าน client ของ transaction นั้น — ไม่มี query ไหนหลุดออกไปใช้ <code>this.prisma</code> ตรง ๆ</li>
+        <li>ตัวอย่าง <code>9.99 × 2</code> ที่ 10.48% ให้ <code>discountedPrice</code> เป็น <code>17.89</code> ไม่ใช่ <code>18</code> และ field เงินทุกตัวปัด 2 ตำแหน่งด้วยกติกาเดียวกัน</li>
+        <li>ลำดับของ <code>products[]</code> ใน receipt ตรงกับลำดับที่ client ส่งมา ไม่ใช่ลำดับที่ฐานข้อมูลคืนแถว</li>
+        <li>ข้อความ 404 ตรงกับ <code>ProductsService</code> ทุกตัวอักษร: <code>Product ${id} not found</code></li>
+        <li><code>address</code>, <code>email</code>, <code>phone</code> ถูกบันทึกลงคอลัมน์ของ <code>Order</code> แยกกัน (ไม่ใช่เก็บ object ทั้งก้อนเป็น JSON)</li>
+        <li><code>products[].id</code> ใน receipt คือ id ของสินค้า ไม่ใช่ id ของ <code>OrderItem</code> และ receipt ไม่มี <code>address</code>, <code>email</code>, <code>phone</code>, <code>createdAt</code></li>
+        <li>สินค้าที่ไม่มีส่วนลดไม่มี key <code>discountPercentage</code> เลย (ไม่ใช่ <code>null</code>)</li>
+        <li>ไฟล์ที่เปลี่ยนอยู่ใน <code>src/orders/</code> ทั้งหมด ไม่มีโค้ดแก้ <code>stock</code> ไม่มี <code>any</code>, <code>as</code> หรือ <code>!</code> และ import ทุกตัวลงท้ายด้วย <code>.js</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> คำนวณ <code>discountedPrice</code> เป็นจำนวนเต็มด้วย <code>Math.round(...)</code> เฉย ๆ (ได้ <code>18</code> ทั้งที่สัญญาของเราต้องการ <code>17.89</code>) เพราะเคยเห็นสไตล์การปัดแบบนี้จาก API ตัวอย่างอื่นมาก่อน ให้ตรวจว่าปัด 2 ตำแหน่งเหมือน field เงินตัวอื่นทุกตัว ไม่มีข้อยกเว้น อีกกรณีคือดึงสินค้าด้วย <code>this.prisma.product.findMany</code> ไว้<em>ก่อน</em> เปิด transaction แล้วค่อยเปิด transaction เพื่อ create — แบบนั้นการอ่านไม่ได้อยู่ใน snapshot เดียวกับการเขียน และถ้า throw 404 ก็ไม่มีอะไรต้อง rollback จริง (ดูเหมือนทำงานถูก แต่ผิดเจตนา) กรณีที่สามคือ mapper ส่ง <code>item.id</code> ออกไปเป็น <code>products[].id</code> ซึ่งจะทำให้ลิงก์ไปหน้าสินค้าของ React พาไปสินค้าผิดตัว</p>
+      <p>โค้ดอ้างอิงของขั้นนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>// src/orders/dto/cart-response.dto.ts
+export class CartProductResponseDto {
+  id: number;
+  title: string;
+  price: number;
+  quantity: number;
+  total: number;
+  discountPercentage?: number;
+  discountedPrice: number;
+  thumbnail: string;
+}
+
+export class CartResponseDto {
+  id: number;
+  userId: number;
+  products: CartProductResponseDto[];
+  total: number;
+  discountedTotal: number;
+  totalProducts: number;
+  totalQuantity: number;
+}</code></pre>
+      <pre><code>// src/orders/cart.mapper.ts
+import type { Order, OrderItem } from '../generated/prisma/client.js';
+import { CartResponseDto } from './dto/cart-response.dto.js';
+
+export type OrderWithItems = Order &amp; { items: OrderItem[] };
+
+export function toCartResponse(order: OrderWithItems): CartResponseDto {
+  return {
+    id: order.id,
+    userId: order.userId,
+    products: order.items.map((item) =&gt; ({
+      id: item.productId,
+      title: item.title,
+      price: item.price,
+      quantity: item.quantity,
+      total: item.total,
+      ...(item.discountPercentage !== null ? { discountPercentage: item.discountPercentage } : {}),
+      discountedPrice: item.discountedPrice,
+      thumbnail: item.thumbnail,
+    })),
+    total: order.total,
+    discountedTotal: order.discountedTotal,
+    totalProducts: order.totalProducts,
+    totalQuantity: order.totalQuantity,
+  };
+}</code></pre>
+      <pre><code>// src/orders/orders.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { toCartResponse } from './cart.mapper.js';
+import { AddCartDto } from './dto/add-cart.dto.js';
+import { CartResponseDto } from './dto/cart-response.dto.js';
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+@Injectable()
+export class OrdersService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(dto: AddCartDto): Promise&lt;CartResponseDto&gt; {
+    const order = await this.prisma.$transaction(async (tx) =&gt; {
+      const ids = dto.products.map((product) =&gt; product.id);
+      const products = await tx.product.findMany({ where: { id: { in: ids } } });
+      const productById = new Map(products.map((product) =&gt; [product.id, product]));
+
+      const items = dto.products.map(({ id, quantity }) =&gt; {
+        const product = productById.get(id);
+        if (!product) {
+          throw new NotFoundException(`Product ${id} not found`);
+        }
+        const total = round2(product.price * quantity);
+        const discountedPrice = round2(total * (1 - (product.discountPercentage ?? 0) / 100));
+        return {
+          productId: product.id,
+          title: product.title,
+          thumbnail: product.thumbnail,
+          price: product.price,
+          discountPercentage: product.discountPercentage,
+          quantity,
+          total,
+          discountedPrice,
+        };
+      });
+
+      return tx.order.create({
+        data: {
+          userId: dto.userId,
+          address: dto.address.address,
+          email: dto.address.email,
+          phone: dto.address.phone,
+          total: round2(items.reduce((sum, item) =&gt; sum + item.total, 0)),
+          discountedTotal: round2(items.reduce((sum, item) =&gt; sum + item.discountedPrice, 0)),
+          totalProducts: items.length,
+          totalQuantity: items.reduce((sum, item) =&gt; sum + item.quantity, 0),
+          items: { create: items },
+        },
+        include: { items: { orderBy: { id: 'asc' } } },
+      });
+    });
+
+    return toCartResponse(order);
+  }
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านขั้นนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="service-result-heading">
+      <h2 id="service-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>ได้ไฟล์ใหม่ใน <code>src/orders/</code> (โค้ดอ้างอิงแบ่งเป็นสามไฟล์ ของคุณอาจต่างออกไปได้) และ <code>npm run build</code> กับ <code>npm run lint</code> ผ่านทั้งคู่โดยไม่มี error หรือ warning ยังไม่มี route ใหม่ใน log ของ dev server และยังไม่มีอะไรให้ <code>curl</code> เพราะ <code>OrdersService</code> ยังไม่ถูกลงทะเบียนใน module ไหน — ถ้า build ผ่านแต่ลืมสิ่งนี้ Nest จะไม่บ่นอะไรเลย มันแค่ไม่มีใครเรียก service ตัวนี้ ซึ่งเป็นงานของ prompt ถัดไป</p>
+      <p>type ที่ <code>tx.order.create</code> คืนมาต้องเข้ากับ <code>OrderWithItems</code> ได้เองโดยไม่ต้อง cast — ถ้า TypeScript บ่นตรงบรรทัดที่เรียก <code>toCartResponse(order)</code> ให้กลับไปดูว่า <code>include: { items: … }</code> หายไปหรือเปล่า นั่นคือกลไกที่ทำให้ <code>include</code> ที่หายไปกลายเป็น compile error ไม่ใช่บั๊กตอน runtime</p>
+    </section>
+
+    <section class="workshop" aria-labelledby="route-heading">
+      <h2 id="route-heading">สั่ง Cursor เปิด route แล้วยิงทดสอบสี่กรณี</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before carts controller"</code>) — prompt ยก <code>@src/products/products.controller.ts</code> และ <code>@src/products/products.module.ts</code> ให้เป็นแบบอย่าง และย้ำเรื่อง path กับ status ไว้ในผลลัพธ์ที่ต้องได้ชัด ๆ เพราะนี่คือจุดที่ AI ชอบ "แก้ให้ดีขึ้น" โดยไม่ได้ขอ</p>
+      <div class="cursor-prompt"><code>สร้าง CartsController ที่เปิด POST /carts/add และลงทะเบียน OrdersModule
+@src/app.module.ts @&lt;ไฟล์ service ของ orders ที่เพิ่งได้จาก prompt แรก — โค้ดอ้างอิงคือ src/orders/orders.service.ts&gt;
+
+ผลลัพธ์ที่ต้องได้:
+- log ตอน npm run start:dev มีบรรทัด Mapped {/carts/add, POST} route (path ต้องเป็น /carts/add ตรงตัว เพราะ React app เรียก path นี้โดยไม่แก้ฝั่ง frontend — ไม่ใช่ /orders)
+- POST /carts/add body {"userId":1,"products":[{"id":1,"quantity":2}],"address":{"address":"1 Sukhumvit Rd","email":"a@b.com","phone":"0812345678"}} → 201 พร้อม receipt ตาม docs/api-spec.md (total 19.98, discountedPrice 17.89, discountedTotal 17.89, totalProducts 1, totalQuantity 2)
+- ไม่มี userId → 400 และ message เป็น array ["userId must not be less than 1","userId must be an integer number"] (validation ของ AddCartDto ต้องทำงานจริง)
+- สินค้า id 99999 → 404 {"message":"Product 99999 not found","error":"Not Found","statusCode":404} และจำนวนแถวใน Order ไม่เพิ่ม
+- email ผิดรูป → 400 message ["address.email must be an email"]
+- npm run build และ npm run lint ผ่าน
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ service หรือการคำนวณที่ได้จาก prompt แรก
+- ห้ามแตะไฟล์ใน test/ — e2e test เป็น prompt แยกในแชทถัดไป
+- ยังไม่ต้องเปิด CORS</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="route-review-heading">
+      <h2 id="route-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>log ตอน start มี <code>Mapped {/carts/add, POST} route</code> — path รวมกันได้ <code>POST /carts/add</code> ไม่มี <code>/orders</code> โผล่ที่ไหน</li>
+        <li>ยิงทั้งสี่กรณีในส่วน "ผลลัพธ์ที่ต้องได้" แล้วได้ <code>201</code>, <code>400</code>, <code>404</code>, <code>400</code> พร้อม body ตรงตัวอักษร — ถ้ากรณี 400 ได้ 201 แทน แปลว่า body ไม่ได้ถูกประกาศชนิดเป็น DTO class ทำให้ validation ไม่ทำงาน</li>
+        <li>POST ตอบ <code>201</code> ไม่ใช่ <code>200</code></li>
+        <li>controller ไม่คิดเลข ไม่เรียก Prisma ตรง และไม่กลืน error ด้วย try/catch — ส่งงานต่อให้ service ที่ทำไว้ในขั้นคิดเงิน</li>
+        <li><code>git status</code> ไม่มีไฟล์ที่ไม่เกี่ยวกับเป้าหมายถูกแก้ — ฝั่ง root module มีแค่การลงทะเบียน module ใหม่ และ service/การคำนวณที่ทำไว้ก่อนหน้านี้ไม่ถูกแตะ</li>
+        <li>ไม่มี <code>any</code>, <code>as</code>, <code>!</code> และ import ทุกตัวลงท้ายด้วย <code>.js</code> ตามกติกา ESM ของโปรเจกต์</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ตั้ง route เป็น <code>/orders</code> เพราะมันดูสอดคล้องกับชื่อ service และ module มากกว่า ผลคือโค้ดดูสวยแต่ React app ได้ 404 ทุกครั้งที่กดสั่งซื้อ อีกกรณีคือแถม <code>@HttpCode(200)</code> (ทำสัญญา 201 พัง) หรือเผลอ import <code>PrismaModule</code> ซ้ำ ทั้งที่มันเป็น global module อยู่แล้ว</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>// src/orders/carts.controller.ts
+import { Body, Controller, Post } from '@nestjs/common';
+import { AddCartDto } from './dto/add-cart.dto.js';
+import { OrdersService } from './orders.service.js';
+
+@Controller('carts')
+export class CartsController {
+  constructor(private readonly ordersService: OrdersService) {}
+
+  @Post('add')
+  create(@Body() dto: AddCartDto) {
+    return this.ordersService.create(dto);
+  }
+}</code></pre>
+      <pre><code>// src/orders/orders.module.ts
+import { Module } from '@nestjs/common';
+import { CartsController } from './carts.controller.js';
+import { OrdersService } from './orders.service.js';
+
+@Module({
+  controllers: [CartsController],
+  providers: [OrdersService],
+})
+export class OrdersModule {}</code></pre>
+      <pre><code>// src/app.module.ts
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { OrdersModule } from './orders/orders.module.js';
+import { PrismaModule } from './prisma/prisma.module.js';
+import { ProductsModule } from './products/products.module.js';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    ProductsModule,
+    OrdersModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านขั้นนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="route-result-heading">
+      <h2 id="route-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>รัน <code>npm run start:dev</code> แล้ว log ต้องมีสองบรรทัดนี้ ถ้าไม่มี แปลว่าลืม import <code>OrdersModule</code> เข้า <code>AppModule</code></p>
+      <pre><code>LOG [RoutesResolver] CartsController {/carts}: +0ms
+LOG [RouterExplorer] Mapped {/carts/add, POST} route +0ms</code></pre>
+      <p>ยิง body เดียวกับที่ React app ส่ง จะได้ <code>201 Created</code> พร้อมตัวเลขตรงกับที่ <code>orders.service.ts</code> คำนวณจริงทุกตัว</p>
+      <pre><code>curl -s -i -X POST http://localhost:3000/carts/add -H 'Content-Type: application/json' \
+  -d '{"userId":1,"products":[{"id":1,"quantity":2}],"address":{"address":"1 Sukhumvit Rd","email":"a@b.com","phone":"0812345678"}}'</code></pre>
+      <pre><code>HTTP/1.1 201 Created
+
+{"id":1,"userId":1,"products":[{"id":1,"title":"Velvet Matte Lipstick","price":9.99,"quantity":2,"total":19.98,"discountPercentage":10.48,"discountedPrice":17.89,"thumbnail":"https://picsum.photos/seed/product-1-thumb/300/300"}],"total":19.98,"discountedTotal":17.89,"totalProducts":1,"totalQuantity":2}</code></pre>
+      <div class="note"><p><code>id</code> เริ่มนับจาก <code>1</code> เพราะเราเก็บคำสั่งซื้อในฐานข้อมูลของเราเอง — ตัวเลขจะขึ้นอยู่กับว่าฐานข้อมูลของคุณเคยมีคำสั่งซื้อมาก่อนกี่ใบ field อื่นทั้งหมด (<code>total</code>, <code>discountedTotal</code>, <code>discountedPrice</code>, <code>totalProducts</code>, <code>totalQuantity</code>) ต้องตรงเป๊ะ</p></div>
+      <p>สามกรณีที่เหลือคือกรณีที่พลาดแล้วรู้ยาก จึงต้องยิงดูให้เห็นด้วยตาทั้งหมด ไม่มี <code>userId</code> → <code>400</code> จาก <code>ValidationPipe</code> โดยที่ <code>message</code> เป็น array และมีสองข้อ เพราะทั้ง <code>@IsInt()</code> และ <code>@Min(1)</code> ไม่ผ่านพร้อมกัน</p>
+      <pre><code>curl -s -i -X POST http://localhost:3000/carts/add -H 'Content-Type: application/json' \
+  -d '{"products":[{"id":1,"quantity":1}],"address":{"address":"x","email":"a@b.com","phone":"1"}}'</code></pre>
+      <pre><code>HTTP/1.1 400 Bad Request
+
+{"message":["userId must not be less than 1","userId must be an integer number"],"error":"Bad Request","statusCode":400}</code></pre>
+      <p>สินค้า id ที่ไม่มีจริง → <code>404</code> จาก <code>NotFoundException</code> ที่ throw อยู่ข้างใน transaction ข้อความตรงกับที่ <code>GET /products/:id</code> ตอบไว้ก่อนหน้านี้</p>
+      <pre><code>curl -s -i -X POST http://localhost:3000/carts/add -H 'Content-Type: application/json' \
+  -d '{"userId":1,"products":[{"id":99999,"quantity":1}],"address":{"address":"x","email":"a@b.com","phone":"1"}}'</code></pre>
+      <pre><code>HTTP/1.1 404 Not Found
+
+{"message":"Product 99999 not found","error":"Not Found","statusCode":404}</code></pre>
+      <p>email ผิดรูป → <code>400</code> โดยชื่อ field ใน message มีคำนำหน้า <code>address.</code> ซึ่งเป็นหลักฐานว่า <code>@ValidateNested()</code> ใน DTO ไล่ตรวจเข้าไปข้างใน object จริง</p>
+      <pre><code>curl -s -i -X POST http://localhost:3000/carts/add -H 'Content-Type: application/json' \
+  -d '{"userId":1,"products":[{"id":1,"quantity":1}],"address":{"address":"x","email":"not-an-email","phone":"1"}}'</code></pre>
+      <pre><code>HTTP/1.1 400 Bad Request
+
+{"message":["address.email must be an email"],"error":"Bad Request","statusCode":400}</code></pre>
+    </section>
+
+    <section class="workshop" aria-labelledby="contract-test-heading">
+      <h2 id="contract-test-heading">สั่ง Cursor เขียน e2e test ของคำสั่งซื้อ</h2>
+      <p>e2e test ที่สะสมมาสามขั้นหยุดอยู่ที่เก้าข้อของ products เพราะตอนนั้น <code>POST /carts/add</code> ยังไม่มีอยู่จริง ตอนนี้มันมีแล้ว จึงถึงเวลาของ test ที่สิบ — และมันต้องมาจาก <strong>prompt แยกในแชทใหม่</strong> ไม่ใช่ prompt ที่เพิ่งเปิด route ไปข้างบน ด้วยเหตุผลเดียวกับตอนต่อ <code>GET /products/:id</code>: แชทที่เพิ่งเขียน endpoint เสร็จจะเขียน test ที่ตรงกับ<em>โค้ดที่มันเพิ่งเขียน</em> ไม่ใช่ตรงกับสัญญา — บั๊กที่มันเพิ่งใส่ไว้ก็จะกลายเป็น "พฤติกรรมที่ถูกต้อง" ไปด้วย</p>
+      <p>test ที่สิบไปอยู่ใน<strong>ไฟล์ใหม่</strong> <code>test/orders.e2e-spec.ts</code> ไม่ได้ต่อท้าย <code>test/products.e2e-spec.ts</code> ที่มีอยู่ — ธรรมเนียมของ Nest คือแบ่ง e2e spec ตาม resource ไฟล์ของ products จึงไม่ถูกแตะเลยในบทนี้ และเพราะ <code>test:e2e</code> เก็บไฟล์ <code>*.e2e-spec.ts</code> ทุกไฟล์อยู่แล้ว การเพิ่ม spec ใหม่จึงไม่ต้องแก้ <code>package.json</code> เลย</p>
+      <p>commit งานก่อน แล้ว<strong>เปิดแชทใหม่</strong>ใน Cursor โหมด Agent แล้วส่ง prompt นี้</p>
+      <div class="cursor-prompt"><code>เขียน e2e test ของ POST /carts/add ให้ตรงกับสัญญาใน docs/api-spec.md
+@docs/api-spec.md
+
+ผลลัพธ์ที่ต้องได้:
+- ไฟล์ใหม่ test/orders.e2e-spec.ts ที่ npm run test:e2e เก็บไปรันด้วย (ไม่ต้องแก้ package.json — script นี้มีอยู่แล้ว)
+- boot แอปจริงด้วย Test.createTestingModule({ imports: [AppModule] }) แล้วยิงผ่าน supertest ที่ app.getHttpServer() — ไม่ mock อะไรเลย ไม่ยิงไป URL หรือ port ภายนอก และปิดแอปด้วย app.close() ใน afterAll
+- beforeAll ตั้ง ValidationPipe แบบ global ให้ตรงกับ src/main.ts ทุกตัวเลือก (whitelist, transform, transformOptions.enableImplicitConversion) เพราะ createNestApplication() ไม่ได้รัน main.ts ให้
+- หนึ่ง test: POST /carts/add ด้วย body {"userId":1,"products":[{"id":1,"quantity":2}],"address":{"address":"1 Sukhumvit Rd","email":"a@b.com","phone":"0812345678"}} → 201
+- เทียบ body ทั้งก้อนด้วย expect(response.body).toEqual({...}) กับ receipt ที่คิดเลขเองจาก docs/api-spec.md: userId 1, totalProducts 1, totalQuantity 2, total 19.98, discountedTotal 17.89 และ products ชิ้นเดียวที่ id 1 title "Velvet Matte Lipstick" price 9.99 quantity 2 total 19.98 discountPercentage 10.48 discountedPrice 17.89
+- ต้องเป็น toEqual กับ body ทั้งก้อน ไม่ใช่ toMatchObject และไม่ใช่ไล่ expect ทีละ field — field ที่เกินมาหรือถูกเปลี่ยนชื่อต้องทำให้ test ล้ม ไม่ใช่ผ่านไปเงียบ ๆ
+- id ของคำสั่งซื้อใช้ expect.any(Number) เพราะ test นี้สร้างคำสั่งซื้อจริงทุกครั้งที่รัน เลขจึงเปลี่ยนทุกรอบ ส่วน thumbnail ใช้ expect.any(String)
+- import ในไฟล์ test ลงท้ายด้วย .js ตามกติกา ESM ของโปรเจกต์
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่ — Vitest กับ supertest มากับ scaffold แล้ว
+- ห้ามแก้ไฟล์ใน src/ เด็ดขาด ถ้า test ไม่ผ่านให้บอกผมว่าไม่ผ่านข้อไหน ห้ามแก้โค้ดให้ test ผ่านเอง
+- ห้ามแตะ test/products.e2e-spec.ts
+- ห้ามรัน test ให้ ผมจะรันเอง</code></div>
+      <p><strong>ตรวจ test ที่ AI เขียนก่อนจะเชื่อมัน</strong> — ข้อที่สองด้านล่างคือข้อที่พลาดง่ายที่สุดในบทนี้ และเป็นข้อที่ทำให้ test เขียวทั้งที่สัญญาพังไปแล้ว</p>
+      <ul>
+        <li><code>git status</code> ต้องเห็นไฟล์ใหม่แค่ <code>test/orders.e2e-spec.ts</code> ไฟล์เดียว — <strong>ไม่มีไฟล์ใน <code>src/</code> ถูกแก้</strong> ถ้ามี แปลว่า agent ไปแก้โค้ดให้เข้ากับ test ของมันเอง ให้ย้อนกลับแล้วสั่งใหม่</li>
+        <li>receipt ถูกเทียบด้วย <code>toEqual</code> กับ object ทั้งก้อน — ไม่ใช่ <code>toMatchObject</code> และไม่ใช่ <code>expect(body.total).toBe(19.98)</code> ไล่ทีละบรรทัด สองแบบหลังมองไม่เห็น field ที่เกินมาหรือถูกเปลี่ยนชื่อ: ถ้าวันหนึ่ง mapper เปลี่ยน <code>thumbnail</code> เป็น <code>thumbnailUrl</code> test จะยังเขียวทั้งที่ React app พังไปแล้ว ส่วน <code>toEqual</code> จะล้มพร้อมบอกทั้ง field ที่หายไปและ field ที่เกินมา</li>
+        <li><code>test/products.e2e-spec.ts</code> ไม่ถูกแก้แม้แต่บรรทัดเดียว</li>
+        <li>ทุก request ยิงผ่าน <code>request(app.getHttpServer())</code> — ไม่มี <code>http://localhost:3000</code> หรือเลข port โผล่ในไฟล์ และไม่มีการ mock <code>PrismaService</code> ทิ้ง</li>
+        <li><code>beforeAll</code> มี <code>app.useGlobalPipes(...)</code> ที่ค่าตรงกับ <code>src/main.ts</code> ทั้งสามตัว และ <code>afterAll</code> เรียก <code>app.close()</code></li>
+      </ul>
+      <p>โค้ดอ้างอิงของหัวข้อนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้ข้างบน</p>
+      <pre><code>import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import request from 'supertest';
+import { AppModule } from './../src/app.module.js';
+
+describe('Orders contract (e2e)', () =&gt; {
+  let app: INestApplication;
+
+  beforeAll(async () =&gt; {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        transformOptions: { enableImplicitConversion: true },
+      }),
+    );
+    await app.init();
+  });
+
+  afterAll(async () =&gt; {
+    await app.close();
+  });
+
+  it('POST /carts/add → 201, discountedPrice rounds to 2dp', async () =&gt; {
+    const response = await request(app.getHttpServer())
+      .post('/carts/add')
+      .send({
+        userId: 1,
+        products: [{ id: 1, quantity: 2 }],
+        address: { address: '1 Sukhumvit Rd', email: 'a@b.com', phone: '0812345678' },
+      })
+      .expect(201);
+
+    expect(response.body).toEqual({
+      id: expect.any(Number),
+      userId: 1,
+      products: [
+        {
+          id: 1,
+          title: 'Velvet Matte Lipstick',
+          price: 9.99,
+          quantity: 2,
+          total: 19.98,
+          discountPercentage: 10.48,
+          discountedPrice: 17.89,
+          thumbnail: expect.any(String),
+        },
+      ],
+      total: 19.98,
+      discountedTotal: 17.89,
+      totalProducts: 1,
+      totalQuantity: 2,
+    });
+  });
+});</code></pre>
+      <p>บรรทัด <code>app.useGlobalPipes(...)</code> ต้องอยู่ที่นี่ด้วยเหตุผลเดียวกับใน spec ของ products: <code>createNestApplication()</code> สร้างแอปจาก <code>AppModule</code> เท่านั้น ไม่ได้รัน <code>src/main.ts</code> ให้ ค่าทั้งสามจึงต้องตรงกับใน <code>main.ts</code> ทุกตัว — ไม่อย่างนั้น spec นี้จะทดสอบแอปคนละตัวกับที่ผู้ใช้จริงเจอ และวันที่มีคนเพิ่ม test ของเคส 400 เข้ามา มันจะผ่านทั้งที่ไม่ควรผ่าน เพราะไม่มี pipe ตัวไหนตรวจ body เลย</p>
+      <p>ส่วน <code>.send({...})</code> ของ supertest แปลง object เป็น JSON แล้วใส่ header <code>Content-Type: application/json</code> ให้เอง จึงไม่ต้องเขียน <code>JSON.stringify</code> หรือ header เองเหมือนตอนยิงด้วย curl</p>
+      <div class="note"><p>test นี้ยิง <code>POST /carts/add</code> จริง แปลว่ารันหนึ่งครั้งเท่ากับสร้างคำสั่งซื้อเพิ่มอีกหนึ่งใบในฐานข้อมูล — ถ้ารัน <code>npm run test:e2e</code> หลังจากยิง curl ทั้งสี่กรณีไปแล้ว แล้วย้อนไปนับแถวใน <code>Order</code> อีกครั้ง จำนวนจะเพิ่มจาก <code>1</code> เป็น <code>2</code> นั่นไม่ใช่ transaction รั่ว แต่เป็นเพราะ test นี้เองที่สั่งซื้อเพิ่ม และเพราะรันซ้ำได้เรื่อย ๆ แบบนี้ <code>id</code> ของคำสั่งซื้อจึงต้องปล่อยเป็น <code>expect.any(Number)</code> คู่กับ <code>thumbnail</code> ที่เป็น <code>expect.any(String)</code> เพราะ URL ของรูปมาจาก seed ส่วนตัวเลขที่เหลือคิดจากสัญญาได้หมดจึงถูกตรึงไว้ทุกตัว — <code>toEqual</code> ยังจับ field ที่เกินมาหรือถูกเปลี่ยนชื่อได้เหมือนเดิม เพราะสอง <code>expect.any(...)</code> นี้ผ่อนแค่<em>ค่า</em> ไม่ได้ผ่อนว่า key ไหนมีได้บ้าง</p></div>
+      <p>รันเฉพาะไฟล์นี้ได้ด้วย <code>npm run test:e2e -- orders</code> เมื่อไม่อยากรอ spec ของ products ทั้งเก้าข้อ</p>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li><code>grep -rn "this.prisma" src/orders/</code> — ทุกบรรทัดที่เจอต้องเป็นการเปิด transaction เท่านั้น ไม่มี query ใดเรียก <code>this.prisma</code> ตรง ๆ — ยืนยันว่าไม่มี query หลุดออกนอก transaction</li>
+        <li><code>grep -rn "stock\|: any\| as " src/orders/</code> ไม่เจออะไรเลย</li>
+        <li>คิดเลขตามด้วยมือใน <code>node -e "console.log(Math.round(19.98 * (1 - 10.48 / 100) * 100) / 100)"</code> ได้ <code>17.89</code> — ตรงกับ <code>discountedPrice</code> ที่ curl ด้านบนคืนมาจริง</li>
+        <li>log ตอน start มีบรรทัด <code>Mapped {/carts/add, POST} route</code></li>
+        <li>ยิงทั้งสี่ curl ข้างบนแล้วได้ status <code>201</code>, <code>400</code>, <code>404</code>, <code>400</code> ตามลำดับ พร้อม body ตรงกับตัวอย่าง</li>
+        <li>แถวที่บันทึกลงฐานข้อมูลมีจริง และยอดตรงกับ response
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce \
+  -c 'SELECT id, "userId", total, "discountedTotal", "totalQuantity" FROM "Order";'</code></pre>
+          <pre><code> id | userId | total | discountedTotal | totalQuantity
+----+--------+-------+-----------------+---------------
+  1 |      1 | 19.98 |           17.89 |             2
+(1 row)</code></pre></li>
+        <li>พิสูจน์ว่า transaction rollback จริง: หลังยิงครบทั้งสี่กรณี จำนวนคำสั่งซื้อต้องยังเป็น <code>1</code> ใบ — กรณี 404 ไม่ทิ้งใบครึ่ง ๆ ไว้ และสองกรณี 400 ถูกปัดตกก่อนถึง service
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT count(*) FROM "Order";'</code></pre>
+          <pre><code> count
+-------
+     1
+(1 row)</code></pre></li>
+        <li><code>docker compose exec db psql -U postgres -d ecommerce -c 'SELECT "orderId", "productId", title, price, quantity, total, "discountedPrice" FROM "OrderItem";'</code> เห็นบรรทัดเดียวที่เก็บ snapshot ชื่อและราคาสินค้าไว้ครบ ไม่ใช่แค่ <code>productId</code></li>
+        <li>หลังได้ <code>test/orders.e2e-spec.ts</code> จาก prompt ในหัวข้อ "สั่ง Cursor เขียน e2e test ของคำสั่งซื้อ" ด้านบนแล้ว รัน <code>npm run test:e2e</code> ต้องผ่านครบทุกไฟล์ (สังเกตว่า <code>Order</code> จะกลายเป็น <code>2</code> ใบหลังรันรอบนี้ เพราะ test ของคำสั่งซื้อสั่งซื้อจริง)
+          <pre><code> ✓ test/app.e2e-spec.ts (1 test)
+ ✓ test/orders.e2e-spec.ts (1 test)
+ ✓ test/products.e2e-spec.ts (9 tests)
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)</code></pre>
+          <p>สิบในนั้นคือสัญญาของเรา — เก้าข้อของ products บวกหนึ่งข้อของคำสั่งซื้อ ที่เหลืออีกหนึ่งคือไฟล์ตัวอย่างที่ scaffold ให้มา เติม <code>--reporter=verbose</code> เพื่อดูชื่อทีละข้อ (<code>npm run test:e2e -- --reporter=verbose</code>) จะได้สิบชื่อนี้</p>
+          <pre><code>GET /products/categories → 200, 24 categories
+GET /products?limit=5&amp;skip=0 → limit and skip echo the request
+GET /products?limit=0 → 400 (out of range)
+GET /products?limit=101 → 400 (out of range)
+GET /products/1 → validated product
+GET /products/9999 → 404 with message
+GET /products/abc → 400 with message
+GET /products/category/groceries → total 27
+GET /products/category/nope → 200, empty envelope
+POST /carts/add → 201, discountedPrice rounds to 2dp</code></pre></li>
+        <li><code>npm run build &amp;&amp; npm run lint</code> ผ่านทั้งคู่</li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: POST /carts/add"</code></li>
+      </ul>
+      <p>ถึงตรงนี้ API ของเราครอบคลุมทุก endpoint ที่ React app ต้องใช้แล้ว เหลือแต่การเปิดประตูให้เบราว์เซอร์เรียกได้จริง ซึ่งคือเรื่อง CORS ในบทถัดไป</p>
+    </section>
+
+        <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/transactions">Transactions: interactive transactions (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries">Relation queries: nested writes (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/controllers#request-payloads">Controllers: Request payloads และ status code ของ POST (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/modules">Modules (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/exception-filters">Exception filters: built-in HTTP exceptions (NestJS Docs)</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round">Math.round() (MDN)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="15_modeling-orders.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="17_enabling-cors-and-port-config.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

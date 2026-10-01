@@ -22,7 +22,7 @@
 
         <p>ข้อมูลทุกอย่างที่เราจัดการมาจนถึงตอนนี้ — รายการสินค้า, รายละเอียดสินค้า, หมวดหมู่ — เป็น <strong>server state</strong>: เจ้าของตัวจริงของข้อมูลคือ server (dummyjson) ฝั่งเราแค่ขอสำเนามาแสดง ข้อมูลแบบนี้มีปัญหาเฉพาะตัว เช่น อาจล้าสมัย ต้อง refetch ต้องมี cache — ซึ่ง TanStack Query เกิดมาเพื่อแก้ปัญหาชุดนี้โดยเฉพาะ</p>
 
-        <p>แต่ตะกร้าสินค้าไม่เหมือนกัน dummyjson ไม่รู้จักตะกร้าของผู้ใช้แต่ละคน ไม่มี endpoint ให้ sync ตะกร้าขึ้นไป ข้อมูลตะกร้า<em>เกิดและตาย</em>ในเบราว์เซอร์ของผู้ใช้ล้วน ๆ — นี่คือ <strong>client state</strong> เจ้าของตัวจริงคือแอปของเราเอง ถ้าเอา TanStack Query มาเก็บมันจะผิดฝาผิดตัวทันที เพราะไม่มีอะไรให้ fetch ไม่มีอะไรให้ stale เครื่องมือที่ถูกต้องคือของที่คุณเรียนมาแล้วใน Week 4: <strong>useReducer + Context</strong></p>
+        <p>แต่ตะกร้าสินค้าไม่เหมือนกัน dummyjson ไม่รู้จักตะกร้าของผู้ใช้แต่ละคน ไม่มี endpoint ให้ sync ตะกร้าขึ้นไป ข้อมูลตะกร้า<em>เกิดและตาย</em>ในเบราว์เซอร์ของผู้ใช้ล้วน ๆ — นี่คือ <strong>client state</strong> เจ้าของตัวจริงคือแอปของเราเอง ถ้าเอา TanStack Query มาเก็บมันจะผิดฝาผิดตัวทันที เพราะไม่มีอะไรให้ fetch ไม่มีอะไรให้ stale เครื่องมือที่ถูกต้องคือของที่คุณเรียนมาแล้วในคอร์ส React พื้นฐาน: <strong>useReducer + Context</strong></p>
 
         <p>ทำไมไม่ใช้ <code>useState</code> เฉย ๆ? เพราะตะกร้ามีการแก้ไขหลายแบบที่เล่นกับข้อมูลก้อนเดียวกัน — เพิ่มสินค้า (ซึ่งต้องเช็คว่ามีอยู่แล้วหรือยัง), ลบสินค้า, ปรับจำนวน, ล้างตะกร้า ถ้ากระจาย logic พวกนี้ไปตาม event handler ของแต่ละ component กติกาจะซ้ำซ้อนและหลุดง่าย <code>useReducer</code> บังคับให้กติกาทั้งหมดรวมอยู่ในฟังก์ชันเดียวที่ทดสอบได้ ส่วน Context ทำให้ทุก component — ตั้งแต่ Header ยันหน้า Checkout — เห็นตะกร้าใบเดียวกันโดยไม่ต้องส่ง props ทะลุลงไปหลายชั้น</p>
 
@@ -166,7 +166,7 @@ export const cartReducer = (
 };
 </code></pre>
 
-        <p><code>CartAction</code> เป็น discriminated union แบบเดียวกับที่คุณเจอใน Week 4: แต่ละ action ประกาศ <code>payload</code> ของตัวเองชัดเจน พอ TypeScript เห็น <code>case CartActionTypes.ADD_TO_CART</code> มันจะ narrow type ให้เองว่า <code>action.payload</code> ในบล็อกนั้นคือ <code>CartItem</code> เต็ม ๆ ส่วน <code>CLEAR_CART</code> ไม่ต้องมี payload เลย</p>
+        <p><code>CartAction</code> เป็น discriminated union แบบเดียวกับที่คุณเจอในคอร์ส React พื้นฐาน: แต่ละ action ประกาศ <code>payload</code> ของตัวเองชัดเจน พอ TypeScript เห็น <code>case CartActionTypes.ADD_TO_CART</code> มันจะ narrow type ให้เองว่า <code>action.payload</code> ในบล็อกนั้นคือ <code>CartItem</code> เต็ม ๆ ส่วน <code>CLEAR_CART</code> ไม่ต้องมี payload เลย</p>
 
         <p>ไล่กติกาทีละ case:</p>
 
@@ -224,7 +224,7 @@ export function saveCartState(state: CartState): void {
         <ul>
           <li><strong>key มีเลขเวอร์ชัน</strong> — <code>"ecommerce-cart:v1"</code> ไม่ใช่แค่ <code>"cart"</code> เพราะข้อมูลใน localStorage อยู่ยาวกว่าโค้ดของเรา ถ้าอนาคตเราเปลี่ยนรูปร่างของ <code>CartState</code> จนไม่ compatible แค่ขยับเป็น <code>:v2</code> ข้อมูลเก่ารูปแบบเก่าก็จะถูกมองข้ามไปเฉย ๆ แทนที่จะถูก parse มาทำแอปพัง</li>
           <li><strong>ทำไมต้อง <code>try/catch</code> ตอนโหลด</strong> — สองเหตุ: หนึ่ง <code>JSON.parse</code> โยน <code>SyntaxError</code> ทันทีถ้าข้อมูลใน storage เพี้ยน (ผู้ใช้ไปแก้เองใน DevTools, extension บางตัวเขียนทับ, ข้อมูลครึ่ง ๆ กลาง ๆ) สอง แค่<em>แตะ</em> <code>localStorage</code> ก็โยน error ได้แล้วในบางสภาพแวดล้อม เช่น เบราว์เซอร์ที่ผู้ใช้ปิด storage หรือ iframe ที่ถูก block cookie/storage — โค้ดที่ถือว่า localStorage "มีแน่ ๆ" คือโค้ดที่รอวันล้ม</li>
-          <li><strong>เช็ครูปร่างก่อนเชื่อ</strong> — ต่อให้ parse ผ่าน เราก็ยังรับค่าเป็น <code>unknown</code> แล้วตรวจว่าเป็น object ที่มี <code>items</code> เป็น array จริงก่อนถึงยอม <code>as CartState</code> — จำที่ Week 4 เตือนเรื่อง <code>as</code> ได้ไหม? ตรงนี้เราใช้มัน<em>หลัง</em>ตรวจสอบด้วยมือแล้ว ไม่ใช่ใช้แทนการตรวจสอบ</li>
+          <li><strong>เช็ครูปร่างก่อนเชื่อ</strong> — ต่อให้ parse ผ่าน เราก็ยังรับค่าเป็น <code>unknown</code> แล้วตรวจว่าเป็น object ที่มี <code>items</code> เป็น array จริงก่อนถึงยอม <code>as CartState</code> — จำที่คอร์ส React พื้นฐาน เตือนเรื่อง <code>as</code> ได้ไหม? ตรงนี้เราใช้มัน<em>หลัง</em>ตรวจสอบด้วยมือแล้ว ไม่ใช่ใช้แทนการตรวจสอบ</li>
           <li><strong>ตอนบันทึกก็ห้ามพัง</strong> — <code>setItem</code> โยน error ได้เมื่อ storage เต็ม (quota) หรือถูกปิด เราเลือกกลืน error เงียบ ๆ เพราะผลลัพธ์ที่แย่ที่สุดคือ "ตะกร้าไม่ถูกจำข้าม session" ซึ่งดีกว่า "ทั้งแอป crash เพราะบันทึกตะกร้าไม่ได้" หลายขุม</li>
           <li><strong>ทุกทางล้มเหลวจบที่ <code>EMPTY</code></strong> — โหลดไม่ได้ด้วยเหตุใดก็ตาม ผู้ใช้ได้ตะกร้าว่างเปล่าที่ใช้งานต่อได้ ไม่ใช่หน้าขาว</li>
         </ul>
@@ -279,7 +279,7 @@ export const CartProvider: React.FC&lt;{ children: React.ReactNode }&gt; = ({
         <p>สองบรรทัดแรกในตัว component คือของสำคัญที่สุดของบทนี้:</p>
 
         <ul>
-          <li><strong><code>useReducer(cartReducer, undefined, loadCartState)</code></strong> — นี่คือ <code>useReducer</code> แบบ 3 arguments ตัวที่สามคือ <strong>lazy initializer</strong>: React จะเรียก <code>loadCartState()</code> แค่<em>ครั้งเดียว</em>ตอน mount เพื่อสร้าง state เริ่มต้น (argument ที่สองคือค่าที่จะส่งให้ initializer — เราไม่ต้องการอะไรจึงเป็น <code>undefined</code>) จำ lazy initial state ของ <code>useState</code> จาก Week 4 ได้ไหม? หลักการเดียวกันเป๊ะ: การอ่าน localStorage + <code>JSON.parse</code> เป็นงานที่มีต้นทุน ถ้าเราเขียน <code>useReducer(cartReducer, loadCartState())</code> แบบสองอาร์กิวเมนต์ ฟังก์ชันนั้นจะถูกเรียกซ้ำ<em>ทุก render</em> แล้วโยนผลลัพธ์ทิ้งเปล่า ๆ ทุกครั้งที่ไม่ใช่ mount แรก</li>
+          <li><strong><code>useReducer(cartReducer, undefined, loadCartState)</code></strong> — นี่คือ <code>useReducer</code> แบบ 3 arguments ตัวที่สามคือ <strong>lazy initializer</strong>: React จะเรียก <code>loadCartState()</code> แค่<em>ครั้งเดียว</em>ตอน mount เพื่อสร้าง state เริ่มต้น (argument ที่สองคือค่าที่จะส่งให้ initializer — เราไม่ต้องการอะไรจึงเป็น <code>undefined</code>) จำ lazy initial state ของ <code>useState</code> จากคอร์ส React พื้นฐาน ได้ไหม? หลักการเดียวกันเป๊ะ: การอ่าน localStorage + <code>JSON.parse</code> เป็นงานที่มีต้นทุน ถ้าเราเขียน <code>useReducer(cartReducer, loadCartState())</code> แบบสองอาร์กิวเมนต์ ฟังก์ชันนั้นจะถูกเรียกซ้ำ<em>ทุก render</em> แล้วโยนผลลัพธ์ทิ้งเปล่า ๆ ทุกครั้งที่ไม่ใช่ mount แรก</li>
           <li><strong>write-through effect</strong> — <code>useEffect</code> ที่มี dependency <code>[cart]</code> แปลว่า "ทุกครั้งที่ state ตะกร้าเปลี่ยน ให้เขียนทับลง localStorage ทันที" การ persist จึงเป็นไปเองอัตโนมัติ ไม่มีวันลืม ไม่ต้องให้ action ไหนจำหน้าที่นี้เอง (สังเกตว่า reducer ยังบริสุทธิ์เหมือนเดิม — side effect ทั้งหมดอยู่ใน effect ตามชื่อของมัน) และเนื่องจาก effect รันหลัง render แรกด้วย state เริ่มต้นก็จะถูกเขียนลง storage ตั้งแต่เปิดแอปครั้งแรกเลย</li>
         </ul>
 

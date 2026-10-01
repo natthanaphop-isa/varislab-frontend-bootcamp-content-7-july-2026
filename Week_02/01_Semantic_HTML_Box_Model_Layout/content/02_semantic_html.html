@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เข้าใจ Semantic HTML ว่าคือการใช้ tag ที่มีความหมายกับเนื้อหา และทำไมจึงดีกว่าการใช้ div ทั้งหน้า" />
+    <title>Semantic HTML คืออะไร | Semantic HTML และ CSS Box Model</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 02 · โครงสร้างหน้าเว็บด้วย Semantic HTML</p>
+          <h1>Semantic HTML คืออะไร</h1>
+          <p class="lesson-original-title" lang="en">What is Semantic HTML</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายความหมายของ Semantic HTML ด้วยคำพูดของตัวเอง</li>
+            <li>เลือกใช้ <code>header</code>, <code>nav</code>, <code>main</code>, <code>section</code>, <code>article</code> และ <code>footer</code> ได้ถูกที่</li>
+            <li>บอกข้อดีของ Semantic HTML เมื่อเทียบกับการใช้ <code>div</code> ทั้งหน้า</li>
+          </ul>
+        </section>
+
+        <h2>HTML เขียนได้หลายแบบ</h2>
+
+        <p>ในทางเทคนิค เราสามารถสร้างหน้าเว็บทั้งหน้าด้วย <code>div</code> อย่างเดียวก็ได้ เบราว์เซอร์ก็แสดงผลได้ปกติ แต่ปัญหาคือโค้ดจะ<strong>อ่านยาก</strong> — มองแล้วไม่รู้เลยว่าส่วนไหนคือ header ส่วนไหนคือเนื้อหาหลัก ส่วนไหนคือ footer</p>
+
+        <p><strong>Semantic HTML</strong> คือการใช้ tag ที่<strong>มีความหมาย</strong>ตรงกับเนื้อหาส่วนนั้น ๆ ชื่อ tag จะบอกเราทันทีว่าข้างในคืออะไร</p>
+
+        <h2>Semantic tags ที่ใช้บ่อย</h2>
+
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>Tag</th>
+                <th>ความหมาย</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>header</code></td>
+                <td>ส่วนหัวของหน้า เช่น โลโก้และเมนู</td>
+              </tr>
+              <tr>
+                <td><code>nav</code></td>
+                <td>เมนูนำทาง (กลุ่มลิงก์สำหรับไปส่วนต่าง ๆ ของเว็บ)</td>
+              </tr>
+              <tr>
+                <td><code>main</code></td>
+                <td>เนื้อหาหลักของหน้า</td>
+              </tr>
+              <tr>
+                <td><code>section</code></td>
+                <td>หมวดเนื้อหา แบ่งหน้าออกเป็นส่วน ๆ</td>
+              </tr>
+              <tr>
+                <td><code>article</code></td>
+                <td>เนื้อหาที่เป็นชิ้น ๆ แยกออกมาได้ เช่น content card</td>
+              </tr>
+              <tr>
+                <td><code>footer</code></td>
+                <td>ส่วนท้ายของหน้า</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>ตัวอย่างที่ไม่ดี vs ตัวอย่างที่ดีกว่า</h2>
+
+        <p>ลองดูโค้ดที่ใช้แต่ <code>div</code>:</p>
+
+        <pre><code class="language-html">&lt;div&gt;
+  &lt;div&gt;
+    &lt;div&gt;Full-Stack Bootcamp&lt;/div&gt;
+    &lt;div&gt;เรียนเขียนเว็บพร้อม AI Workflow&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+        <p>โค้ดนี้ใช้งานได้ แต่ถ้าไม่อ่านข้อความข้างใน เราไม่มีทางรู้เลยว่า <code>div</code> แต่ละชั้นทำหน้าที่อะไร อันไหนคือหัวข้อ อันไหนคือคำอธิบาย</p>
+
+        <p>ทีนี้ลองเขียนใหม่ด้วย Semantic HTML:</p>
+
+        <pre><code class="language-html">&lt;header&gt;
+  &lt;nav&gt;
+    &lt;p&gt;Varis Lab&lt;/p&gt;
+    &lt;a href="#"&gt;Courses&lt;/a&gt;
+  &lt;/nav&gt;
+&lt;/header&gt;
+
+&lt;main&gt;
+  &lt;section&gt;
+    &lt;h1&gt;Full-Stack Software Developer Bootcamp&lt;/h1&gt;
+    &lt;p&gt;เรียนเขียนเว็บพร้อม AI Workflow&lt;/p&gt;
+  &lt;/section&gt;
+&lt;/main&gt;</code></pre>
+
+        <p>แค่ดูชื่อ tag ก็รู้ทันทีว่า ด้านบนคือส่วนหัวที่มีเมนูนำทาง ด้านล่างคือเนื้อหาหลัก ซึ่งมี section หนึ่งที่มีหัวข้อ <code>h1</code> และย่อหน้าคำอธิบาย</p>
+
+        <h2>ทำไม Semantic HTML ถึงสำคัญ</h2>
+
+        <ul>
+          <li><strong>โค้ดอ่านง่ายขึ้น</strong> — เปิดไฟล์มาก็เห็นโครงสร้างหน้าเว็บทันที</li>
+          <li><strong>คนอื่นดูแลต่อได้ง่ายขึ้น</strong> — เพื่อนร่วมทีม (หรือตัวเราเองในอีกหลายเดือน) ไม่ต้องเดาว่า <code>div</code> ไหนคืออะไร</li>
+          <li><strong>เบราว์เซอร์และ screen reader เข้าใจหน้าเว็บดีขึ้น</strong> — เช่น screen reader รู้ว่าส่วนไหนคือเมนู ส่วนไหนคือเนื้อหาหลัก ช่วยให้ผู้ใช้ที่มองไม่เห็นใช้งานเว็บได้</li>
+          <li><strong>เตรียมตัวเข้าสู่ React</strong> — การคิดแบ่งหน้าเว็บเป็นส่วนที่มีความหมาย (header, section, card) คือพื้นฐานของการคิดแบบ component</li>
+        </ul>
+
+        <div class="note">
+          <p>Semantic tags อย่าง <code>header</code> หรือ <code>section</code> ไม่ได้ทำให้หน้าตาเปลี่ยนไปจาก <code>div</code> มากนัก — มันเปลี่ยน<strong>ความหมาย</strong> ไม่ใช่หน้าตา หน้าตาเป็นหน้าที่ของ CSS ซึ่งเราจะจัดการในบทที่ 04 เป็นต้นไป</p>
+        </div>
+
+        <div class="warning">
+          <p>Semantic HTML ไม่ได้แปลว่าห้ามใช้ <code>div</code> เลย เมื่อเราต้องการกล่องสำหรับจัดกลุ่มเพื่อ styling เฉย ๆ โดยไม่มีความหมายพิเศษ <code>div</code> ก็ยังเหมาะสม — ในบทถัดไปเราจะใช้ <code>&lt;div class="nav-links"&gt;</code> ครอบลิงก์เมนูด้วยเหตุผลนี้</p>
+        </div>
+
+        <h3>ลองทำดู</h3>
+
+        <p>ดูโครงสร้างนี้แล้วลองเปลี่ยน <code>div</code> ให้เป็น semantic tag ที่เหมาะสมที่สุด:</p>
+
+        <pre><code class="language-html">&lt;div&gt;
+  &lt;div&gt;
+    &lt;a href="#"&gt;หน้าแรก&lt;/a&gt;
+    &lt;a href="#"&gt;ติดต่อเรา&lt;/a&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;div&gt;
+  &lt;div&gt;บทความที่ 1&lt;/div&gt;
+  &lt;div&gt;บทความที่ 2&lt;/div&gt;
+&lt;/div&gt;
+&lt;div&gt;© 2026 My Website&lt;/div&gt;</code></pre>
+
+        <p>คำใบ้: มีส่วนหัวที่มีเมนู เนื้อหาหลักที่มีเนื้อหาเป็นชิ้น ๆ และส่วนท้าย</p>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า Semantic HTML คือการใช้ tag ที่มีความหมายกับเนื้อหา</li>
+            <li>บอกได้ว่า <code>main</code> ใช้ครอบเนื้อหาหลักของหน้า และ <code>article</code> เหมาะกับเนื้อหาที่เป็นชิ้น ๆ เช่น card</li>
+            <li>บอกข้อดีของ Semantic HTML ได้อย่างน้อย 3 ข้อ</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="01_intro_and_recap.html" rel="prev">ก่อนหน้า: ภาพรวมคอร์สและทบทวนพื้นฐาน</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="03_landing_page_structure.html" rel="next">ถัดไป: สร้างโครงสร้าง Landing Page</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สรุป workflow ของ Git, GitHub และ feature branch พร้อม cheat sheet แบบฝึกหัด Learning Goals แบบทดสอบ และการบ้าน" />
+    <title>สรุปบทเรียน แบบฝึกหัด และการบ้าน | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 15 · แก้ปัญหาและสรุป (Troubleshooting &amp; Wrap Up)</p>
+          <h1>สรุปบทเรียน แบบฝึกหัด และการบ้าน</h1>
+          <p class="lesson-original-title" lang="en">Wrap Up, Practice &amp; Homework</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ทบทวน workflow ทั้งหมดตั้งแต่ commit จนถึง merge ได้ในภาพเดียว</li>
+            <li>ทำ feature branch workflow ครบวงจรด้วยตัวเองผ่านแบบฝึกหัด</li>
+            <li>ตรวจความเข้าใจด้วยแบบทดสอบ และส่งการบ้านตามเกณฑ์</li>
+          </ul>
+        </section>
+
+        <p>
+          ในคู่มือนี้เราไม่ได้เรียนแค่วิธีส่งโค้ดขึ้น GitHub แต่ได้เรียน workflow พื้นฐานที่ developer ใช้ทำงานจริง:
+          แก้ไฟล์ ตรวจสถานะ เลือกไฟล์ และสร้าง commit จากนั้นใช้ branch แยกพื้นที่พัฒนา feature โดยไม่กระทบ <code>main</code>
+          เมื่อ feature พร้อมจึง merge กลับเข้า <code>main</code> และ push ขึ้น GitHub ต่อจากนี้ (เช่นเมื่อเริ่มทำ React project) เราจะใช้ workflow นี้ซ้ำกับทุก feature
+          จน Git กลายเป็นส่วนหนึ่งของกระบวนการพัฒนา software ตามธรรมชาติ
+        </p>
+
+        <h2>สรุป Workflow ทั้งหมด</h2>
+        <h3>Local Commit Workflow</h3>
+        <pre><code class="language-text">แก้ไฟล์
+   ↓
+git status
+   ↓
+git add
+   ↓
+git commit</code></pre>
+        <h3>GitHub Workflow</h3>
+        <pre><code class="language-text">Local Commit
+   ↓
+git push
+   ↓
+GitHub</code></pre>
+        <h3>Feature Branch Workflow</h3>
+        <pre><code class="language-text">main
+   ↓
+สร้าง Feature Branch
+   ↓
+แก้ Code
+   ↓
+Commit
+   ↓
+กลับ main
+   ↓
+Merge
+   ↓
+Push
+   ↓
+ลบ Feature Branch</code></pre>
+
+        <h2>Mental Model สรุป</h2>
+        <pre><code class="language-text">Working Directory
+ไฟล์ที่กำลังแก้
+        ↓
+      git add
+        ↓
+
+Staging Area
+ไฟล์ที่เลือกสำหรับ Commit
+        ↓
+    git commit
+        ↓
+
+Local Repository
+ประวัติในเครื่อง
+        ↓
+      git push
+        ↓
+
+GitHub Repository
+ประวัติออนไลน์</code></pre>
+
+        <h2>Cheat Sheet</h2>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>งาน</th><th>คำสั่ง</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>ตรวจสอบ Git</td><td><code>git --version</code></td></tr>
+              <tr><td>ตั้งชื่อ</td><td><code>git config --global user.name "Your Name"</code></td></tr>
+              <tr><td>ตั้งอีเมล</td><td><code>git config --global user.email "your-email@example.com"</code></td></tr>
+              <tr><td>เริ่ม repository</td><td><code>git init</code></td></tr>
+              <tr><td>ตรวจสอบสถานะ</td><td><code>git status</code></td></tr>
+              <tr><td>เพิ่มไฟล์</td><td><code>git add filename</code> หรือ <code>git add .</code></td></tr>
+              <tr><td>Commit</td><td><code>git commit -m "Describe your changes"</code></td></tr>
+              <tr><td>ดู history</td><td><code>git log --oneline</code></td></tr>
+              <tr><td>เชื่อม GitHub</td><td><code>git remote add origin REPOSITORY_URL</code></td></tr>
+              <tr><td>ตรวจสอบ remote</td><td><code>git remote -v</code></td></tr>
+              <tr><td>เปลี่ยน branch หลักเป็น main</td><td><code>git branch -M main</code></td></tr>
+              <tr><td>Push ครั้งแรก</td><td><code>git push -u origin main</code></td></tr>
+              <tr><td>Push ครั้งต่อไป</td><td><code>git push</code></td></tr>
+              <tr><td>ดู branch</td><td><code>git branch</code></td></tr>
+              <tr><td>สร้าง feature branch</td><td><code>git switch -c feature/feature-name</code></td></tr>
+              <tr><td>กลับ main</td><td><code>git switch main</code></td></tr>
+              <tr><td>Merge feature</td><td><code>git merge feature/feature-name</code></td></tr>
+              <tr><td>ลบ branch ที่ merge แล้ว</td><td><code>git branch -d feature/feature-name</code></td></tr>
+              <tr><td>ดู commit graph</td><td><code>git log --oneline --graph --all</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>แบบฝึกหัด: เพิ่ม Learning Goals Section</h2>
+        <p>ทำ feature branch workflow ครบวงจรอีกรอบด้วยตัวเอง เริ่มจาก <code>main</code> ที่ <code>git status</code> ขึ้น working tree clean</p>
+        <p><strong>1.</strong> สร้าง feature branch ใหม่:</p>
+        <pre><code class="language-bash">git switch -c feature/add-learning-goals</code></pre>
+        <p><strong>2.</strong> เพิ่ม section นี้ใน <code>index.html</code> (วางต่อจาก My Projects และก่อนปุ่ม Contact Me):</p>
+        <pre><code class="language-html">&lt;section&gt;
+  &lt;h2&gt;Learning Goals&lt;/h2&gt;
+
+  &lt;ul&gt;
+    &lt;li&gt;Build responsive websites&lt;/li&gt;
+    &lt;li&gt;Learn React&lt;/li&gt;
+    &lt;li&gt;Build a full-stack application&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/section&gt;</code></pre>
+        <p><strong>3.</strong> ตรวจสอบ เพิ่มไฟล์ และ commit:</p>
+        <pre><code class="language-bash">git status
+git add index.html
+git commit -m "Add learning goals section"</code></pre>
+        <p><strong>4.</strong> กลับ <code>main</code>:</p>
+        <pre><code class="language-bash">git switch main</code></pre>
+        <p><strong>5.</strong> Merge:</p>
+        <pre><code class="language-bash">git merge feature/add-learning-goals</code></pre>
+        <p><strong>6.</strong> Push:</p>
+        <pre><code class="language-bash">git push</code></pre>
+        <p><strong>7.</strong> ลบ branch:</p>
+        <pre><code class="language-bash">git branch -d feature/add-learning-goals</code></pre>
+
+        <div class="expected-result">
+          <p>หน้าเว็บบน <code>main</code> มี Learning Goals Section, GitHub มี commit <code>Add learning goals section</code> และ <code>git branch</code> เหลือแค่ <code>* main</code></p>
+        </div>
+
+        <h2>แบบทดสอบทบทวน</h2>
+        <p>ลองตอบด้วยตัวเองก่อน ถ้าไม่แน่ใจข้อไหน ให้ย้อนกลับไปอ่านบทที่เกี่ยวข้อง</p>
+        <ol>
+          <li>
+            <p>Git มีหน้าที่หลักอะไร?</p>
+            <p>A. สร้างเว็บไซต์ · B. บันทึกประวัติการเปลี่ยนแปลงของ Project · C. Deploy Website · D. ติดตั้ง Package</p>
+          </li>
+          <li>
+            <p>GitHub คืออะไร?</p>
+            <p>A. Programming Language · B. Code Editor · C. บริการออนไลน์สำหรับเก็บและแชร์ Git Repository · D. Browser</p>
+          </li>
+          <li>
+            <p>คำสั่งใดใช้เริ่ม Git Repository?</p>
+            <p>A. <code>git start</code> · B. <code>git create</code> · C. <code>git init</code> · D. <code>git new</code></p>
+          </li>
+          <li>
+            <p>คำสั่งใดใช้ตรวจสอบสถานะของไฟล์?</p>
+            <p>A. <code>git check</code> · B. <code>git status</code> · C. <code>git inspect</code> · D. <code>git files</code></p>
+          </li>
+          <li>
+            <p>Staging Area คืออะไร?</p>
+            <p>A. พื้นที่เลือกไฟล์สำหรับ Commit ถัดไป · B. Folder ที่เก็บ Code บน GitHub · C. Folder สำหรับไฟล์ที่ถูกลบ · D. หน้า Preview Website</p>
+          </li>
+          <li>
+            <p>คำสั่งใดใช้เพิ่มไฟล์เข้า Staging Area?</p>
+            <p>A. <code>git save</code> · B. <code>git add</code> · C. <code>git upload</code> · D. <code>git stage-file</code></p>
+          </li>
+          <li>
+            <p>Commit คืออะไร?</p>
+            <p>A. การลบ Repository · B. จุดบันทึกการเปลี่ยนแปลงของ Project · C. การสร้าง GitHub Account · D. การติดตั้ง Git</p>
+          </li>
+          <li>
+            <p>คำสั่งใดใช้ส่ง Commit ขึ้น GitHub?</p>
+            <p>A. <code>git add</code> · B. <code>git upload</code> · C. <code>git commit</code> · D. <code>git push</code></p>
+          </li>
+          <li>
+            <p>Branch ใช้ทำอะไร?</p>
+            <p>A. ใช้ลบ Project · B. ใช้ติดตั้ง Package · C. ใช้สร้างเส้นทางแยกสำหรับพัฒนา Code · D. ใช้เปิด Browser</p>
+          </li>
+          <li>
+            <p>คำสั่งใดสร้างและย้ายไป Branch ใหม่?</p>
+            <p>A. <code>git branch-open feature/name</code> · B. <code>git switch -c feature/name</code> · C. <code>git merge feature/name</code> · D. <code>git push feature/name</code></p>
+          </li>
+          <li>
+            <p>ถ้าต้องการนำ Feature Branch เข้า <code>main</code> ควรทำอย่างไร?</p>
+            <p>A.</p>
+            <pre><code class="language-bash">git switch main
+git merge feature/name</code></pre>
+            <p>B.</p>
+            <pre><code class="language-bash">git add main
+git push feature/name</code></pre>
+            <p>C.</p>
+            <pre><code class="language-bash">git merge main
+git delete feature/name</code></pre>
+            <p>D.</p>
+            <pre><code class="language-bash">git init feature/name</code></pre>
+          </li>
+          <li>
+            <p>คำสั่งใดใช้ลบ Branch ที่ Merge แล้ว?</p>
+            <p>A. <code>git delete branch-name</code> · B. <code>git branch -d branch-name</code> · C. <code>git remove branch-name</code> · D. <code>git clear branch-name</code></p>
+          </li>
+          <li>
+            <p>Merge Conflict เกิดขึ้นเมื่อใด?</p>
+            <p>A. เมื่อ Git ไม่สามารถตัดสินใจรวมการเปลี่ยนแปลงได้ · B. เมื่อไม่มี Internet · C. เมื่อไฟล์ CSS ว่าง · D. เมื่อ Repository เป็น Public</p>
+          </li>
+        </ol>
+
+        <h2>การบ้าน</h2>
+        <p>สร้าง feature ใหม่บน branch แยกใน Developer Profile Page ของคุณ โดยเลือกหนึ่งหัวข้อ:</p>
+        <ul>
+          <li>Education Section</li>
+          <li>Work Experience Section</li>
+          <li>Social Links Section</li>
+          <li>Favorite Technologies Section</li>
+          <li>Career Goal Section</li>
+          <li>Completed Projects Section</li>
+        </ul>
+
+        <h3>ข้อกำหนด</h3>
+        <p><strong>1. เริ่มจาก <code>main</code></strong> — ตรวจสอบว่า <code>*</code> อยู่หน้า <code>main</code>:</p>
+        <pre><code class="language-bash">git branch</code></pre>
+        <p><strong>2. สร้าง feature branch</strong> ตัวอย่าง:</p>
+        <pre><code class="language-bash">git switch -c feature/add-education-section</code></pre>
+        <p><strong>3. เพิ่ม feature</strong> — เพิ่ม HTML และ CSS ตามความเหมาะสม</p>
+        <p><strong>4. สร้างอย่างน้อย 1 commit</strong> ตัวอย่าง:</p>
+        <pre><code class="language-bash">git add .
+git commit -m "Add education section"</code></pre>
+        <p><strong>5. Merge กลับ <code>main</code></strong></p>
+        <pre><code class="language-bash">git switch main
+git merge feature/add-education-section</code></pre>
+        <p><strong>6. Push</strong></p>
+        <pre><code class="language-bash">git push</code></pre>
+        <p><strong>7. ลบ branch</strong></p>
+        <pre><code class="language-bash">git branch -d feature/add-education-section</code></pre>
+
+        <h3>สิ่งที่ต้องส่ง</h3>
+        <ol>
+          <li>GitHub Repository URL</li>
+          <li>ชื่อ feature branch ที่ใช้</li>
+          <li>Commit message</li>
+          <li>Screenshot หน้า repository</li>
+          <li>Screenshot commit history</li>
+          <li>คำตอบสั้น ๆ: “Branch และ Merge ใช้ทำอะไร?”</li>
+        </ol>
+
+        <h3>เกณฑ์การให้คะแนน</h3>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>หัวข้อ</th><th>คะแนน</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Repository เปิดดูได้</td><td>1</td></tr>
+              <tr><td>Project ทำงานถูกต้อง</td><td>2</td></tr>
+              <tr><td>สร้าง Feature Branch ถูกต้อง</td><td>2</td></tr>
+              <tr><td>Commit Message ชัดเจน</td><td>1</td></tr>
+              <tr><td>Merge กลับเข้า main สำเร็จ</td><td>2</td></tr>
+              <tr><td>Push Code ล่าสุดขึ้น GitHub</td><td>1</td></tr>
+              <tr><td>อธิบาย Branch และ Merge ได้</td><td>1</td></tr>
+              <tr><td><strong>รวม</strong></td><td><strong>10</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <p>repository ต้องเป็น <strong>Public</strong> เพื่อให้ผู้ตรวจเปิดดูได้ และก่อนส่งให้เปิดหน้า GitHub ตรวจอีกรอบว่า feature ใหม่อยู่บน <code>main</code> จริง ไม่ใช่ค้างอยู่แค่ในเครื่อง</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบาย Local Commit Workflow, GitHub Workflow และ Feature Branch Workflow ได้</li>
+            <li>ทำแบบฝึกหัด Learning Goals ครบทั้ง 7 ขั้นตอน</li>
+            <li>ตอบแบบทดสอบทบทวนได้ครบทุกข้อ</li>
+            <li>ส่งการบ้านพร้อม repository URL, ชื่อ branch, commit message, screenshot และคำตอบสั้น</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="14_common_problems.html" rel="prev">ก่อนหน้า: ปัญหาที่พบบ่อยและวิธีแก้</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

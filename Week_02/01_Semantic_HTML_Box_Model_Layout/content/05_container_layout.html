@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ใช้ max-width และ margin: 0 auto จำกัดความกว้างของ content และจัดให้อยู่กลางหน้า กับ header, navbar และ main ของ Landing Page" />
+    <title>จัด content ให้อยู่กลางหน้าด้วย max-width | Semantic HTML และ CSS Box Model</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 05 · CSS Box Model และระยะห่าง</p>
+          <h1>จัด content ให้อยู่กลางหน้าด้วย max-width</h1>
+          <p class="lesson-original-title" lang="en">Container Layout</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ใช้ <code>max-width</code> จำกัดความกว้างสูงสุดของ content</li>
+            <li>อธิบายว่า <code>margin: 0 auto</code> จัด block element ให้อยู่กลางหน้าได้อย่างไร</li>
+            <li>ใช้ container pattern กับ navbar และ <code>main</code> ของ Landing Page</li>
+          </ul>
+        </section>
+
+        <h2>ปัญหา: content ยืดเต็มจอ</h2>
+
+        <p>ตอนนี้เนื้อหาของเรายืดเต็มความกว้างของหน้าจอ บนจอเล็กอาจไม่เป็นไร แต่บนจอ desktop ใหญ่ ๆ ข้อความหนึ่งบรรทัดจะยาวมาก สายตาต้องกวาดไกลจนอ่านยาก และหน้าเว็บดูไม่เป็นมืออาชีพ ในเว็บจริงเราจึงไม่ค่อยปล่อยให้ content ยืดเต็มจอเสมอไป</p>
+
+        <h2>max-width: จำกัดความกว้างสูงสุด</h2>
+
+        <pre><code class="language-css">max-width: 1100px;</code></pre>
+
+        <p>แปลว่า element นี้กว้างได้<strong>ไม่เกิน</strong> 1100px — ถ้าจอแคบกว่า 1100px element ก็หดตามจอได้ แต่ถ้าจอกว้างกว่า มันจะหยุดอยู่ที่ 1100px ต่างจาก <code>width: 1100px</code> ที่บังคับกว้าง 1100px เสมอ แม้จอจะแคบกว่าก็ตาม</p>
+
+        <h2>margin: 0 auto: จัดให้อยู่กลางหน้า</h2>
+
+        <pre><code class="language-css">margin: 0 auto;</code></pre>
+
+        <p>เมื่อ <code>margin</code> มีค่าสองค่า ค่าแรกคือด้านบน/ล่าง ค่าที่สองคือด้านซ้าย/ขวา บรรทัดนี้จึงแปลว่า:</p>
+
+        <ul>
+          <li>ด้านบนและล่าง margin เป็น <code>0</code></li>
+          <li>ด้านซ้ายและขวาเป็น <code>auto</code> — ให้เบราว์เซอร์คำนวณเอง โดยแบ่งพื้นที่ที่เหลือให้สองข้างเท่ากัน</li>
+          <li>ผลลัพธ์คือ element อยู่<strong>กลางหน้า</strong>ในแนวนอน</li>
+        </ul>
+
+        <p>สองบรรทัดนี้มักใช้คู่กันเสมอ รวมกับ <code>padding</code> ด้านข้างเพื่อไม่ให้เนื้อหาชิดขอบจอบนหน้าจอแคบ กลายเป็น pattern ที่พบบ่อยมากในงานจริง:</p>
+
+        <pre><code class="language-css">.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 32px;
+}</code></pre>
+
+        <div class="warning">
+          <p><code>margin: 0 auto</code> จะจัดกลางได้ก็ต่อเมื่อ element มีความกว้างน้อยกว่า parent เช่น ตั้ง <code>max-width</code> ไว้ ถ้าไม่มีการจำกัดความกว้าง block element จะกว้างเต็ม parent อยู่แล้ว จึงไม่มีพื้นที่เหลือให้แบ่งซ้ายขวา และจะดูเหมือนไม่มีอะไรเกิดขึ้น</p>
+        </div>
+
+        <h2>ขั้นที่ 1: Header และ Navbar</h2>
+
+        <p>เพิ่มโค้ดนี้ต่อท้าย <code>style.css</code>:</p>
+
+        <pre><code class="language-css">.site-header {
+  border-bottom: 1px solid #1e293b;
+}
+
+.navbar {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 32px;
+}</code></pre>
+
+        <p>สังเกตว่าเราแยกหน้าที่กันระหว่างสองกล่อง:</p>
+
+        <ul>
+          <li><code>.site-header</code> (tag <code>header</code>) กว้างเต็มจอ และมีเส้นขอบล่างสีเทาเข้มยาวสุดจอ คั่นระหว่าง header กับเนื้อหา</li>
+          <li><code>.navbar</code> (tag <code>nav</code>) ที่อยู่ข้างในเป็น container — กว้างไม่เกิน 1100px อยู่กลางหน้า และมี padding บน/ล่าง 20px ซ้าย/ขวา 32px</li>
+        </ul>
+
+        <p>นี่คือเหตุผลที่เราแยก <code>header</code> กับ <code>nav</code> ออกจากกันในบทที่ 03 — เส้นขอบยาวเต็มจอได้ แต่เนื้อหาใน navbar ยังอยู่ในแนวเดียวกับ content ด้านล่าง</p>
+
+        <h2>ขั้นที่ 2: Main</h2>
+
+        <pre><code class="language-css">main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 64px 32px;
+}</code></pre>
+
+        <p><code>main</code> ใช้ container pattern เดียวกันกับ navbar (<code>max-width: 1100px</code> เท่ากัน) ขอบซ้ายของเนื้อหาจึงตรงกับโลโก้ใน navbar พอดี ส่วน <code>padding: 64px 32px</code> ให้ระยะห่างด้านบน/ล่าง 64px และซ้าย/ขวา 32px</p>
+
+        <div class="note">
+          <p>สังเกตว่าเราเลือก <code>main</code> ด้วยชื่อ tag ตรง ๆ (ไม่มีจุดข้างหน้า) เพราะในหน้ามี <code>main</code> ตัวเดียว ส่วน <code>.site-header</code> และ <code>.navbar</code> เลือกด้วย class ซึ่งต้องมีจุด <code>.</code> นำหน้า — เราจะลงรายละเอียดเรื่องนี้ในบทที่ 08</p>
+        </div>
+
+        <div class="expected-result">
+          <p>refresh หน้าเว็บ บนจอกว้าง เนื้อหาจะไม่ยืดเต็มจออีกแล้ว แต่ถูกจำกัดความกว้างและอยู่กลางหน้า มีเส้นบาง ๆ ใต้ header ยาวเต็มจอ และมีระยะห่างด้านบนของเนื้อหาหลัก ลองย่อ-ขยายหน้าต่างเบราว์เซอร์ดูว่า content หดตามจอได้เมื่อจอแคบกว่า 1100px</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า <code>max-width</code> ต่างจาก <code>width</code> อย่างไร</li>
+            <li>อธิบายได้ว่า <code>margin: 0 auto</code> ค่าแรกและค่าที่สองหมายถึงด้านไหน</li>
+            <li><code>style.css</code> มี <code>.site-header</code>, <code>.navbar</code> และ <code>main</code> ตามโค้ดด้านบน</li>
+            <li>บนจอกว้าง เนื้อหาอยู่กลางหน้าและกว้างไม่เกิน 1100px</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="04_css_box_model.html" rel="prev">ก่อนหน้า: CSS Box Model และ box-sizing</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="06_padding_vs_margin.html" rel="next">ถัดไป: padding กับ margin ต่างกันอย่างไร</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

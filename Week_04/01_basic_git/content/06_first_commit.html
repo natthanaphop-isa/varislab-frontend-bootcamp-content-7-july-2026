@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สร้าง commit แรกด้วย git commit -m เรียนรู้หลักการเขียน commit message ที่ดี และอ่านความหมายของ working tree clean" />
+    <title>สร้าง Commit แรกและเขียน Commit Message ที่ดี | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 06 · บันทึกประวัติใน Local Repository (Local Repository)</p>
+          <h1>สร้าง Commit แรกและเขียน Commit Message ที่ดี</h1>
+          <p class="lesson-original-title" lang="en">Your First Commit</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>สร้าง commit จากไฟล์ใน staging area ด้วย <code>git commit -m</code></li>
+            <li>แยก commit message ที่ดีออกจาก message ที่ไม่มีประโยชน์ได้</li>
+            <li>ตรวจสอบสถานะหลัง commit และเข้าใจข้อความ <code>working tree clean</code></li>
+          </ul>
+        </section>
+
+        <h2>สร้าง Commit แรก</h2>
+        <p>จากบทที่แล้ว ไฟล์ <code>index.html</code> และ <code>style.css</code> อยู่ใน staging area เรียบร้อยแล้ว ถึงเวลา “ปิดกล่อง” และติดป้าย:</p>
+        <pre><code class="language-bash">git commit -m "Create developer profile page"</code></pre>
+        <p>โครงสร้างของคำสั่งคือ:</p>
+        <pre><code class="language-text">git commit -m "ข้อความอธิบายการเปลี่ยนแปลง"</code></pre>
+        <p><code>-m</code> ย่อมาจาก <strong>message</strong> คือข้อความที่อธิบายว่า commit นี้ทำอะไร</p>
+        <p>ผลลัพธ์จะคล้าย:</p>
+        <pre><code class="language-text">[main (root-commit) 8c41a22] Create developer profile page
+ 2 files changed, 114 insertions(+)
+ create mode 100644 index.html
+ create mode 100644 style.css</code></pre>
+        <ul>
+          <li><code>main</code> — branch ที่ commit นี้ถูกบันทึก (อาจเป็น <code>master</code> ในบางเครื่อง)</li>
+          <li><code>root-commit</code> — นี่คือ commit แรกสุดของ repository</li>
+          <li><code>8c41a22</code> — commit ID แบบย่อ ในเครื่องคุณจะเป็นตัวอักษรคนละชุด เพราะ ID แต่ละ commit ไม่ซ้ำกัน</li>
+          <li>ตัวเลขจำนวนบรรทัดที่เพิ่มอาจต่างเล็กน้อยตามการเว้นบรรทัดในไฟล์ของคุณ</li>
+        </ul>
+
+        <div class="warning">
+          <p>ถ้าลืมใส่ <code>-m</code> Git จะเปิด text editor (มักเป็น Vim) ขึ้นมาให้พิมพ์ message ถ้าติดอยู่ในหน้าจอนั้น ให้กด <code>Esc</code> แล้วพิมพ์ <code>:q!</code> ตามด้วย Enter เพื่อออกโดยไม่ commit จากนั้นรันคำสั่งใหม่พร้อม <code>-m</code></p>
+        </div>
+
+        <h2>Commit Message ที่ดี</h2>
+        <p>
+          commit message ไม่ได้เขียนให้ Git อ่าน — Git ไม่สนใจเลยว่าข้อความคืออะไร เราเขียนเพื่อให้<strong>มนุษย์</strong>เข้าใจ
+          ซึ่งอาจเป็นเพื่อนร่วมทีม หรือตัวเราเองในอีกหลายเดือนข้างหน้าที่กลับมาไล่ดูว่าเคยเปลี่ยนอะไรไป message ที่ดีจึงควรอธิบายว่า commit นี้ทำอะไร
+        </p>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>ตัวอย่างที่ดี</th><th>ตัวอย่างที่ไม่ดี</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>Create developer profile page</code></td><td><code>update</code></td></tr>
+              <tr><td><code>Update personal profile information</code></td><td><code>fix</code></td></tr>
+              <tr><td><code>Improve profile card design</code></td><td><code>test</code></td></tr>
+              <tr><td><code>Add projects section</code></td><td><code>done</code></td></tr>
+              <tr><td><code>Fix contact button spacing</code></td><td><code>new</code> / <code>final</code></td></tr>
+              <tr><td><code>Add project documentation</code></td><td><code>asdf</code> / <code>123</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          ลองนึกภาพว่าอ่าน history แล้วเจอ <code>final</code> ติดกันห้า commit — ไม่ต่างอะไรกับโฟลเดอร์ <code>developer-profile-final-real</code> ในบทที่ 01 เลย
+        </p>
+
+        <h3>คำขึ้นต้นที่ใช้บ่อย</h3>
+        <p>ขึ้นต้นด้วยคำกริยาภาษาอังกฤษที่บอกว่าทำอะไร จะช่วยให้ message กระชับและอ่านง่าย:</p>
+        <ul>
+          <li><strong>Add</strong> — เพิ่มสิ่งใหม่</li>
+          <li><strong>Create</strong> — สร้างขึ้นมาใหม่</li>
+          <li><strong>Update</strong> — ปรับปรุงข้อมูลที่มีอยู่</li>
+          <li><strong>Fix</strong> — แก้ bug หรือจุดผิด</li>
+          <li><strong>Remove</strong> — ลบออก</li>
+          <li><strong>Improve</strong> — ทำให้ดีขึ้น</li>
+          <li><strong>Change</strong> — เปลี่ยนแปลง</li>
+        </ul>
+
+        <h2>ตรวจสอบสถานะหลัง Commit</h2>
+        <pre><code class="language-bash">git status</code></pre>
+        <p>ถ้าทุกอย่างถูก commit แล้ว จะเห็น:</p>
+        <pre><code class="language-text">On branch main
+nothing to commit, working tree clean</code></pre>
+        <p>ความหมายคือ:</p>
+        <ul>
+          <li>ไม่มีไฟล์ใหม่ที่ยังไม่ถูกติดตาม</li>
+          <li>ไม่มีไฟล์ที่ถูกแก้แต่ยังไม่ได้ commit</li>
+          <li>ไฟล์ในโปรเจกต์ตรงกับ commit ล่าสุดทุกประการ</li>
+        </ul>
+
+        <div class="warning">
+          <p>ถ้ารัน <code>git commit</code> แล้วได้ <code>Author identity unknown</code> แปลว่ายังไม่ได้ตั้งชื่อ/อีเมล ให้ย้อนไปทำตามบทที่ 02 แล้ว commit ใหม่ และถ้าได้ <code>nothing added to commit</code> แปลว่าลืม <code>git add</code> ก่อน</p>
+        </div>
+
+        <h2>ลองฝึก</h2>
+        <p>เขียน commit message ที่ดีสำหรับสถานการณ์เหล่านี้ (ยังไม่ต้อง commit จริง แค่คิด):</p>
+        <ol>
+          <li>เปลี่ยนสีปุ่ม Contact Me ให้เข้มขึ้น</li>
+          <li>แก้คำสะกดผิดในคำอธิบายตัวเอง</li>
+          <li>เพิ่มรายการทักษะใหม่</li>
+        </ol>
+
+        <div class="verification">
+          <ul>
+            <li>รัน <code>git commit -m "Create developer profile page"</code> สำเร็จ และเห็น <code>root-commit</code></li>
+            <li><code>git status</code> แสดง <code>nothing to commit, working tree clean</code></li>
+            <li>อธิบายได้ว่าทำไม <code>update</code> หรือ <code>final</code> ไม่ใช่ commit message ที่ดี</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="05_staging_area.html" rel="prev">ก่อนหน้า: Working Directory, Staging Area และ git add</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="07_commit_history.html" rel="next">ถัดไป: สร้าง Commit History และ README</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

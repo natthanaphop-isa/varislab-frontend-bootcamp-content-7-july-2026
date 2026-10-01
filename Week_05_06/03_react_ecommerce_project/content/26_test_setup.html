@@ -18,7 +18,7 @@
 
         <p>แอปของเราครบทุกฟีเจอร์แล้ว — ดูสินค้าได้ เพิ่มลงตะกร้าได้ สั่งซื้อได้ แต่ตอนนี้ถ้าถามว่า "กล้าแก้ <code>cartReducer</code> ไหม? กล้าอัปเกรด TanStack Query ไหม?" คำตอบที่ซื่อสัตย์คือ "ไม่ค่อยกล้า เพราะต้องไล่คลิกทุกหน้าเองเพื่อเช็คว่าไม่มีอะไรพัง" ชุดเทสต์ (test suite) คือสิ่งที่เปลี่ยนคำตอบนั้นเป็น "กล้า เพราะกด <code>npm run test</code> แล้วรู้ผลใน 10 วินาที" — และนี่คือสิ่งที่เราจะสร้างกันใน 4 บทสุดท้ายของช่วงนี้</p>
 
-        <p>ใน Week 4 คุณเขียนเทสต์ด้วย <strong>Vitest</strong> และ <strong>React Testing Library</strong> มาแล้ว บทนี้เราจะติดตั้งเครื่องมือชุดเดิมนั้นเข้าโปรเจกต์นี้ พร้อมเพื่อนใหม่หนึ่งตัวคือ <strong>MSW (Mock Service Worker)</strong> แล้ววางโครงสร้างพื้นฐานทั้งหมดที่บทถัด ๆ ไปจะใช้: ข้อมูลปลอม, API ปลอม และ helper สำหรับ render ทั้งแอปในเทสต์ บทนี้ยังไม่มีเทสต์จริงสักตัว — แต่พอวางฐานเสร็จ สามบทถัดไปจะไหลลื่นมาก</p>
+        <p>ในคอร์ส React พื้นฐาน คุณเขียนเทสต์ด้วย <strong>Vitest</strong> และ <strong>React Testing Library</strong> มาแล้ว บทนี้เราจะติดตั้งเครื่องมือชุดเดิมนั้นเข้าโปรเจกต์นี้ พร้อมเพื่อนใหม่หนึ่งตัวคือ <strong>MSW (Mock Service Worker)</strong> แล้ววางโครงสร้างพื้นฐานทั้งหมดที่บทถัด ๆ ไปจะใช้: ข้อมูลปลอม, API ปลอม และ helper สำหรับ render ทั้งแอปในเทสต์ บทนี้ยังไม่มีเทสต์จริงสักตัว — แต่พอวางฐานเสร็จ สามบทถัดไปจะไหลลื่นมาก</p>
 
         <h2>ทำไมต้อง MSW — mock ที่ชั้น network ไม่ใช่ชั้นโค้ด</h2>
 
@@ -36,7 +36,7 @@
 </code></pre>
 
         <ul>
-          <li><strong>vitest</strong> — test runner ตัวเดิมจาก Week 4 ข้อดีใหญ่คือมันใช้ config และ transform pipeline ของ Vite ทำให้ path alias <code>@/</code> และ SCSS Modules ในโค้ดเราทำงานในเทสต์ได้เลยโดยไม่ต้องตั้งค่าเพิ่ม</li>
+          <li><strong>vitest</strong> — test runner ตัวเดิมจากคอร์ส React พื้นฐาน ข้อดีใหญ่คือมันใช้ config และ transform pipeline ของ Vite ทำให้ path alias <code>@/</code> และ SCSS Modules ในโค้ดเราทำงานในเทสต์ได้เลยโดยไม่ต้องตั้งค่าเพิ่ม</li>
           <li><strong>jsdom</strong> — DOM จำลองที่รันใน Node ทำให้ component ของเรา render ได้โดยไม่ต้องเปิดเบราว์เซอร์จริง</li>
           <li><strong>@testing-library/react</strong> — <code>render</code>, <code>screen</code>, <code>renderHook</code>, <code>waitFor</code> สำหรับเทสต์ component และ hook แบบเน้นพฤติกรรมที่ผู้ใช้เห็น</li>
           <li><strong>@testing-library/jest-dom</strong> — matcher เพิ่มเติมอย่าง <code>toBeInTheDocument()</code> ที่ทำให้ assertion อ่านเป็นภาษาคนมากขึ้น</li>
@@ -98,7 +98,7 @@ export default defineConfig({
         <ul>
           <li><strong><code>/// &lt;reference types="vitest/config" /&gt;</code></strong> — โดยปกติ type ของ <code>defineConfig</code> ไม่รู้จัก key ชื่อ <code>test</code> (มันเป็นของ Vitest ไม่ใช่ Vite) triple-slash directive บรรทัดนี้ดึง type เสริมของ Vitest เข้ามา ทำให้ทุก field ใน block <code>test</code> มี autocomplete และถูกเช็ค type</li>
           <li><strong><code>environment: "jsdom"</code></strong> — ให้ทุกเทสต์รันใน DOM จำลอง เราจะได้ <code>document</code>, <code>window</code> และ <code>localStorage</code> ใช้เหมือนอยู่ในเบราว์เซอร์</li>
-          <li><strong><code>globals: true</code></strong> — ทำให้ <code>describe</code>, <code>it</code>, <code>expect</code> เป็น global ไม่ต้อง import ในทุกไฟล์เทสต์ (แบบเดียวกับที่คุ้นเคยใน Week 4)</li>
+          <li><strong><code>globals: true</code></strong> — ทำให้ <code>describe</code>, <code>it</code>, <code>expect</code> เป็น global ไม่ต้อง import ในทุกไฟล์เทสต์ (แบบเดียวกับที่คุ้นเคยในคอร์ส React พื้นฐาน)</li>
           <li><strong><code>setupFiles</code></strong> — ไฟล์ที่ Vitest รัน<em>ก่อน</em>ไฟล์เทสต์ทุกไฟล์ เดี๋ยวเราจะสร้างมันเพื่อเปิด/ปิด MSW server</li>
           <li><strong><code>env: { VITE_API_BASE_URL: "https://dummyjson.com" }</code></strong> — บังคับค่า env ตอนรันเทสต์ให้ตายตัว สังเกต comment ในไฟล์: <em>MSW handlers hardcode the host, so tests must not depend on .env</em> — handler ของ MSW จะ match request ด้วย URL เต็ม <code>https://dummyjson.com/...</code> ถ้าเราปล่อยให้ <code>apiClient</code> อ่าน <code>baseURL</code> จากไฟล์ <code>.env</code> ของแต่ละเครื่อง วันไหนใครแก้ <code>.env</code> ไปชี้ host อื่น request จะไม่ match handler แล้วเทสต์พังทั้งชุดแบบงง ๆ การ hardcode ตรงนี้ทำให้เทสต์ deterministic: รันที่เครื่องไหนก็ได้ผลเหมือนกัน</li>
         </ul>

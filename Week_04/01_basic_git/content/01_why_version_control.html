@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เข้าใจปัญหาของการเก็บงานหลายเวอร์ชันด้วยการ copy โฟลเดอร์ รู้จัก Git, commit และความต่างระหว่าง Git กับ GitHub" />
+    <title>ทำไมต้องใช้ Git และ Git ต่างจาก GitHub อย่างไร | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 01 · รู้จัก Git และเตรียมเครื่อง (Getting Started)</p>
+          <h1>ทำไมต้องใช้ Git และ Git ต่างจาก GitHub อย่างไร</h1>
+          <p class="lesson-original-title" lang="en">Why Version Control</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายปัญหาของการเก็บหลายเวอร์ชันด้วยการ copy โฟลเดอร์</li>
+            <li>อธิบายได้ว่า Git คืออะไร และ commit คืออะไร</li>
+            <li>แยกความแตกต่างระหว่าง Git กับ GitHub ได้</li>
+            <li>รู้ว่าตลอดคู่มือนี้เราจะสร้างอะไร และหัวข้อไหนยังไม่ได้เรียน</li>
+          </ul>
+        </section>
+
+        <h2>สิ่งที่เราจะสร้างในคู่มือนี้</h2>
+        <p>
+          ตลอดคู่มือเราจะใช้โปรเจกต์เล็ก ๆ ชื่อ <strong>Developer Profile Page</strong> เป็นสนามฝึก Git
+          โปรเจกต์นี้มีแค่ HTML และ CSS ไม่มี npm, Vite, JavaScript, TypeScript, framework, package หรือ build tool ใด ๆ
+          เพราะเราอยากให้สมาธิทั้งหมดอยู่ที่ Git ไม่ต้องเสียเวลาแก้ปัญหา setup หรือ dependency
+        </p>
+        <pre class="file-tree">developer-profile-page/
+├── index.html
+├── style.css
+└── README.md</pre>
+        <p>เส้นทางการเรียนทั้งหมดจะเป็นแบบนี้:</p>
+        <pre><code class="language-text">สร้าง Project
+    ↓
+เริ่ม Git Repository
+    ↓
+บันทึก Commit
+    ↓
+ส่งขึ้น GitHub
+    ↓
+สร้าง Feature Branch
+    ↓
+พัฒนา Feature แยกจาก main
+    ↓
+Merge กลับเข้า main</code></pre>
+
+        <h2>ปัญหาก่อนมี Git</h2>
+        <p>สมมติว่าเรากำลังสร้างเว็บไซต์ และเก็บแต่ละเวอร์ชันด้วยการ copy โฟลเดอร์ไปเรื่อย ๆ:</p>
+        <pre><code class="language-text">developer-profile
+developer-profile-new
+developer-profile-final
+developer-profile-final-2
+developer-profile-final-real
+developer-profile-final-use-this</code></pre>
+        <p>คุ้น ๆ ไหม? พอเวลาผ่านไปเราจะเริ่มเจอปัญหา:</p>
+        <ul>
+          <li>ไม่รู้ว่าโฟลเดอร์ไหนใหม่ที่สุด</li>
+          <li>ไม่รู้ว่าแต่ละโฟลเดอร์ต่างกันตรงไหน</li>
+          <li>ไม่รู้ว่าแก้โค้ดไปตอนไหน</li>
+          <li>ย้อนกลับไปเวอร์ชันก่อนหน้าได้ยาก</li>
+          <li>เผลอแก้ผิดโฟลเดอร์ หรือส่งโฟลเดอร์ผิดให้เพื่อน</li>
+          <li>ยิ่งทำงานหลายคน ยิ่งสับสน</li>
+        </ul>
+        <p>Git ถูกสร้างขึ้นมาเพื่อแก้ปัญหานี้โดยตรง</p>
+
+        <h2>Git คืออะไร</h2>
+        <p>
+          Git คือระบบที่ใช้<strong>ติดตามและบันทึกประวัติการเปลี่ยนแปลงของไฟล์</strong> จัดอยู่ในประเภท
+          <strong>Version Control System</strong> Git ช่วยให้เรารู้ว่า:
+        </p>
+        <ul>
+          <li>ไฟล์ไหนถูกแก้ และแก้ส่วนใด</li>
+          <li>แก้เมื่อไร และใครเป็นคนแก้</li>
+          <li>เปลี่ยนแปลงไปเพื่ออะไร</li>
+          <li>โปรเจกต์เคยมีหน้าตาอย่างไรในอดีต</li>
+        </ul>
+
+        <h3>Git เปรียบเหมือน Save Point ในเกม</h3>
+        <p>
+          เวลาเขียนโปรแกรม เราไม่ได้เขียนทุกอย่างเสร็จในครั้งเดียว เราค่อย ๆ เพิ่มหน้า เพิ่มปุ่ม ปรับดีไซน์ และแก้ bug
+          Git ช่วยให้เราบันทึกความคืบหน้าเป็นช่วง ๆ เหมือน save point ในเกม:
+        </p>
+        <pre><code class="language-text">เริ่มสร้าง Project
+        ↓
+Save Point 1: สร้างหน้า HTML
+        ↓
+Save Point 2: เพิ่มข้อมูลส่วนตัว
+        ↓
+Save Point 3: เพิ่ม CSS
+        ↓
+Save Point 4: เพิ่ม Feature</code></pre>
+        <p>
+          ใน Git เราเรียก save point แต่ละจุดว่า <strong>commit</strong> — commit คือจุดบันทึกการเปลี่ยนแปลงของโปรเจกต์ ณ ช่วงเวลาหนึ่ง
+          ถ้าวันหนึ่งเราแก้โค้ดแล้วพัง เราสามารถย้อนกลับมาดูได้ว่าก่อนหน้านี้เราเปลี่ยนอะไรไปบ้าง
+        </p>
+
+        <h2>Git กับ GitHub ต่างกันอย่างไร</h2>
+        <p>หลายคนเข้าใจผิดว่า Git กับ GitHub คือสิ่งเดียวกัน แต่จริง ๆ แล้วไม่ใช่:</p>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>Git</th><th>GitHub</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>เป็นโปรแกรมที่ทำงานในเครื่อง</td><td>เป็นบริการออนไลน์</td></tr>
+              <tr><td>ใช้บันทึกประวัติของโปรเจกต์</td><td>ใช้เก็บและแชร์ repository</td></tr>
+              <tr><td>ใช้งาน offline ได้</td><td>ต้องใช้อินเทอร์เน็ตในการส่งข้อมูล</td></tr>
+              <tr><td>มีคำสั่ง เช่น <code>add</code> และ <code>commit</code></td><td>มีหน้า repository และ commit history</td></tr>
+              <tr><td>ประวัติอยู่ในเครื่อง</td><td>ประวัติถูกเก็บออนไลน์</td></tr>
+              <tr><td>ไม่จำเป็นต้องมี account</td><td>ต้องมี GitHub account</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>ประโยคที่ควรจำให้ขึ้นใจ:</p>
+        <pre><code class="language-text">Git    = ระบบบันทึกประวัติของ Project
+GitHub = เว็บไซต์สำหรับเก็บและแชร์ Git Repository</code></pre>
+        <p>
+          Git ทำงานอยู่ในเครื่องของเรา ถึงไม่มีอินเทอร์เน็ตก็ยังสร้าง commit ได้ ส่วน GitHub เป็นบริการออนไลน์ที่เราใช้ส่ง repository
+          ขึ้นไปเก็บ สำรอง และแชร์กับคนอื่น เราใช้ Git โดยไม่ใช้ GitHub ได้ แต่ในการทำงานจริงเรามักใช้ทั้งสองอย่างคู่กัน
+        </p>
+
+        <h2>สิ่งที่ยังไม่เรียนในคู่มือนี้</h2>
+        <p>
+          คู่มือนี้ตั้งใจเน้นพื้นฐาน จึงยังไม่ลงลึกเรื่อง Pull Request, การทำงานเป็นทีม, remote feature branch,
+          แบบฝึกหัดแก้ merge conflict แบบเต็ม, <code>rebase</code>, <code>cherry-pick</code>, <code>stash</code>, <code>reset</code>,
+          <code>revert</code>, squash commit, Git Flow และ GitHub Actions — หัวข้อเหล่านี้จะได้เจอภายหลังเมื่อเริ่มทำ React project หรือทำงานร่วมกับคนอื่น
+        </p>
+
+        <div class="note">
+          <p>อย่าพยายามท่องคำสั่งทั้งหมดตั้งแต่ตอนนี้ ให้จับภาพรวมให้ได้ก่อนว่า “Git บันทึกประวัติในเครื่อง / GitHub เก็บประวัตินั้นไว้ออนไลน์” คำสั่งจะจำได้เองเมื่อได้ใช้ซ้ำ ๆ</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่าการ copy โฟลเดอร์เพื่อเก็บเวอร์ชันมีปัญหาอะไร</li>
+            <li>อธิบายได้ว่า Git คือ Version Control System ที่บันทึกประวัติการเปลี่ยนแปลงของไฟล์</li>
+            <li>อธิบายได้ว่า commit คือ “save point” ของโปรเจกต์</li>
+            <li>บอกความต่างระหว่าง Git (โปรแกรมในเครื่อง) กับ GitHub (บริการออนไลน์) ได้</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="02_install_and_configure_git.html" rel="next">ถัดไป: ตรวจสอบการติดตั้งและตั้งค่า Git</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ฝึกต่อยอด Student Goal Dashboard ด้วยการเพิ่มนักเรียน เพิ่ม field ใหม่ ปรับ badge และใช้ if เปลี่ยนข้อความ badge ตามพื้นฐานของนักเรียน" />
+    <title>Mini Challenge: ต่อยอด Dashboard | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 10 · ฝึกต่อยอดและสรุป (Practice &amp; Wrap Up)</p>
+          <h1>Mini Challenge: ต่อยอด Dashboard</h1>
+          <p class="lesson-original-title" lang="en">Mini Challenges</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เพิ่มข้อมูลใน array แล้วเห็นการ์ดใหม่โดยไม่ต้องแก้ loop</li>
+            <li>เพิ่ม field ใหม่ใน object และแสดงบนการ์ด</li>
+            <li>ปรับหน้าตาหรือข้อความของ badge</li>
+            <li>ใช้ <code>if</code> ภายใน loop เพื่อแสดงข้อความต่างกันตามข้อมูล</li>
+          </ul>
+        </section>
+
+        <p>ใช้โปรเจกต์ที่ทำเสร็จในบทที่ 9 เป็นจุดเริ่ม ทำทีละ challenge และหลังแก้แต่ละครั้งให้ save, refresh และดู Console ว่าไม่มี error ใช้เวลาประมาณ 15–20 นาที</p>
+
+        <div class="note">
+          <p>ก่อนเริ่ม แนะนำให้ copy โฟลเดอร์โปรเจกต์เก็บไว้อีกชุด ถ้าแก้แล้วพังจนงง จะได้มีเวอร์ชันที่ทำงานได้ไว้เทียบ</p>
+        </div>
+
+        <h2>Challenge 1: เพิ่มนักเรียนคนที่ 4</h2>
+        <p>เพิ่ม object ของคุณเองเข้าไปเป็นสมาชิกตัวสุดท้ายใน array <code>students</code>:</p>
+        <pre><code class="language-javascript">{
+  name: "Your Name",
+  goal: "เป้าหมายของคุณ",
+  level: "พื้นฐานของคุณ",
+}</code></pre>
+        <p>สังเกตว่าเราไม่ได้แตะโค้ดใน <code>forEach</code> เลย แต่การ์ดใบที่ 4 ก็ขึ้นมาเอง นี่คือพลังของการแยก “ข้อมูล” ออกจาก “วิธีแสดงผล”</p>
+        <div class="warning">
+          <p>อย่าลืมจุลภาคหลัง <code>}</code> ของ object ก่อนหน้า (ของ Pond) ถ้าหน้าเว็บไม่แสดงการ์ดเลยสักใบหลังเพิ่มข้อมูล ให้เปิด Console หา <code>SyntaxError</code> ก่อน และสังเกตว่าการ์ดใบที่ 4 ขึ้นไปอยู่แถวใหม่ เพราะ grid ของเรามี 3 คอลัมน์</p>
+        </div>
+
+        <h2>Challenge 2: เพิ่ม field <code>targetRole</code></h2>
+        <p>เพิ่ม field ใหม่ชื่อ <code>targetRole</code> ให้นักเรียน เช่น</p>
+        <pre><code class="language-javascript">{
+  name: "Man",
+  goal: "เปลี่ยนสายงานเป็น Developer",
+  level: "เริ่มจากศูนย์",
+  targetRole: "Frontend Developer",
+}</code></pre>
+        <p>แล้วแสดง <code>targetRole</code> บนการ์ด (เพิ่มบรรทัด <code>&lt;p&gt;</code> ใหม่ใน <code>innerHTML</code>)</p>
+        <div class="note">
+          <p>ถ้าเพิ่ม <code>targetRole</code> ให้นักเรียนแค่บางคน การ์ดของคนที่ไม่มี field นี้จะขึ้นคำว่า <code>undefined</code> — ลองสังเกตอาการนี้ แล้วเพิ่ม field ให้ครบทุกคน</p>
+        </div>
+
+        <h2>Challenge 3: ปรับ badge</h2>
+        <p>เปลี่ยนสีของ badge (แก้ที่ <code>.badge</code> ใน <code>style.css</code>) หรือเปลี่ยนข้อความใน badge (แก้ที่ <code>&lt;span class="badge"&gt;</code> ใน <code>innerHTML</code>) ให้เป็นแบบของคุณ</p>
+
+        <h2>Bonus: badge เปลี่ยนตามพื้นฐาน</h2>
+        <p>ถ้า <code>level</code> เป็น <code>"เริ่มจากศูนย์"</code> ให้ badge แสดงว่า</p>
+        <pre><code class="language-text">Beginner Friendly</code></pre>
+        <p>ถ้าไม่ใช่ ให้ badge แสดงว่า</p>
+        <pre><code class="language-text">Has Some Experience</code></pre>
+        <p>ตัวอย่าง logic ที่ใช้ตัดสินใจ:</p>
+        <pre><code class="language-javascript">let badgeText = "Has Some Experience";
+
+if (student.level === "เริ่มจากศูนย์") {
+  badgeText = "Beginner Friendly";
+}</code></pre>
+        <p>คำใบ้สำหรับนำไปใช้:</p>
+        <ul>
+          <li>logic นี้ต้องอยู่<strong>ข้างใน</strong> <code>forEach</code> เพราะต้องตัดสินใจใหม่สำหรับนักเรียนแต่ละคน และต้องอยู่<strong>ก่อน</strong>บรรทัด <code>innerHTML</code></li>
+          <li>ใช้ <code>let</code> ไม่ใช่ <code>const</code> เพราะเราอาจเปลี่ยนค่า <code>badgeText</code> ภายหลังใน <code>if</code></li>
+          <li>แทนข้อความ badge เดิมด้วยค่าจากตัวแปร โดยใช้ <code>${ }</code> แบบเดียวกับ <code>${student.name}</code></li>
+          <li><code>===</code> เทียบข้อความแบบตรงทุกตัวอักษร ถ้าพิมพ์ <code>"เริ่มจากศูนย์"</code> ใน <code>if</code> ไม่ตรงกับในข้อมูล (เช่น มีเว้นวรรคเกิน) เงื่อนไขจะไม่เป็นจริง ถ้าไม่แน่ใจให้ <code>console.log(student.level);</code> ดู</li>
+        </ul>
+
+        <section class="expected-result">
+          <h2>ผลลัพธ์ที่ควรเห็น</h2>
+          <p>หน้าเว็บมีการ์ดอย่างน้อย 4 ใบ ทุกใบแสดง <code>targetRole</code> และถ้าทำ Bonus การ์ดของ Man (พื้นฐาน “เริ่มจากศูนย์”) จะแสดง badge <strong>Beginner Friendly</strong> ส่วนคนอื่นที่พื้นฐานไม่ใช่ “เริ่มจากศูนย์” จะแสดง <strong>Has Some Experience</strong></p>
+        </section>
+
+        <div class="verification">
+          <ul>
+            <li>เพิ่มนักเรียนคนที่ 4 แล้วการ์ดขึ้นเองโดยไม่แก้ loop</li>
+            <li>ทุกการ์ดแสดง <code>targetRole</code> โดยไม่มีคำว่า <code>undefined</code></li>
+            <li>badge มีสีหรือข้อความตามที่คุณออกแบบ</li>
+            <li>(Bonus) ข้อความ badge เปลี่ยนตาม <code>level</code> ของนักเรียนแต่ละคน</li>
+            <li>Console ไม่มี error สีแดง</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="09_render_cards.html" rel="prev">ก่อนหน้า: สร้างการ์ดบนหน้าเว็บด้วย JavaScript</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="11_wrap_up_homework.html" rel="next">ถัดไป: สรุปบทเรียนและการบ้าน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

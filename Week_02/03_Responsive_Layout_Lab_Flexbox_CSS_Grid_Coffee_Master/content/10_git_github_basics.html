@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ทำความรู้จัก Git, GitHub และ repository รวมถึงความหมายของคำสั่ง git status, init, add, commit, branch, remote และ push ก่อนส่งงานจริง" />
+    <title>Git และ GitHub เบื้องต้น | Responsive Layout Lab: Flexbox + CSS Grid</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 10 · ส่งงานขึ้น GitHub (GitHub Submission)</p>
+          <h1>Git และ GitHub เบื้องต้น</h1>
+          <p class="lesson-original-title" lang="en">Git &amp; GitHub Basics</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายความต่างระหว่าง Git, GitHub และ repository</li>
+            <li>บอกได้ว่าคำสั่ง Git 7 คำสั่งที่จะใช้ส่งงานทำหน้าที่อะไร</li>
+            <li>อธิบายได้ว่า commit คืออะไร</li>
+          </ul>
+        </section>
+
+        <h2>ทำไมต้องใช้ Git และ GitHub</h2>
+        <p>ตอนนี้เรามี landing page ที่เริ่มเป็น project จริงแล้ว ถ้าเก็บไว้แค่ในเครื่องตัวเอง งานนี้จะแชร์ให้คนอื่นดูยาก และถ้าเครื่องมีปัญหางานก็อาจหายได้ developer จริงไม่ได้ส่งงานเป็น screenshot อย่างเดียว แต่ส่ง code ที่คนอื่นเปิดดู ตรวจ และต่อยอดได้</p>
+        <p>ยังไม่ต้องเข้าใจ Git ทุกอย่าง ขอให้จำแค่ 3 ข้อนี้:</p>
+        <pre><code class="language-text">Git ใช้เก็บประวัติการเปลี่ยนแปลงของ code
+GitHub ใช้เก็บ code online
+Repository link ใช้ส่งงานหรือใช้เป็น portfolio ได้</code></pre>
+
+        <h2>Git, GitHub และ Repository</h2>
+        <div class="comparison" role="region" aria-label="เปรียบเทียบ Git GitHub และ Repository" tabindex="0">
+          <table>
+            <thead><tr><th>คำ</th><th>คืออะไร</th><th>ตัวอย่างในงานนี้</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Git</strong></td><td>เครื่องมือเก็บประวัติการเปลี่ยนแปลงของ code ในเครื่องเรา</td><td>เขียนหน้าเว็บเสร็จแล้วบันทึก version นี้ไว้ ถ้าวันหลังแก้แล้วพัง ยังมีประวัติว่า version ก่อนหน้าหน้าตาเป็นอย่างไร</td></tr>
+              <tr><td><strong>GitHub</strong></td><td>เว็บไซต์สำหรับเก็บ repository แบบ online และแชร์ให้คนอื่นดูได้</td><td>ที่ที่เรา push project ขึ้นไป แล้วส่ง link ให้ผู้สอน</td></tr>
+              <tr><td><strong>Repository (repo)</strong></td><td>folder project ที่ถูกเก็บด้วย Git</td><td>โฟลเดอร์ Bootcamp Landing Page ที่มี <code>index.html</code>, <code>style.css</code> และ <code>README.md</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>คำสั่งที่จะใช้</h2>
+        <p>ทุกคำสั่งรันใน terminal <strong>ภายในโฟลเดอร์ project</strong> (ใน VS Code เปิด Terminal แล้วจะอยู่ในโฟลเดอร์ที่เปิดไว้ให้อัตโนมัติ)</p>
+
+        <h3>1. เช็กสถานะ</h3>
+        <pre><code class="language-bash">git status</code></pre>
+        <p>ดูว่า Git เห็นไฟล์อะไรเปลี่ยนแปลงบ้าง — ใช้บ่อยที่สุด รันได้ทุกเมื่อที่ไม่แน่ใจ ไม่ทำให้อะไรเปลี่ยน</p>
+
+        <h3>2. เริ่มใช้ Git ใน project</h3>
+        <pre><code class="language-bash">git init</code></pre>
+        <p>เปลี่ยนโฟลเดอร์ธรรมดาให้เป็น Git repository ใช้<strong>ครั้งแรกครั้งเดียว</strong>ต่อ project</p>
+
+        <h3>3. เลือกไฟล์เข้า staging</h3>
+        <pre><code class="language-bash">git add .</code></pre>
+        <p>จุด <code>.</code> หมายถึง “ทุกไฟล์ในโฟลเดอร์นี้” คำสั่งนี้เลือกไฟล์ทั้งหมดเตรียมบันทึกเป็น version ใหม่ (staging คือพื้นที่พักไฟล์ที่จะเข้า commit ถัดไป)</p>
+
+        <h3>4. Commit งาน</h3>
+        <pre><code class="language-bash">git commit -m "Complete bootcamp landing page"</code></pre>
+        <p><strong>Commit</strong> คือการบันทึก snapshot ของงาน ณ ตอนนั้น ข้อความหลัง <code>-m</code> คือ <strong>commit message</strong> ที่อธิบายว่า version นี้เปลี่ยนอะไร</p>
+
+        <h3>5. ตั้งชื่อ branch หลักเป็น main</h3>
+        <pre><code class="language-bash">git branch -M main</code></pre>
+        <p>ตั้งชื่อ branch หลักเป็น <code>main</code> ให้ตรงกับที่ GitHub ใช้</p>
+
+        <h3>6. เชื่อมกับ repo บน GitHub</h3>
+        <pre><code class="language-bash">git remote add origin &lt;your-repo-url&gt;</code></pre>
+        <p>บอก Git ว่า repo ปลายทางบน GitHub อยู่ที่ไหน โดยตั้งชื่อเล่นว่า <code>origin</code> ให้แทน <code>&lt;your-repo-url&gt;</code> ด้วย URL จริงของคุณ เช่น:</p>
+        <pre><code class="language-bash">git remote add origin https://github.com/username/bootcamp-landing-page.git</code></pre>
+
+        <h3>7. Push code ขึ้น GitHub</h3>
+        <pre><code class="language-bash">git push -u origin main</code></pre>
+        <p>ส่ง commit จากเครื่องเราขึ้น GitHub โดย <code>-u</code> จำไว้ว่า branch <code>main</code> ในเครื่องคู่กับ <code>origin/main</code> ครั้งต่อไปจึงพิมพ์แค่ <code>git push</code> ได้</p>
+
+        <div class="note">
+          <p>จำภาพรวมง่าย ๆ: <strong>add</strong> = เลือกไฟล์ → <strong>commit</strong> = บันทึก version ในเครื่อง → <strong>push</strong> = ส่ง version ขึ้น GitHub ถ้า commit แล้วแต่ยังไม่ push งานจะยังไม่ขึ้นไปบน GitHub</p>
+        </div>
+
+        <div class="warning">
+          <p>อย่าพิมพ์ <code>&lt;</code> <code>&gt;</code> ลงไปด้วยตอนแทน URL — <code>&lt;your-repo-url&gt;</code> เป็นแค่ตัวแทนในเอกสาร และอย่าลืมว่า commit message ต้องอยู่ในเครื่องหมายคำพูด</p>
+        </div>
+
+        <p>อ่านเพิ่มเติมได้ที่ <a href="https://git-scm.com/doc" target="_blank" rel="noreferrer">git-scm.com/doc</a> และ <a href="https://docs.github.com/" target="_blank" rel="noreferrer">docs.github.com</a></p>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า Git ต่างจาก GitHub อย่างไร</li>
+            <li>อธิบายได้ว่า commit คือการบันทึก snapshot ของงานพร้อมข้อความอธิบาย</li>
+            <li>เรียงลำดับได้: <code>init</code> → <code>add</code> → <code>commit</code> → <code>branch -M main</code> → <code>remote add</code> → <code>push</code></li>
+            <li>ในเครื่องมี Git พร้อมใช้ (ลองรัน <code>git --version</code> แล้วเห็นเลขเวอร์ชัน)</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="09_css_organization.html" rel="prev">ก่อนหน้า: จัด CSS เป็นหมวด</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="11_push_to_github.html" rel="next">ถัดไป: Push โปรเจกต์ขึ้น GitHub</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

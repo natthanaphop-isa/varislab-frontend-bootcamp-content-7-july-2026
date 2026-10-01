@@ -127,7 +127,7 @@ export interface FetchProductsResponse extends Pagination {
           <li><strong><code>FetchProductsResponse extends Pagination</code></strong> — รูปแบบคำตอบของ endpoint รายการสินค้า คือ <code>products</code> บวกสามฟิลด์ pagination ที่ทวนไปเมื่อครู่ การ <code>extends</code> ทำให้เราประกอบ type จากชิ้นส่วนที่มีอยู่แล้วโดยไม่ต้องพิมพ์ซ้ำ</li>
         </ul>
 
-        <blockquote>💡 ใน Week 4 เราเขียน <code>import type</code> เพราะโปรเจกต์นั้นเปิด <code>verbatimModuleSyntax</code> ไว้ แต่ template ของโปรเจกต์นี้ไม่ได้เปิด option นั้น <code>import { Pagination }</code> แบบธรรมดาจึงใช้ได้ — TypeScript รู้เองว่าเป็น type แล้วตัดทิ้งตอน build ให้</blockquote>
+        <blockquote>💡 ในคอร์ส React พื้นฐาน เราเขียน <code>import type</code> เพราะโปรเจกต์นั้นเปิด <code>verbatimModuleSyntax</code> ไว้ แต่ template ของโปรเจกต์นี้ไม่ได้เปิด option นั้น <code>import { Pagination }</code> แบบธรรมดาจึงใช้ได้ — TypeScript รู้เองว่าเป็น type แล้วตัดทิ้งตอน build ให้</blockquote>
 
         <h2>สร้าง src/shared/utils/pagination.utils.ts</h2>
 

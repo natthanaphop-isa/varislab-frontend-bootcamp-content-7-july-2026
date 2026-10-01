@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Refactor การต่อข้อความด้วยเครื่องหมาย + ให้อ่านง่ายขึ้นด้วย template literal ที่ใช้ backtick และแทรกค่าตัวแปรด้วย ${}" />
+    <title>ประกอบข้อความด้วย Template Literal | สร้างฟอร์มรับข้อมูลคอร์ส</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 06 · เริ่มคิดแบบ JavaScript (Thinking in JavaScript)</p>
+          <h1>ประกอบข้อความด้วย Template Literal</h1>
+          <p class="lesson-original-title" lang="en">Template Literals</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เขียนข้อความด้วย backtick (<code>`</code>) และแทรกค่าตัวแปรด้วย <code>${…}</code></li>
+            <li>Refactor โค้ดต่อข้อความด้วย <code>+</code> ให้เป็น template literal โดยผลลัพธ์ยังเหมือนเดิม</li>
+            <li>อธิบายได้ว่าการขึ้นบรรทัดใหม่ใน template literal แสดงผลบนหน้าเว็บอย่างไร</li>
+          </ul>
+        </section>
+
+        <h2>ปัญหาของการต่อข้อความด้วย +</h2>
+        <p>ลองดูโค้ดส่วนแสดงผลจากบทที่แล้วอีกครั้ง:</p>
+        <pre><code class="language-javascript">resultBox.textContent =
+  "สวัสดีครับคุณ " +
+  fullName +
+  " เป้าหมายของคุณคือ " +
+  goal +
+  " ระดับพื้นฐานตอนนี้คือ " +
+  level +
+  " ข้อความเพิ่มเติม: " +
+  message;
+</code></pre>
+        <p>มันทำงานได้ แต่อ่านยาก ต้องคอยเปิดปิดเครื่องหมายคำพูด ใส่ <code>+</code> ทุกช่วง และระวังช่องว่างหน้าหลังข้อความ ยิ่งข้อความยาว โอกาสพิมพ์พลาดยิ่งเยอะ</p>
+
+        <h2>Template Literal คืออะไร</h2>
+        <p>Template literal คือข้อความที่ครอบด้วยเครื่องหมาย <strong>backtick</strong> <code>`</code> (ปุ่มเดียวกับ <code>~</code> มุมซ้ายบนของคีย์บอร์ดส่วนใหญ่) แทนเครื่องหมายคำพูด ข้างในเราแทรกค่าตัวแปรได้ด้วย <code>${ชื่อตัวแปร}</code>:</p>
+        <pre><code class="language-javascript">const fullName = "Man";
+
+// แบบเดิม
+"สวัสดีครับคุณ " + fullName
+
+// แบบ template literal
+`สวัสดีครับคุณ ${fullName}`
+</code></pre>
+        <p>ทั้งสองบรรทัดได้ข้อความ <code>"สวัสดีครับคุณ Man"</code> เหมือนกัน — <code>${fullName}</code> แปลว่า "เอาค่าของตัวแปร <code>fullName</code> มาใส่ตรงนี้"</p>
+
+        <h2>Step 5: Refactor script.js</h2>
+        <p>แก้ส่วน <code>resultBox.textContent</code> ใน <code>script.js</code> ให้เป็น template literal ไฟล์ทั้งไฟล์จะเป็นแบบนี้:</p>
+        <pre><code class="language-javascript">const inquiryForm = document.getElementById("inquiryForm");
+const fullNameInput = document.getElementById("fullName");
+const goalInput = document.getElementById("goal");
+const levelSelect = document.getElementById("level");
+const messageInput = document.getElementById("message");
+const resultBox = document.getElementById("result");
+
+inquiryForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const fullName = fullNameInput.value;
+  const goal = goalInput.value;
+  const level = levelSelect.value;
+  const message = messageInput.value;
+
+  resultBox.textContent = `สวัสดีครับคุณ ${fullName}
+เป้าหมายของคุณคือ ${goal}
+ระดับพื้นฐานตอนนี้คือ ${level}
+ข้อความเพิ่มเติม: ${message}`;
+});
+</code></pre>
+        <p>อ่านง่ายขึ้นมาก ข้อความเรียงเป็นบรรทัดเหมือนผลลัพธ์ที่อยากได้ และไม่มี <code>+</code> ให้พลาดอีกแล้ว การปรับโค้ดให้อ่านง่ายขึ้นโดยที่<strong>การทำงานยังเหมือนเดิม</strong>แบบนี้เรียกว่า <strong>refactor</strong></p>
+
+        <div class="warning">
+          <p>ต้องใช้ backtick <code>`</code> เท่านั้น ถ้าเผลอใช้ <code>"</code> หรือ <code>'</code> ครอบ JavaScript จะแสดง <code>${fullName}</code> ออกมาตรง ๆ เป็นตัวอักษร ไม่ได้แทนค่าให้ และถ้าขึ้นบรรทัดใหม่ในข้อความที่ครอบด้วย <code>"</code> จะเกิด error ทันที</p>
+        </div>
+
+        <div class="note">
+          <p>ใน template literal ช่องว่างและการขึ้นบรรทัดใหม่ถือเป็นส่วนหนึ่งของข้อความ นี่คือเหตุผลที่บรรทัด <code>เป้าหมายของคุณคือ …</code> ในโค้ดถูกเขียนชิดซ้ายสุด ไม่ได้ย่อหน้าตามโค้ดด้านบน — ถ้าย่อหน้า ช่องว่างเหล่านั้นจะติดไปในข้อความด้วย</p>
+        </div>
+
+        <h2>ทำไมบนหน้าเว็บยังเห็นเป็นบรรทัดเดียว</h2>
+        <p>ข้อความของเรามีการขึ้นบรรทัดใหม่อยู่จริง แต่โดยปกติ browser จะ<strong>ยุบการขึ้นบรรทัดใหม่ในข้อความให้กลายเป็นช่องว่าง</strong> ดังนั้นในกล่องผลลัพธ์คุณจะเห็นข้อความต่อกันเป็นย่อหน้าเดียว ซึ่งเป็นพฤติกรรมปกติ ไม่ใช่ bug ในโค้ดของเรา (ถ้าอยากทดลองให้แสดงแยกบรรทัด ดูไอเดียได้ในบทที่ 9)</p>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>กรอกฟอร์มแล้วกดส่ง ได้ข้อความสรุปเหมือนบทที่แล้วทุกอย่าง (ต่างกันแค่ในโค้ดที่อ่านง่ายขึ้น) — ถ้าเห็น <code>${fullName}</code> โผล่มาในกล่องผลลัพธ์ แปลว่าใช้เครื่องหมายครอบผิด</p>
+        </section>
+
+        <div class="verification">
+          <ul>
+            <li>หาปุ่ม backtick บนคีย์บอร์ดของตัวเองเจอ</li>
+            <li>แปลงข้อความ <code>"เป้าหมาย: " + goal</code> เป็น template literal ได้เอง</li>
+            <li>อธิบายได้ว่า <code>${level}</code> ทำอะไร</li>
+            <li>ผลลัพธ์หลัง refactor เหมือนก่อน refactor</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="05_reading_form_values.html" rel="prev">ก่อนหน้า: อ่านค่าจากฟอร์มด้วย JavaScript</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="07_if_else_validation.html" rel="next">ถัดไป: ตรวจสอบข้อมูลด้วย if/else</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

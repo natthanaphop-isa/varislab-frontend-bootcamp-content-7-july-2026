@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สร้าง @CurrentUser() ด้วย createParamDecorator แล้วเปิด GET /orders/me ที่กรองคำสั่งซื้อจาก token เท่านั้น พร้อมเปิดปุ่ม Authorize ใน Swagger UI" />
+  <title>@CurrentUser() และ GET /orders/me</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>@CurrentUser() และ GET /orders/me</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>สร้าง parameter decorator ของตัวเองด้วย <code>createParamDecorator</code> เพื่อดึงผู้ใช้ปัจจุบันออกมาใช้ใน handler</li>
+        <li>ออกแบบ endpoint ที่รู้ว่า "ของใคร" จาก token เท่านั้น จนไม่มีทางที่ client จะขอดูข้อมูลของคนอื่นได้</li>
+        <li>เปิดปุ่ม Authorize ใน Swagger UI แล้วทดสอบ endpoint ที่ต้องใช้ token ได้จากหน้าเอกสาร</li>
+      </ul>
+    </section>
+
+    <div class="note"><p>บทนี้มี prompt <strong>สองอันในสองแชท</strong> อันแรกเปิด endpoint อันที่สองทำให้หน้าเอกสารใช้ทดสอบ endpoint นั้นได้ — ทั้งคู่สั้นกว่าบทที่แล้วมาก</p></div>
+
+    <h2><code>request.user</code> ใช้ได้ แต่ไม่ควรใช้ตรง ๆ</h2>
+    <p>หลังผ่าน guard มาแล้ว payload ถูกแปะไว้ที่ <code>request.user</code> เรียบร้อย handler จึงอ่านได้ด้วย <code>@Req()</code> ซึ่งก็ทำงานได้จริง — แบบที่เห็นใน <code>GET /auth/me</code> ของบทที่แล้ว</p>
+    <p>ปัญหาของวิธีนั้นมีสองข้อเมื่อเริ่มมี endpoint หลายเส้นที่ต้องใช้ผู้ใช้ปัจจุบัน ข้อแรก handler ได้ object <code>Request</code> ทั้งก้อนมาทั้งที่ต้องการแค่ฟิลด์เดียว ซึ่งเปิดช่องให้ไปหยิบ header หรือ query จากใน handler ตามสะดวก จนเส้นแบ่งหน้าที่เลือนไป ข้อสองคือทุก handler ต้องรู้ว่า payload อยู่ที่ <code>request.user</code> — ถ้าวันหนึ่งย้ายไปอยู่ที่อื่น ต้องไล่แก้ทุกจุด</p>
+    <p>NestJS มีทางที่ตรงกว่า: <code>createParamDecorator</code> ให้เราประกาศ decorator ของตัวเองที่ทำหน้าที่ดึงค่าออกมาจาก context แล้วส่งเข้า parameter โดยตรง ผลคือ handler เขียนว่ามันต้องการอะไรไว้ในลายเซ็นของตัวเอง และความรู้เรื่อง "payload เก็บไว้ตรงไหน" ถูกรวบไว้ที่ไฟล์เดียว</p>
+
+    <h2>ความเป็นเจ้าของต้องมาจาก token เท่านั้น</h2>
+    <p>endpoint ที่คืน "ของฉัน" มีวิธีเขียนที่ผิดอยู่วิธีหนึ่งซึ่งดูสมเหตุสมผลมากจนเผลอทำกันบ่อย คือรับ <code>userId</code> เป็น query แล้วกรองตามนั้น</p>
+    <pre><code>GET /orders/me?userId=1     ← ผิด
+GET /orders/me              ← ถูก  (เลข id มาจาก token)</code></pre>
+    <p>แบบแรกแปลว่าใครที่ login แล้วก็เปลี่ยนเลขเป็นอะไรก็ได้เพื่อดูคำสั่งซื้อของคนอื่น — ช่องโหว่ชนิดนี้เรียกว่า IDOR (insecure direct object reference) และเป็นหนึ่งในบั๊กด้านสิทธิ์ที่พบบ่อยที่สุดในระบบจริง มันไม่ได้เกิดจากการลืมใส่ guard เพราะ guard ทำงานถูกต้องทุกประการ ผู้ใช้ login จริง token ถูกต้องจริง แต่ระบบดันเชื่อ<em>ข้อมูลที่ผู้ใช้พิมพ์มา</em>แทนที่จะเชื่อ<em>ข้อมูลที่ตัวเองเซ็นไว้</em></p>
+    <p>กฎง่าย ๆ คือ: อะไรที่เกี่ยวกับ "คุณเป็นใคร" ต้องอ่านจาก token เสมอ ห้ามรับจาก client แม้แต่ทางเดียว ในโค้ดของเราแปลว่า <code>GET /orders/me</code> ต้องไม่มี parameter ใด ๆ ที่เกี่ยวกับตัวตนเลย</p>
+    <div class="note"><p><code>POST /carts/add</code> ยังรับ <code>userId</code> จาก body อยู่เหมือนเดิม และนั่นถูกต้องสำหรับสัญญาฉบับนั้น เพราะมันเป็น endpoint สาธารณะที่ออกแบบไว้ก่อนจะมีระบบผู้ใช้ — React app ที่เรียกมันก็ไม่มี token จะส่งอยู่แล้ว ความต่างคือ <code>POST /carts/add</code> ไม่เคยอ้างว่ารู้ว่าคุณเป็นใคร ส่วน <code>/orders/me</code> อ้าง จึงต้องพิสูจน์ให้ได้</p></div>
+
+    <h2>Authorize ใน Swagger: ของแถมที่ตอนนี้ไม่ใช่ของแถมแล้ว</h2>
+    <p>ตอนเพิ่ม Swagger เข้าโปรเจกต์ เราเคยบอกว่า <code>.addBearerAuth()</code> เป็นตัวอย่างของสิ่งที่ AI ชอบเติมให้โดยไม่ได้ขอ และควรถามตัวเองว่าต้องการจริงไหม ตอนนั้นคำตอบที่ซื่อสัตย์คือ<strong>ไม่</strong> — ไม่มี endpoint ไหนต้องใช้ token สักเส้น ปุ่มที่กดแล้วไม่มีอะไรเปลี่ยนคือความรกบนหน้าจอ</p>
+    <p>ตอนนี้มีสองเส้นที่ต้องใช้ token แล้ว คำตอบจึงเปลี่ยน นี่คือความต่างระหว่าง "ของแถมที่ไม่ได้ขอ" กับ "ของที่ขอเพราะมีเหตุผลรองรับ" — ตัวโค้ดเหมือนกันทุกตัวอักษร ต่างกันที่ว่าตอบคำถามว่า "ทำไมต้องมี" ได้หรือเปล่า</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <p>รายการด้านล่างคือไฟล์ที่เปลี่ยนใน<strong>โค้ดอ้างอิงของคอร์ส</strong> — ใช้เป็นแผนที่ตอนเทียบงาน ไม่ใช่ข้อบังคับ Cursor ของคุณอาจวางไฟล์หรือตั้งชื่อต่างไปได้ ขอแค่ผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
+    <pre><code>ecommerce-api/
+└── src/
+    ├── main.ts                          (แก้ไข: addBearerAuth — prompt ที่สอง)
+    ├── auth/
+    │   ├── current-user.decorator.ts    (สร้างใหม่ — prompt แรก)
+    │   └── auth.controller.ts           (แก้ไข: ใช้ @CurrentUser — prompt แรก)
+    └── orders/
+        ├── orders.controller.ts         (สร้างใหม่ — prompt แรก)
+        ├── orders.service.ts            (แก้ไข: เพิ่ม findMine — prompt แรก)
+        └── orders.module.ts             (แก้ไข: ลงทะเบียน controller — prompt แรก)</code></pre>
+    <ul>
+      <li><strong><code>src/auth/current-user.decorator.ts</code></strong> — ในโค้ดอ้างอิง: <code>createParamDecorator</code> ที่คืน <code>request.user</code> พร้อม type ที่ชัดเจน</li>
+      <li><strong><code>src/orders/orders.controller.ts</code></strong> — ในโค้ดอ้างอิง: <code>@Controller('orders')</code> ที่มี <code>@Get('me')</code> เส้นเดียว · <strong>ไม่</strong>ติด <code>@Public()</code> · ไม่รับ parameter ที่เกี่ยวกับตัวตนเลย</li>
+      <li><strong><code>src/orders/orders.service.ts</code></strong> — ในโค้ดอ้างอิง: <code>findMine(userId)</code> ที่กรองด้วย <code>where: { userId }</code> และเรียงจากใหม่ไปเก่า · ใช้ mapper ตัวเดิมของคำสั่งซื้อ</li>
+      <li>ไม่มีไฟล์ใน <code>test/</code> หรือ <code>prisma/</code> เปลี่ยนในบทนี้ และ <code>POST /carts/add</code> ไม่ถูกแตะ</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="orders-heading">
+      <h2 id="orders-heading">Prompt แรก: เปิด GET /orders/me</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before orders/me"</code>)</p>
+      <div class="cursor-prompt"><code>สร้าง endpoint GET /orders/me ที่คืนเฉพาะคำสั่งซื้อของผู้ใช้ที่ token ระบุ
+@docs/auth-spec.md @src/orders/orders.service.ts @src/orders/orders.module.ts
+
+ผลลัพธ์ที่ต้องได้:
+- GET /orders/me พร้อม token → 200 และเป็น array ของคำสั่งซื้อที่ userId ตรงกับ sub ใน token เท่านั้น เรียงจากใหม่ไปเก่า
+- ไม่มี token → 401
+- เลข userId มาจาก token เท่านั้น — ต้องไม่มีทางส่ง userId เข้ามาทาง query, body หรือ path เพื่อดูคำสั่งซื้อของคนอื่นได้เลย
+- รูปทรงของคำสั่งซื้อแต่ละใบตรงกับ order receipt ใน docs/api-spec.md โดยใช้ mapper ตัวเดิมที่มีอยู่ ไม่เขียนรูปทรงขึ้นใหม่
+- ผู้ใช้ที่ยังไม่เคยสั่งซื้อ → 200 พร้อม [] ไม่ใช่ 404
+- สร้าง decorator ของตัวเองสำหรับดึงผู้ใช้ปัจจุบันจาก request มาใช้ใน handler แทนการรับ Request ทั้งก้อน แล้วเอาไปใช้กับ GET /auth/me ที่มีอยู่แล้วด้วย
+- POST /carts/add ไม่เปลี่ยนเลย ยังเป็น public และยังรับ userId จาก body เหมือนเดิม
+- npm run test:e2e ยังได้ Tests  11 passed (11)
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแตะไฟล์ใน test/
+- ห้ามแก้ prisma/schema.prisma — Order.userId ยังเป็น Int เปล่า ๆ ไม่มี relation ไปหา User
+- ห้ามแก้ POST /carts/add หรือ cart.mapper.ts
+- ห้ามใช้ any, as หรือ !</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="orders-review-heading">
+      <h2 id="orders-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li><code>orders.controller.ts</code> <strong>ไม่มี</strong> <code>@Public()</code> ทั้งระดับ class และระดับ handler — ถ้ามี endpoint นี้จะเปิดโล่งและคืนคำสั่งซื้อโดยไม่ตรวจอะไรเลย</li>
+        <li>ลายเซ็นของ handler ไม่มี <code>@Query()</code>, <code>@Param()</code> หรือ <code>@Body()</code> ที่เกี่ยวกับตัวตนเลย — อ่านแล้วต้องเห็นได้ทันทีว่าไม่มีทางส่งเลขคนอื่นเข้ามา</li>
+        <li><code>where: { userId }</code> ใช้ค่าที่มาจาก token ตรง ๆ ไม่ได้ผ่านตัวแปรที่รับมาจาก request ที่อื่น</li>
+        <li>decorator ตัวใหม่ประกาศ type ของค่าที่คืนไว้ชัด ไม่ใช่ <code>any</code> และ <code>GET /auth/me</code> ถูกแก้ให้ใช้ตัวนี้แทน <code>@Req()</code> ด้วย</li>
+        <li>ใช้ mapper ของคำสั่งซื้อตัวเดิม (<code>toCartResponse</code>) — <code>grep -rn "discountedPrice" src/orders/</code> ต้องไม่เจอการคำนวณซ้ำที่ไหนใหม่</li>
+        <li>controller ใช้ <code>import type</code> กับ <code>JwtPayload</code> ไม่ใช่ <code>import</code> ธรรมดา — มันอยู่ในลายเซ็นของ method ที่มี decorator จึงเข้าเงื่อนไขของกติกาข้อนั้นใน <code>.cursor/rules</code> พอดี ถ้าผิด <code>nest start</code> จะพังด้วย <code>TS1272</code></li>
+        <li><code>git diff src/orders/carts.controller.ts</code> ว่างเปล่า และ <code>git diff --stat test/ prisma/</code> ว่างเปล่า</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> เพิ่ม <code>@Query('userId')</code> ให้ handler เพราะมันทำให้ทดสอบง่ายและ "ยืดหยุ่นกว่า" ซึ่งเปลี่ยน endpoint ส่วนตัวให้กลายเป็นช่องดูข้อมูลของทุกคนในระบบทันที อีกกรณีที่เจอคือ query คำสั่งซื้อทั้งหมดออกมาก่อนแล้วค่อย <code>filter</code> ใน JavaScript — ผลลัพธ์ถูกต้อง แต่ฐานข้อมูลต้องส่งคำสั่งซื้อของทุกคนข้ามเครือข่ายมาให้แอปทุกครั้ง และวันที่ข้อมูลเยอะขึ้นมันจะช้าลงเรื่อย ๆ โดยไม่มีใครสังเกต</p>
+      <p>โค้ดอ้างอิงของหัวข้อนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>// src/auth/current-user.decorator.ts
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import type { AuthenticatedRequest, JwtPayload } from './jwt-payload.interface.js';
+
+export const CurrentUser = createParamDecorator(
+  (_data: unknown, context: ExecutionContext): JwtPayload =&gt; {
+    return context.switchToHttp().getRequest&lt;AuthenticatedRequest&gt;().user;
+  },
+);</code></pre>
+      <p>พารามิเตอร์ตัวแรกชื่อ <code>_data</code> คือค่าที่ส่งเข้ามาตอนเรียก decorator เช่น <code>@CurrentUser('email')</code> เราไม่ได้ใช้มันในคอร์สนี้ จึงประกาศเป็น <code>unknown</code> แล้วขึ้นต้นชื่อด้วยขีดล่างเพื่อบอก linter ว่าตั้งใจไม่ใช้</p>
+      <pre><code>// src/orders/orders.controller.ts
+import { Controller, Get } from '@nestjs/common';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import type { JwtPayload } from '../auth/jwt-payload.interface.js';
+import { CartResponseDto } from './dto/cart-response.dto.js';
+import { OrdersService } from './orders.service.js';
+
+@ApiTags('orders')
+@Controller('orders')
+export class OrdersController {
+  constructor(private readonly ordersService: OrdersService) {}
+
+  @Get('me')
+  @ApiOkResponse({ type: [CartResponseDto] })
+  findMine(@CurrentUser() user: JwtPayload) {
+    return this.ordersService.findMine(user.sub);
+  }
+}</code></pre>
+      <p>ลายเซ็นบรรทัดนี้คือหลักฐานทั้งหมดที่ต้องใช้ตรวจว่า endpoint นี้ปลอดภัยจาก IDOR: มันรับค่าเดียวคือผู้ใช้ปัจจุบัน และค่านั้นมาจาก token ไม่ได้มาจาก request ที่ client ควบคุมได้</p>
+      <pre><code>// src/orders/orders.service.ts — เฉพาะส่วนที่เพิ่ม
+  async findMine(userId: number): Promise&lt;CartResponseDto[]&gt; {
+    const orders = await this.prisma.order.findMany({
+      where: { userId },
+      orderBy: { id: 'desc' },
+      include: { items: { orderBy: { id: 'asc' } } },
+    });
+
+    return orders.map(toCartResponse);
+  }</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไปต่อไม่ได้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="orders-result-heading">
+      <h2 id="orders-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>log ตอน start มีเส้นทางใหม่</p>
+      <pre><code>[RouterExplorer] Mapped {/orders/me, GET} route</code></pre>
+      <p>บัญชีที่เพิ่งสมัครยังไม่มีคำสั่งซื้อ จึงได้ array ว่าง ไม่ใช่ <code>404</code></p>
+      <pre><code>[]</code></pre>
+      <p>หลังสั่งซื้อด้วยเลข <code>userId</code> ของตัวเองหนึ่งครั้ง จะเห็นใบนั้นโผล่มาเป็นใบแรกของ array</p>
+      <div class="note"><p>อย่าคาดหวังว่าจำนวนใบจะเป็น <code>1</code> เสมอไป — e2e test ของคำสั่งซื้อกับตอนที่เราทดลองสั่งผ่าน React app ก็เขียนแถวจริงลงตาราง <code>Order</code> ด้วย <code>userId</code> เลข <code>1</code> ไปแล้วหลายใบ สิ่งที่ต้องตรวจคือ "ใบที่เพิ่งสั่งอยู่ในผลลัพธ์" และ "ทุกใบเป็นของเราคนเดียว" ไม่ใช่ตัวเลขตายตัว</p></div>
+    </section>
+
+    <section class="workshop" aria-labelledby="swagger-heading">
+      <h2 id="swagger-heading">Prompt ที่สอง: เปิดปุ่ม Authorize ใน Swagger</h2>
+      <p>commit งานของ prompt แรกไว้ก่อน (<code>git add -A &amp;&amp; git commit -m "feat: orders/me and current user decorator"</code>) แล้วเปิดแชทใหม่</p>
+      <div class="cursor-prompt"><code>เปิดปุ่ม Authorize ใน Swagger UI ให้ทดสอบ endpoint ที่ต้องใช้ token ได้
+@src/main.ts @src/auth/auth.controller.ts @src/orders/orders.controller.ts
+
+ผลลัพธ์ที่ต้องได้:
+- Swagger UI ที่ /api มีปุ่ม Authorize — วาง access token ลงไปแล้วกด Try it out ที่ GET /auth/me และ GET /orders/me ได้ 200
+- /api-json มี components.securitySchemes แบบ type: http, scheme: bearer, bearerFormat: JWT
+- ณ ตอนนี้มีเฉพาะ /auth/me กับ /orders/me เท่านั้นที่มี security กำกับไว้ ส่วนหกเส้นที่เป็น public ต้องไม่มี
+- endpoint สาธารณะยังกด Try it out ได้โดยไม่ต้อง Authorize
+- npm run test:e2e ยังได้ Tests  11 passed (11)
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่ (@nestjs/swagger ติดตั้งแล้ว)
+- ห้ามแก้ logic ของ endpoint ไหนเลย เพิ่มได้แค่การตั้งค่า Swagger กับ decorator
+- ห้ามใส่ addApiKey, addOAuth2, addTag หรือ scheme อื่นที่ไม่ได้ขอ
+- ห้ามแตะไฟล์ใน test/</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="swagger-review-heading">
+      <h2 id="swagger-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li><code>.addBearerAuth()</code> ถูกเพิ่มต่อจาก <code>.setVersion()</code> และก่อน <code>.build()</code> — ไม่มี <code>.addTag()</code> หรือ scheme อื่นแถมมาด้วย</li>
+        <li><code>@ApiBearerAuth()</code> ติดเฉพาะสองเส้นที่ต้องใช้ token ไม่ได้เหมาเอาไปติดที่ <code>@Controller</code> ของ <code>AuthController</code> ซึ่งจะทำให้ signup กับ login ขึ้นรูปกุญแจทั้งที่ไม่ต้องใช้</li>
+        <li>ชื่อ scheme ที่ใช้ตอน <code>.addBearerAuth()</code> กับตอน <code>@ApiBearerAuth()</code> ตรงกัน (หรือใช้ค่าปริยายทั้งคู่) — ถ้าไม่ตรง ปุ่มจะกดได้แต่ token จะไม่ถูกแนบไปจริง</li>
+        <li><code>src/main.ts</code> ไม่มีอะไรเปลี่ยนนอกจากบรรทัดของ Swagger</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ตั้งชื่อ scheme ตอนประกาศเป็น <code>'JWT-auth'</code> แล้วใช้ <code>@ApiBearerAuth()</code> เปล่า ๆ ที่ handler ซึ่งอ้างถึงชื่อปริยาย <code>'bearer'</code> ผลคือหน้า Swagger มีปุ่มให้กด กรอก token ได้ แต่เวลากด Try it out จริง header ไม่ถูกแนบไป แล้วได้ <code>401</code> กลับมาโดยไม่มีอะไรบอกว่าเพราะอะไร</p>
+      <p>โค้ดอ้างอิงของหัวข้อนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>// src/main.ts — เฉพาะส่วนที่เปลี่ยน
+  const config = new DocumentBuilder()
+    .setTitle('E-commerce API')
+    .setDescription("E-commerce API designed from the React storefront's own contract (see docs/api-spec.md)")
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();</code></pre>
+      <pre><code>// src/orders/orders.controller.ts — เฉพาะบรรทัดที่เพิ่ม
+  @Get('me')
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: [CartResponseDto] })
+  findMine(@CurrentUser() user: JwtPayload) {</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="swagger-result-heading">
+      <h2 id="swagger-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>เปิด <code>http://localhost:3000/api</code> จะเห็นปุ่ม <strong>Authorize</strong> มุมขวาบน กดแล้ววาง access token ลงไป (เฉพาะตัว token ไม่ต้องพิมพ์คำว่า <code>Bearer</code> นำหน้า Swagger ใส่ให้เอง) จากนั้นสองเส้นที่มีรูปกุญแจจะกด Try it out ได้</p>
+      <p>ใน <code>/api-json</code> จะมีก้อนนี้เพิ่มเข้ามา</p>
+      <pre><code>"securitySchemes": {
+  "bearer": { "scheme": "bearer", "bearerFormat": "JWT", "type": "http" }
+}</code></pre>
+      <p>และเฉพาะสองเส้นที่ต้องใช้ token เท่านั้นที่มีบรรทัด <code>"security"</code> กำกับ — ส่วน <code>/products/categories</code> และเพื่อน ๆ ต้องไม่มี</p>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>สั่งซื้อด้วยเลขผู้ใช้ของคุณเองหนึ่งใบ (ใช้เลข <code>sub</code> ที่ถอดจาก token ได้ในบทที่แล้ว)
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:3000/carts/add \
+  -H 'Content-Type: application/json' \
+  -d '{"userId":1,"products":[{"id":1,"quantity":2}],"address":{"address":"1 Main","email":"student@example.com","phone":"0812345678"}}'</code></pre></li>
+        <li>เรียก <code>/orders/me</code> แล้วตรวจสามอย่างพร้อมกัน: จำนวนใบ, ทุกใบเป็นของเรา, และใบล่าสุดคือใบที่เพิ่งสั่ง
+          <pre><code>curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/orders/me \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;{const a=JSON.parse(d);console.log('count =',a.length);console.log('all mine =',a.every(o=&gt;o.userId===1));console.log('latest id =',a[0].id)})"</code></pre></li>
+        <li>เทียบจำนวนกับความจริงในฐานข้อมูล — ตัวเลข <code>count</code> ข้างบนต้องตรงกับแถวของ <code>userId</code> นั้น
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce \
+  -c 'SELECT "userId", count(*) FROM "Order" GROUP BY "userId" ORDER BY "userId";'</code></pre>
+          ถ้ามี <code>userId</code> อื่นอยู่ในตารางด้วย แต่ <code>/orders/me</code> คืนมาเฉพาะของเรา นั่นคือหลักฐานว่าการกรองทำงานจริง</li>
+        <li>ไม่มี token → <code>401</code>
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3000/orders/me</code></pre></li>
+        <li>ลองแอบส่ง <code>userId</code> ของคนอื่นเข้าไป — ต้องไม่มีผลใด ๆ ผลลัพธ์ต้องเท่าเดิมทุกประการ
+          <pre><code>curl -s -H "Authorization: Bearer $TOKEN" 'http://localhost:3000/orders/me?userId=2' \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log(JSON.parse(d).every(o=&gt;o.userId===1)))"</code></pre>
+          ต้องได้ <code>true</code> — query string ถูกเพิกเฉยเพราะ handler ไม่ได้อ่านมันเลย</li>
+        <li>เอกสารมี security scheme และเฉพาะเส้นที่ควรมีเท่านั้นที่ถูกกำกับ
+          <pre><code>curl -s http://localhost:3000/api-json | grep -c securitySchemes</code></pre></li>
+        <li><code>npm run test:e2e</code> ยังได้ <code>Tests  11 passed (11)</code> และ <code>git diff --stat test/</code> ว่างเปล่า</li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: swagger bearer auth"</code></li>
+      </ul>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/custom-decorators#param-decorators">Custom decorators: createParamDecorator (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/openapi/security#bearer-authentication">OpenAPI: bearer authentication (NestJS Docs)</a></li>
+      <li><a href="https://owasp.org/Top10/A01_2021-Broken_Access_Control/">A01:2021 Broken Access Control (OWASP Top 10)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/filtering-and-sorting">Filtering and sorting (Prisma Docs)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="24_the-jwt-auth-guard.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="26_refresh-token-rotation.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สร้างโฟลเดอร์ developer-profile-page พร้อมไฟล์ index.html และ style.css เพื่อใช้เป็นโปรเจกต์ฝึก Git" />
+    <title>สร้าง Developer Profile Page | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 03 · บันทึกประวัติใน Local Repository (Local Repository)</p>
+          <h1>สร้าง Developer Profile Page</h1>
+          <p class="lesson-original-title" lang="en">Create the Sample Project</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>สร้างโฟลเดอร์โปรเจกต์และเปิดด้วย VS Code จาก Terminal</li>
+            <li>สร้างไฟล์ <code>index.html</code> และ <code>style.css</code> ของ Developer Profile Page</li>
+            <li>เปิดดูหน้าเว็บใน browser เพื่อยืนยันว่าทำงานได้</li>
+          </ul>
+        </section>
+
+        <p>ก่อนจะใช้ Git เราต้องมีอะไรให้ Git ติดตามก่อน บทนี้เราจะสร้างหน้า profile แบบง่าย ๆ ที่มีแค่ HTML กับ CSS ซึ่งจะเป็นโปรเจกต์ที่ใช้ฝึกตลอดคู่มือ</p>
+
+        <h2>สร้างโฟลเดอร์โปรเจกต์</h2>
+        <p>ใน Terminal ให้ <code>cd</code> ไปยังที่ที่คุณเก็บโปรเจกต์ แล้วสร้างโฟลเดอร์ใหม่:</p>
+        <pre><code class="language-bash">mkdir developer-profile-page</code></pre>
+        <p>เข้าไปในโฟลเดอร์:</p>
+        <pre><code class="language-bash">cd developer-profile-page</code></pre>
+        <p>เปิดโฟลเดอร์นี้ด้วย VS Code:</p>
+        <pre><code class="language-bash">code .</code></pre>
+        <p>จุด <code>.</code> หมายถึง “โฟลเดอร์ปัจจุบัน” คำสั่งนี้จึงแปลว่า “เปิดโฟลเดอร์ที่ฉันอยู่ตอนนี้ด้วย VS Code”</p>
+
+        <div class="note">
+          <p>ถ้า <code>code .</code> ใช้ไม่ได้ ให้เปิด VS Code เอง แล้วเลือก <strong>File → Open Folder</strong> จากนั้นเลือกโฟลเดอร์ <code>developer-profile-page</code></p>
+        </div>
+
+        <h2>สร้างไฟล์ index.html</h2>
+        <p>สร้างไฟล์ชื่อ <code>index.html</code> ในโฟลเดอร์โปรเจกต์ แล้วใส่โค้ดนี้:</p>
+        <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+
+    &lt;meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    /&gt;
+
+    &lt;title&gt;Developer Profile&lt;/title&gt;
+
+    &lt;link rel="stylesheet" href="style.css" /&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+    &lt;main class="profile-card"&gt;
+      &lt;h1&gt;Somchai Developer&lt;/h1&gt;
+
+      &lt;p class="role"&gt;Aspiring Software Developer&lt;/p&gt;
+
+      &lt;p class="description"&gt;
+        I am learning web development and preparing to begin a career in
+        technology.
+      &lt;/p&gt;
+
+      &lt;section&gt;
+        &lt;h2&gt;Current Skills&lt;/h2&gt;
+
+        &lt;ul&gt;
+          &lt;li&gt;HTML&lt;/li&gt;
+          &lt;li&gt;CSS&lt;/li&gt;
+          &lt;li&gt;JavaScript Basics&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/section&gt;
+
+      &lt;a class="contact-button" href="mailto:hello@example.com"&gt;
+        Contact Me
+      &lt;/a&gt;
+    &lt;/main&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+        <p>
+          โครงหน้าเรียบง่าย: การ์ด <code>main.profile-card</code> หนึ่งใบ มีชื่อ ตำแหน่ง (<code>.role</code>) คำอธิบายสั้น ๆ (<code>.description</code>)
+          รายการทักษะ และปุ่มติดต่อ (<code>.contact-button</code>) ที่เป็นลิงก์ <code>mailto:</code> ส่วน <code>&lt;link rel="stylesheet" href="style.css" /&gt;</code>
+          คือการดึงไฟล์ CSS ที่เรากำลังจะสร้างเข้ามา
+        </p>
+
+        <h2>สร้างไฟล์ style.css</h2>
+        <p>สร้างไฟล์ชื่อ <code>style.css</code> ในโฟลเดอร์เดียวกัน แล้วใส่โค้ดนี้:</p>
+        <pre><code class="language-css">* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+
+  display: grid;
+  place-items: center;
+
+  padding: 24px;
+
+  font-family: Arial, sans-serif;
+
+  background-color: #f4f6f8;
+}
+
+.profile-card {
+  width: 100%;
+  max-width: 420px;
+
+  padding: 32px;
+
+  border-radius: 16px;
+
+  background-color: white;
+
+  box-shadow: 0 12px 30px rgb(0 0 0 / 10%);
+}
+
+.profile-card h1 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.role {
+  margin-top: 0;
+
+  font-weight: bold;
+  color: #2563eb;
+}
+
+.description {
+  line-height: 1.6;
+}
+
+.profile-card section {
+  margin-top: 24px;
+}
+
+.profile-card ul {
+  padding-left: 20px;
+}
+
+.contact-button {
+  display: inline-block;
+
+  margin-top: 16px;
+  padding: 12px 20px;
+
+  border-radius: 8px;
+
+  color: white;
+  background-color: #2563eb;
+
+  text-decoration: none;
+}
+
+.contact-button:hover {
+  background-color: #1d4ed8;
+}</code></pre>
+        <p>
+          <code>body</code> ใช้ <code>display: grid</code> คู่กับ <code>place-items: center</code> เพื่อจัดการ์ดไว้กลางจอ
+          <code>.profile-card</code> กว้างเต็มที่แต่ไม่เกิน <code>420px</code> จึงดูดีทั้งบนมือถือและจอใหญ่ ที่เหลือเป็นการแต่งสี ระยะห่าง และเงาของการ์ด
+        </p>
+
+        <h2>เปิดดูใน Browser</h2>
+        <p>ดับเบิลคลิกไฟล์ <code>index.html</code> (หรือลากไปวางใน browser) เพื่อตรวจสอบว่าเว็บไซต์ทำงานได้</p>
+
+        <div class="expected-result">
+          <p>ควรเห็นการ์ดสีขาวมุมโค้งอยู่กลางจอบนพื้นสีเทาอ่อน มีชื่อ <strong>Somchai Developer</strong> ตำแหน่งตัวหนาสีน้ำเงิน รายการ Current Skills และปุ่ม <strong>Contact Me</strong> สีน้ำเงินที่เข้มขึ้นเมื่อเอาเมาส์ไปชี้</p>
+        </div>
+
+        <p>ตอนนี้โครงสร้างโปรเจกต์ของเราเป็นแบบนี้:</p>
+        <pre class="file-tree">developer-profile-page/
+├── index.html
+└── style.css</pre>
+
+        <div class="warning">
+          <p>ถ้าหน้าเว็บไม่มีสไตล์เลย ให้ตรวจว่าไฟล์ชื่อ <code>style.css</code> สะกดตรงกับใน <code>href</code> และอยู่ในโฟลเดอร์เดียวกับ <code>index.html</code> และอย่าลืม <strong>save</strong> ไฟล์ทั้งสองก่อน refresh</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>มีโฟลเดอร์ <code>developer-profile-page</code> และเปิดอยู่ใน VS Code</li>
+            <li>มีไฟล์ <code>index.html</code> และ <code>style.css</code> พร้อมโค้ดครบ</li>
+            <li>เปิด <code>index.html</code> ใน browser แล้วเห็นการ์ด profile ที่มีสไตล์ถูกต้อง</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="02_install_and_configure_git.html" rel="prev">ก่อนหน้า: ตรวจสอบการติดตั้งและตั้งค่า Git</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="04_git_init_and_status.html" rel="next">ถัดไป: เริ่ม Repository ด้วย git init และ git status</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

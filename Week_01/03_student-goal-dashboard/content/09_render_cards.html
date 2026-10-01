@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ใช้ forEach ร่วมกับ createElement, classList.add, innerHTML และ appendChild สร้างการ์ดนักเรียนจากข้อมูลแล้วแสดงบนหน้าเว็บ" />
+    <title>สร้างการ์ดบนหน้าเว็บด้วย JavaScript | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 09 · สร้าง Student Goal Dashboard (Building the Dashboard)</p>
+          <h1>สร้างการ์ดบนหน้าเว็บด้วย JavaScript</h1>
+          <p class="lesson-original-title" lang="en">Version 2: Rendering Cards</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>สร้าง HTML element ใหม่ด้วย <code>document.createElement</code></li>
+            <li>ใส่ class ให้ element ด้วย <code>classList.add</code></li>
+            <li>เติม HTML ข้างใน element จากข้อมูลด้วย <code>innerHTML</code> และ template literal</li>
+            <li>นำ element ไปแสดงบนหน้าเว็บด้วย <code>appendChild</code></li>
+            <li>อธิบาย flow “ข้อมูล → loop → สร้าง HTML → แสดงผล” ได้ครบ 6 ขั้น</li>
+            <li>debug อาการที่เจอบ่อยตอน render การ์ด</li>
+          </ul>
+        </section>
+
+        <h2>JavaScript เวอร์ชัน 2</h2>
+        <p>ข้อมูลในบทที่แล้วถูกต้องแล้ว ตอนนี้เราจะเปลี่ยนจาก “แสดงใน Console” เป็น “สร้างการ์ดบนหน้าเว็บ” แทนที่โค้ดทั้งหมดใน <code>script.js</code> ด้วยโค้ดนี้:</p>
+        <pre><code class="language-javascript">const studentList = document.getElementById("studentList");
+
+const students = [
+  {
+    name: "Man",
+    goal: "เปลี่ยนสายงานเป็น Developer",
+    level: "เริ่มจากศูนย์",
+  },
+  {
+    name: "Jane",
+    goal: "สร้าง Portfolio",
+    level: "เคยเรียนมาบ้าง",
+  },
+  {
+    name: "Pond",
+    goal: "เข้าใจ Full-Stack",
+    level: "เคยทำโปรเจกต์เล็ก ๆ",
+  },
+];
+
+students.forEach(function (student) {
+  const studentCard = document.createElement("article");
+
+  studentCard.classList.add("student-card");
+
+  studentCard.innerHTML = `
+    &lt;h2&gt;${student.name}&lt;/h2&gt;
+    &lt;p&gt;&lt;strong&gt;เป้าหมาย:&lt;/strong&gt; ${student.goal}&lt;/p&gt;
+    &lt;p&gt;&lt;strong&gt;พื้นฐาน:&lt;/strong&gt; ${student.level}&lt;/p&gt;
+    &lt;span class="badge"&gt;Bootcamp Student&lt;/span&gt;
+  `;
+
+  studentList.appendChild(studentCard);
+});</code></pre>
+
+        <h2>อธิบายทีละบรรทัด</h2>
+
+        <h3>1. หา container</h3>
+        <pre><code class="language-javascript">const studentList = document.getElementById("studentList");</code></pre>
+        <p>ไปหากล่อง <code>&lt;div id="studentList"&gt;</code> ที่เตรียมไว้ใน HTML เพื่อใช้วางการ์ดนักเรียน เราหาแค่<strong>ครั้งเดียว</strong>นอก loop เพราะทุกการ์ดใส่ลงกล่องเดียวกัน</p>
+
+        <h3>2. วนผ่านนักเรียนทุกคน</h3>
+        <pre><code class="language-javascript">students.forEach(function (student) {</code></pre>
+        <p>ให้วนผ่านนักเรียนทุกคนใน array <code>students</code> ในแต่ละรอบ JavaScript จะหยิบนักเรียนหนึ่งคนมาเก็บไว้ในตัวแปร <code>student</code> โค้ดทุกบรรทัดใน loop จึงทำงาน 3 รอบ ได้การ์ด 3 ใบ</p>
+
+        <h3>3. สร้าง element ใหม่</h3>
+        <pre><code class="language-javascript">const studentCard = document.createElement("article");</code></pre>
+        <p>สร้าง HTML element ใหม่ขึ้นมาหนึ่งอัน เป็นแท็ก <code>&lt;article&gt;</code> ตอนนี้มันยังเป็นกล่องเปล่า ๆ ที่อยู่ในหน่วยความจำ <strong>ยังไม่ได้อยู่บนหน้าเว็บ</strong></p>
+
+        <h3>4. ใส่ class</h3>
+        <pre><code class="language-javascript">studentCard.classList.add("student-card");</code></pre>
+        <p>ใส่ class ชื่อ <code>student-card</code> ให้ element นี้ เพื่อให้ CSS ที่เราเขียนรอไว้ในบทที่ 7 ตกแต่งหน้าตาได้ ผลเหมือนเขียน <code>&lt;article class="student-card"&gt;</code> ใน HTML</p>
+
+        <h3>5. ใส่เนื้อหาข้างในการ์ด</h3>
+        <pre><code class="language-javascript">studentCard.innerHTML = `
+  &lt;h2&gt;${student.name}&lt;/h2&gt;
+  ...
+`;</code></pre>
+        <p>ใส่ HTML ข้างในการ์ดโดยใช้ข้อมูลจาก <code>student</code> สองเรื่องที่ควรรู้:</p>
+        <ul>
+          <li><strong>Backtick <code>`</code></strong> — ข้อความที่ครอบด้วย backtick เรียกว่า <strong>template literal</strong> เขียนข้อความหลายบรรทัดได้ (เครื่องหมายคำพูด <code>"</code> ธรรมดาทำไม่ได้) ปุ่ม backtick มักอยู่ใต้ปุ่ม <kbd>Esc</kbd> บนคีย์บอร์ด</li>
+          <li><strong><code>${ }</code></strong> — ช่องสำหรับแทรกค่าจาก JavaScript ลงในข้อความ เช่น <code>${student.name}</code> จะถูกแทนด้วย <code>Man</code> ในรอบแรก และ <code>Jane</code> ในรอบที่สอง</li>
+        </ul>
+
+        <h3>6. นำการ์ดไปแสดงบนหน้าเว็บ</h3>
+        <pre><code class="language-javascript">studentList.appendChild(studentCard);</code></pre>
+        <p>เอาการ์ดที่สร้างเสร็จแล้วไปใส่เป็นลูกตัวสุดท้ายของ <code>studentList</code> บรรทัดนี้คือจังหวะที่การ์ด<strong>ปรากฏบนหน้าเว็บจริง</strong> ถ้าลืมบรรทัดนี้ การ์ดจะถูกสร้างขึ้นมาแต่ไม่มีใครเห็น</p>
+
+        <section class="expected-result">
+          <h2>ผลลัพธ์ที่ควรเห็น</h2>
+          <p>refresh หน้าเว็บ ใต้คำอธิบายจะมีการ์ดสีน้ำเงินเทา 3 ใบเรียงกันเป็นแถวเดียว 3 คอลัมน์ แต่ละใบมีชื่อนักเรียนสีฟ้า (Man, Jane, Pond) บรรทัด <strong>เป้าหมาย:</strong> และ <strong>พื้นฐาน:</strong> และป้าย <strong>Bootcamp Student</strong> ด้านล่าง</p>
+          <p>ถ้าคลิกขวาที่การ์ดแล้วเลือก Inspect จะเห็นในแท็บ Elements ว่ามี <code>&lt;article class="student-card"&gt;</code> 3 ตัวอยู่ใน <code>&lt;div id="studentList"&gt;</code> ทั้งที่ในไฟล์ HTML กล่องนี้ว่างเปล่า — JavaScript เป็นคนสร้างมันขึ้นมา</p>
+        </section>
+
+        <h2>Flow ที่ควรจำ</h2>
+        <ol>
+          <li>มีข้อมูลอยู่ใน array</li>
+          <li>array เก็บ object หลายตัว</li>
+          <li>object แต่ละตัวคือข้อมูลหนึ่งรายการ</li>
+          <li>loop วนผ่านข้อมูลทีละตัว</li>
+          <li>สร้าง HTML จากข้อมูล</li>
+          <li>เอา HTML ไปแสดงบนหน้าเว็บ</li>
+        </ol>
+        <p>นี่คือ pattern ที่จะเจอบ่อยมากเมื่อไปเรียน React ในอนาคต ตอนนี้เราเขียนแบบ manual ก่อน เพื่อให้เข้าใจพื้นฐานว่าเบื้องหลังเกิดอะไรขึ้น</p>
+
+        <h2>Debug: อาการที่เจอบ่อยตอน render การ์ด</h2>
+
+        <h3>หน้าเว็บไม่มีการ์ด และ Console มี error เรื่อง <code>null</code></h3>
+        <p>ใน Chrome จะเห็นประมาณนี้:</p>
+        <pre><code class="language-text">Uncaught TypeError: Cannot read properties of null (reading 'appendChild')</code></pre>
+        <p>อ่านทีละส่วน: “อ่าน property ของ <code>null</code> ไม่ได้ (ตอนกำลังเรียก <code>appendChild</code>)” แปลว่าตัวแปรที่อยู่หน้า <code>.appendChild</code> คือ <code>studentList</code> มีค่าเป็น <code>null</code> — <code>getElementById</code> หา element ไม่เจอ ให้เช็ก:</p>
+        <ul>
+          <li>id ใน HTML (<code>id="studentList"</code>) กับใน JavaScript (<code>getElementById("studentList")</code>) สะกดตรงกันทุกตัวหรือไม่</li>
+          <li><code>&lt;script&gt;</code> อยู่ท้าย <code>&lt;body&gt;</code> หรือไม่ (ดูบทที่ 7)</li>
+          <li>ใส่ <code>console.log(studentList);</code> ต่อจากบรรทัด <code>getElementById</code> เพื่อยืนยัน</li>
+        </ul>
+
+        <h3>การ์ดขึ้น แต่หน้าตาเป็นข้อความธรรมดา ไม่มีกรอบ</h3>
+        <p>CSS ไม่มีผลกับการ์ด มักเกิดจาก class ที่ใส่ใน <code>classList.add</code> สะกดไม่ตรงกับใน CSS (เช่น <code>"studentCard"</code> แทน <code>"student-card"</code>) หรือ <code>style.css</code> ไม่ได้เชื่อมกับ HTML</p>
+
+        <h3>การ์ดขึ้นคำว่า <code>undefined</code></h3>
+        <p>ชื่อ field ใน <code>${ }</code> ไม่ตรงกับใน object เช่น <code>${student.goals}</code> ทั้งที่ field ชื่อ <code>goal</code> หรือใช้ <code>${students.name}</code> (ชื่อ array) แทน <code>${student.name}</code></p>
+
+        <h3>แสดง <code>${student.name}</code> ออกมาตรง ๆ ทั้งข้อความ</h3>
+        <p>ใช้เครื่องหมายคำพูด <code>"</code> หรือ <code>'</code> แทน backtick <code>`</code> — <code>${ }</code> ทำงานเฉพาะใน template literal ที่ครอบด้วย backtick เท่านั้น</p>
+
+        <h3>การ์ดขึ้นซ้ำ มากกว่าจำนวนนักเรียน</h3>
+        <p>มักเกิดจากข้อมูลใน array ถูก copy วางซ้ำโดยไม่ตั้งใจ (เช่น array มี 8 object แทน 4) ใช้ <code>console.log(students.length);</code> ตรวจจำนวนก่อน แล้วลบชุดที่ซ้ำออก</p>
+
+        <div class="note">
+          <p><code>innerHTML</code> ตีความข้อความเป็น HTML จริง เหมาะกับข้อมูลที่เราเขียนเองในโค้ดอย่างในโปรเจกต์นี้ แต่ถ้าวันหนึ่งข้อมูลมาจากสิ่งที่ผู้ใช้พิมพ์เข้ามา ควรระวังและเลือกใช้ <code>textContent</code> กับข้อความเหล่านั้นแทน อ่านเพิ่มเติมได้ที่ <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML" target="_blank" rel="noreferrer">MDN: Element.innerHTML</a></p>
+        </div>
+
+        <h2>เทียบกับโค้ดที่เสร็จแล้ว</h2>
+        <p>เมื่อทำเสร็จ ลองเทียบโค้ดของคุณกับไฟล์ในโฟลเดอร์ <code>finish/</code> ของโปรเจกต์ ผลลัพธ์ต้องเป็นการ์ดนักเรียน 3 ใบเหมือนกัน (การเว้นบรรทัดและย่อหน้าต่างกันได้ ไม่มีผลกับการทำงาน)</p>
+
+        <div class="verification">
+          <ul>
+            <li>หน้าเว็บแสดงการ์ด 3 ใบ (Man, Jane, Pond) เรียง 3 คอลัมน์ พร้อมป้าย Bootcamp Student</li>
+            <li>ไม่มี error สีแดงใน Console</li>
+            <li>อธิบายได้ว่า <code>createElement</code>, <code>classList.add</code>, <code>innerHTML</code> และ <code>appendChild</code> ทำหน้าที่อะไร</li>
+            <li>ท่อง flow 6 ขั้นได้: array → object → ข้อมูลหนึ่งรายการ → loop → สร้าง HTML → แสดงบนหน้าเว็บ</li>
+            <li>เห็น error <code>Cannot read properties of null</code> แล้วรู้ว่าต้องเช็ก id ก่อน</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="08_console_first.html" rel="prev">ก่อนหน้า: ตรวจข้อมูลใน Console ก่อน</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="10_mini_challenges.html" rel="next">ถัดไป: Mini Challenge: ต่อยอด Dashboard</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

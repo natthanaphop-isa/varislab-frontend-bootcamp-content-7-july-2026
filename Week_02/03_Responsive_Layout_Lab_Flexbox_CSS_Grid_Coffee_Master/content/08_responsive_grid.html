@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ปรับ media query ของหน้า landing page ให้ grid เปลี่ยนจาก 3 คอลัมน์เป็น 2 และ 1 คอลัมน์ พร้อมปรับ hero, CTA, navbar และขนาดตัวอักษรบนจอเล็ก" />
+    <title>ทำ Grid ให้ Responsive | Responsive Layout Lab: Flexbox + CSS Grid</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 08 · ขัดเกลา UI และ Responsive (UI Polish &amp; Responsive)</p>
+          <h1>ทำ Grid ให้ Responsive</h1>
+          <p class="lesson-original-title" lang="en">Responsive Grid</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เปลี่ยนจำนวน column ของ Grid ตามขนาดจอด้วย media query</li>
+            <li>ใช้ breakpoint 2 ระดับ (tablet และ mobile) ร่วมกันได้ถูกลำดับ</li>
+            <li>ทดสอบหน้าเว็บในหลายขนาดจอด้วย DevTools</li>
+          </ul>
+        </section>
+
+        <h2>เป้าหมาย</h2>
+        <p>เราใช้ media query กับ Flexbox มาแล้ว (เปลี่ยน <code>flex-direction</code> เป็น <code>column</code>) คราวนี้ใช้หลักเดียวกันกับ Grid แค่เปลี่ยนค่า <code>grid-template-columns</code>:</p>
+        <pre><code class="language-text">Desktop (กว้างกว่า 900px) = 3 columns
+Tablet  (ไม่เกิน 900px)    = 2 columns
+Mobile  (ไม่เกิน 600px)    = 1 column</code></pre>
+
+        <h2>แทนที่ media query เดิม</h2>
+        <p>ไฟล์เริ่มต้นมี <code>@media (max-width: 768px)</code> อยู่ท้ายไฟล์ เราจะ<strong>ลบบล็อกนั้นทิ้ง</strong> แล้วแทนด้วย 2 บล็อกนี้ (วางไว้ท้ายสุดของ <code>style.css</code> เสมอ):</p>
+        <pre><code class="language-css">/* Responsive */
+@media (max-width: 900px) {
+    .hero-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .features-section,
+    .pricing-cards {
+        flex-direction: column;
+    }
+
+    .curriculum-grid,
+    .audience-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cta-section {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    h1 {
+        font-size: 44px;
+    }
+
+    .section-header h2 {
+        font-size: 34px;
+    }
+}
+
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    main {
+        padding: 40px 20px;
+    }
+
+    h1 {
+        font-size: 36px;
+    }
+
+    .hero-description {
+        font-size: 18px;
+    }
+
+    .curriculum-grid,
+    .audience-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cta-section {
+        padding: 28px;
+    }
+}</code></pre>
+
+        <h2>อ่านทีละ breakpoint</h2>
+        <h3>ไม่เกิน 900px (tablet)</h3>
+        <ul>
+          <li><strong>Grid</strong> — <code>.curriculum-grid</code> และ <code>.audience-grid</code> เหลือ 2 คอลัมน์ รวม selector ไว้ด้วยกันได้เพราะทั้งคู่ต้องเปลี่ยนเหมือนกัน</li>
+          <li><strong>Flexbox</strong> — hero, feature cards และ pricing cards เรียงเป็นแนวตั้ง เพราะที่ความกว้างนี้การวางข้างกันเริ่มเบียด</li>
+          <li><strong>CTA</strong> — <code>flex-direction: column</code> ทำให้ปุ่มลงไปอยู่ใต้ข้อความ และ <code>align-items: flex-start</code> ให้ปุ่มชิดซ้ายตามข้อความ (ถ้าไม่ใส่ ค่า <code>center</code> เดิมจะดันทุกอย่างไปกลาง)</li>
+          <li><strong>Typography</strong> — ลดขนาด <code>h1</code> เหลือ 44px และหัวข้อ section เหลือ 34px</li>
+        </ul>
+        <h3>ไม่เกิน 600px (mobile)</h3>
+        <ul>
+          <li><strong>Grid</strong> — เหลือ 1 คอลัมน์ (<code>1fr</code>) card เรียงลงมาใบละแถว</li>
+          <li><strong>Navbar</strong> — โลโก้กับลิงก์เรียงแนวตั้ง ลิงก์ขึ้นบรรทัดใหม่ได้และอยู่กึ่งกลาง</li>
+          <li><strong>Spacing</strong> — ลด padding ของ <code>main</code> และของกล่อง CTA ให้เนื้อหามีพื้นที่มากขึ้นบนจอแคบ</li>
+          <li><strong>Typography</strong> — <code>h1</code> เหลือ 36px และคำอธิบายใน hero เหลือ 18px</li>
+        </ul>
+
+        <div class="note">
+          <p>บนจอ 500px ทั้งสองบล็อกทำงานพร้อมกัน (เพราะ 500 ≤ 900 และ 500 ≤ 600) ค่าที่ซ้ำกันอย่าง <code>grid-template-columns</code> หรือ <code>h1</code> จึงใช้ค่าจากบล็อกที่<strong>อยู่ทีหลัง</strong> — นี่คือเหตุผลที่บล็อก 600px ต้องวางหลังบล็อก 900px ส่วนค่าที่ไม่ได้เขียนทับ เช่น hero ที่เป็น column ก็ยังมีผลต่อไป</p>
+        </div>
+
+        <div class="warning">
+          <p><strong>ข้อผิดพลาดที่พบบ่อย</strong></p>
+          <ul>
+            <li>สลับลำดับ ให้บล็อก 600px อยู่ก่อน 900px — บนมือถือ grid จะกลายเป็น 2 คอลัมน์ เพราะบล็อก 900px มาทีหลังและเขียนทับ</li>
+            <li>วาง media query ไว้<em>ก่อน</em> rule ปกติ เช่นก่อน <code>.curriculum-grid</code> — rule ปกติที่อยู่ทีหลังจะเขียนทับค่าใน media query ทำให้ดูเหมือน responsive ไม่ทำงาน</li>
+            <li>ลืมลบ <code>@media (max-width: 768px)</code> เดิม — จะมีค่าจากสามบล็อกตีกัน ทำให้งงว่าค่ามาจากไหน</li>
+          </ul>
+        </div>
+
+        <h2>ทดสอบด้วย DevTools</h2>
+        <p>เปิด DevTools แล้วสลับเป็นโหมดจำลองอุปกรณ์ (device toolbar) หรือค่อย ๆ ลากหน้าต่างเบราว์เซอร์ให้แคบลง สังเกตจุดที่ layout เปลี่ยน:</p>
+        <ul>
+          <li>กว้างกว่า 900px — curriculum 3 คอลัมน์, hero ซ้าย-ขวา, CTA ข้อความซ้ายปุ่มขวา</li>
+          <li>ระหว่าง 601–900px — curriculum/audience 2 คอลัมน์, hero และ CTA เรียงแนวตั้ง</li>
+          <li>ไม่เกิน 600px — ทุก grid เหลือ 1 คอลัมน์, navbar เรียงแนวตั้ง</li>
+        </ul>
+
+        <div class="verification">
+          <ul>
+            <li>ใน <code>style.css</code> ไม่มี <code>@media (max-width: 768px)</code> แล้ว และมีบล็อก 900px ตามด้วย 600px อยู่ท้ายไฟล์</li>
+            <li>ที่ความกว้าง ~800px audience card 3 ใบแสดงเป็น 2 คอลัมน์ (ใบที่ 3 ลงไปแถวสอง)</li>
+            <li>ที่ความกว้าง ~400px card ทุกชุดเรียงใบละแถว และไม่มี scroll แนวนอน</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="07_ui_polish.html" rel="prev">ก่อนหน้า: ขัดเกลา UI ให้ดูเป็นมืออาชีพ</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="09_css_organization.html" rel="next">ถัดไป: จัด CSS เป็นหมวด</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

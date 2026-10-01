@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เชื่อม local repository กับ GitHub ด้วย git remote add origin ตั้งชื่อ branch หลักเป็น main และ push ครั้งแรกด้วย git push -u origin main" />
+    <title>เชื่อม Local กับ GitHub และ Push ครั้งแรก | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 09 · ส่งงานขึ้น GitHub (GitHub &amp; Remote Repository)</p>
+          <h1>เชื่อม Local กับ GitHub และ Push ครั้งแรก</h1>
+          <p class="lesson-original-title" lang="en">Connect &amp; Push to GitHub</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เพิ่ม remote ด้วย <code>git remote add origin</code> และตรวจสอบด้วย <code>git remote -v</code></li>
+            <li>อธิบายได้ว่า <code>origin</code> คืออะไร</li>
+            <li>ตรวจสอบและเปลี่ยนชื่อ branch หลักเป็น <code>main</code></li>
+            <li>push ครั้งแรกด้วย <code>git push -u origin main</code> และอธิบายแต่ละส่วนของคำสั่งได้</li>
+          </ul>
+        </section>
+
+        <h2>เชื่อม Local กับ GitHub</h2>
+        <p>นำ URL ที่ได้จากบทที่แล้วมาเพิ่มเป็น remote (อย่าลืมเปลี่ยน <code>username</code> เป็นชื่อ GitHub ของคุณ):</p>
+        <pre><code class="language-bash">git remote add origin https://github.com/username/developer-profile-page.git</code></pre>
+        <p>คำสั่งนี้ไม่มีผลลัพธ์อะไรแสดงออกมาถ้าสำเร็จ ให้ตรวจสอบด้วย:</p>
+        <pre><code class="language-bash">git remote -v</code></pre>
+        <p>ผลลัพธ์ตัวอย่าง:</p>
+        <pre><code class="language-text">origin  https://github.com/username/developer-profile-page.git (fetch)
+origin  https://github.com/username/developer-profile-page.git (push)</code></pre>
+        <p>สองบรรทัดนี้บอกว่า remote ชื่อ <code>origin</code> ใช้ URL นี้ทั้งตอนดึงข้อมูล (fetch) และตอนส่งข้อมูล (push)</p>
+
+        <h2>origin คืออะไร</h2>
+        <p>
+          <code>origin</code> คือ<strong>ชื่อเล่น</strong>ของ remote repository แทนที่จะต้องพิมพ์ URL ยาว ๆ ทุกครั้ง เราใช้คำว่า <code>origin</code> แทนได้เลย
+          ชื่อนี้ตั้งอะไรก็ได้ แต่โดยธรรมเนียม remote หลักมักตั้งชื่อว่า <code>origin</code>
+        </p>
+
+        <div class="warning">
+          <p>ถ้าเจอ <code>error: remote origin already exists.</code> แปลว่าเคยเพิ่ม <code>origin</code> ไปแล้ว ให้ตรวจด้วย <code>git remote -v</code> ถ้า URL ผิด ให้แก้ด้วย <code>git remote set-url origin NEW_REPOSITORY_URL</code> (แทน <code>NEW_REPOSITORY_URL</code> ด้วย URL ที่ถูกต้อง)</p>
+        </div>
+
+        <h2>ตรวจสอบ Branch หลัก</h2>
+        <pre><code class="language-bash">git branch</code></pre>
+        <p>
+          Git บางเครื่องตั้งชื่อ branch เริ่มต้นเป็น <code>master</code> บางเครื่องเป็น <code>main</code> ส่วน GitHub ใช้ <code>main</code> เป็นค่าเริ่มต้น
+          เพื่อให้ตรงกัน ถ้าเห็น branch ชื่อ <code>master</code> ให้เปลี่ยนเป็น <code>main</code>:
+        </p>
+        <pre><code class="language-bash">git branch -M main</code></pre>
+        <p>ตรวจสอบอีกครั้ง:</p>
+        <pre><code class="language-bash">git branch</code></pre>
+        <pre><code class="language-text">* main</code></pre>
+        <p>เครื่องหมาย <code>*</code> หมายถึง branch ที่กำลังใช้งานอยู่ (ถ้าเดิมเป็น <code>main</code> อยู่แล้ว จะรัน <code>git branch -M main</code> ซ้ำก็ไม่มีผลเสียอะไร)</p>
+
+        <h2>Push ครั้งแรก</h2>
+        <p>ส่ง repository ขึ้น GitHub:</p>
+        <pre><code class="language-bash">git push -u origin main</code></pre>
+        <p>ถ้าสำเร็จ ท้ายผลลัพธ์จะคล้าย:</p>
+        <pre><code class="language-text">To https://github.com/username/developer-profile-page.git
+ * [new branch]      main -&gt; main
+branch 'main' set up to track 'origin/main'.</code></pre>
+
+        <div class="note">
+          <p>
+            การ push ครั้งแรกผ่าน HTTPS Git จะขอให้ยืนยันตัวตนกับ GitHub บางเครื่องจะเปิดหน้าต่าง browser ให้ sign in
+            ถ้าถูกถาม password ใน Terminal ให้รู้ไว้ว่า GitHub <strong>ไม่รับ password ของบัญชี</strong>สำหรับคำสั่ง Git แล้ว ต้องใช้ personal access token แทน
+            ดูรายละเอียดได้ที่ <a href="https://docs.github.com/en/authentication" target="_blank" rel="noreferrer">docs.github.com/en/authentication</a>
+          </p>
+        </div>
+
+        <p>หลัง push สำเร็จ ให้ refresh หน้า repository บน GitHub ควรเห็น:</p>
+        <div class="expected-result">
+          <ul>
+            <li>ไฟล์ <code>index.html</code>, <code>style.css</code> และ <code>README.md</code></li>
+            <li>เนื้อหาของ README แสดงอยู่ใต้รายการไฟล์</li>
+            <li>จำนวน commit (3 commits) ซึ่งกดเข้าไปดู commit history ได้</li>
+          </ul>
+        </div>
+
+        <h3>อธิบายคำสั่ง git push -u origin main</h3>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>ส่วนของคำสั่ง</th><th>ความหมาย</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>git push</code></td><td>ส่ง commit ขึ้น remote</td></tr>
+              <tr><td><code>origin</code></td><td>ชื่อ remote repository ที่จะส่งไป</td></tr>
+              <tr><td><code>main</code></td><td>branch ที่ต้องการส่งขึ้นไป</td></tr>
+              <tr><td><code>-u</code></td><td>จดจำความสัมพันธ์ระหว่าง <code>main</code> ในเครื่องกับ <code>main</code> บน GitHub</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>เพราะ <code>-u</code> จำความสัมพันธ์ไว้แล้ว การ push ครั้งต่อ ๆ ไปบน <code>main</code> ใช้แค่:</p>
+        <pre><code class="language-bash">git push</code></pre>
+
+        <h2>Workflow ตอนนี้ครบวงจรแล้ว</h2>
+        <pre><code class="language-text">แก้ไขไฟล์
+    ↓
+git status
+    ↓
+git add
+    ↓
+git commit
+    ↓
+git push</code></pre>
+
+        <div class="verification">
+          <ul>
+            <li><code>git remote -v</code> แสดง <code>origin</code> พร้อม URL ของ repository คุณ ทั้ง fetch และ push</li>
+            <li><code>git branch</code> แสดง <code>* main</code></li>
+            <li><code>git push -u origin main</code> สำเร็จ</li>
+            <li>หน้า GitHub แสดงไฟล์ครบ 3 ไฟล์และมี commit history</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="08_create_github_repository.html" rel="prev">ก่อนหน้า: Local, Remote และการสร้าง Repository บน GitHub</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="10_what_is_a_branch.html" rel="next">ถัดไป: Branch คืออะไร และสร้าง Feature Branch</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

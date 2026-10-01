@@ -43,7 +43,7 @@ VITE_API_BASE_URL=https://dummyjson.com
 
         <h2>ทำไมต้อง axios ในเมื่อมี fetch</h2>
 
-        <p>ใน Week 4 เราเรียก API ด้วย <code>fetch</code> ที่มากับเบราว์เซอร์ ซึ่งใช้งานได้ดีในโปรเจกต์เล็ก แต่พอแอปโตขึ้น จุดอ่อนของมันจะเริ่มกวนใจ:</p>
+        <p>ในคอร์ส React พื้นฐาน เราเรียก API ด้วย <code>fetch</code> ที่มากับเบราว์เซอร์ ซึ่งใช้งานได้ดีในโปรเจกต์เล็ก แต่พอแอปโตขึ้น จุดอ่อนของมันจะเริ่มกวนใจ:</p>
 
         <ul>
           <li><strong><code>fetch</code> ไม่ถือว่า HTTP error เป็น error</strong> — server ตอบ 404 หรือ 500 กลับมา promise ก็ยัง resolve ปกติ! คุณต้องจำไปเช็ค <code>response.ok</code> เองทุกครั้ง ลืมเมื่อไหร่ bug เงียบเมื่อนั้น ส่วน axios จะ reject ให้ทันทีเมื่อ status ไม่ใช่ 2xx</li>

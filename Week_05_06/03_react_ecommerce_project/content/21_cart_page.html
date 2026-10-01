@@ -119,7 +119,7 @@ export default CartTable;
           <li><strong>ปุ่มลบต่อแถว</strong> — เครื่องหมาย × เรียก <code>onRemoveItem(item.id)</code> ส่งแค่ id เพราะ reducer ฝั่งโน้นต้องการแค่นั้นในการ filter แถวทิ้ง</li>
           <li><strong>ช่อง Price โชว์ส่วนลดเมื่อมีข้อมูล</strong> — จำ <code>originalPrice</code> ที่เราตั้งใจเก็บติดลง CartItem ตั้งแต่บทที่ 19 และคำนวณใส่ตอน Add to Cart ในบทที่ 20 ได้ไหม? มาเก็บดอกตรงนี้: ถ้ามีค่า เราโชว์ราคาเต็ม (ขีดฆ่า) กับยอด "You Save" ได้ทันทีโดยไม่ต้องถาม API สักคำ — ข้อมูลทุกอย่างอยู่ในตะกร้าครบแล้ว</li>
           <li><strong>ปุ่มปรับจำนวนกับกติกาขั้นต่ำ</strong> — ปุ่มลดจำนวนถูก <code>disabled</code> เมื่อ <code>quantity &lt;= 1</code>: reducer ของเราไม่มีกติกากันจำนวนติดลบ เราเลือกกันที่ UI แทน — จะเอาของออกจากตะกร้าต้องตั้งใจกดปุ่มลบ ไม่ใช่กดลดจนหายไปเองแบบงง ๆ สังเกตด้วยว่าใน JSX เราเขียนปุ่มด้วย <code>&amp;lt;</code> / <code>&amp;gt;</code> (HTML entity) ไม่ใช่พิมพ์ <code>&lt;</code> <code>&gt;</code> ตรง ๆ — เพราะเครื่องหมายน้อยกว่าใน JSX คือการเปิด tag เดี๋ยว parser งงตาย</li>
-          <li><strong>ช่อง Total ต่อแถวเป็นค่าคำนวณ</strong> — <code>price * quantity</code> คิดสดตอน render ไม่เก็บลง state ตามหลักที่ย้ำกันมาตั้งแต่ Week 4: อะไร derive ได้จาก state อย่าเก็บซ้ำ เดี๋ยวมันคลาดเคลื่อนกันเอง</li>
+          <li><strong>ช่อง Total ต่อแถวเป็นค่าคำนวณ</strong> — <code>price * quantity</code> คิดสดตอน render ไม่เก็บลง state ตามหลักที่ย้ำกันมาตั้งแต่คอร์ส React พื้นฐาน: อะไร derive ได้จาก state อย่าเก็บซ้ำ เดี๋ยวมันคลาดเคลื่อนกันเอง</li>
           <li><strong>รูปมี fallback</strong> — <code>item.image || "/placeholder.png"</code> กันตารางเลย์เอาต์พังถ้าข้อมูลรูปหลุดมาว่าง ๆ</li>
         </ul>
 

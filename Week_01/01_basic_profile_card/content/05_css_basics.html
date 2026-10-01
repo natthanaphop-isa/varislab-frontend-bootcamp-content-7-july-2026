@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เข้าใจรูปแบบ selector, property และ value ของ CSS แล้วเริ่มเขียน style.css ด้วยการตั้งพื้นหลังและจัดการ์ดให้อยู่กลางจอ" />
+    <title>พื้นฐาน CSS และการจัดพื้นหลัง | สร้าง Professional Profile Card</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 05 · ตกแต่งด้วย CSS (Styling with CSS)</p>
+          <h1>พื้นฐาน CSS และการจัดพื้นหลัง</h1>
+          <p class="lesson-original-title" lang="en">CSS Basics</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อ่านและเขียนกฎ CSS ในรูปแบบ <code>selector { property: value; }</code></li>
+            <li>เลือก element ด้วยชื่อ tag, class (<code>.</code>) และ id (<code>#</code>)</li>
+            <li>ตั้งพื้นหลังของหน้าและจัดการ์ดให้อยู่กลางจอ</li>
+          </ul>
+        </section>
+
+        <h2>CSS คืออะไร</h2>
+        <p>ตอนนี้หน้าเว็บเรามีโครงสร้างแล้ว แต่ยังดูธรรมดามาก CSS คือภาษาที่ใช้<strong>บอก browser ว่า element แต่ละตัวควรแสดงผลอย่างไร</strong> เช่น สี พื้นหลัง ระยะห่าง ขนาดตัวอักษร และรูปทรงของการ์ด</p>
+        <p>ไฟล์ <code>style.css</code> มีผลกับหน้าเว็บได้เพราะบรรทัด <code>&lt;link rel="stylesheet" href="style.css" /&gt;</code> ที่เราใส่ไว้ใน <code>&lt;head&gt;</code> ตั้งแต่บทที่ 03</p>
+
+        <h2>รูปแบบของกฎ CSS</h2>
+        <p>CSS ทุกกฎมี pattern หลักแบบเดียวกัน:</p>
+        <pre><code class="language-css">selector {
+  property: value;
+}</code></pre>
+        <ul>
+          <li><strong>selector</strong> — สิ่งที่เราต้องการเลือก (element ไหน)</li>
+          <li><strong>property</strong> — คุณสมบัติที่ต้องการเปลี่ยน (เช่น สีพื้นหลัง)</li>
+          <li><strong>value</strong> — ค่าที่กำหนดให้คุณสมบัตินั้น</li>
+        </ul>
+        <p>ตัวอย่าง:</p>
+        <pre><code class="language-css">body {
+  background: #0f172a;
+  color: white;
+}</code></pre>
+        <p>แปลว่า "เลือก <code>body</code> แล้วกำหนดพื้นหลังเป็นสีเข้ม และตัวหนังสือเป็นสีขาว" ค่า <code>#0f172a</code> คือรหัสสีแบบ hex ส่วน <code>white</code> คือชื่อสีที่ CSS รู้จัก</p>
+
+        <div class="warning">
+          <p>ทุกบรรทัด <code>property: value</code> ต้องปิดท้ายด้วย <code>;</code> และทุกกฎต้องมีวงเล็บปีกกา <code>{ }</code> ครบคู่ ถ้าลืมปีกกาปิดตัวเดียว กฎที่อยู่ถัดจากนั้นอาจไม่ทำงานทั้งหมด</p>
+        </div>
+
+        <h2>เลือก element ด้วย tag, class และ id</h2>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>แบบ</th>
+                <th>ตัวอย่าง selector</th>
+                <th>เลือกอะไรใน HTML</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ชื่อ tag</td>
+                <td><code>body</code>, <code>h1</code>, <code>button</code></td>
+                <td>ทุก element ที่เป็น tag นั้น</td>
+              </tr>
+              <tr>
+                <td>class (ขึ้นต้นด้วย <code>.</code>)</td>
+                <td><code>.profile-card</code></td>
+                <td><code>&lt;main class="profile-card"&gt;</code></td>
+              </tr>
+              <tr>
+                <td>id (ขึ้นต้นด้วย <code>#</code>)</td>
+                <td><code>#summary</code></td>
+                <td><code>&lt;p id="summary"&gt;</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>จำแบบง่าย ๆ ก่อน: <strong><code>.</code> ใช้เลือก class</strong> และ <strong><code>#</code> ใช้เลือก id</strong> (ใน HTML เราเขียนแค่ชื่อ ไม่ต้องมีจุดหรือ <code>#</code> นำหน้า)</p>
+
+        <h2>เริ่มเขียน style.css</h2>
+        <p>เปิดไฟล์ <code>style.css</code> แล้วเขียนสองกฎแรกนี้:</p>
+        <pre><code class="language-css">* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}</code></pre>
+
+        <h3>กฎ <code>*</code></h3>
+        <p><code>*</code> คือ selector ที่เลือก<strong>ทุก element</strong> ในหน้า <code>box-sizing: border-box</code> ทำให้ความกว้างที่เรากำหนดรวม <code>padding</code> และเส้นขอบไว้แล้ว เช่น การ์ดกว้าง <code>460px</code> ก็จะกว้าง 460px จริง ๆ แม้จะมี padding ข้างใน ทำให้คำนวณขนาดง่ายขึ้น</p>
+
+        <h3>กฎ <code>body</code></h3>
+        <ul>
+          <li><code>margin: 0</code> — ลบระยะขอบที่ browser ใส่ให้ body โดยอัตโนมัติ</li>
+          <li><code>min-height: 100vh</code> — ให้ body สูงอย่างน้อยเต็มความสูงหน้าจอ (<code>vh</code> คือ % ของความสูงหน้าจอ)</li>
+          <li><code>font-family: Arial, sans-serif</code> — ใช้ฟอนต์ Arial ถ้าเครื่องไม่มีให้ใช้ฟอนต์ sans-serif แทน</li>
+          <li><code>background: #0f172a</code> และ <code>color: white</code> — พื้นหลังสีน้ำเงินเข้มเกือบดำ ตัวหนังสือสีขาว</li>
+          <li><code>display: flex</code>, <code>justify-content: center</code>, <code>align-items: center</code> — สามบรรทัดนี้ทำงานร่วมกันเพื่อ<strong>จัดการ์ดให้อยู่กลางจอ</strong> ทั้งแนวนอนและแนวตั้ง (เรื่อง flexbox จะได้ลงลึกภายหลัง ตอนนี้ขอแค่รู้ว่ามันจัดให้อยู่ตรงกลาง)</li>
+        </ul>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>Save แล้ว refresh browser พื้นหลังทั้งหน้าจะเป็นสีเข้ม ตัวหนังสือเป็นสีขาว และเนื้อหาของการ์ดย้ายมาอยู่กลางจอ</p>
+        </section>
+
+        <h2>ลองเล่น: เปลี่ยนสีพื้นหลัง</h2>
+        <p>วิธีเรียน CSS ที่ดีที่สุดคือ<strong>แก้ค่า แล้วดูผลลัพธ์บนหน้าจอ</strong> ลองเปลี่ยนค่าพื้นหลังของ <code>body</code> จาก:</p>
+        <pre><code class="language-css">background: #0f172a;</code></pre>
+        <p>เป็นสีอื่น เช่น <code>background: darkgreen;</code> หรือรหัสสีที่คุณชอบ แล้ว save และ refresh ดูว่าหน้าเว็บเปลี่ยนอย่างไร ลองเสร็จแล้วจะเปลี่ยนกลับเป็น <code>#0f172a</code> หรือเก็บสีของคุณไว้ก็ได้</p>
+
+        <div class="note">
+          <p>ยังไม่ต้องจำ CSS ทุก property ได้ทั้งหมด ขอให้เข้าใจว่า CSS คือ "การเลือก element แล้วบอกว่ามันควรหน้าตาเป็นอย่างไร" ถ้าอยากรู้ว่า property ไหนทำอะไร เปิดดูได้ที่ <a href="https://developer.mozilla.org/en-US/docs/Web/CSS" target="_blank" rel="noreferrer">MDN CSS</a></p>
+        </div>
+
+        <section class="verification" aria-labelledby="check-heading">
+          <h2 id="check-heading">ก่อนไปบทถัดไป เช็กว่า</h2>
+          <ul>
+            <li>พื้นหลังหน้าเว็บเป็นสีเข้ม และเนื้อหาอยู่กลางจอ</li>
+            <li>อธิบายได้ว่า selector, property และ value คืออะไร</li>
+            <li>บอกได้ว่า <code>.profile-card</code> กับ <code>#summary</code> เลือก element ไหนใน HTML</li>
+          </ul>
+        </section>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="04_building_the_card.html" rel="prev">ก่อนหน้า: สร้างเนื้อหาของการ์ด</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="06_styling_the_card.html" rel="next">ถัดไป: ตกแต่งการ์ด ข้อความ และปุ่ม</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

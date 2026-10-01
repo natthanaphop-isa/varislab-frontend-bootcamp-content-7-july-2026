@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สรุปสิ่งที่ได้เรียนจากการสร้าง Professional Profile Card พร้อมโค้ดฉบับสมบูรณ์ การบ้าน Personal Developer Intro Card และคำถาม reflection" />
+    <title>สรุปบทเรียนและการบ้าน | สร้าง Professional Profile Card</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 09 · JavaScript และก้าวต่อไป (Interaction &amp; Wrap Up)</p>
+          <h1>สรุปบทเรียนและการบ้าน</h1>
+          <p class="lesson-original-title" lang="en">Wrap Up &amp; Homework</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>สรุปหน้าที่ของ HTML, CSS และ JavaScript จากโปรเจกต์ที่ทำจริง</li>
+            <li>เทียบโค้ดของคุณกับโค้ดฉบับสมบูรณ์ทั้ง 3 ไฟล์</li>
+            <li>รู้ว่าการบ้าน Personal Developer Intro Card ต้องส่งอะไรบ้าง</li>
+          </ul>
+        </section>
+
+        <h2>สิ่งที่เราได้เรียนไป</h2>
+        <p>เราเริ่มจากโปรเจกต์เล็กมาก แต่ concept ข้างในคือพื้นฐานของ Web Development จริง:</p>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>ภาษา</th>
+                <th>หน้าที่</th>
+                <th>ในโปรเจกต์นี้เราใช้ทำ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HTML</td>
+                <td>สร้างโครงสร้างของหน้าเว็บ</td>
+                <td>การ์ด, label, ชื่อ, ข้อความแนะนำตัว, ปุ่ม และการเชื่อมไฟล์ CSS/JS</td>
+              </tr>
+              <tr>
+                <td>CSS</td>
+                <td>ควบคุมหน้าตา สี ระยะห่าง และ layout</td>
+                <td>พื้นหลังเข้ม จัดการ์ดกลางจอ มุมโค้ง เงา ปุ่มแคปซูลที่เปลี่ยนสีตอน hover</td>
+              </tr>
+              <tr>
+                <td>JavaScript</td>
+                <td>เพิ่มการโต้ตอบกับผู้ใช้</td>
+                <td>กดปุ่มแล้วเปลี่ยนข้อความ</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>การ์ดนี้ยังไม่ใช่ระบบใหญ่ แต่คือจุดเริ่มต้นของ component ที่ใช้ในเว็บจริง ไม่ว่าจะเป็นหน้า Portfolio, หน้า Profile, หน้า Course, หน้า Product หรือระบบหลังบ้าน</p>
+        <p>การเป็น Developer ไม่ได้เริ่มจากการจำทุกอย่างได้ แต่เริ่มจาก<strong>การเข้าใจภาพรวม ทดลองแก้ ทดลองเปลี่ยน</strong> และค่อย ๆ สะสมความมั่นใจจากการลงมือทำ ถ้ายังจำ syntax ไม่ได้ทั้งหมด ไม่เป็นไรเลย ขอให้จำภาพนี้ไว้ก่อน:</p>
+        <blockquote>
+          <strong>HTML</strong> = โครงสร้าง<br />
+          <strong>CSS</strong> = หน้าตา<br />
+          <strong>JavaScript</strong> = พฤติกรรม
+        </blockquote>
+
+        <h2>โค้ดฉบับสมบูรณ์</h2>
+        <p>ใช้เทียบกับโค้ดของคุณ (ข้อความและชื่อในไฟล์ของคุณอาจต่างไปได้ ถ้าทำ Mini Challenge แล้ว)</p>
+        <pre class="file-tree">professional-profile-card/
+├── index.html
+├── style.css
+└── script.js</pre>
+
+        <h3><code>index.html</code></h3>
+        <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="th"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+    &lt;title&gt;Professional Profile Card&lt;/title&gt;
+    &lt;link rel="stylesheet" href="style.css" /&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+    &lt;main class="profile-card"&gt;
+      &lt;p class="label"&gt;Aspiring Software Developer&lt;/p&gt;
+
+      &lt;h1&gt;สวัสดีครับ ผมชื่อ Varis&lt;/h1&gt;
+
+      &lt;p id="summary"&gt;
+        ผมกำลังเริ่มต้นเส้นทางสู่สายงาน Software Developer
+        และกำลังเรียนรู้พื้นฐานการสร้าง Web Application
+      &lt;/p&gt;
+
+      &lt;button id="toggleButton"&gt;
+        ดูเป้าหมายของฉัน
+      &lt;/button&gt;
+    &lt;/main&gt;
+
+    &lt;script src="script.js"&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <h3><code>style.css</code></h3>
+        <pre><code class="language-css">* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-card {
+  width: 460px;
+  padding: 32px;
+  border-radius: 24px;
+  background: #1e293b;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.label {
+  color: #38bdf8;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 16px 0;
+  font-size: 32px;
+}
+
+#summary {
+  color: #cbd5e1;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+button {
+  margin-top: 24px;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  background: #38bdf8;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #7dd3fc;
+}</code></pre>
+
+        <h3><code>script.js</code></h3>
+        <pre><code class="language-javascript">const summary = document.getElementById("summary");
+const toggleButton = document.getElementById("toggleButton");
+
+toggleButton.addEventListener("click", function () {
+  summary.textContent =
+    "เป้าหมายของฉันคือการสร้างโปรเจกต์จริง เข้าใจพื้นฐาน Full-Stack และเตรียม Portfolio สำหรับสมัครงานสาย Developer";
+});</code></pre>
+
+        <h2>การบ้าน: Personal Developer Intro Card</h2>
+        <p>ปรับ Professional Profile Card นี้ให้เป็นของตัวคุณเอง</p>
+
+        <h3>Requirements</h3>
+        <ol>
+          <li>เปลี่ยนชื่อเป็นชื่อของตัวเอง</li>
+          <li>เปลี่ยน label เป็นเป้าหมายของตัวเอง เช่น <code>Aspiring Software Developer</code></li>
+          <li>เขียน summary แนะนำตัวเอง 2–3 บรรทัด</li>
+          <li>ทำให้ปุ่มกดแล้วเปลี่ยนข้อความได้</li>
+          <li>ปรับสีหรือ style อย่างน้อย 1 จุด</li>
+        </ol>
+
+        <h3>Bonus</h3>
+        <ol>
+          <li>เพิ่มปุ่ม Reset ที่กดแล้วข้อความกลับมาเหมือนเดิม</li>
+          <li>เพิ่ม section เล็ก ๆ เช่น ประสบการณ์เดิม หรือเป้าหมายหลังเรียนจบ</li>
+          <li>ปรับ layout ให้ดู professional ขึ้น</li>
+        </ol>
+
+        <div class="note">
+          <p>สำหรับ Bonus ข้อ 1 ลองนึกถึงสี่ขั้นจากบทที่ 07: หาข้อความ → หาปุ่ม (ปุ่มใหม่ต้องมี id ของตัวเอง) → รอฟังการคลิก → เปลี่ยนข้อความ คำถามที่ต้องคิดเองคือ "ข้อความเดิม" จะเอามาจากไหน</p>
+        </div>
+
+        <h3>Reflection ที่ต้องส่งพร้อมงาน</h3>
+        <ol>
+          <li>เข้าใจ HTML, CSS, JavaScript ต่างกันอย่างไร?</li>
+          <li>ตอนทำงานเจอ error อะไรไหม?</li>
+          <li>แก้ปัญหาอย่างไร?</li>
+          <li>อยากให้ช่วย review จุดไหน?</li>
+        </ol>
+
+        <div class="note">
+          <p>อย่ากลัวทำโค้ดพัง การทำให้พังแล้วค่อยแก้ คือวิธีเรียนเขียนโค้ดที่ดีที่สุดวิธีหนึ่ง ต่อจากนี้เราจะลงรายละเอียดมากขึ้นเกี่ยวกับ HTML structure, CSS layout และพื้นฐานการคิดแบบโปรแกรมเมอร์</p>
+        </div>
+
+        <section class="verification" aria-labelledby="check-heading">
+          <h2 id="check-heading">เช็กลิสต์ก่อนส่งงาน</h2>
+          <ul>
+            <li>การ์ดแสดงชื่อ, label และ summary 2–3 บรรทัดของคุณเอง</li>
+            <li>กดปุ่มแล้วข้อความเปลี่ยน</li>
+            <li>ปรับสีหรือ style แล้วอย่างน้อย 1 จุด</li>
+            <li>เปิดไฟล์ใน browser ใหม่อีกรอบหลัง save ทุกไฟล์ แล้วทุกอย่างยังทำงาน</li>
+            <li>เขียนคำตอบ reflection ครบทั้ง 4 ข้อ</li>
+          </ul>
+        </section>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="08_challenge_and_debugging.html" rel="prev">ก่อนหน้า: ปรับให้เป็นของตัวเอง และรับมือกับ Error</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

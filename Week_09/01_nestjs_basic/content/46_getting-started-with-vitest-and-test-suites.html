@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="รู้จัก Vitest ในโปรเจกต์ NestJS รันชุดทดสอบ เลือกไฟล์ที่ต้องการ และเตรียม TestingModule ด้วย mock dependencies" />
+  <title>เริ่มต้น Vitest และสร้าง Test Suite</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 46/58</p>
+    <h1>เริ่มต้น Vitest และสร้าง Test Suite</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">บทนี้เราจะทำอะไรบ้าง</h2>
+      <ul>
+        <li>อธิบายบทบาทของ Vitest และความต่างระหว่าง unit กับ e2e configuration</li>
+        <li>เลือกใช้คำสั่ง test, watch และ coverage ให้ตรงกับงาน</li>
+        <li>เข้าใจ convention ของไฟล์ <code>*.spec.ts</code> และโครงสร้าง test suite</li>
+        <li>สร้าง <code>TestingModule</code> และ mock dependency ให้ service ถูกสร้างได้</li>
+      </ul>
+    </section>
+
+    <h2>ทำไมถึงเป็น Vitest</h2>
+    <p>NestJS ไม่ได้บังคับว่าต้องใช้ testing framework ตัวไหน แต่ถ้าตั้งค่าเองทั้งหมด เราต้องเตรียมทั้ง test runner, assertions, mocks และการรองรับ TypeScript ตั้งแต่ NestJS 12 เป็นต้นมา โปรเจกต์จาก <code>nest new</code> จึงตั้งค่า <strong>Vitest</strong> มาให้พร้อมใช้ Vitest ทำงานบน Vite รองรับ TypeScript และ ES modules โดยตรง และรันไฟล์ทดสอบแยกกันในหลาย workers ได้</p>
+    <p>Vitest ให้ครบในแพ็กเกจเดียวเช่นกัน: เป็น test runner, มี assertion API (<code>expect</code>), มีระบบ mock ในตัว (<code>vi.fn()</code>, <code>vi.spyOn()</code>, <code>vi.mock()</code>) และรายงาน coverage ผ่าน <code>@vitest/coverage-v8</code> ที่ Nest ติดตั้งไว้ให้แล้ว API ของมันจงใจออกแบบให้เข้ากันได้กับ Jest — ถ้าเคยเขียน Jest มาก่อน สิ่งที่ต้องจำแทบมีแค่ <code>jest.fn()</code> กลายเป็น <code>vi.fn()</code></p>
+    <div class="note"><p>Nest เปิด <code>globals: true</code> ไว้ใน config และประกาศ <code>"types": ["vitest/globals", "node"]</code> ใน <code>tsconfig.json</code> — <code>describe</code>, <code>it</code>, <code>expect</code>, <code>beforeEach</code>, <code>vi</code> ฯลฯ จึงใช้ได้ทันทีในไฟล์ทดสอบโดยไม่ต้อง import (import เฉพาะ type เช่น <code>import type { Mock } from 'vitest'</code> เมื่อต้องการ)</p></div>
+
+    <h2>สองไฟล์ config: unit กับ e2e</h2>
+    <p>Nest แยก config ของ Vitest เป็นสองไฟล์ที่ root ของโปรเจกต์ ต่างกันแค่ว่าจะมองหาไฟล์ทดสอบชื่อแบบไหน</p>
+    <pre><code>// vitest.config.ts — unit tests
+import { defineConfig } from 'vitest/config';
+import tsconfigPaths from 'vite-tsconfig-paths';
+
+export default defineConfig({
+  plugins: [tsconfigPaths()],
+  test: {
+    globals: true,
+    root: './',
+    include: ['**/*.spec.ts'],
+  },
+});
+
+// vitest.config.e2e.ts — e2e tests
+export default defineConfig({
+  plugins: [tsconfigPaths()],
+  test: {
+    globals: true,
+    root: './',
+    include: ['**/*.e2e-spec.ts'],
+  },
+});</code></pre>
+
+    <h2>คำสั่งที่มีให้ตั้งแต่ scaffold</h2>
+    <pre><code># รัน unit tests ทั้งหมดครั้งเดียวแล้วจบ
+npm run test
+
+# รันแบบ watch: แก้ไฟล์แล้วรันซ้ำให้อัตโนมัติ
+npm run test:watch
+
+# รัน unit tests พร้อมเก็บ coverage
+npm run test:cov
+
+# รัน e2e tests
+npm run test:e2e</code></pre>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบคำสั่งทดสอบ" tabindex="0">
+      <table>
+        <thead><tr><th>คำสั่ง</th><th>สิ่งที่รันจริง</th><th>ทดสอบอะไร / ไฟล์ที่มอง</th></tr></thead>
+        <tbody>
+          <tr><td><code>npm run test</code></td><td><code>vitest run</code></td><td>unit tests: class/function เดี่ยว ๆ พร้อม mock dependencies — <code>**/*.spec.ts</code></td></tr>
+          <tr><td><code>npm run test:watch</code></td><td><code>vitest</code></td><td>เหมือน <code>test</code> แต่ค้างอยู่และรันซ้ำทุกครั้งที่ save ไฟล์ — เหมาะกับตอนพัฒนา</td></tr>
+          <tr><td><code>npm run test:cov</code></td><td><code>vitest run --coverage</code></td><td>เหมือน <code>test</code> แต่สรุปสัดส่วนโค้ดที่ถูกทดสอบเป็นตารางใน terminal และโฟลเดอร์ <code>coverage/</code></td></tr>
+          <tr><td><code>npm run test:e2e</code></td><td><code>vitest run --config ./vitest.config.e2e.ts</code></td><td>ระบบทั้งเส้นทาง: boot แอปจริงแล้วยิง HTTP เข้าไป — <code>**/*.e2e-spec.ts</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ทุกคำสั่งรับชื่อไฟล์ (หรือบางส่วนของชื่อ) ต่อท้ายเพื่อรันเฉพาะไฟล์ที่สนใจ เช่น <code>npm run test -- coffees.service</code> หรือ <code>npm run test:e2e -- coffees</code> ซึ่งเราจะใช้ตลอดบทถัด ๆ ไป</p>
+    <div class="note"><p>ตอน scaffold Nest สร้างไฟล์ตัวอย่างให้แล้วสองแบบ: <code>src/app.controller.spec.ts</code> (unit) และ <code>test/app.e2e-spec.ts</code> (e2e) — เปิดอ่านสองไฟล์นี้ได้เลยเพื่อเห็นโครงก่อนเราลงลึกในบทถัด ๆ ไป สังเกตว่า import ในไฟล์ทดสอบก็ลงท้ายด้วย <code>.js</code> เหมือนโค้ดส่วนอื่นของแอป เพราะเป็น ES module เดียวกัน</p></div>
+
+    <h2>Convention การวางไฟล์ทดสอบ</h2>
+    <p>สำหรับ <strong>unit tests</strong> ธรรมเนียมของ Nest คือเก็บไฟล์ spec ไว้<em>โฟลเดอร์เดียวกับ</em>ไฟล์ที่มันทดสอบ — controller, provider, service แต่ละตัวมีไฟล์ทดสอบของตัวเอง และต้องลงท้ายด้วย <code>.spec.ts</code> เพื่อให้ tooling จับเป็นไฟล์ test อัตโนมัติ (เช่น <code>coffees.service.ts</code> คู่กับ <code>coffees.service.spec.ts</code>)</p>
+    <p>สำหรับ <strong>e2e tests</strong> ไฟล์อยู่ในโฟลเดอร์ <code>test/</code> แยกต่างหาก จัดกลุ่มตาม feature ที่ทดสอบ และต้องลงท้ายด้วย <code>.e2e-spec.ts</code></p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบ unit กับ e2e tests" tabindex="0">
+      <table>
+        <thead><tr><th></th><th>Unit tests</th><th>e2e tests</th></tr></thead>
+        <tbody>
+          <tr><td>โฟกัส</td><td>class/function เดี่ยว แยกจาก dependencies ด้วย mock</td><td>การทำงานร่วมกันของ classes/modules ในระดับใกล้ผู้ใช้จริง</td></tr>
+          <tr><td>ตำแหน่งไฟล์</td><td>ข้าง source, <code>*.spec.ts</code></td><td>โฟลเดอร์ <code>test/</code>, <code>*.e2e-spec.ts</code></td></tr>
+          <tr><td>ความเร็ว</td><td>เร็ว รันบ่อยระหว่างพัฒนา</td><td>ช้ากว่า boot แอปจริง มักต้องมี database</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>รันเฉพาะไฟล์ที่กำลังแก้ และ mock สิ่งที่ยังไม่เกี่ยว</h2>
+    <p>ระหว่างพัฒนาไม่จำเป็นต้องรันทุก suite — ส่ง pattern ของชื่อไฟล์ต่อท้ายคำสั่งได้</p>
+    <pre><code># รัน unit test แบบ watch เฉพาะไฟล์ที่ชื่อเข้ากับ pattern
+npm run test:watch -- coffees.service</code></pre>
+    <div class="warning"><p><strong>เก็บกวาด constructor ก่อนเริ่มบทนี้:</strong> ในบทที่ 35 เรา inject <code>ConfigService</code> เข้า <code>CoffeesService</code> เพื่อลองอ่านและ log ค่า config ถ้ายังเก็บ dependency ทดลองนี้ไว้ test module ต้องมี mock ของ <code>ConfigService</code> เพิ่มด้วย วิธีที่ตรงกับโค้ดในบทนี้ที่สุดคือลบ injection และ log ที่ใช้ทดลองออก ให้ constructor เหลือ <code>constructor(private readonly prisma: PrismaService) {}</code> แล้วลบ import ที่ไม่ใช้แล้ว</p></div>
+    <p>พอเปิด <code>coffees.service.spec.ts</code> ที่ CLI สร้างให้ จะพบว่ามัน fail ทันที เพราะ <code>CoffeesService</code> ตอนนี้ inject <code>PrismaService</code> — <code>TestingModule</code> ที่สร้างขึ้นมาเปล่า ๆ ไม่มี <code>PrismaModule</code> จึงไม่รู้จะหา provider นี้จากไหน วิธีปลดล็อกขั้นแรกคือให้ <em>mock ว่าง</em> ไปก่อน แค่ให้ DI resolve ได้</p>
+    <pre><code>// coffees.service.spec.ts — ภายใน Test.createTestingModule
+providers: [
+  CoffeesService,
+  { provide: PrismaService, useValue: {} }, // 👈 mock ว่างแทน Prisma Client ตัวจริง
+]</code></pre>
+    <div class="note"><p>รูปแบบ <code>{ provide: Token, useValue: ... }</code> นี้เรียกว่า <strong>custom provider</strong>: แทนที่จะบอก Nest ว่า <q>สร้าง instance จาก class นี้</q> เราบอกว่า <q>เมื่อมีใครขอ token นี้ ให้ส่งค่านี้ไปแทน</q> — ในที่นี้ใช้ class <code>PrismaService</code> เป็น token แล้วส่ง object ว่างกลับไป นี่คือเหตุผลที่เราห่อ <code>PrismaClient</code> ไว้ใน service ของ Nest ตั้งแต่บทที่ 22: มันสลับตัวจริงกับ mock ได้ในบรรทัดเดียวโดยไม่ต้องต่อฐานข้อมูล</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">รัน Vitest และทำให้ CoffeesService suite ผ่าน</h2>
+      <h3>ขั้นที่ 1: รันชุดทดสอบที่มากับโปรเจกต์</h3>
+      <p>ยังไม่ต้องเขียนอะไรใหม่ — รันคำสั่งใน <code>iluvcoffee</code> เพื่อดูว่าแต่ละแบบให้ผลอย่างไร และสังเกตว่าไฟล์ spec ตัวอย่างบางไฟล์อาจ fail ถ้าเราแก้ controller/service ไปมากแล้ว ซึ่งเป็นเรื่องปกติและเราจะแก้ในขั้นถัดไป</p>
+      <div class="prompt-example"><code>npm run test
+npm run test:cov
+npm run test:watch      # ลองแก้ไฟล์ spec แล้ว save ดู จากนั้นกด q เพื่อออก
+# e2e จะ boot แอปจริง — ถ้า fail เพราะ dependency ของ database ให้จดไว้ก่อน
+npm run test:e2e</code></div>
+      <h3>ขั้นที่ 2: ทำให้ CoffeesService suite กลับมาเขียว</h3>
+      <p>เปิด watch mode เฉพาะ <code>coffees.service</code> แล้วเติม mock providers ว่างจนกว่า test <q>should be defined</q> จะผ่าน</p>
+      <div class="prompt-example"><code>npm run test:watch -- coffees.service
+# แก้ coffees.service.spec.ts: เพิ่ม providers mock ตามโค้ดด้านบน
+# (import PrismaService จาก '../prisma/prisma.service.js')</code></div>
+      <p>จากนั้นรันทั้ง suite ด้วย <code>npm run test</code> จะเห็นว่าอีกสองไฟล์ที่ CLI สร้างไว้ให้ก็ fail ด้วยเหตุผลเดียวกัน — <code>coffees.controller.spec.ts</code> ขาด <code>CoffeesService</code> และ <code>coffee-rating.service.spec.ts</code> ขาด <code>CoffeesService</code> เช่นกัน ใส่ mock ว่างด้วยวิธีเดียวกันให้ทั้งคู่ เพื่อให้ทั้ง suite กลับมาเขียวก่อนเข้าบทถัดไป</p>
+      <pre><code>// coffees.controller.spec.ts
+controllers: [CoffeesController],
+providers: [{ provide: CoffeesService, useValue: {} }],
+
+// coffee-rating.service.spec.ts
+providers: [
+  CoffeeRatingService,
+  { provide: CoffeesService, useValue: {} },
+],</code></pre>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+      <p>หลังเพิ่ม mocks ที่จำเป็นแล้ว <code>npm run test</code> ผ่านทุก suite โดยไม่มี error เรื่อง dependency ส่วน watch mode สามารถเลือกเฉพาะ <code>coffees.service.spec.ts</code> และรันซ้ำอัตโนมัติเมื่อไฟล์เปลี่ยนได้</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ลองเช็กให้แน่ใจ</h2>
+      <ul>
+        <li><code>npm run test</code> รันจบและทุก suite ผ่าน พร้อมสรุป <code>Test Files</code> และ <code>Tests</code></li>
+        <li><code>npm run test:cov</code> สร้าง <code>coverage/index.html</code> และเปิดดูรายงาน coverage รายไฟล์ได้</li>
+        <li>เปิด <code>package.json</code> ดูว่า scripts <code>test</code>, <code>test:watch</code>, <code>test:cov</code>, <code>test:e2e</code> ชี้ไปที่ <code>vitest</code> จริง</li>
+        <li>เปิด <code>vitest.config.e2e.ts</code> และสังเกต <code>include</code> ว่าจับเฉพาะ <code>**/*.e2e-spec.ts</code> ขณะที่ <code>vitest.config.ts</code> จับ <code>**/*.spec.ts</code></li>
+        <li>ผลของ <code>npm run test:watch -- coffees.service</code> แสดงแค่ suite ของ <code>coffees.service.spec.ts</code> ไม่ใช่ทุกไฟล์</li>
+        <li>ลองลบ mock ของ <code>PrismaService</code> ออกแล้วดูว่า error dependency กลับมา — ยืนยันว่าเข้าใจว่า mock ตัวนี้แก้ปัญหาอะไร</li>
+        <li>แก้ไฟล์ service เล็กน้อยระหว่าง watch เปิดอยู่ แล้วเห็น Vitest รันซ้ำอัตโนมัติ</li>
+        <li>ตรวจว่าไฟล์ spec อยู่ข้างไฟล์ source ตาม convention ไม่ได้ย้ายไป <code>test/</code></li>
+        <li><code>npm run test</code> (ทั้ง suite) ผ่านครบทุกไฟล์ ไม่เหลือ error <q>can't resolve dependencies</q> ค้างอยู่</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/fundamentals/testing">Testing (NestJS)</a></li>
+      <li><a href="https://vitest.dev/guide/">Getting Started (Vitest)</a></li>
+      <li><a href="https://vitest.dev/api/vi.html">vi utility: vi.fn, vi.spyOn, vi.mock (Vitest)</a></li>
+      <li><a href="https://docs.nestjs.com/first-steps">First steps: โครงโปรเจกต์จาก nest new (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/fundamentals/testing">Testing: unit testing และ TestingModule (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/fundamentals/custom-providers">Custom providers: พื้นฐานของการ mock ด้วย useValue (NestJS)</a></li>
+      <li><a href="https://docs.nestjs.com/recipes/prisma">Prisma recipe: PrismaService (NestJS)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="45_documenting-responses-and-grouping-with-tags.html" rel="prev">← บทก่อน</a>
+      <a class="lesson-navigation__link" href="index.html">ดูบทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="47_adding-unit-tests.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop · เนื้อหาตรวจทานล่าสุด 1 กันยายน 2026</p></footer>
+</body>
+</html>

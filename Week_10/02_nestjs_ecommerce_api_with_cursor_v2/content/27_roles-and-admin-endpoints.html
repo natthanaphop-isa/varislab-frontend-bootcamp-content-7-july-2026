@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เพิ่ม @Roles() กับ RolesGuard เป็น guard ตัวที่สอง เปิด GET /admin/orders ให้เฉพาะ ADMIN แล้วสั่ง Cursor เขียน e2e test ของ auth ทั้งชุด" />
+  <title>Roles, RolesGuard และ e2e ของ auth</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>Roles, RolesGuard และ e2e ของ auth</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ซ้อน guard สองชั้นให้ทำงานตามลำดับ โดยชั้นที่สองใช้ข้อมูลที่ชั้นแรกเตรียมไว้</li>
+        <li>อธิบายได้ว่าทำไมการเปลี่ยน role ในฐานข้อมูลไม่ทำให้ token ที่ออกไปแล้วเปลี่ยนตาม และทำไมนั่นเป็นทั้งข้อดีและข้อเสีย</li>
+        <li>สั่งให้ AI เขียน e2e test ของสัญญา auth ทั้งชุด แล้วตรวจว่ามันทดสอบสิ่งที่ควรทดสอบจริง</li>
+      </ul>
+    </section>
+
+    <div class="note"><p>บทนี้มี prompt <strong>สองอันในสองแชท</strong>: อันแรกเปิด endpoint ของ admin อันที่สองเขียน e2e test ของ auth — และเหมือนทุกครั้ง test ต้องมาจากแชทที่ไม่ใช่แชทที่เพิ่งเขียนโค้ดให้</p></div>
+
+    <h2>guard ตัวที่สอง ที่ต้องมาทีหลัง</h2>
+    <p>การตรวจสิทธิ์แยกออกจากการตรวจตัวตนอย่างชัดเจน: guard ตัวแรกตอบว่า "คุณเป็นใคร" ตัวที่สองตอบว่า "คนแบบคุณทำสิ่งนี้ได้ไหม" เราจึงเขียน guard เพิ่มอีกตัวแทนที่จะยัดเงื่อนไข role เข้าไปในตัวเดิม</p>
+    <p>ลำดับสำคัญมาก NestJS เรียก global guard ตามลำดับที่ลงทะเบียนไว้ และ <code>RolesGuard</code> ต้องอ่าน <code>request.user</code> ซึ่งเป็นของที่ <code>JwtAuthGuard</code> แปะไว้ ถ้าลงทะเบียนสลับกัน <code>RolesGuard</code> จะทำงานตอนที่ยังไม่มีใครอ่าน token เลย แล้วมันจะเจอ <code>undefined</code></p>
+    <p>อีกเรื่องที่ต้องตัดสินใจคือ route ที่<em>ไม่มี</em> <code>@Roles()</code> ต้องเกิดอะไรขึ้น คำตอบคือปล่อยผ่าน — <code>RolesGuard</code> มีหน้าที่เดียวคือบังคับข้อกำหนดเรื่อง role ถ้า route ไหนไม่ได้กำหนดไว้ แปลว่ามันไม่มีข้อกำหนดนั้น ไม่ใช่ว่ามันห้ามทุกคน การตรวจว่าต้อง login หรือไม่เป็นงานของ guard ตัวแรกไปแล้ว</p>
+
+    <h2>token คือภาพถ่าย ไม่ใช่กระจกเงา</h2>
+    <p>เราใส่ <code>role</code> ลงไปใน payload ตั้งแต่ตอนออกแบบ login เพื่อให้ตรวจสิทธิ์ได้โดยไม่ต้องอ่านฐานข้อมูลทุก request ซึ่งเร็วและไม่มีภาระเพิ่ม แต่มันมาพร้อมผลที่ต้องเข้าใจให้ชัด</p>
+    <p><strong>token บันทึกสภาพ ณ วินาทีที่ login แล้วแข็งตัวอยู่อย่างนั้นจนหมดอายุ</strong> ถ้าวันนี้เราเลื่อนใครขึ้นเป็น admin ในฐานข้อมูล token ที่เขาถืออยู่ยังบอกว่า <code>USER</code> เหมือนเดิม และเขาจะยังเข้า endpoint ของ admin ไม่ได้จนกว่าจะ login ใหม่ ในทางกลับกัน ถ้าเราถอดสิทธิ์ admin ของใครออก token ใบเดิมของเขาก็ยังใช้สิทธิ์ admin ได้จนหมดอายุ</p>
+    <p>ข้อหลังคือราคาที่จ่ายสำหรับความเร็ว และเป็นเหตุผลที่ access token ต้องอายุสั้น — ของเราตั้งไว้ 15 นาที นั่นคือขอบเขตความเสียหายสูงสุดถ้าต้องถอดสิทธิ์ใครกะทันหัน ระบบที่ต้องการให้การถอดสิทธิ์มีผลทันทีต้องแลกด้วยการอ่านฐานข้อมูลทุก request หรือทำรายการ token ที่ถูกยกเลิกไว้ตรวจ ซึ่งทั้งสองทางก็คือการเอา state กลับมาไว้ฝั่ง server อีกครั้ง</p>
+    <p>คุณจะได้เห็นเรื่องนี้เกิดขึ้นจริงในส่วนตรวจท้ายบท ตอนที่เลื่อนตัวเองเป็น admin แล้วพบว่ายังเข้าไม่ได้</p>
+    <div class="warning"><p>ไม่มี endpoint ไหนในคอร์สนี้ที่แต่งตั้ง admin ได้ และนั่นตั้งใจ — endpoint ที่ให้ใครก็ได้ยกระดับสิทธิ์ตัวเองคือช่องโหว่ที่ร้ายแรงที่สุดแบบหนึ่ง การเปลี่ยน role จึงทำด้วย SQL โดยคนที่เข้าถึงฐานข้อมูลได้เท่านั้น ซึ่งตรงกับความเป็นจริงของระบบส่วนใหญ่</p></div>
+
+    <h2>admin ไม่ใช่ domain</h2>
+    <p><code>GET /admin/orders</code> ฟังดูเหมือนควรมีโฟลเดอร์ <code>src/admin/</code> ของตัวเอง แต่กติกาของโปรเจกต์เราเขียนไว้ว่าหนึ่งโฟลเดอร์ต่อหนึ่ง <em>business domain</em> — และ admin ไม่ใช่ domain มันคือ<em>กลุ่มผู้ใช้</em> สิ่งที่ endpoint นี้ทำงานด้วยยังเป็นคำสั่งซื้อเหมือนเดิมทุกประการ ต่างแค่ว่าเห็นได้กว้างกว่า</p>
+    <p>ถ้าแยกตามกลุ่มผู้ใช้ เราจะได้ logic ของคำสั่งซื้อกระจายอยู่สองที่ และวันที่แก้สูตรคิดเงินก็ต้องไล่แก้ทั้งคู่ โค้ดของบทนี้จึงอยู่ใน <code>src/orders/</code> ต่อจากของเดิม</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <p>รายการด้านล่างคือไฟล์ที่เปลี่ยนใน<strong>โค้ดอ้างอิงของคอร์ส</strong> — ใช้เป็นแผนที่ตอนเทียบงาน ไม่ใช่ข้อบังคับ Cursor ของคุณอาจวางไฟล์หรือตั้งชื่อต่างไปได้ ขอแค่ผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
+    <pre><code>ecommerce-api/
+├── src/
+│   ├── auth/
+│   │   ├── roles.decorator.ts           (สร้างใหม่ — prompt แรก)
+│   │   ├── roles.guard.ts               (สร้างใหม่ — prompt แรก)
+│   │   └── auth.module.ts               (แก้ไข: APP_GUARD ตัวที่สอง)
+│   └── orders/
+│       ├── admin-orders.controller.ts   (สร้างใหม่ — prompt แรก)
+│       ├── orders.service.ts            (แก้ไข: เพิ่ม findAll)
+│       └── orders.module.ts             (แก้ไข)
+└── test/
+    └── auth.e2e-spec.ts                 (สร้างใหม่ — prompt ที่สอง)</code></pre>
+    <ul>
+      <li><strong><code>src/auth/roles.guard.ts</code></strong> — ในโค้ดอ้างอิง: อ่าน <code>@Roles()</code> ทั้งระดับ handler และ class · route ที่ไม่มี metadata นี้ผ่านได้เลย · โยน <code>ForbiddenException</code> ไม่ใช่ <code>UnauthorizedException</code></li>
+      <li><strong><code>src/auth/auth.module.ts</code></strong> — ในโค้ดอ้างอิง: <code>APP_GUARD</code> สองรายการ โดย <code>RolesGuard</code> อยู่<strong>หลัง</strong> <code>JwtAuthGuard</code></li>
+      <li><strong><code>src/orders/admin-orders.controller.ts</code></strong> — ในโค้ดอ้างอิง: <code>@Controller('admin/orders')</code> ที่ติด <code>@Roles(Role.ADMIN)</code> · ไม่ติด <code>@Public()</code></li>
+      <li><strong><code>test/auth.e2e-spec.ts</code></strong> — ในโค้ดอ้างอิง: แปดเคสของสัญญา auth · มาจาก prompt แยกในแชทที่สอง · ลบผู้ใช้ที่สร้างขึ้นทิ้งใน <code>afterAll</code> เพื่อให้รันซ้ำได้</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="roles-heading">
+      <h2 id="roles-heading">Prompt แรก: เปิด GET /admin/orders</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before roles"</code>)</p>
+      <div class="cursor-prompt"><code>เพิ่มการตรวจบทบาทด้วย @Roles() แล้วเปิด GET /admin/orders ให้เฉพาะ ADMIN
+@docs/auth-spec.md @src/auth/jwt-auth.guard.ts @src/auth/auth.module.ts @src/orders/orders.service.ts
+
+ผลลัพธ์ที่ต้องได้:
+- GET /admin/orders พร้อม token ของผู้ใช้ทั่วไป → 403 ไม่ใช่ 401 (token ถูกต้องทุกอย่าง แต่สิทธิ์ไม่พอ)
+- GET /admin/orders โดยไม่มี token เลย → 401
+- GET /admin/orders พร้อม token ของผู้ใช้ที่ role เป็น ADMIN → 200 และเป็นคำสั่งซื้อทุกใบในระบบ ไม่ใช่เฉพาะของตัวเอง เรียงจากใหม่ไปเก่า
+- guard ที่ตรวจบทบาทเป็น global guard ตัวที่สอง ผูกผ่าน APP_GUARD ใน providers โดยลงทะเบียนหลัง guard ของ JWT เพราะมันอ่าน user ที่ guard แรกแปะไว้ใน request
+- route ที่ไม่มี @Roles() ต้องไม่ถูกกระทบเลย — GET /orders/me ของผู้ใช้ทั่วไปยังได้ 200 และ npm run test:e2e ยังได้ Tests  11 passed (11)
+- บทบาทอ่านจาก role ใน payload ของ token เท่านั้น ไม่ query ฐานข้อมูลซ้ำ
+- ใช้ enum Role ที่ Prisma generate ให้ ไม่ประกาศรายชื่อบทบาทขึ้นใหม่เป็น string
+- endpoint ใหม่กด Try it out ใน Swagger ได้หลังกด Authorize
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามสร้าง endpoint ที่แต่งตั้ง admin — ผมจะเปลี่ยน role ด้วย SQL เอง
+- ห้ามแตะไฟล์ใน test/ — e2e test เป็น prompt แยกในแชทถัดไป
+- ห้ามแก้ POST /carts/add, GET /orders/me หรือ guard ของ JWT
+- ห้ามใช้ any, as หรือ !</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="roles-review-heading">
+      <h2 id="roles-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li><code>RolesGuard</code> ลงทะเบียน<strong>หลัง</strong> <code>JwtAuthGuard</code> ใน <code>providers</code> — สลับลำดับแล้วมันจะอ่าน <code>request.user</code> ไม่เจอ</li>
+        <li>route ที่ไม่มี <code>@Roles()</code> คืน <code>true</code> ทันที ไม่ใช่ตกไปเข้าเงื่อนไขที่ปฏิเสธ</li>
+        <li>โยน <code>ForbiddenException</code> (403) ไม่ใช่ <code>UnauthorizedException</code> (401) — ผู้ใช้คนนี้ระบุตัวตนได้แล้ว เขาแค่ไม่มีสิทธิ์</li>
+        <li>ใช้ <code>Role</code> ที่ import มาจาก client ที่ Prisma generate ให้ ไม่ใช่ประกาศ <code>type Role = 'USER' | 'ADMIN'</code> ขึ้นใหม่ซึ่งจะเพี้ยนจาก schema ได้ในอนาคต</li>
+        <li>controller ของ admin อยู่ใน <code>src/orders/</code> และเรียก service ตัวเดิม ไม่ได้ copy logic การแปลงคำสั่งซื้อมาไว้เอง</li>
+        <li>ไม่มี endpoint ไหนที่เขียน <code>role</code> ลงฐานข้อมูลได้ — <code>grep -rn "role" src/auth/auth.service.ts</code> ต้องเจอแค่ตอนอ่านมาใส่ payload</li>
+        <li><code>git diff --stat test/</code> ว่างเปล่า</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ทำ <code>RolesGuard</code> ให้ปฏิเสธ route ที่ไม่มี <code>@Roles()</code> ซึ่งจะทำให้ทั้งแอปพังทันทีรวมถึง e2e ทั้งสิบเอ็ดข้อ อีกกรณีที่เงียบกว่าคือโยน <code>UnauthorizedException</code> แทน <code>ForbiddenException</code> เพราะทั้งคู่ "แปลว่าเข้าไม่ได้" เหมือนกัน — แต่ client ที่เจอ <code>401</code> จะพยายาม refresh token แล้วลองใหม่วนไปเรื่อย ๆ ทั้งที่ปัญหาคือสิทธิ์ไม่พอ ซึ่ง refresh กี่รอบก็ไม่ช่วย</p>
+      <p>โค้ดอ้างอิงของหัวข้อนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>// src/auth/roles.decorator.ts
+import { SetMetadata } from '@nestjs/common';
+import { Role } from '../generated/prisma/enums.js';
+
+export const ROLES_KEY = 'roles';
+
+export const Roles = (...roles: Role[]) =&gt; SetMetadata(ROLES_KEY, roles);</code></pre>
+      <pre><code>// src/auth/roles.guard.ts
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { Role } from '../generated/prisma/enums.js';
+import { ROLES_KEY } from './roles.decorator.js';
+import type { AuthenticatedRequest } from './jwt-payload.interface.js';
+
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private readonly reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const required = this.reflector.getAllAndOverride&lt;Role[] | undefined&gt;(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    if (required === undefined) {
+      return true;
+    }
+
+    const request = context.switchToHttp().getRequest&lt;AuthenticatedRequest&gt;();
+
+    if (!required.some((role) =&gt; role === request.user.role)) {
+      throw new ForbiddenException();
+    }
+
+    return true;
+  }
+}</code></pre>
+      <pre><code>// src/auth/auth.module.ts — เฉพาะส่วน providers
+  providers: [
+    AuthService,
+    PasswordService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],</code></pre>
+      <p>สองบรรทัดนี้สลับกันไม่ได้ และนี่เป็นหนึ่งในไม่กี่ที่ในโปรเจกต์ที่<em>ลำดับของโค้ด</em>มีผลต่อพฤติกรรมจริง</p>
+      <pre><code>// src/orders/admin-orders.controller.ts
+import { Controller, Get } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../auth/roles.decorator.js';
+import { Role } from '../generated/prisma/enums.js';
+import { CartResponseDto } from './dto/cart-response.dto.js';
+import { OrdersService } from './orders.service.js';
+
+@ApiTags('admin')
+@ApiBearerAuth()
+@Roles(Role.ADMIN)
+@Controller('admin/orders')
+export class AdminOrdersController {
+  constructor(private readonly ordersService: OrdersService) {}
+
+  @Get()
+  @ApiOkResponse({ type: [CartResponseDto] })
+  findAll() {
+    return this.ordersService.findAll();
+  }
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไปต่อไม่ได้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="roles-result-heading">
+      <h2 id="roles-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>log ตอน start มีเส้นทางใหม่</p>
+      <pre><code>[RouterExplorer] Mapped {/admin/orders, GET} route</code></pre>
+      <p>ผู้ใช้ทั่วไปที่ login แล้วได้ <code>403</code> ไม่ใช่ <code>401</code> — ความต่างนี้บอก client ว่าอย่าเสียเวลา refresh token แล้วลองใหม่</p>
+      <pre><code>{"message":"Forbidden resource","error":"Forbidden","statusCode":403}</code></pre>
+    </section>
+
+    <section class="verification" aria-labelledby="roles-check-heading">
+      <h2 id="roles-check-heading">ตรวจว่าใช้งานได้จริง — และดูว่า token ไม่ได้อัปเดตตามฐานข้อมูล</h2>
+      <p>รันห้าคำสั่งนี้<strong>ตามลำดับ</strong> ความประหลาดใจอยู่ที่ขั้นที่สาม</p>
+      <ul>
+        <li>ตอนนี้ยังเป็นผู้ใช้ทั่วไป ต้องได้ <code>403</code>
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" \
+  http://localhost:3000/admin/orders</code></pre></li>
+        <li>เลื่อนตัวเองขึ้นเป็น admin ด้วย SQL
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce \
+  -c "UPDATE \"User\" SET role='ADMIN' WHERE email='student@example.com';"</code></pre></li>
+        <li>ยิงซ้ำด้วย token ใบเดิม — <strong>ยังได้ <code>403</code> เหมือนเดิม</strong>
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" \
+  http://localhost:3000/admin/orders</code></pre>
+          นี่ไม่ใช่บั๊ก token ใบนั้นถูกเซ็นไว้ตอนที่คุณยังเป็น <code>USER</code> และไม่มีอะไรไปแก้มันได้ ฐานข้อมูลเปลี่ยนแล้วแต่ token ยังเป็นภาพถ่ายของเมื่อกี้</li>
+        <li>login ใหม่เพื่อให้ได้ token ที่บันทึกสภาพปัจจุบัน แล้วยิงอีกครั้ง — คราวนี้ได้ <code>200</code>
+          <pre><code>TOKEN=$(curl -s -X POST http://localhost:3000/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"student@example.com","password":"secret123"}' \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log(JSON.parse(d).accessToken))")
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" \
+  http://localhost:3000/admin/orders</code></pre></li>
+        <li>ไม่มี token เลย → <code>401</code> ไม่ใช่ <code>403</code>
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3000/admin/orders</code></pre></li>
+        <li>admin เห็นคำสั่งซื้อมากกว่าที่ <code>/orders/me</code> คืนให้ (ถ้าในฐานข้อมูลมีของ <code>userId</code> อื่นอยู่ด้วย)
+          <pre><code>curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/admin/orders \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log('admin sees', JSON.parse(d).length))"</code></pre></li>
+      </ul>
+    </section>
+
+    <section class="workshop" aria-labelledby="contract-test-heading">
+      <h2 id="contract-test-heading">Prompt ที่สอง: e2e test ของสัญญา auth</h2>
+      <p>สัญญาใน <code>docs/auth-spec.md</code> ยังไม่มี test ตัวไหนคุ้มครองเลย ทุกอย่างที่ผ่านมาตรวจด้วย curl ทีละคำสั่ง ซึ่งแปลว่าวันที่มีคนแก้อะไรสักอย่างในโบนัสนี้ จะไม่มีอะไรบอกได้ว่าสัญญายังอยู่ครบหรือเปล่า</p>
+      <p>และเหมือนทุกครั้ง test ต้องมาจาก<strong>แชทใหม่</strong> ไม่ใช่แชทที่เพิ่งเขียน endpoint ให้ เพราะแชทที่เพิ่งเขียนโค้ดเสร็จจะเขียน test ที่ตรงกับ<em>โค้ดที่มันเพิ่งเขียน</em> ไม่ใช่ตรงกับสัญญา</p>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ (<code>git add -A &amp;&amp; git commit -m "feat: roles and admin orders"</code>)</p>
+      <div class="cursor-prompt"><code>เขียน e2e test ของ auth ใน test/auth.e2e-spec.ts ให้ตรงกับสัญญาใน docs/auth-spec.md
+@docs/auth-spec.md
+
+ผลลัพธ์ที่ต้องได้:
+- ไฟล์ใหม่ test/auth.e2e-spec.ts ที่ npm run test:e2e เก็บไปรันด้วย (ไม่ต้องแก้ package.json — script นี้มีอยู่แล้ว)
+- boot แอปจริงด้วย Test.createTestingModule({ imports: [AppModule] }) แล้วยิงผ่าน supertest ที่ app.getHttpServer() และปิดด้วย app.close() ใน afterAll
+- beforeAll ตั้ง ValidationPipe แบบ global ให้ตรงกับ src/main.ts ทุกตัวเลือก เพราะ createNestApplication() ไม่ได้รัน main.ts ให้
+- แปด test ตามนี้
+  1. POST /auth/signup ด้วยอีเมลใหม่ → 201 และ body ไม่มีคีย์ที่เกี่ยวกับรหัสผ่านเลย
+  2. POST /auth/signup ด้วยอีเมลเดิมซ้ำ → 409
+  3. POST /auth/login รหัสผ่านผิด → 401 และ message ตรงกันเป๊ะกับกรณีอีเมลที่ไม่มีในระบบ
+  4. POST /auth/login ถูกต้อง → 200 และได้ทั้ง accessToken และ refreshToken
+  5. GET /auth/me ไม่มี token → 401
+  6. GET /auth/me พร้อม token → 200 และ email ตรงกับที่สมัครไว้
+  7. POST /auth/refresh ด้วยใบที่เพิ่งใช้ไปแล้ว → 401
+  8. GET /admin/orders ด้วย token ของผู้ใช้ทั่วไป → 403
+- test ต้องรันซ้ำได้เรื่อย ๆ: สมัครด้วยอีเมลที่ไม่ซ้ำกับรอบก่อน และลบผู้ใช้ที่ test สร้างขึ้นทิ้งใน afterAll ผ่าน app.get(PrismaService)
+- import ในไฟล์ test ลงท้ายด้วย .js ตามกติกา ESM ของโปรเจกต์
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่ — Vitest กับ supertest มากับ scaffold แล้ว
+- ห้ามแก้ไฟล์ใน src/ เด็ดขาด ถ้า test ไม่ผ่านให้บอกผมว่าไม่ผ่านข้อไหน ห้ามแก้โค้ดให้ test ผ่านเอง
+- ห้ามแก้ test/products.e2e-spec.ts, test/orders.e2e-spec.ts หรือ test/app.e2e-spec.ts
+- ห้ามเขียน test ที่เปลี่ยน role ของใครเป็น ADMIN — ตรวจแค่ฝั่ง 403 พอ
+- ห้ามรัน test ให้ ผมจะรันเอง</code></div>
+      <p>บรรทัดสุดท้ายของขอบเขตสำคัญกว่าที่เห็น: ถ้า test เลื่อน role ของตัวเองเป็น <code>ADMIN</code> ได้เพื่อจะทดสอบเคส <code>200</code> แปลว่า test suite กลายเป็นเครื่องมือยกระดับสิทธิ์ไปด้วย เราจึงทดสอบเฉพาะด้านที่ปฏิเสธ ส่วนด้านที่อนุญาตตรวจด้วยมือไปแล้วในส่วนก่อนหน้า</p>
+    </section>
+
+    <section class="review" aria-labelledby="test-review-heading">
+      <h2 id="test-review-heading">ตรวจ test ที่ AI เขียน</h2>
+      <ul>
+        <li><code>git status</code> เห็นไฟล์ใหม่แค่ <code>test/auth.e2e-spec.ts</code> — <strong>ไม่มีไฟล์ใน <code>src/</code> ถูกแก้</strong> ถ้ามี แปลว่า agent ไปแก้โค้ดให้เข้ากับ test ของมันเอง ให้ย้อนกลับแล้วสั่งใหม่</li>
+        <li>อีเมลที่ใช้สมัครไม่ซ้ำกันทุกรอบ (เช่นต่อท้ายด้วย <code>Date.now()</code>) และ <code>afterAll</code> ลบผู้ใช้นั้นทิ้งจริง — ลองรัน <code>npm run test:e2e</code> สองครั้งติดกัน ต้องเขียวทั้งสองครั้ง</li>
+        <li>เคสที่ 3 เทียบ <code>message</code> ของสองกรณีว่า<em>เท่ากัน</em> ไม่ใช่แค่เช็คว่าทั้งคู่เป็น 401 — ถ้าเช็คแค่ status ข้อความที่รั่วข้อมูลจะผ่าน test ไปได้สบาย</li>
+        <li>เคสที่ 1 ตรวจว่า<em>ไม่มี</em>คีย์ที่เกี่ยวกับรหัสผ่าน ไม่ใช่ตรวจว่ามีคีย์ที่ต้องการครบ — สองอย่างนี้ต่างกัน</li>
+        <li>ไม่มี <code>UPDATE</code> หรือ <code>prisma.user.update</code> ที่เปลี่ยน <code>role</code> อยู่ในไฟล์ test</li>
+        <li>ไม่มี URL หรือเลข port ฮาร์ดโค้ดในไฟล์ — ทุก request ยิงผ่าน <code>request(app.getHttpServer())</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ใช้อีเมลคงที่อย่าง <code>test@example.com</code> ซึ่งทำให้เคสที่ 1 ผ่านครั้งแรกครั้งเดียว แล้วได้ 409 ตลอดไปในรอบถัด ๆ มา — test ที่รันซ้ำไม่ได้คือ test ที่จะถูกปิดทิ้งภายในสัปดาห์เดียว อีกกรณีคือเขียนเคสที่ 7 โดยไม่ได้ refresh ก่อนหนึ่งรอบ ทำให้ token ที่เอามาทดสอบยังเป็นใบที่ใช้ได้อยู่ แล้ว test จะแดงทั้งที่โค้ดถูก</p>
+      <p>โค้ดอ้างอิงของหัวข้อนี้ — เฉพาะโครงและสองเคสที่พลาดง่ายที่สุด ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด</p>
+      <pre><code>import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import request from 'supertest';
+import { AppModule } from './../src/app.module.js';
+import { PrismaService } from './../src/prisma/prisma.service.js';
+
+describe('Auth contract (e2e)', () =&gt; {
+  let app: INestApplication;
+  const email = `student-${Date.now()}@example.com`;
+  const password = 'secret123';
+
+  beforeAll(async () =&gt; {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        transformOptions: { enableImplicitConversion: true },
+      }),
+    );
+    await app.init();
+  });
+
+  afterAll(async () =&gt; {
+    await app.get(PrismaService).user.deleteMany({ where: { email } });
+    await app.close();
+  });
+
+  it('POST /auth/signup → 201 without any password field', async () =&gt; {
+    const response = await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({ email, password, name: 'Student' })
+      .expect(201);
+
+    expect(Object.keys(response.body)).not.toContain('passwordHash');
+    expect(Object.keys(response.body)).not.toContain('password');
+  });
+  it('POST /auth/login → same message for wrong password and unknown email', async () =&gt; {
+    const wrongPassword = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password: 'not-the-password' })
+      .expect(401);
+
+    const unknownEmail = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'nobody@example.com', password })
+      .expect(401);
+
+    expect(wrongPassword.body.message).toBe(unknownEmail.body.message);
+  });
+});</code></pre>
+      <p>เคสที่สองในตัวอย่างนี้คือเคสที่พิสูจน์สิ่งที่ curl พิสูจน์ได้ยาก: ไม่ใช่ว่าแต่ละกรณีตอบ 401 แต่คือทั้งสองกรณีตอบ<em>เหมือนกัน</em> — ซึ่งเป็นข้อกำหนดที่เขียนไว้ในสัญญาตั้งแต่บทแรกของโบนัส และสังเกตว่ามันต้องมา<em>หลัง</em>เคสสมัคร เพราะ Vitest รัน <code>it</code> ตามลำดับที่เขียนในไฟล์ ถ้าสลับที่กัน ตอนทดสอบรหัสผ่านผิดจะยังไม่มีอีเมลนั้นอยู่จริง ทั้งสองกรณีจึงกลายเป็น “อีเมลไม่มีในระบบ” เหมือนกัน และการเทียบก็จะผ่านโดยไม่ได้ทดสอบอะไรเลย</p>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>รันทั้งชุดแล้วต้องเขียวครบ สี่ไฟล์ สิบเก้าข้อ
+          <pre><code>npm run test:e2e</code></pre>
+          <pre><code> ✓ test/app.e2e-spec.ts      (1 test)
+ ✓ test/auth.e2e-spec.ts     (8 tests)
+ ✓ test/orders.e2e-spec.ts   (1 test)
+ ✓ test/products.e2e-spec.ts (9 tests)
+
+ Test Files  4 passed (4)
+      Tests  19 passed (19)</code></pre></li>
+        <li>รันซ้ำอีกครั้งทันที ต้องได้ <code>19 passed</code> เหมือนเดิม — ถ้ารอบสองมีข้อแดง แปลว่า <code>afterAll</code> ยังลบไม่สะอาด</li>
+        <li>ทำให้พังเพื่อดูว่า test จับได้จริง: แก้ข้อความ <code>Invalid credentials</code> ในกรณีอีเมลไม่มีจริงให้ต่างจากอีกกรณีชั่วคราว แล้วรันใหม่ — เคสที่เทียบสองข้อความต้องแดง จากนั้นย้อนกลับด้วย <code>git checkout -- .</code></li>
+        <li><code>git diff --stat src/</code> ว่างเปล่าหลังจาก prompt ที่สอง</li>
+        <li><code>grep -rn "ADMIN" test/</code> ไม่เจอการตั้งค่า role ที่ไหนเลย — เจอได้แค่ในชื่อ test หรือค่าที่คาดหวัง</li>
+        <li><code>npm run build</code> และ <code>npm run lint</code> ผ่าน</li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "test: auth contract e2e"</code></li>
+      </ul>
+      <p>สิบเก้าข้อนี้แบ่งเป็นสองกลุ่มที่มีเจ้าของต่างกัน: สิบข้อแรกคุ้มครองสัญญาที่ React app พึ่งพา ส่วนแปดข้อใหม่คุ้มครองสัญญาที่คุณออกแบบเองในบทแรกของโบนัส (อีกหนึ่งข้อเป็นของ scaffold) ทั้งสองกลุ่มรันด้วยคำสั่งเดียวและต้องเขียวพร้อมกันเสมอ</p>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/security/authorization">Authorization: @Roles() และ RolesGuard (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/guards#binding-guards">Binding guards และลำดับของ global guard (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/fundamentals/testing#end-to-end-testing">Testing: end-to-end tests (NestJS Docs)</a></li>
+      <li><a href="https://owasp.org/Top10/A01_2021-Broken_Access_Control/">A01:2021 Broken Access Control (OWASP Top 10)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="26_refresh-token-rotation.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="28_wrap-up.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

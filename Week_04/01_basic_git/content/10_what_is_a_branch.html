@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เข้าใจว่า branch คือเส้นทางแยกของการพัฒนา ดู branch ปัจจุบันด้วย git branch และสร้าง feature branch ด้วย git switch -c พร้อมหลักการตั้งชื่อ" />
+    <title>Branch คืออะไร และสร้าง Feature Branch | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 10 · Branch และ Merge (Branch &amp; Merge)</p>
+          <h1>Branch คืออะไร และสร้าง Feature Branch</h1>
+          <p class="lesson-original-title" lang="en">Introduction to Branch</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายได้ว่า branch คืออะไร และช่วยแก้ปัญหาอะไร</li>
+            <li>อธิบายบทบาทของ <code>main</code>, feature branch และ merge</li>
+            <li>ดู branch ปัจจุบันด้วย <code>git branch</code></li>
+            <li>สร้างและย้ายไป feature branch ด้วย <code>git switch -c</code></li>
+            <li>ตั้งชื่อ branch ตามรูปแบบ <code>feature/ชื่อ-feature</code></li>
+          </ul>
+        </section>
+
+        <h2>Branch คืออะไร</h2>
+        <p><strong>Branch</strong> คือเส้นทางแยกของการพัฒนาโปรเจกต์ สมมติว่า <code>main</code> คือโค้ดหลักที่ทำงานได้:</p>
+        <pre><code class="language-text">main</code></pre>
+        <p>เมื่อต้องการเพิ่ม feature ใหม่ เราสามารถสร้าง branch แยกออกมา:</p>
+        <pre><code class="language-text">main
+  \
+   feature/add-projects-section</code></pre>
+        <p>จากนั้นพัฒนา feature บน branch นั้น โดยไม่แก้ <code>main</code> โดยตรง</p>
+
+        <h3>ทำไมต้องแยก branch</h3>
+        <p>
+          ตอนนี้หน้าเว็บหลักของเราทำงานได้แล้ว และเรากำลังจะเพิ่ม Projects Section แต่ยังไม่รู้ว่าโค้ดจะเสร็จเมื่อไร หรือจะออกมาดีหรือเปล่า
+          ถ้าแก้บน <code>main</code> โดยตรง โค้ดหลักอาจค้างอยู่ในสถานะที่ยังไม่สมบูรณ์ branch ช่วยให้เราสร้างพื้นที่แยกออกมาทดลองก่อน
+          เมื่อ feature เสร็จและตรวจสอบแล้ว เราจึง merge กลับเข้า <code>main</code>
+        </p>
+
+        <h3>Mental Model</h3>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>คำ</th><th>ความหมาย</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>main</code></td><td>เวอร์ชันหลักที่ควรทำงานได้เสมอ</td></tr>
+              <tr><td>feature branch</td><td>พื้นที่แยกสำหรับพัฒนา feature</td></tr>
+              <tr><td>merge</td><td>นำ feature ที่ทำเสร็จกลับมารวมกับ <code>main</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>ดู Branch ปัจจุบัน</h2>
+        <pre><code class="language-bash">git branch</code></pre>
+        <pre><code class="language-text">* main</code></pre>
+        <p>ตอนนี้เรามี branch เดียวคือ <code>main</code> และกำลังอยู่บนมัน (ดูจากเครื่องหมาย <code>*</code>)</p>
+
+        <div class="warning">
+          <p>ก่อนสร้างหรือสลับ branch ให้รัน <code>git status</code> ก่อนเสมอ ถ้ายังมีไฟล์ที่แก้แต่ยังไม่ได้ commit ให้ commit ให้เรียบร้อยก่อน เพื่อไม่ให้งานที่ค้างอยู่ติดข้ามไปอีก branch จนสับสน ในคู่มือนี้เราจะเริ่ม branch ใหม่จากสถานะ <code>working tree clean</code> เท่านั้น</p>
+        </div>
+
+        <h2>สร้าง Feature Branch</h2>
+        <p>สร้าง branch ใหม่และย้ายไปใช้งานทันที:</p>
+        <pre><code class="language-bash">git switch -c feature/add-projects-section</code></pre>
+        <pre><code class="language-text">Switched to a new branch 'feature/add-projects-section'</code></pre>
+        <p>คำสั่งนี้ทำ 2 อย่างในครั้งเดียว:</p>
+        <ol>
+          <li>สร้าง branch ใหม่ (<code>-c</code> ย่อมาจาก create) โดยเริ่มจาก commit ล่าสุดของ branch ที่เรายืนอยู่</li>
+          <li>ย้ายไปอยู่บน branch ใหม่นั้น</li>
+        </ol>
+        <p>ตรวจสอบ:</p>
+        <pre><code class="language-bash">git branch</code></pre>
+        <pre><code class="language-text">* feature/add-projects-section
+  main</code></pre>
+        <p>ตอนนี้ <code>*</code> ย้ายมาอยู่หน้า <code>feature/add-projects-section</code> แล้ว แปลว่า commit ต่อจากนี้จะถูกบันทึกบน branch นี้ (Git เรียงรายชื่อ branch ตามตัวอักษร <code>feature/...</code> จึงขึ้นก่อน <code>main</code> — ให้ดูที่ <code>*</code> เป็นหลักว่าตอนนี้อยู่ branch ไหน)</p>
+
+        <h2>การตั้งชื่อ Branch</h2>
+        <p>รูปแบบที่แนะนำ:</p>
+        <pre><code class="language-text">feature/ชื่อ-feature</code></pre>
+        <p>ตัวอย่าง:</p>
+        <pre><code class="language-text">feature/add-projects-section
+feature/add-learning-goals
+feature/add-social-links
+feature/update-profile-design</code></pre>
+        <p>สำหรับการแก้ bug อาจใช้ prefix <code>fix/</code>:</p>
+        <pre><code class="language-text">fix/contact-button
+fix/mobile-spacing</code></pre>
+        <p>
+          ชื่อ branch ใช้ตัวพิมพ์เล็กและคั่นคำด้วยขีด <code>-</code> ไม่ใช้ช่องว่าง ชื่อที่ดีบอกได้ทันทีว่า branch นี้ทำอะไร ในคู่มือนี้เราจะใช้ <code>feature/</code> เป็นหลัก
+        </p>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่าทำไมไม่ควรพัฒนา feature ที่ยังไม่เสร็จบน <code>main</code> โดยตรง</li>
+            <li>รัน <code>git switch -c feature/add-projects-section</code> สำเร็จ</li>
+            <li><code>git branch</code> แสดง <code>*</code> อยู่หน้า <code>feature/add-projects-section</code></li>
+            <li>ตั้งชื่อ branch ตามรูปแบบ <code>feature/...</code> หรือ <code>fix/...</code> ได้</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="09_connect_and_push.html" rel="prev">ก่อนหน้า: เชื่อม Local กับ GitHub และ Push ครั้งแรก</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="11_develop_on_feature_branch.html" rel="next">ถัดไป: พัฒนา Feature บน Branch แยก</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

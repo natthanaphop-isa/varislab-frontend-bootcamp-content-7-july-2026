@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="สรุปสิ่งที่สร้างได้ในคอร์สนี้ ตรวจว่าคุณอธิบายทุกการตัดสินใจได้จริง แล้วดูเส้นทางต่อยอดหลังจบ 28 บท" />
+  <title>สรุปและก้าวต่อไป</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>สรุปและก้าวต่อไป</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายภาพรวมของโปรเจกต์ที่สร้างเสร็จ ตั้งแต่ schema ไปถึงเอกสาร Swagger ได้ในหนึ่งหน้า</li>
+        <li>ตอบคำถาม 13 ข้อเกี่ยวกับการตัดสินใจในโค้ดของตัวเองได้โดยไม่เปิดโค้ดดู</li>
+        <li>เลือกก้าวต่อไปที่เหมาะกับตัวเองได้ ทั้งเรื่องการทดสอบ, deploy และการปรับ business logic</li>
+      </ul>
+    </section>
+
+    <h2>สิ่งที่คุณสร้าง</h2>
+    <p>จาก <code>nest new</code> เปล่า ๆ ตอนเริ่ม workshop ตอนนี้คุณมีโปรเจกต์หน้าตานี้ (ชื่อโฟลเดอร์ migration ของคุณจะมี timestamp ต่างออกไป)</p>
+    <pre><code>ecommerce-api/
+├── .cursor/rules/project.mdc            กติกาที่ Cursor อ่านทุกครั้ง (ตอนตั้งกติกา Cursor)
+├── docker-compose.yml                   postgres:17 (ตอนรัน PostgreSQL)
+├── prisma7.config.ts                    config ของ Prisma CLI (ตอนติดตั้ง Prisma)
+├── nest-cli.json                        เปิด CLI plugin ของ swagger (ตอนใส่ Swagger)
+├── docs/api-spec.md                     สัญญาที่เราออกแบบเองจากโค้ด client (ตอนออกแบบสัญญา)
+├── prisma/
+│   ├── schema.prisma                    Product, Category, Review, Order, OrderItem
+│   ├── migrations/                      init + add_orders + add_users, add_refresh_token (โบนัส)
+│   └── seed.ts                          สร้างสินค้า 208 ชิ้นด้วย faker (ตอน seed ข้อมูล)
+├── test/
+│   ├── products.e2e-spec.ts             e2e test ของ endpoint สินค้า (ตอนสร้าง endpoint ทีละตัว)
+│   ├── orders.e2e-spec.ts               e2e test ของ POST /carts/add
+│   └── auth.e2e-spec.ts                 e2e test ของสัญญา auth (โบนัส)
+└── src/
+    ├── main.ts                          ValidationPipe + CORS + Swagger
+    ├── app.module.ts
+    ├── prisma/                          PrismaModule, PrismaService
+    ├── products/
+    │   ├── products.controller.ts  products.service.ts  products.module.ts
+    │   ├── product.mapper.ts
+    │   └── dto/product-response.dto.ts  dto/pagination-query.dto.ts
+    ├── orders/
+    │   ├── carts.controller.ts  orders.service.ts  orders.module.ts
+    │   ├── orders.controller.ts  admin-orders.controller.ts   (โบนัส)
+    │   ├── cart.mapper.ts
+    │   └── dto/add-cart.dto.ts  dto/cart-response.dto.ts
+    └── auth/                             ทั้งโฟลเดอร์เป็นของโบนัส
+        ├── auth.controller.ts  auth.service.ts  auth.module.ts
+        ├── password.service.ts  user.mapper.ts
+        ├── jwt-auth.guard.ts  roles.guard.ts
+        └── decorator, interface และ dto ของ auth</code></pre>
+    <p>และของที่ใช้งานได้จริงห้าอย่างนี้</p>
+    <ul>
+      <li><strong>ห้า endpoint</strong> ที่รูปทรง response ตรงกับสัญญาใน <code>docs/api-spec.md</code>: <code>GET /products/categories</code>, <code>GET /products</code>, <code>GET /products/{id}</code>, <code>GET /products/category/{slug}</code> และ <code>POST /carts/add</code></li>
+      <li><strong>สัญญาที่ตรวจอัตโนมัติ</strong> — <code>npm run test:e2e</code> boot แอปจริงขึ้นมาแล้วตรวจ status และรูปทรงของ response ครบสิบเคส รวมถึงเคส 404, หมวดที่ไม่มีจริง และ <code>POST /carts/add</code></li>
+      <li><strong>validation ที่กันขยะ</strong> — <code>ValidationPipe</code> แบบ global พร้อม <code>whitelist</code> และ DTO ที่ประกาศกฎไว้ครบ ทำให้ payload ผิดรูปได้ 400 พร้อมข้อความที่อ่านรู้เรื่อง</li>
+      <li><strong>คำสั่งซื้อที่ atomic</strong> — <code>POST /carts/add</code> เขียน <code>Order</code> กับ <code>OrderItem</code> ในทรานแซกชันเดียว</li>
+      <li><strong>เอกสารและการเชื่อมต่อ</strong> — Swagger UI ที่ <code>/api</code> พร้อม response schema ทุก endpoint, CORS ที่เปิดให้เฉพาะ origin ของ Vite และ React app ของจริงที่รันบน API นี้ได้ครบวงจรโดยแก้แค่ base URL หนึ่งบรรทัด</li>
+    </ul>
+
+    <p>และถ้าคุณเรียนเจ็ดบทโบนัสต่อจนจบ จะมีของเพิ่มอีกสี่อย่าง — ทั้งหมดนี้<strong>ไม่</strong>กระทบห้าข้อข้างบนเลยแม้แต่ข้อเดียว React app ยังทำงานเหมือนเดิมทุกประการ</p>
+    <ul>
+      <li><strong>สัญญาชุดที่สองที่คุณออกแบบเอง</strong> — <code>docs/auth-spec.md</code> ต่างจาก <code>docs/api-spec.md</code> ตรงที่ไม่มี client ตัวไหนมาบังคับรูปทรง คุณจึงเป็นคนตัดสินใจทั้งหมดเอง</li>
+      <li><strong>เจ็ด endpoint ของผู้ใช้</strong> — สมัคร, เข้าสู่ระบบ, ดูข้อมูลตัวเอง, ดูคำสั่งซื้อของตัวเอง, แลก token ใบใหม่, ออกจากระบบ และ endpoint ของ admin ที่เห็นคำสั่งซื้อทุกใบ</li>
+      <li><strong>guard สองชั้นที่ปิดเป็นค่าปริยาย</strong> — ทุก route ต้องมี token เว้นแต่จะติด <code>@Public()</code> ไว้ ส่วนชั้นที่สองตรวจ role และตอบ <code>403</code> แยกจาก <code>401</code> อย่างชัดเจน</li>
+      <li><strong>e2e อีกแปดเคส</strong> — <code>npm run test:e2e</code> รวมเป็น <code>Tests 19 passed (19)</code> จากสี่ไฟล์ โดยสิบเคสแรกคุ้มครองสัญญาที่ React app พึ่งพา และแปดเคสใหม่คุ้มครองสัญญาที่คุณเขียนเอง</li>
+    </ul>
+
+    <section class="verification" aria-labelledby="self-check-heading">
+      <h2 id="self-check-heading">สิ่งที่คุณควรอธิบายได้ตอนนี้</h2>
+      <p>ตอบทีละข้อโดยยังไม่เปิดโค้ด ข้อไหนตอบไม่ได้ให้กลับไปอ่านบทนั้นอีกครั้ง — นี่คือมาตรวัดเดียวที่บอกว่าคุณเป็นเจ้าของโค้ดนี้จริงหรือเปล่า</p>
+      <ul>
+        <li>ทำไม <code>price</code>, <code>rating</code> และ <code>discountPercentage</code> ประกาศเป็น <code>Float</code> ใน <code>schema.prisma</code> (ตอนออกแบบ schema)</li>
+        <li>ทำไม <code>id</code> ของ <code>Product</code> ไม่ใช่ <code>@default(autoincrement())</code> (ตอนออกแบบ schema และตอน seed ข้อมูล)</li>
+        <li><code>whitelist: true</code> ใน <code>ValidationPipe</code> ตัดอะไรทิ้ง และทำไมการตัดทิ้งเงียบ ๆ ปลอดภัยกว่าปล่อยผ่าน (ตอนทำ pagination และตอน validate ตะกร้า)</li>
+        <li>ทำไม <code>@Get('categories')</code> ต้องประกาศก่อน <code>@Get(':id')</code> และจะเกิดอะไรถ้าสลับกัน (ตอนทำ endpoint หมวดหมู่และสินค้ารายชิ้น)</li>
+        <li>ทำไม <code>limit</code> ที่เกิน 100 หรือต่ำกว่า 1 ต้องได้ <code>400</code> แทนที่จะถูกปัดให้อยู่ในช่วงเงียบ ๆ (ตอนทำ pagination)</li>
+        <li>ทำไม mapper ไม่ใส่ key <code>discountPercentage</code> เลยเมื่อค่าในฐานข้อมูลเป็น <code>null</code> แต่ยังใส่ <code>brand</code> เสมอ (ตอนทำ mapper)</li>
+        <li>callback ที่ส่งให้ <code>$transaction</code> rollback อะไรเมื่อมีการ throw ข้างใน และ client ที่ควรใช้ข้างในคือตัวไหน (ตอนสร้างคำสั่งซื้อใน transaction)</li>
+        <li>ทำไม endpoint ของคำสั่งซื้อชื่อ <code>/carts/add</code> ไม่ใช่ <code>/orders</code> ที่ดูถูกหลักกว่า (ตอนเปิด POST /carts/add)</li>
+        <li>origin ที่ใส่ใน <code>enableCors</code> ป้องกันอะไร และ<em>ไม่</em>ป้องกันอะไร (ตอนเปิด CORS)</li>
+        <li>ทำไม response DTO ต้องเป็น <code>class</code> ไม่ใช่ <code>interface</code> (ตอนทำ mapper และตอนเขียนเอกสาร DTO)</li>
+        <li>ทำไม refresh token ต้อง hash ด้วย SHA-256 ไม่ใช่ bcrypt ทั้งที่ bcrypt ปลอดภัยกว่าสำหรับรหัสผ่าน (โบนัส — ตอนทำ refresh token)</li>
+        <li>ทำไม guard ต้องอ่าน metadata ทั้งระดับ handler และระดับ class ไม่ใช่แค่ระดับ handler (โบนัส — ตอนใส่ JWT guard)</li>
+        <li>ทำไม <code>Order.userId</code> ยังไม่ผูก foreign key ไปหา <code>User</code> ทั้งที่มีตาราง <code>User</code> แล้ว (โบนัส — ตอนออกแบบ model ของผู้ใช้)</li>
+      </ul>
+    </section>
+
+    <h2>ก้าวต่อไป</h2>
+    <ul>
+      <li><strong>ย้าย refresh token ไปไว้ใน httpOnly cookie</strong> — ตอนเปิด CORS เราตั้งข้อสังเกตไว้ว่า <code>*</code> ใช้ร่วมกับ cookie ไม่ได้ตามสเปก และโบนัสก็เลือกส่ง refresh token ทาง body ด้วยเหตุผลนั้นพอดี แต่ token ที่อยู่ใน JavaScript อ่านได้ก็ถูกขโมยด้วยสคริปต์ที่หลุดเข้ามาได้ cookie แบบ <code>httpOnly</code> ปิดช่องนั้น แลกกับการต้องเปิด <code>credentials</code> ใน CORS ระบุ origin ให้ชัด และรับมือกับ CSRF ที่ตามมาเป็นแพ็กเกจ — เป็นแบบฝึกหัดที่ดีเพราะมันบังคับให้กลับไปแก้การตัดสินใจเก่าสองข้อพร้อมกัน</li>
+      <li><strong>พา test suite ขึ้น CI</strong> — <code>npm run test:e2e</code> ที่เรามีตอนนี้ยิงใส่ฐานข้อมูล<em>ตัวเดียวกับที่ใช้พัฒนา</em> ซึ่งสะดวกตอนทำ workshop แต่ใช้บน CI ไม่ได้: test จะเห็นข้อมูลที่ใครก็ไม่รู้ทิ้งค้างไว้ และเคสสั่งซื้อก็เขียนแถวจริงเพิ่มทุกครั้งที่รัน ทางออกคือฐานข้อมูลแยกที่ยกขึ้นก่อนรันแล้วทิ้งทีหลัง ตาม <a href="../../../Week_09/01_nestjs_basic/content/49_creating-our-first-e2e-test.html">NestJS Fundamentals — สร้าง e2e Test แรก</a> ที่ผูก <code>pretest:e2e</code> กับ <code>posttest:e2e</code> ไว้กับ service <code>test-db</code> ใน Docker</li>
+      <li><strong>ขึ้น production ด้วย <code>migrate deploy</code></strong> — บนเครื่องเราใช้ <code>prisma migrate dev</code> แต่บน server ต้องใช้ <code>prisma migrate deploy</code> ซึ่งรัน migration ที่ commit ไว้เท่านั้นและไม่สร้างไฟล์ใหม่ ลองย้ายฐานข้อมูลขึ้น Postgres แบบ hosted ตาม <a href="../../../Week_08/02_API_Design_in_Nodejs_v1/content/18_hosted_postgresql_with_neon.html">API Design in Node.js — Hosted PostgreSQL กับ Neon</a> แล้วเปลี่ยนแค่ <code>DATABASE_URL</code> กับ <code>CORS_ORIGIN</code></li>
+      <li><strong>ตัด stock ในทรานแซกชันของคำสั่งซื้อ</strong> — ตอนนี้สั่งซื้อแล้ว <code>stock</code> ไม่ลด เพราะคอร์สนี้ยังไม่ทำในเวอร์ชันแรก แต่ของจริงต้องลด และต้องลดใน <code>$transaction</code> เดียวกับที่สร้าง <code>Order</code> พร้อมปฏิเสธเมื่อของไม่พอ — เป็นแบบฝึกหัดที่ดีเรื่อง business rule กับ atomicity</li>
+      <li><strong>เพิ่ม endpoint ค้นหาสินค้า</strong> — ตอนนี้ client กรองสินค้าได้แค่ตาม category กับ pagination ลองเพิ่ม query param อย่าง <code>q</code> สำหรับค้นหาชื่อสินค้า โดยเริ่มจากการเพิ่ม field นี้ลงใน <code>docs/api-spec.md</code> ก่อนเขียนโค้ดสักบรรทัด — ฝึก workflow contract-first แบบเดียวกับที่ใช้มาทั้งคอร์สด้วยตัวเองอีกครั้ง</li>
+    </ul>
+
+    <h2>ปิดท้าย</h2>
+    <p>สิ่งที่คอร์สนี้ฝึกจริง ๆ ไม่ใช่การพิมพ์โค้ด NestJS ให้เร็วขึ้น แต่เป็นการ<strong>สั่งงานให้แคบพอจะตรวจได้</strong>: จับสัญญาก่อนเขียนโค้ด แปลงสัญญาเป็น prompt สามส่วนที่ระบุผลลัพธ์และข้อห้ามชัดเจน แล้วอ่านผลลัพธ์ทีละบรรทัดเทียบกับสัญญานั้น ยิ่ง AI พิมพ์ได้เร็วเท่าไร ความสามารถในการตรวจของคุณยิ่งเป็นตัวตัดสินคุณภาพงานมากขึ้นเท่านั้น เก็บกติกาข้อเดียวนี้ไปใช้กับทุกโปรเจกต์ต่อจากนี้</p>
+    <blockquote><p>AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้ — ถ้าอธิบายไม่ได้ แปลว่ายังไม่ผ่านบทนี้</p></blockquote>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/guards">Guards (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/fundamentals/testing">Testing (NestJS Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-migrate/workflows/development-and-production">Prisma Migrate: Development and production (Prisma Docs)</a></li>
+      <li><a href="https://docs.cursor.com/context/rules">Rules (Cursor Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="27_roles-and-admin-endpoints.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เพิ่มโครงสร้าง HTML ของ Curriculum Section ที่มี section header และ curriculum card 6 ใบ ต่อจาก Feature Section" />
+    <title>เพิ่ม HTML ของ Curriculum Section | Responsive Layout Lab: Flexbox + CSS Grid</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 03 · ประกอบหน้าเว็บด้วย CSS Grid (Page Composition with CSS Grid)</p>
+          <h1>เพิ่ม HTML ของ Curriculum Section</h1>
+          <p class="lesson-original-title" lang="en">Curriculum Section HTML</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เพิ่ม section ใหม่เข้าไปในหน้าเดิมได้ถูกตำแหน่ง</li>
+            <li>แยกได้ว่า element ไหนคือ grid container (parent) และ element ไหนคือ grid item (child)</li>
+            <li>นำ class <code>.section-header</code> และ <code>.eyebrow</code> ที่มีอยู่แล้วกลับมาใช้ซ้ำได้</li>
+          </ul>
+        </section>
+
+        <h2>ตำแหน่งของ section ใหม่</h2>
+        <p>เปิด <code>index.html</code> แล้วหา <code>&lt;section class="features-section"&gt;</code> เราจะเพิ่ม Curriculum Section <strong>ต่อจาก Feature Section และก่อน Pricing Section</strong> ลำดับ section ใน <code>&lt;main&gt;</code> จะเป็นแบบนี้:</p>
+        <pre><code class="language-text">hero-section
+features-section
+curriculum-section   ← เพิ่มใหม่ในบทนี้
+pricing-section</code></pre>
+
+        <h2>HTML ของ Curriculum Section</h2>
+        <p>วาง code นี้ต่อจาก <code>&lt;/section&gt;</code> ของ features-section:</p>
+        <pre><code class="language-html">&lt;section id="curriculum" class="curriculum-section"&gt;
+  &lt;div class="section-header"&gt;
+    &lt;p class="eyebrow"&gt;Curriculum&lt;/p&gt;
+
+    &lt;h2&gt;สิ่งที่คุณจะได้เรียนใน Bootcamp นี้&lt;/h2&gt;
+
+    &lt;p&gt;
+      เรียนแบบเป็นขั้นตอน ตั้งแต่พื้นฐานการเขียนโค้ด
+      ไปจนถึงการสร้าง Full-Stack Application และการใช้ AI อย่างถูกวิธี
+    &lt;/p&gt;
+  &lt;/div&gt;
+
+  &lt;div class="curriculum-grid"&gt;
+    &lt;article class="curriculum-card"&gt;
+      &lt;p class="module-number"&gt;01&lt;/p&gt;
+      &lt;h3&gt;Manual Coding Foundation&lt;/h3&gt;
+      &lt;p&gt;
+        เข้าใจ HTML, CSS, JavaScript และ logic พื้นฐานด้วยตัวเองก่อนใช้ AI
+      &lt;/p&gt;
+    &lt;/article&gt;
+
+    &lt;article class="curriculum-card"&gt;
+      &lt;p class="module-number"&gt;02&lt;/p&gt;
+      &lt;h3&gt;Modern Web Layout&lt;/h3&gt;
+      &lt;p&gt;
+        ฝึก Semantic HTML, Box Model, Flexbox, Grid และ Responsive Layout
+      &lt;/p&gt;
+    &lt;/article&gt;
+
+    &lt;article class="curriculum-card"&gt;
+      &lt;p class="module-number"&gt;03&lt;/p&gt;
+      &lt;h3&gt;TypeScript Basics&lt;/h3&gt;
+      &lt;p&gt;
+        เรียนรู้ type, function, interface และการ debug code อย่างเป็นระบบ
+      &lt;/p&gt;
+    &lt;/article&gt;
+
+    &lt;article class="curriculum-card"&gt;
+      &lt;p class="module-number"&gt;04&lt;/p&gt;
+      &lt;h3&gt;React Frontend&lt;/h3&gt;
+      &lt;p&gt;
+        สร้าง UI ด้วย React, component thinking, props, state และ effects
+      &lt;/p&gt;
+    &lt;/article&gt;
+
+    &lt;article class="curriculum-card"&gt;
+      &lt;p class="module-number"&gt;05&lt;/p&gt;
+      &lt;h3&gt;Backend &amp; Database&lt;/h3&gt;
+      &lt;p&gt;
+        สร้าง API ด้วย Node.js, NestJS, PostgreSQL, Prisma และ Neon
+      &lt;/p&gt;
+    &lt;/article&gt;
+
+    &lt;article class="curriculum-card"&gt;
+      &lt;p class="module-number"&gt;06&lt;/p&gt;
+      &lt;h3&gt;Capstone Launch&lt;/h3&gt;
+      &lt;p&gt;
+        รวมทุกอย่างเป็น Full-Stack Project พร้อม deploy และ present ผลงาน
+      &lt;/p&gt;
+    &lt;/article&gt;
+  &lt;/div&gt;
+&lt;/section&gt;</code></pre>
+
+        <h2>อ่านโครงสร้างทีละชั้น</h2>
+        <pre class="file-tree">section.curriculum-section
+├── div.section-header        ← หัวข้อของ section (eyebrow + h2 + คำอธิบาย)
+└── div.curriculum-grid       ← grid container (parent)
+    ├── article.curriculum-card   ← grid item (child) ใบที่ 1
+    ├── article.curriculum-card   ← ใบที่ 2
+    └── … รวม 6 ใบ</pre>
+        <ul>
+          <li><strong><code>.section-header</code></strong> — class เดิมที่ Pricing Section ใช้อยู่แล้ว เราใช้ซ้ำเพื่อให้หัวข้อทุก section หน้าตาเหมือนกัน (บทที่ 07 จะปรับ style ของมันเพิ่ม)</li>
+          <li><strong><code>.eyebrow</code></strong> — label ตัวเล็กสีฟ้าเหนือหัวข้อ มี style อยู่แล้วจาก hero</li>
+          <li><strong><code>.curriculum-grid</code></strong> — div ที่ครอบ card ทั้งหมด จะเป็นตัวที่ได้ <code>display: grid</code> ในบทถัดไป</li>
+          <li><strong><code>&lt;article class="curriculum-card"&gt;</code></strong> — card แต่ละใบเป็นเนื้อหาที่อยู่ได้ด้วยตัวเอง จึงใช้ <code>&lt;article&gt;</code> ตามหลัก Semantic HTML</li>
+          <li><strong><code>&lt;h3&gt;</code></strong> — หัวข้อ card ใช้ h3 เพราะอยู่ใต้ h2 ของ section (ลำดับ heading ไม่กระโดด)</li>
+          <li><strong><code>id="curriculum"</code></strong> — ใส่ไว้ให้ลิงก์ “Curriculum” ใน navbar กระโดดมาที่ section นี้ได้ เราจะต่อลิงก์ในบทที่ 07</li>
+        </ul>
+
+        <div class="warning">
+          <p>ระวังวาง section ใหม่ผิดที่ เช่น วางไว้<em>ข้างใน</em> <code>.features-section</code> (ก่อน <code>&lt;/section&gt;</code> ของมัน) — curriculum ทั้งก้อนจะกลายเป็นลูกของ flex container แล้วไปเบียดอยู่ในแถวเดียวกับ feature cards ถ้าหน้าเว็บดูแปลก ให้เช็กว่า tag ปิด <code>&lt;/section&gt;</code> ครบและอยู่ถูกลำดับ</p>
+        </div>
+
+        <h2>ผลลัพธ์ตอนนี้</h2>
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>หัวข้อ “สิ่งที่คุณจะได้เรียนใน Bootcamp นี้” โผล่ใต้ feature cards แต่ card ทั้ง 6 ใบยังเรียงลงมาเป็นแนวตั้งยาว ๆ ไม่มีกรอบ — เป็นเรื่องปกติ เพราะเรายังไม่ได้เขียน CSS ของ section นี้เลย</p>
+        </section>
+
+        <div class="verification">
+          <ul>
+            <li><code>curriculum-section</code> อยู่ระหว่าง <code>features-section</code> กับ <code>pricing-section</code></li>
+            <li>ใน <code>.curriculum-grid</code> มี <code>&lt;article class="curriculum-card"&gt;</code> ครบ 6 ใบ (01–06)</li>
+            <li>ชี้ได้ว่า parent คือ <code>.curriculum-grid</code> และ child คือ <code>.curriculum-card</code></li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="02_flexbox_vs_grid.html" rel="prev">ก่อนหน้า: Flexbox กับ Grid ใช้ตอนไหน</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="04_css_grid_basics.html" rel="next">ถัดไป: จัด Curriculum Cards ด้วย CSS Grid</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

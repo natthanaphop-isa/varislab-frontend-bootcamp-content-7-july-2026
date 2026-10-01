@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ตรวจสอบว่าเครื่องติดตั้ง Git แล้วด้วย git --version และตั้งชื่อกับอีเมลที่จะติดไปกับทุก commit ด้วย git config" />
+    <title>ตรวจสอบการติดตั้งและตั้งค่า Git | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 02 · รู้จัก Git และเตรียมเครื่อง (Getting Started)</p>
+          <h1>ตรวจสอบการติดตั้งและตั้งค่า Git</h1>
+          <p class="lesson-original-title" lang="en">Install Check &amp; Git Config</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ตรวจสอบว่าเครื่องติดตั้ง Git แล้วหรือยัง</li>
+            <li>ตั้งชื่อและอีเมลสำหรับ commit ด้วย <code>git config --global</code></li>
+            <li>ตรวจสอบค่าที่ตั้งไว้ได้</li>
+          </ul>
+        </section>
+
+        <h2>ตรวจสอบการติดตั้ง Git</h2>
+        <p>เปิด Terminal (macOS/Linux) หรือ PowerShell (Windows) แล้วรัน:</p>
+        <pre><code class="language-bash">git --version</code></pre>
+        <p>ผลลัพธ์ตัวอย่าง:</p>
+        <pre><code class="language-text">git version 2.50.1</code></pre>
+        <p>ถ้าเห็นเลขเวอร์ชัน (ตัวเลขในเครื่องคุณอาจต่างจากนี้ได้) แสดงว่า Git ถูกติดตั้งแล้ว พร้อมใช้งาน</p>
+
+        <div class="warning">
+          <p>ถ้าเห็นข้อความทำนอง <code>command not found: git</code> หรือ <code>'git' is not recognized</code> แปลว่ายังไม่ได้ติดตั้ง Git ให้ดาวน์โหลดจาก <a href="https://git-scm.com/downloads" target="_blank" rel="noreferrer">git-scm.com/downloads</a> ติดตั้งให้เสร็จ แล้วปิด-เปิด Terminal ใหม่ก่อนลองอีกครั้ง</p>
+        </div>
+
+        <h2>ตั้งชื่อและอีเมล</h2>
+        <p>
+          ทุก commit ต้องมีข้อมูลของคนที่สร้างมัน Git จึงต้องรู้ว่า “เราเป็นใคร” ชื่อและอีเมลนี้จะติดไปกับ commit history ของเราตลอด
+        </p>
+        <p>ตั้งชื่อ:</p>
+        <pre><code class="language-bash">git config --global user.name "Your Name"</code></pre>
+        <p>ตั้งอีเมล:</p>
+        <pre><code class="language-bash">git config --global user.email "your-email@example.com"</code></pre>
+        <p>
+          แทน <code>Your Name</code> และ <code>your-email@example.com</code> ด้วยข้อมูลจริงของคุณ ส่วน <code>--global</code>
+          หมายถึงตั้งค่าครั้งเดียวใช้ได้กับทุก repository ในเครื่องนี้ ไม่ต้องตั้งใหม่ทุกโปรเจกต์
+        </p>
+
+        <h3>ตรวจสอบค่าที่ตั้งไว้</h3>
+        <pre><code class="language-bash">git config --global user.name
+git config --global user.email</code></pre>
+        <p>ทั้งสองบรรทัดควรแสดงชื่อและอีเมลที่เพิ่งตั้งไป</p>
+
+        <div class="note">
+          <p>แนะนำให้ใช้<strong>อีเมลเดียวกับ GitHub account</strong> เพื่อให้ GitHub เชื่อม commit เข้ากับ profile ของเราได้ถูกต้อง</p>
+        </div>
+
+        <div class="warning">
+          <p>ถ้าข้ามขั้นตอนนี้ไป ตอนสร้าง commit แรกอาจเจอ error <code>Author identity unknown</code> วิธีแก้คือกลับมารันสองคำสั่ง <code>git config --global</code> ข้างบนแล้ว commit ใหม่</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li><code>git --version</code> แสดงเลขเวอร์ชันของ Git</li>
+            <li><code>git config --global user.name</code> แสดงชื่อของคุณ</li>
+            <li><code>git config --global user.email</code> แสดงอีเมลของคุณ (ควรตรงกับ GitHub)</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="01_why_version_control.html" rel="prev">ก่อนหน้า: ทำไมต้องใช้ Git และ Git ต่างจาก GitHub อย่างไร</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="03_create_profile_project.html" rel="next">ถัดไป: สร้าง Developer Profile Page</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

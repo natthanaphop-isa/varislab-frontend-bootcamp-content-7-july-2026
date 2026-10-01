@@ -1,0 +1,98 @@
+{
+  "questions": [
+    {
+      "prompt": "เหตุใด update() จึงเรียก findOne(id) ก่อนสั่ง Prisma Client อัปเดตข้อมูล?",
+      "body": "<pre><code>async update(id: string, dto: UpdateCoffeeDto) {\n  await this.findOne(id);\n  return this.prisma.coffee.update({\n    where: { id: +id },\n    data: dto,\n  });\n}</code></pre>",
+      "choices": [
+        "เพื่อแปลง DTO ให้เป็น Prisma Model ก่อนบันทึก",
+        "เพื่อให้ id ที่ไม่มีจริงได้ 404 ที่อ่านรู้เรื่อง แทนที่จะปล่อย Prisma Error P2025 กลายเป็น 500",
+        "เพื่อ Copy ข้อมูลจาก Database มาเก็บใน Array ก่อนอัปเดต"
+      ],
+      "correctChoice": 2,
+      "explanation": "findOne() ตรวจว่ามี Coffee จริงและโยน NotFoundException เมื่อไม่พบ จึงได้ Response 404 ที่ชัดเจน ส่วน +id แปลง Route Parameter จาก String เป็น Number ให้ตรงกับฟิลด์ Int ของ Prisma"
+    },
+    {
+      "prompt": "Schema ใดประกาศความสัมพันธ์แบบ Implicit Many-to-many ระหว่าง Coffee และ Flavor ได้ถูกต้อง?",
+      "choices": [
+        "Coffee มี flavors Flavor[] และ Flavor มี coffees Coffee[] โดยให้ Prisma สร้างตารางเชื่อมให้อัตโนมัติ",
+        "Coffee มี flavorId Int เพียงฝั่งเดียว และ Flavor ไม่ต้องมี Relation Field",
+        "Coffee และ Flavor ต่างมี id เดียวกัน จึงถือว่าเป็น Many-to-many โดยอัตโนมัติ"
+      ],
+      "correctChoice": 1,
+      "explanation": "Implicit Many-to-many ต้องประกาศ Relation Field แบบ Array ครบทั้งสองฝั่ง Prisma จึงสร้างตารางเชื่อม _CoffeeToFlavor ให้เอง ส่วน Flavor.name ใช้ @unique เพื่อป้องกันชื่อซ้ำและรองรับ connectOrCreate"
+    },
+    {
+      "prompt": "ต้องปรับ Query อย่างไรเพื่อให้ GET /coffees คืนข้อมูล flavors ที่สัมพันธ์กับ Coffee มาด้วย?",
+      "body": "<pre><code>return this.prisma.coffee.findMany({\n  // เพิ่ม Option ที่นี่\n});</code></pre>",
+      "choices": [
+        "เพิ่ม data: { flavors: true }",
+        "เพิ่ม where: { flavors: true }",
+        "เพิ่ม include: { flavors: true }"
+      ],
+      "correctChoice": 3,
+      "explanation": "Prisma ไม่โหลด Relation มาโดย Default ต้องระบุ include: { flavors: true } อย่างชัดเจนใน Query ที่ต้องการ Relation และ Type ของผลลัพธ์จะมี flavors: Flavor[] เพิ่มขึ้นตามไปด้วย"
+    },
+    {
+      "prompt": "เมื่อ PATCH ส่ง flavors ชุดใหม่มา โค้ดใดแทนที่ความสัมพันธ์เดิมทั้งหมดและนำ Flavor ที่มีชื่อซ้ำกลับมาใช้ใหม่?",
+      "choices": [
+        "flavors: { deleteMany: {}, create: flavors }",
+        "flavors: { set: [], connectOrCreate: connectOrCreateFlavors(flavors) }",
+        "flavors: { include: true, increment: 1 }"
+      ],
+      "correctChoice": 2,
+      "explanation": "set: [] ตัดแถวความสัมพันธ์เดิมในตารางเชื่อมก่อน แล้ว connectOrCreate จะเชื่อม Flavor เดิมหรือสร้างใหม่ตามชื่อที่เป็น Unique โดยไม่ลบแถว Flavor ทิ้ง"
+    },
+    {
+      "prompt": "ข้อใดต่อค่า Pagination จาก HTTP Query ไปยัง Prisma ได้ถูกต้องและให้ผลลัพธ์แต่ละหน้ามีลำดับคงที่?",
+      "body": "<pre><code>GET /coffees?limit=10&amp;offset=20</code></pre>",
+      "choices": [
+        "findMany({ take: 20, skip: 10 }) โดยไม่ต้องกำหนดลำดับ",
+        "findMany({ limit: 10, offset: 20, sort: 'id' })",
+        "findMany({ take: 10, skip: 20, orderBy: { id: 'asc' } })"
+      ],
+      "correctChoice": 3,
+      "explanation": "Prisma ใช้ take เป็นจำนวนแถวสูงสุดและ skip เป็นจำนวนแถวที่ข้าม ส่วน orderBy ทำให้ทุก Query ใช้ลำดับเดียวกัน ลดโอกาสที่ข้อมูลจะซ้ำหรือหายระหว่างหน้า"
+    },
+    {
+      "prompt": "ข้อใดเป็นกติกาสำคัญของ Interactive Transaction นี้?",
+      "body": "<pre><code>return this.prisma.$transaction(async (tx) =&gt; {\n  const coffee = await tx.coffee.update(...);\n  await tx.event.create(...);\n  return coffee;\n});</code></pre>",
+      "choices": [
+        "ทุก Query ที่ต้อง Rollback พร้อมกันต้องเรียกผ่าน tx ภายใน Callback",
+        "Query แรกต้องเรียกผ่าน tx แต่ Query ถัดไปควรเรียกผ่าน this.prisma",
+        "ต้องเรียก tx.commit() และ tx.release() เองก่อน Return"
+      ],
+      "correctChoice": 1,
+      "explanation": "ทุก Query ในหน่วยงานเดียวกันต้องใช้ Transaction Client ชื่อ tx หาก Callback สำเร็จ Prisma จะ Commit และหาก Throw จะ Rollback ทั้งหมด พร้อมคืน Connection ให้ Pool โดยอัตโนมัติ"
+    },
+    {
+      "prompt": "ข้อใดอธิบายความแตกต่างระหว่าง @@index([name, type]) และ @@unique([name, type]) ได้ถูกต้อง?",
+      "choices": [
+        "ทั้งสองแบบห้ามคู่ name และ type ซ้ำเหมือนกัน ต่างกันเพียงชื่อ Syntax",
+        "@@index ช่วย Query ที่ค้นสองคอลัมน์ร่วมกัน ส่วน @@unique เพิ่ม Constraint ห้ามคู่ค่านั้นซ้ำด้วย",
+        "@@index ใช้ได้เฉพาะ Primary Key ส่วน @@unique ใช้ได้เฉพาะ Foreign Key"
+      ],
+      "correctChoice": 2,
+      "explanation": "Composite Index ช่วยการค้นหาตาม Query Pattern ที่สอดคล้องกัน แต่ไม่บังคับความไม่ซ้ำ ส่วน Composite Unique Index ทำทั้ง Index และ Constraint ที่ห้ามค่าของทั้งคู่ซ้ำกัน"
+    },
+    {
+      "prompt": "Workflow ใดเหมาะกับการเปลี่ยนชื่อ Column ที่มีข้อมูลอยู่และนำขึ้น Production อย่างปลอดภัย?",
+      "choices": [
+        "ใช้ prisma db push บน Production แล้วตอบยอมรับ Data Loss",
+        "ใช้ prisma migrate reset บน Production เพื่อให้ Schema เริ่มต้นใหม่",
+        "สร้าง Migration ด้วย --create-only แก้ SQL เป็น RENAME COLUMN รีวิวและ Apply จากนั้นใช้ migrate deploy บน Production"
+      ],
+      "correctChoice": 3,
+      "explanation": "--create-only เปิดโอกาสให้อ่านและแก้ SQL ที่ Prisma ร่างไว้เป็น RENAME COLUMN เพื่อรักษาข้อมูล ส่วน Production ควรใช้ migrate deploy เพื่อ Apply เฉพาะ Migration ที่ยังค้างตามลำดับ"
+    },
+    {
+      "prompt": "CoffeeRatingService ต้องใช้ CoffeesService จาก CoffeesModule การตั้งค่าใดรักษา Module Encapsulation และแชร์ Provider Instance เดิมได้ถูกต้อง?",
+      "choices": [
+        "เพิ่ม exports: [CoffeesService] ใน CoffeesModule และ imports: [CoffeesModule] ใน CoffeeRatingModule",
+        "เพิ่ม CoffeesService ซ้ำใน providers ของ CoffeeRatingModule โดยไม่ต้องแก้ CoffeesModule",
+        "เพิ่ม CoffeeRatingService ใน controllers ของ CoffeesModule แล้วเรียกผ่าน Route"
+      ],
+      "correctChoice": 1,
+      "explanation": "Module เจ้าของต้อง Export Provider และ Module ผู้ใช้ต้อง Import Module เจ้าของ การประกาศ CoffeesService ซ้ำใน providers ของ CoffeeRatingModule เป็น Anti-pattern เพราะทำให้ได้ Instance แยก"
+    }
+  ]
+}

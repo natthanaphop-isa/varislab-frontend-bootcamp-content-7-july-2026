@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="จัด navbar ให้ logo อยู่ซ้าย เมนูอยู่ขวา ด้วย display: flex, justify-content: space-between, align-items: center และ gap" />
+    <title>สร้าง Navbar ด้วย Flexbox | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 05 · สร้าง Landing Page ด้วย Flexbox (Building the Page)</p>
+          <h1>สร้าง Navbar ด้วย Flexbox</h1>
+          <p class="lesson-original-title" lang="en">Navbar with Flexbox</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>จัด logo ไว้ซ้ายและเมนูไว้ขวาด้วย <code>justify-content: space-between</code></li>
+            <li>จัดทั้งสองฝั่งให้อยู่กึ่งกลางแนวตั้งด้วย <code>align-items: center</code></li>
+            <li>ใช้ Flexbox ซ้อนกันสองชั้น (<code>.navbar</code> และ <code>.nav-links</code>)</li>
+          </ul>
+        </section>
+
+        <h2>เส้นคั่นใต้ header</h2>
+        <p>เริ่มจากกล่องนอกสุดก่อน <code>.site-header</code> กินความกว้างเต็มจอ เราใส่เส้นขอบล่างบาง ๆ เพื่อแยก navbar ออกจากเนื้อหา:</p>
+        <pre><code class="language-css">.site-header {
+    border-bottom: 1px solid #1e293b;
+}</code></pre>
+
+        <h2>ขั้นที่ 1: container ของ navbar</h2>
+        <p>เราไม่อยากให้ logo ไปชิดขอบจอซ้ายสุด และเมนูชิดขวาสุดบนจอกว้าง ๆ จึงใช้เทคนิค container จากเรื่อง Box Model ก่อน:</p>
+        <pre><code class="language-css">.navbar {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 32px;
+}</code></pre>
+        <p>ตอนนี้ navbar อยู่กลางจอ กว้างไม่เกิน 1100px แต่ logo กับเมนูยังเรียงบน-ล่างอยู่</p>
+
+        <h2>ขั้นที่ 2: เปิด Flexbox</h2>
+        <p><code>.navbar</code> มีลูก 2 ตัว คือ <code>.logo</code> และ <code>.nav-links</code> เพิ่ม <code>display: flex</code>:</p>
+        <pre><code class="language-css">.navbar {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 32px;
+
+    display: flex;
+}</code></pre>
+        <p>refresh ดู — logo กับกลุ่มเมนูมาอยู่แถวเดียวกันแล้ว แต่ยังชิดกันอยู่ทางซ้าย</p>
+
+        <h2>ขั้นที่ 3: ดันไปซ้าย-ขวา และจัดกึ่งกลางแนวตั้ง</h2>
+        <pre><code class="language-css">.navbar {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 32px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}</code></pre>
+        <ul>
+          <li><code>display: flex</code> — เปิด Flexbox</li>
+          <li><code>justify-content: space-between</code> — ดัน logo ไปซ้าย และ nav links ไปขวา</li>
+          <li><code>align-items: center</code> — ทำให้ทั้งสองฝั่งอยู่กึ่งกลางแนวตั้ง</li>
+        </ul>
+        <div class="note">
+          <p>เราเว้นบรรทัดว่างแยกกลุ่ม property ของ "ขนาด/ระยะห่าง" ออกจากกลุ่ม "Flexbox" ไม่มีผลกับการแสดงผล แต่ช่วยให้อ่านโค้ดง่ายขึ้นมาก</p>
+        </div>
+
+        <h2>ตกแต่ง logo</h2>
+        <pre><code class="language-css">.logo {
+    margin: 0;
+    color: #38bdf8;
+    font-size: 20px;
+    font-weight: bold;
+}</code></pre>
+        <p><code>.logo</code> เป็น <code>&lt;p&gt;</code> ซึ่งเบราว์เซอร์ใส่ <code>margin</code> บน-ล่างมาให้ ถ้าไม่ตั้ง <code>margin: 0</code> ระยะนี้จะทำให้ logo ดูเยื้องและ navbar สูงเกินจำเป็น</p>
+
+        <h2>Flexbox ชั้นที่สอง: <code>.nav-links</code></h2>
+        <p>ลิงก์ <code>&lt;a&gt;</code> เป็น inline element จึงอยู่แถวเดียวกันอยู่แล้ว แต่ชิดกันจนอ่านยาก <code>.nav-links</code> เองก็เป็น flex container ได้ เพราะข้างในมีลิงก์หลายตัวที่อยากให้เรียงเป็นแถว และเราจะใช้ <code>gap</code> สร้างระยะห่าง:</p>
+        <pre><code class="language-css">.nav-links {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-links a {
+    color: #cbd5e1;
+    text-decoration: none;
+}
+
+.nav-links a:hover {
+    color: #38bdf8;
+}</code></pre>
+        <ul>
+          <li><code>.nav-links a</code> — เลือกเฉพาะ <code>&lt;a&gt;</code> ที่อยู่ใน <code>.nav-links</code> เปลี่ยนเป็นสีเทาอ่อน และเอาเส้นใต้ออก</li>
+          <li><code>:hover</code> — เมื่อเอาเมาส์ชี้ ลิงก์จะเปลี่ยนเป็นสีฟ้าเดียวกับ logo</li>
+        </ul>
+
+        <div class="expected-result">
+          <p>navbar มี "Varis Lab" สีฟ้าอยู่ซ้าย เมนู Overview, Curriculum, Pricing สีเทาอ่อนอยู่ขวา มีระยะห่างระหว่างลิงก์ ทั้งสองฝั่งอยู่กึ่งกลางแนวตั้ง และมีเส้นบาง ๆ คั่นใต้ header ลองชี้เมาส์ที่ลิงก์จะเห็นสีเปลี่ยน</p>
+        </div>
+
+        <div class="warning">
+          <p><strong>ผิดบ่อย:</strong> ใส่ <code>justify-content: space-between</code> ที่ <code>.nav-links</code> แทน <code>.navbar</code> — ผลคือลิงก์ 3 ตัวกระจายกันแปลก ๆ แต่ logo กับเมนูยังไม่แยกซ้าย-ขวา จำไว้ว่า property นี้ต้องใส่ที่ parent ของ "สิ่งที่อยากแยกซ้าย-ขวา" ซึ่งก็คือ <code>.navbar</code></p>
+        </div>
+
+        <h2>ลองทำ</h2>
+        <p>เปลี่ยน <code>justify-content</code> ใน <code>.navbar</code> เป็น <code>center</code> แล้วดูว่า layout เปลี่ยนอย่างไร จากนั้นลอง <code>flex-start</code> สังเกตว่า <code>gap</code> ไม่ได้ใส่ไว้ที่ <code>.navbar</code> logo กับเมนูจึงชิดกัน เสร็จแล้วอย่าลืมเปลี่ยนกลับเป็น <code>space-between</code></p>
+
+        <div class="verification">
+          <ul>
+            <li>logo อยู่ซ้าย เมนูอยู่ขวา และอยู่กึ่งกลางแนวตั้งเดียวกัน</li>
+            <li>ลิงก์มีระยะห่าง 20px จาก <code>gap</code> ไม่ใช่จาก <code>margin</code></li>
+            <li>อธิบายได้ว่าหน้านี้มี flex container ซ้อนกันสองชั้นตรงไหน</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="04_html_structure.html" rel="prev">ก่อนหน้า: โครงสร้าง HTML และ CSS พื้นฐาน</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="06_hero_section.html" rel="next">ถัดไป: Hero Section แบบซ้าย-ขวา และ Flex Ratio</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

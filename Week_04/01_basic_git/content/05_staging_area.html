@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เข้าใจ workflow พื้นฐานของ Git และสามพื้นที่ Working Directory, Staging Area, Local Repository แล้วเลือกไฟล์เข้า staging area ด้วย git add" />
+    <title>Working Directory, Staging Area และ git add | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 05 · บันทึกประวัติใน Local Repository (Local Repository)</p>
+          <h1>Working Directory, Staging Area และ git add</h1>
+          <p class="lesson-original-title" lang="en">The Three Areas &amp; git add</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>จำ workflow พื้นฐาน แก้ไฟล์ → <code>git status</code> → <code>git add</code> → <code>git commit</code></li>
+            <li>อธิบายสามพื้นที่ของ Git: Working Directory, Staging Area และ Local Repository</li>
+            <li>เพิ่มไฟล์ทีละไฟล์หรือทั้งหมดเข้า staging area ด้วย <code>git add</code></li>
+            <li>อธิบายความหมายของจุดใน <code>git add .</code></li>
+          </ul>
+        </section>
+
+        <h2>Git Workflow พื้นฐาน</h2>
+        <p>ก่อนลงมือ มาดูภาพรวมของ workflow ที่เราจะใช้ซ้ำไปตลอดชีวิตการเป็น developer:</p>
+        <pre><code class="language-text">แก้ไขไฟล์
+    ↓
+git status
+    ↓
+git add
+    ↓
+git commit
+    ↓
+git push</code></pre>
+        <p>ช่วงแรกที่เรายังไม่ได้เชื่อมกับ GitHub จะใช้แค่สี่ขั้นแรก:</p>
+        <pre><code class="language-text">แก้ไขไฟล์
+    ↓
+git status
+    ↓
+git add
+    ↓
+git commit</code></pre>
+
+        <h2>สามพื้นที่ของ Git</h2>
+        <p>Git แบ่งการทำงานออกเป็น 3 พื้นที่หลัก ไฟล์จะเดินทางจากพื้นที่หนึ่งไปอีกพื้นที่หนึ่งด้วยคำสั่งต่าง ๆ:</p>
+        <pre><code class="language-text">Working Directory
+ไฟล์ที่เรากำลังแก้ไข
+        ↓ git add
+
+Staging Area
+ไฟล์ที่เราเลือกเตรียมไว้
+        ↓ git commit
+
+Local Repository
+ประวัติที่ถูกบันทึกในเครื่อง</code></pre>
+        <ul>
+          <li><strong>Working Directory</strong> — ไฟล์จริงที่เราเปิดแก้อยู่ใน VS Code</li>
+          <li><strong>Staging Area</strong> — “พื้นที่พักรอ” ของการเปลี่ยนแปลงที่เราเลือกแล้วว่าจะใส่ใน commit ถัดไป</li>
+          <li><strong>Local Repository</strong> — ประวัติ commit ที่บันทึกไว้ในโฟลเดอร์ <code>.git</code> ในเครื่องเรา</li>
+        </ul>
+
+        <h3>เปรียบเทียบกับการแพ็กกล่องพัสดุ</h3>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>Git</th><th>การแพ็กกล่องพัสดุ</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Working Directory</td><td>ของทั้งหมดที่อยู่ในห้อง</td></tr>
+              <tr><td>Staging Area</td><td>ของที่เลือกใส่กล่อง</td></tr>
+              <tr><td>Commit</td><td>การปิดกล่องและเขียนป้ายว่าข้างในมีอะไร</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          เราไม่จำเป็นต้องยัดของทุกอย่างในห้องลงกล่องเดียวกัน ฉันใดก็ฉันนั้น เราไม่จำเป็นต้องนำทุกไฟล์เข้า commit เดียวกัน
+          staging area ทำให้เราเลือกได้ว่า commit นี้จะมีอะไรบ้าง เพื่อให้แต่ละ commit มีความหมายชัดเจน
+        </p>
+
+        <h2>เพิ่มไฟล์เข้า Staging Area</h2>
+        <p>ลองเพิ่มทีละไฟล์ก่อน เพื่อให้เห็นว่าเกิดอะไรขึ้น:</p>
+        <pre><code class="language-bash">git add index.html</code></pre>
+        <p>ตรวจสอบ:</p>
+        <pre><code class="language-bash">git status</code></pre>
+        <p>ผลลัพธ์จะคล้าย:</p>
+        <pre><code class="language-text">On branch main
+
+No commits yet
+
+Changes to be committed:
+  (use "git rm --cached &lt;file&gt;..." to unstage)
+        new file:   index.html
+
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+        style.css</code></pre>
+        <p>
+          ตอนนี้ <code>index.html</code> ย้ายไปอยู่ในส่วน <strong>Changes to be committed</strong> แล้ว (อยู่ใน staging area)
+          ส่วน <code>style.css</code> ยังอยู่ในส่วน Untracked เพราะเรายังไม่ได้เลือกมัน
+        </p>
+        <p>เพิ่ม <code>style.css</code> ด้วย:</p>
+        <pre><code class="language-bash">git add style.css</code></pre>
+        <p>หรือถ้าต้องการเพิ่มทุกไฟล์ในครั้งเดียว:</p>
+        <pre><code class="language-bash">git add .</code></pre>
+
+        <h3>จุดใน git add . หมายถึงอะไร</h3>
+        <p>
+          จุด <code>.</code> หมายถึง<strong>โฟลเดอร์ปัจจุบัน</strong> (แบบเดียวกับ <code>code .</code> ในบทที่ 03) ดังนั้น <code>git add .</code> จึงแปลว่า
+          “เพิ่มไฟล์ที่เปลี่ยนแปลงทั้งหมดในโฟลเดอร์ปัจจุบันเข้า staging area”
+        </p>
+        <p>หลังเพิ่มครบ รัน <code>git status</code> อีกครั้ง ควรเห็นทั้งสองไฟล์อยู่ใต้ Changes to be committed:</p>
+        <pre><code class="language-text">Changes to be committed:
+  (use "git rm --cached &lt;file&gt;..." to unstage)
+        new file:   index.html
+        new file:   style.css</code></pre>
+
+        <div class="warning">
+          <p><code>git add .</code> สะดวกก็จริง แต่มันเพิ่ม<strong>ทุกอย่าง</strong>ที่เปลี่ยน ก่อนใช้ให้รัน <code>git status</code> ดูก่อนเสมอว่ามีไฟล์แปลก ๆ ที่ไม่ได้ตั้งใจจะ commit ติดมาด้วยหรือเปล่า และต้องรันจากโฟลเดอร์ root ของโปรเจกต์</p>
+        </div>
+
+        <div class="note">
+          <p>ถ้าแก้ไฟล์หลังจาก <code>git add</code> ไปแล้ว การแก้ครั้งหลังจะยังไม่อยู่ใน staging area ต้อง <code>git add</code> ไฟล์นั้นซ้ำอีกรอบ — นิสัยดีคือรัน <code>git status</code> ก่อน commit ทุกครั้ง</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า Working Directory, Staging Area และ Local Repository ต่างกันอย่างไร</li>
+            <li>หลัง <code>git add index.html</code> เห็นไฟล์นั้นย้ายไปอยู่ใต้ Changes to be committed</li>
+            <li>หลัง <code>git add .</code> (หรือ add ครบทั้งสองไฟล์) <code>git status</code> ไม่มี Untracked files เหลือ</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="04_git_init_and_status.html" rel="prev">ก่อนหน้า: เริ่ม Repository ด้วย git init และ git status</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="06_first_commit.html" rel="next">ถัดไป: สร้าง Commit แรกและเขียน Commit Message ที่ดี</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="รู้จัก merge conflict ว่าเกิดขึ้นเมื่อไร อ่าน conflict marker และขั้นตอนหลังแก้ conflict เสร็จ" />
+    <title>รู้จัก Merge Conflict | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 13 · Branch และ Merge (Branch &amp; Merge)</p>
+          <h1>รู้จัก Merge Conflict</h1>
+          <p class="lesson-original-title" lang="en">Merge Conflict Overview</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายได้ว่า merge conflict เกิดขึ้นเมื่อไร</li>
+            <li>อ่าน conflict marker <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code> และ <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> ได้</li>
+            <li>บอกทางเลือกในการแก้ conflict และขั้นตอนหลังแก้เสร็จ</li>
+          </ul>
+        </section>
+
+        <p>
+          บทนี้เป็นการทำความรู้จักแนวคิดก่อน ยังไม่ต้องฝึกแก้ conflict แบบเต็มรูปแบบ เป้าหมายคือให้รู้ว่า <strong>conflict เป็นเรื่องปกติ</strong>
+          ไม่ใช่ว่าเราทำอะไรพัง และเมื่อเจอแล้ว Git ต้องการให้มนุษย์เป็นคนตัดสินใจ
+        </p>
+
+        <h2>Merge Conflict คืออะไร</h2>
+        <p>
+          ในบทที่แล้ว merge ของเราผ่านไปแบบ fast-forward เพราะ <code>main</code> ไม่มีอะไรเปลี่ยน แต่ถ้า<strong>ทั้งสอง branch แก้บรรทัดเดียวกัน</strong>
+          Git จะไม่สามารถตัดสินใจได้ว่าจะใช้โค้ดจากฝั่งใด นี่คือ <strong>merge conflict</strong>
+        </p>
+        <p>ตัวอย่าง บน <code>main</code> มีคนแก้ตำแหน่งเป็น:</p>
+        <pre><code class="language-html">&lt;p class="role"&gt;Frontend Developer&lt;/p&gt;</code></pre>
+        <p>ขณะเดียวกัน บน feature branch <code>feature/update-role</code> แก้บรรทัดเดียวกันเป็น:</p>
+        <pre><code class="language-html">&lt;p class="role"&gt;Full-Stack Developer&lt;/p&gt;</code></pre>
+        <p>เมื่ออยู่บน <code>main</code> แล้วรัน <code>git merge feature/update-role</code> Git จะแจ้งประมาณนี้:</p>
+        <pre><code class="language-text">Auto-merging index.html
+CONFLICT (content): Merge conflict in index.html
+Automatic merge failed; fix conflicts and then commit the result.</code></pre>
+        <p>และในไฟล์ <code>index.html</code> ตรงบรรทัดที่ชนกัน Git จะใส่เครื่องหมายไว้แบบนี้:</p>
+        <pre><code class="language-text">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+&lt;p class="role"&gt;Frontend Developer&lt;/p&gt;
+=======
+&lt;p class="role"&gt;Full-Stack Developer&lt;/p&gt;
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/update-role</code></pre>
+
+        <h2>อ่าน Conflict Marker</h2>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>ส่วน</th><th>ความหมาย</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>ระหว่าง <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> กับ <code>=======</code></td><td>โค้ดจาก branch ปัจจุบัน (branch ที่เรายืนอยู่ ในตัวอย่างคือ <code>main</code>)</td></tr>
+              <tr><td>ระหว่าง <code>=======</code> กับ <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/update-role</code></td><td>โค้ดจาก branch ที่กำลัง merge เข้ามา</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>ผู้พัฒนาต้องตัดสินใจว่าจะ:</p>
+        <ul>
+          <li>เลือกเวอร์ชันบน</li>
+          <li>เลือกเวอร์ชันล่าง</li>
+          <li>หรือเขียนเวอร์ชันใหม่ที่รวมทั้งสองฝั่ง</li>
+        </ul>
+        <p>เช่น ถ้าตัดสินใจใช้เวอร์ชันล่าง ให้ลบ marker ทั้งสามบรรทัดและเวอร์ชันบนออก จนเหลือแค่:</p>
+        <pre><code class="language-html">&lt;p class="role"&gt;Full-Stack Developer&lt;/p&gt;</code></pre>
+
+        <div class="warning">
+          <p>ต้องลบ marker <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code> และ <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> ออกให้หมดก่อน commit ถ้าลืมไว้ มันจะถูกบันทึกลงไฟล์จริงและโผล่ขึ้นมาบนหน้าเว็บ</p>
+        </div>
+
+        <h2>Workflow หลังแก้ Conflict</h2>
+        <p>เมื่อแก้ไฟล์เรียบร้อยและ save แล้ว ให้บอก Git ว่าแก้เสร็จแล้วด้วยการ add:</p>
+        <pre><code class="language-bash">git add .</code></pre>
+        <p>จากนั้น commit เพื่อจบการ merge:</p>
+        <pre><code class="language-bash">git commit -m "Resolve merge conflict"</code></pre>
+
+        <div class="note">
+          <p>ระหว่างที่ conflict ยังไม่ถูกแก้ <code>git status</code> จะบอกว่าไฟล์ไหนยังชนกันอยู่ (จะเห็นคำว่า <code>both modified</code>) เมื่อไม่แน่ใจว่าเหลืออะไรต้องทำ ให้กลับไปพึ่ง <code>git status</code> เหมือนเดิม ส่วน VS Code เองก็ไฮไลต์ส่วนที่ conflict และมีปุ่มช่วยเลือกฝั่งให้ด้วย</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า conflict เกิดเมื่อสอง branch แก้บรรทัดเดียวกัน จน Git ตัดสินใจเองไม่ได้</li>
+            <li>บอกได้ว่าส่วนไหนของ marker คือโค้ดจาก <code>HEAD</code> และส่วนไหนคือโค้ดจาก branch ที่ merge เข้ามา</li>
+            <li>รู้ว่าหลังแก้เสร็จต้องลบ marker แล้ว <code>git add</code> และ <code>git commit</code></li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="12_merge_into_main.html" rel="prev">ก่อนหน้า: Merge Feature กลับเข้า main</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="14_common_problems.html" rel="next">ถัดไป: ปัญหาที่พบบ่อยและวิธีแก้</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เขียน JavaScript เวอร์ชันแรกของ Student Goal Dashboard ที่เก็บข้อมูลนักเรียนเป็น array of objects แล้วใช้ forEach แสดงข้อมูลใน Console เพื่อตรวจก่อนแสดงบนหน้าเว็บ" />
+    <title>ตรวจข้อมูลใน Console ก่อน | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 08 · สร้าง Student Goal Dashboard (Building the Dashboard)</p>
+          <h1>ตรวจข้อมูลใน Console ก่อน</h1>
+          <p class="lesson-original-title" lang="en">Version 1: Console First</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เก็บข้อมูลนักเรียนของ dashboard เป็น array of objects ใน <code>script.js</code></li>
+            <li>ใช้ <code>forEach</code> กับ <code>console.log</code> ตรวจข้อมูลทุกรายการก่อนนำไปแสดงบนหน้าเว็บ</li>
+            <li>อธิบายได้ว่าทำไมการตรวจข้อมูลใน Console ก่อนจึงช่วยให้ debug ง่ายขึ้น</li>
+          </ul>
+        </section>
+
+        <h2>ทำไมต้องดูใน Console ก่อน</h2>
+        <p>ก่อนจะแสดงผลบนหน้าเว็บ เราลองดูข้อมูลใน Console ก่อน นี่คือวิธีทำงานที่ดี เพราะเราต้องมั่นใจก่อนว่า<strong>ข้อมูลของเราถูกต้อง</strong></p>
+        <p>ลองนึกภาพว่าเราเขียนทั้งข้อมูล loop และโค้ดสร้างการ์ดทีเดียวพร้อมกัน แล้วหน้าเว็บไม่แสดงอะไรเลย ปัญหาอาจอยู่ได้หลายจุด: ข้อมูลพิมพ์ผิด, loop ผิด, หา container ไม่เจอ, หรือสร้างการ์ดผิด การแบ่งทำทีละขั้นแล้วตรวจแต่ละขั้นให้ผ่านก่อน ทำให้เมื่อพังเรารู้ทันทีว่าพังที่ขั้นไหน</p>
+
+        <h2>JavaScript เวอร์ชัน 1</h2>
+        <p>ใส่โค้ดนี้ใน <code>script.js</code>:</p>
+        <pre><code class="language-javascript">const students = [
+  {
+    name: "Man",
+    goal: "เปลี่ยนสายงานเป็น Developer",
+    level: "เริ่มจากศูนย์",
+  },
+  {
+    name: "Jane",
+    goal: "สร้าง Portfolio",
+    level: "เคยเรียนมาบ้าง",
+  },
+  {
+    name: "Pond",
+    goal: "เข้าใจ Full-Stack",
+    level: "เคยทำโปรเจกต์เล็ก ๆ",
+  },
+];
+
+students.forEach(function (student) {
+  console.log(student.name);
+  console.log(student.goal);
+  console.log(student.level);
+});</code></pre>
+
+        <p>โค้ดนี้มีสองส่วนที่เราเรียนมาแล้ว:</p>
+        <ol>
+          <li><strong>ข้อมูล</strong> — <code>students</code> เป็น array ที่มี object 3 ตัว แต่ละตัวมี field <code>name</code>, <code>goal</code>, <code>level</code></li>
+          <li><strong>Loop</strong> — <code>forEach</code> วนผ่านนักเรียนทีละคน และแสดงทั้ง 3 field ของคนนั้นใน Console</li>
+        </ol>
+
+        <section class="expected-result">
+          <h2>ผลลัพธ์ที่ควรเห็น</h2>
+          <p>เปิด <code>index.html</code> แล้วเปิดแท็บ Console หน้าเว็บยังเหมือนบทที่แล้ว แต่ใน Console จะมี 9 บรรทัด เรียงเป็นชุดละ 3 บรรทัดต่อนักเรียนหนึ่งคน:</p>
+          <pre><code class="language-text">Man
+เปลี่ยนสายงานเป็น Developer
+เริ่มจากศูนย์
+Jane
+สร้าง Portfolio
+เคยเรียนมาบ้าง
+Pond
+เข้าใจ Full-Stack
+เคยทำโปรเจกต์เล็ก ๆ</code></pre>
+        </section>
+
+        <h2>ถ้าไม่เห็นตามนี้</h2>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>อาการ</th><th>สาเหตุที่เป็นไปได้</th><th>วิธีเช็ก</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Console ว่างเปล่า ไม่มีอะไรเลย</td>
+                <td>ไม่ได้ save, ไม่ได้ refresh หรือ <code>script.js</code> ไม่ได้เชื่อมกับ HTML</td>
+                <td>เช็กลิสต์ save / refresh / ถูกไฟล์ และบรรทัด <code>&lt;script src="script.js"&gt;</code></td>
+              </tr>
+              <tr>
+                <td>มี <code>SyntaxError</code> สีแดง</td>
+                <td>ลืมจุลภาคระหว่าง object หรือวงเล็บ/ปีกกา/เครื่องหมายคำพูดไม่ครบคู่</td>
+                <td>คลิกเลขบรรทัดที่ error บอก แล้วเช็กบรรทัดนั้นและบรรทัดก่อนหน้า</td>
+              </tr>
+              <tr>
+                <td>บางบรรทัดขึ้น <code>undefined</code></td>
+                <td>สะกดชื่อ field ใน <code>console.log</code> ไม่ตรงกับใน object</td>
+                <td>ใส่ <code>console.log(student);</code> ใน loop แล้วเทียบชื่อ field</td>
+              </tr>
+              <tr>
+                <td>ข้อมูลขึ้นซ้ำหลายชุด</td>
+                <td>copy object ซ้ำใน array โดยไม่ตั้งใจ</td>
+                <td><code>console.log(students.length);</code> ว่าได้ 3 หรือไม่</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <p>Console ของ Chrome ยุบข้อความที่เหมือนกันซึ่งแสดงติดกันไว้เป็นบรรทัดเดียว และมีตัวเลขบอกจำนวนครั้งกำกับไว้ ถ้าเห็นตัวเลขแบบนี้ แปลว่าบรรทัดนั้นถูกแสดงซ้ำหลายครั้ง</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li><code>script.js</code> มี array <code>students</code> ที่มี object 3 ตัว (Man, Jane, Pond)</li>
+            <li>Console แสดงชื่อ เป้าหมาย และพื้นฐานของทั้ง 3 คนครบ 9 บรรทัด</li>
+            <li>ไม่มี error สีแดงใน Console</li>
+            <li>อธิบายได้ว่าทำไมเราตรวจข้อมูลใน Console ก่อนสร้างการ์ด</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="07_project_html_css.html" rel="prev">ก่อนหน้า: เตรียมโปรเจกต์ HTML และ CSS</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="09_render_cards.html" rel="next">ถัดไป: สร้างการ์ดบนหน้าเว็บด้วย JavaScript</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

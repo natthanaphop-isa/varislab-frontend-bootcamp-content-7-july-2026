@@ -9,10 +9,10 @@
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 30 จาก 77</p>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 30/58</p>
     <h1>เพิ่ม Indexes ให้ Models</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
-      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <h2 id="objectives-heading">บทนี้เราจะทำอะไรบ้าง</h2>
       <ul>
         <li>อธิบายได้ว่า index ช่วยให้ query เร็วขึ้นอย่างไร และต้องแลกกับอะไร</li>
         <li>ประกาศ <code>@@index([...])</code> บนคอลัมน์เดียวที่ถูกใช้ค้นหาบ่อย</li>
@@ -70,11 +70,11 @@ FROM pg_indexes
 WHERE tablename = 'event';</code></div>
     </section>
     <section class="expected-result" aria-labelledby="exercise-result-heading">
-      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <h2 id="exercise-result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
       <p>ผลของ query แสดง index ของตาราง <code>event</code> อย่างน้อย 3 รายการ: <code>event_pkey</code> ของ <code>id</code>, <code>event_name_idx</code> ของ <code>name</code> และ composite index <code>event_name_type_idx</code> ที่ครอบ <code>name</code> กับ <code>type</code> — ทั้งหมดถูกสร้างจาก attribute ใน <code>schema.prisma</code> โดยตรง</p>
     </section>
     <section class="verification" aria-labelledby="exercise-check-heading">
-      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <h2 id="exercise-check-heading">ลองเช็กให้แน่ใจ</h2>
       <ul>
         <li><code>pg_indexes</code> ของตาราง <code>event</code> มี index ใหม่ปรากฏหลัง <code>db push</code></li>
         <li><code>indexdef</code> ของ composite index ระบุทั้งสองคอลัมน์ <code>(name, type)</code></li>
@@ -89,11 +89,11 @@ WHERE tablename = 'event';</code></div>
       <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
-      <a class="lesson-navigation__link" href="29_use-transactions.html" rel="prev">← บทก่อนหน้า</a>
-      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="29_use-transactions.html" rel="prev">← บทก่อน</a>
+      <a class="lesson-navigation__link" href="index.html">ดูบทเรียนทั้งหมด</a>
       <a class="lesson-navigation__link" href="31_setting-up-migrations.html" rel="next">บทถัดไป →</a>
     </nav>
   </main>
-  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+  <footer><p>NestJS Fundamentals Workshop · เนื้อหาตรวจทานล่าสุด 1 กันยายน 2026</p></footer>
 </body>
 </html>

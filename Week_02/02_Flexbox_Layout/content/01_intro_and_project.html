@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ทบทวน Box Model จากคอร์ส HTML/CSS พื้นฐาน และทำความรู้จักโปรเจกต์ Bootcamp Landing Page ที่เราจะจัด layout ด้วย Flexbox" />
+    <title>ภาพรวมบทเรียนและโปรเจกต์ | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 01 · พื้นฐาน Flexbox (Flexbox Fundamentals)</p>
+          <h1>ภาพรวมบทเรียนและโปรเจกต์</h1>
+          <p class="lesson-original-title" lang="en">Intro &amp; Project Overview</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ทบทวนแนวคิด "ทุก element คือกล่อง" และเครื่องมือ <code>padding</code>, <code>margin</code>, <code>max-width</code> จากเรื่อง Box Model ได้</li>
+            <li>อธิบายได้ว่าคอร์สนี้จะตอบคำถาม "มีกล่องหลายใบ จะจัดวางยังไง" ด้วย Flexbox</li>
+            <li>เห็นภาพหน้า landing page ที่เราจะสร้าง และรู้ว่าไฟล์ของโปรเจกต์อยู่ตรงไหน</li>
+          </ul>
+        </section>
+
+        <h2>ทบทวนสิ่งที่เรียนมาแล้ว</h2>
+        <p>ก่อนเริ่มคอร์สนี้ เราควรมีพื้นฐาน HTML/CSS ต่อไปนี้ ซึ่งคอร์สนี้จะต่อยอดโดยตรง:</p>
+        <ul>
+          <li>HTML ควรมีความหมาย ด้วย <strong>Semantic HTML</strong> (<code>header</code>, <code>nav</code>, <code>main</code>, <code>section</code>, <code>article</code>, <code>footer</code>)</li>
+          <li><strong>ทุก element บนหน้าเว็บคือกล่อง</strong> และเราใช้ <code>padding</code>, <code>margin</code>, <code>border</code>, <code>width</code> ควบคุมพื้นที่ของกล่องแต่ละใบ</li>
+          <li><code>padding</code> คือระยะห่างด้านใน ส่วน <code>margin</code> คือระยะห่างด้านนอก</li>
+          <li><code>max-width</code> คู่กับ <code>margin: 0 auto</code> ใช้จัด container ให้อยู่กลางหน้า</li>
+        </ul>
+
+        <h2>คำถามหลักของคอร์สนี้</h2>
+        <p>เมื่อเราควบคุมกล่องทีละใบได้แล้ว คำถามถัดไปคือ:</p>
+        <blockquote><strong>ถ้ามีกล่องหลายใบ เราจะจัดวางมันยังไงให้เป็น layout ที่ดูเป็นมืออาชีพ?</strong></blockquote>
+        <p>ตัวอย่างสิ่งที่เราอยากทำบ่อย ๆ ในเว็บจริง:</p>
+        <ul>
+          <li>ให้ logo อยู่ซ้าย และเมนูอยู่ขวาใน navbar</li>
+          <li>ให้ hero section มีข้อความด้านซ้าย และกล่องข้อมูลด้านขวา</li>
+          <li>ให้ feature card 3 ใบเรียงอยู่ในแถวเดียวกัน โดยมีระยะห่างเท่า ๆ กัน</li>
+          <li>ให้ layout เปลี่ยนเป็นเรียงบน-ล่างเมื่อหน้าจอเล็กลง</li>
+        </ul>
+        <p>เครื่องมือหลักที่เราจะใช้ตอบโจทย์ทั้งหมดนี้คือ <strong>Flexbox</strong> ซึ่งเป็นเครื่องมือ CSS ที่ใช้บ่อยมากในการจัด layout หน้าเว็บจริง โดยเฉพาะ navbar, card layout, section layout และ component ต่าง ๆ</p>
+
+        <div class="note">
+          <p>คอร์สนี้ยังไม่ต้องจำทุก property ของ Flexbox ให้ได้ทั้งหมด ขอแค่เข้าใจภาพหลักประโยคเดียว: <strong>Flexbox คือการบอก parent ว่าให้จัดลูก ๆ ข้างในอย่างไร</strong></p>
+        </div>
+
+        <h2>โปรเจกต์: Bootcamp Pricing &amp; Feature Section</h2>
+        <p>เราจะสร้างหน้า landing page ของ Full-Stack Bootcamp ที่ใช้ Flexbox หลายจุด ประกอบด้วย:</p>
+        <ol>
+          <li><strong>Navbar</strong> — logo ซ้าย เมนูขวา</li>
+          <li><strong>Hero layout แบบซ้าย-ขวา</strong> — ข้อความแนะนำคอร์ส กับกล่องสรุป course stats</li>
+          <li><strong>Feature cards 3 ใบ</strong> — เรียงเป็นแถวและกว้างเท่ากัน</li>
+          <li><strong>Pricing cards 2 ใบ</strong> — แผนจ่ายครั้งเดียว และแผนผ่อน</li>
+          <li><strong>Responsive เบื้องต้น</strong> — จอเล็กแล้วเปลี่ยนเป็นเรียงบน-ล่าง</li>
+        </ol>
+        <p>ภาพร่างของหน้าที่จะได้:</p>
+        <pre><code class="language-text">[Navbar]
+Varis Lab        Overview   Curriculum   Pricing
+
+[Hero Section]
+ซ้าย: ข้อความแนะนำคอร์ส
+ขวา: กล่องสรุป course stats
+
+[Feature Section]
+Card 1    Card 2    Card 3
+
+[Pricing Section]
+Plan 1    Plan 2</code></pre>
+
+        <h2>ไฟล์ของโปรเจกต์</h2>
+        <p>โปรเจกต์นี้มีแค่ 2 ไฟล์ คือ <code>index.html</code> และ <code>style.css</code> ตั้งชื่อโฟลเดอร์ว่า <code>flexbox-layout</code> (หรือชื่ออื่นที่คุณสะดวก):</p>
+        <pre class="file-tree">flexbox-layout/
+├── index.html
+└── style.css</pre>
+        <p>ในโฟลเดอร์ของคอร์สนี้จะมีโค้ดให้ 2 ชุด:</p>
+        <div class="comparison" role="region" aria-label="โฟลเดอร์โค้ดของคอร์ส" tabindex="0">
+          <table>
+            <thead><tr><th>โฟลเดอร์</th><th>คืออะไร</th><th>ใช้ทำอะไร</th></tr></thead>
+            <tbody>
+              <tr><td><code>start/</code></td><td>โค้ดฉบับร่างที่หน้าตาใกล้เสร็จแล้ว แต่ยังมีจุดที่ต้องเก็บงาน</td><td>ใช้ดูระหว่างเรียน และฝึกหาจุดที่ต่างจากฉบับเสร็จ (เราจะไล่ดูกันในบทที่ 09)</td></tr>
+              <tr><td><code>finish/</code></td><td>โค้ดฉบับสมบูรณ์</td><td>ใช้เทียบกับของเราเมื่อทำตามคู่มือจบ</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>ในคู่มือนี้เราจะเขียนทีละส่วนจนได้โค้ดเหมือน <code>finish/</code> ทุกบรรทัด เปิดไฟล์ <code>index.html</code> ในเบราว์เซอร์ไว้ แล้ว refresh ดูผลทุกครั้งที่เพิ่ม CSS</p>
+
+        <h2>เส้นทางของคู่มือ</h2>
+        <ul>
+          <li><strong>บทที่ 02–03</strong> — แนวคิด parent/children และ property หลักของ Flexbox</li>
+          <li><strong>บทที่ 04–08</strong> — ลงมือสร้างหน้า: HTML, navbar, hero, feature cards, pricing และ footer</li>
+          <li><strong>บทที่ 09–11</strong> — responsive เบื้องต้น, error ที่เจอบ่อย, challenge และการบ้าน</li>
+        </ul>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า <code>padding</code> กับ <code>margin</code> ต่างกันอย่างไร</li>
+            <li>บอกได้ว่าหน้าที่เราจะสร้างมีกี่ส่วน และส่วนไหนต้องจัดวางกล่องหลายใบ</li>
+            <li>สร้างโฟลเดอร์โปรเจกต์ที่มี <code>index.html</code> และ <code>style.css</code> พร้อมแล้ว</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="02_flexbox_mental_model.html" rel="next">ถัดไป: Flexbox Mental Model: Parent กับ Children</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

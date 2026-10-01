@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ทำความเข้าใจว่าหน้าเว็บประกอบจากส่วนเล็ก ๆ และ HTML, CSS, JavaScript แต่ละตัวทำหน้าที่อะไร" />
+    <title>หน้าเว็บประกอบขึ้นจากอะไร | สร้าง Professional Profile Card</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 01 · ภาพรวมก่อนเริ่ม (Getting Started)</p>
+          <h1>หน้าเว็บประกอบขึ้นจากอะไร</h1>
+          <p class="lesson-original-title" lang="en">What Is a Web Page</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายได้ว่าหน้าเว็บจริงถูกประกอบขึ้นจาก component เล็ก ๆ หลายชิ้น</li>
+            <li>บอกหน้าที่ของ HTML, CSS และ JavaScript ได้ด้วยประโยคสั้น ๆ</li>
+            <li>เข้าใจว่าทำไมเราเริ่มต้นด้วยการสร้าง Profile Card</li>
+          </ul>
+        </section>
+
+        <h2>ยินดีต้อนรับ</h2>
+        <p>ก่อนเริ่ม ขอบอกไว้ก่อนเลยว่าคอร์สนี้<strong>ไม่ได้คาดหวังให้คุณจำ syntax ได้ทั้งหมดตั้งแต่วันแรก</strong> และไม่ได้คาดหวังให้เขียนโค้ดคล่องทันที หลายคนอาจมาจากสายงานอื่น ไม่เคยเขียนโค้ดมาก่อน หรือเคยลองเรียนเองแต่ยังต่อภาพรวมไม่ติด ไม่เป็นไรเลย</p>
+        <p>สิ่งสำคัญที่สุดในช่วงแรกไม่ใช่ความเร็ว แต่คือ<strong>การเข้าใจภาพรวม</strong> และกล้าลงมือทำทีละขั้น ในคอร์สนี้เราจะโฟกัสแค่ 3 เรื่อง:</p>
+        <ol>
+          <li>หน้าเว็บมีโครงสร้างอย่างไร</li>
+          <li>CSS ทำให้หน้าเว็บดูดีขึ้นอย่างไร</li>
+          <li>JavaScript ทำให้หน้าเว็บตอบสนองกับผู้ใช้อย่างไร</li>
+        </ol>
+        <p>เรื่องอย่าง React, Backend, Database หรือ AI Coding แบบเต็มรูปแบบยังไม่อยู่ในคอร์สนี้ เพราะก่อนจะใช้เครื่องมือเหล่านั้นได้ดี เราต้องเข้าใจก่อนว่าเว็บธรรมดาหนึ่งหน้าเกิดขึ้นได้อย่างไร</p>
+
+        <h2>Web Page คืออะไร</h2>
+        <p>ทุกครั้งที่เราเปิดเว็บ ไม่ว่าจะเป็นหน้า Login, หน้า Course, หน้า Product, หน้า Dashboard หรือหน้า Portfolio สิ่งที่เห็นบนจอคือ <strong>Web Page</strong></p>
+        <p>เว็บจริงอาจดูซับซ้อนมาก แต่ถ้าแยกออกมาทีละชิ้น มันมักประกอบจากส่วนเล็ก ๆ หลายส่วนรวมกัน เช่น:</p>
+        <ul>
+          <li>Header</li>
+          <li>Card</li>
+          <li>Button</li>
+          <li>Form</li>
+          <li>Menu</li>
+          <li>Table</li>
+          <li>Profile section</li>
+          <li>Product section</li>
+        </ul>
+        <p>ส่วนเล็ก ๆ แต่ละชิ้นแบบนี้เรามักเรียกว่า <strong>component</strong> ในคอร์สนี้เราจะเริ่มจากชิ้นเล็กชิ้นเดียวก่อน คือ <strong>Profile Card</strong> เพราะ card เป็น component ที่เจอบ่อยมากในงานจริง ทั้งเว็บสมัครงาน เว็บคอร์สออนไลน์ ระบบ CRM หรือ Dashboard หลังบ้าน</p>
+
+        <h2>HTML / CSS / JavaScript: สามส่วนที่ทำงานร่วมกัน</h2>
+        <p>ภาพที่อยากให้จำติดตัวไปตลอดคอร์สนี้คือ:</p>
+        <blockquote>
+          <strong>HTML</strong> = โครงสร้าง<br />
+          <strong>CSS</strong> = หน้าตา<br />
+          <strong>JavaScript</strong> = พฤติกรรม
+        </blockquote>
+        <p>ถ้าเปรียบเทียบให้เห็นภาพ:</p>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>ภาษา</th>
+                <th>เปรียบเหมือน</th>
+                <th>ตัวอย่างกับ "ปุ่มหนึ่งปุ่ม"</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HTML</td>
+                <td>โครงกระดูกของหน้าเว็บ</td>
+                <td>"มีปุ่มอยู่ตรงนี้"</td>
+              </tr>
+              <tr>
+                <td>CSS</td>
+                <td>เสื้อผ้า สีสัน และการจัดวาง</td>
+                <td>"ปุ่มนี้สีฟ้า มุมโค้ง ตัวหนังสือหนา"</td>
+              </tr>
+              <tr>
+                <td>JavaScript</td>
+                <td>สมอง หรือพฤติกรรม</td>
+                <td>"ถ้าผู้ใช้กดปุ่ม ให้เปลี่ยนข้อความบนหน้าเว็บ"</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>ในโปรเจกต์นี้เราจะได้ใช้ครบทั้ง 3 ส่วน แต่ในระดับที่ยังไม่ยากเกินไป และแต่ละส่วนจะอยู่ในไฟล์ของตัวเองแยกกันชัดเจน</p>
+
+        <div class="note">
+          <p>ระหว่างทางถ้าเจอ error ไม่ต้องตกใจ <strong>Error เป็นเรื่องปกติของการเขียนโปรแกรม</strong> ทักษะที่เราจะฝึกไปด้วยกันคือการอ่านปัญหา วิเคราะห์ และแก้ทีละขั้น ซึ่งสำคัญกว่าการจำคำสั่งได้ทั้งหมด</p>
+        </div>
+
+        <section class="verification" aria-labelledby="check-heading">
+          <h2 id="check-heading">เช็กความเข้าใจ</h2>
+          <ul>
+            <li>ลองมองเว็บที่คุณใช้บ่อย แล้วชี้ให้ได้อย่างน้อย 3 component (เช่น header, card, button)</li>
+            <li>อธิบายได้ว่า HTML, CSS และ JavaScript ต่างกันอย่างไร โดยใช้ตัวอย่าง "ปุ่มหนึ่งปุ่ม"</li>
+          </ul>
+        </section>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="02_project_setup.html" rel="next">ถัดไป: ดูผลลัพธ์และสร้างโปรเจกต์แรก</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

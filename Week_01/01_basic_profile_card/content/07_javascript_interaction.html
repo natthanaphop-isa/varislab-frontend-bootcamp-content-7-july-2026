@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เขียน script.js เพื่อหา element ด้วย getElementById รอฟังการคลิกด้วย addEventListener และเปลี่ยนข้อความด้วย textContent" />
+    <title>ทำให้ปุ่มทำงานด้วย JavaScript | สร้าง Professional Profile Card</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 07 · JavaScript และก้าวต่อไป (Interaction &amp; Wrap Up)</p>
+          <h1>ทำให้ปุ่มทำงานด้วย JavaScript</h1>
+          <p class="lesson-original-title" lang="en">JavaScript Interaction</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>หา element ในหน้าเว็บด้วย <code>document.getElementById</code></li>
+            <li>สั่งให้ปุ่มรอฟังการคลิกด้วย <code>addEventListener</code></li>
+            <li>เปลี่ยนข้อความบนหน้าเว็บด้วย <code>textContent</code></li>
+          </ul>
+        </section>
+
+        <h2>สิ่งที่เราจะทำ</h2>
+        <p>ตอนนี้หน้าเว็บมีทั้งโครงสร้างและหน้าตาแล้ว แต่ปุ่มยังกดแล้วไม่เกิดอะไร JavaScript คือส่วนที่เพิ่ม<strong>พฤติกรรม</strong>ให้หน้าเว็บ ในโปรเจกต์นี้เราจะทำสิ่งง่าย ๆ อย่างเดียว:</p>
+        <blockquote>เมื่อผู้ใช้กดปุ่ม ให้ข้อความในการ์ดเปลี่ยน</blockquote>
+
+        <h2>เขียน script.js</h2>
+        <p>เปิดไฟล์ <code>script.js</code> แล้วเขียนโค้ดนี้:</p>
+        <pre><code class="language-javascript">const summary = document.getElementById("summary");
+const toggleButton = document.getElementById("toggleButton");
+
+toggleButton.addEventListener("click", function () {
+  summary.textContent =
+    "เป้าหมายของฉันคือการสร้างโปรเจกต์จริง เข้าใจพื้นฐาน Full-Stack และเตรียม Portfolio สำหรับสมัครงานสาย Developer";
+});</code></pre>
+        <p>Save แล้ว refresh browser จากนั้นลองกดปุ่ม <code>ดูเป้าหมายของฉัน</code></p>
+
+        <h2>อ่านโค้ดทีละบรรทัด</h2>
+
+        <h3>หาข้อความที่จะเปลี่ยน</h3>
+        <pre><code class="language-javascript">const summary = document.getElementById("summary");</code></pre>
+        <p>แปลว่า "ไปหา element ในหน้าเว็บที่มี id ชื่อ <code>summary</code> แล้วเก็บไว้ในตัวแปรชื่อ <code>summary</code>"</p>
+        <ul>
+          <li><code>const</code> — ประกาศ<strong>ตัวแปร</strong> คือตั้งชื่อให้ค่าบางอย่าง เพื่อเรียกใช้ทีหลัง</li>
+          <li><code>document</code> — ตัวแทนของหน้าเว็บทั้งหน้าใน JavaScript</li>
+          <li><code>getElementById("summary")</code> — ค้นหา element จาก id (ไม่ต้องใส่ <code>#</code> ข้างหน้า ต่างจาก CSS)</li>
+        </ul>
+
+        <h3>หาปุ่มที่ผู้ใช้จะกด</h3>
+        <pre><code class="language-javascript">const toggleButton = document.getElementById("toggleButton");</code></pre>
+        <p>แปลว่า "ไปหาปุ่มที่มี id ชื่อ <code>toggleButton</code> แล้วเก็บไว้ในตัวแปรชื่อ <code>toggleButton</code>"</p>
+
+        <h3>รอฟังการคลิก</h3>
+        <pre><code class="language-javascript">toggleButton.addEventListener("click", function () {
+  // โค้ดในนี้จะทำงานเมื่อผู้ใช้กดปุ่ม
+});</code></pre>
+        <p>แปลว่า "ให้ปุ่มนี้<strong>รอฟังเหตุการณ์ (event)</strong> <code>click</code> ถ้าผู้ใช้กดปุ่ม ให้ทำงานที่อยู่ใน function นี้" โค้ดในวงเล็บปีกกาจะยังไม่ทำงานตอนโหลดหน้า แต่จะทำงาน<em>ทุกครั้งที่มีการคลิก</em> ส่วนบรรทัดที่ขึ้นต้นด้วย <code>//</code> คือ comment เป็นโน้ตสำหรับคนอ่าน browser จะข้ามไป</p>
+
+        <h3>เปลี่ยนข้อความ</h3>
+        <pre><code class="language-javascript">summary.textContent = "ข้อความใหม่";</code></pre>
+        <p>แปลว่า "เปลี่ยนข้อความของ element <code>summary</code> ให้เป็นข้อความใหม่" เครื่องหมาย <code>=</code> ในที่นี้คือ<strong>การกำหนดค่า</strong> ไม่ใช่การเปรียบเทียบ ในโค้ดจริงเราขึ้นบรรทัดใหม่หลัง <code>=</code> แค่เพราะข้อความยาว ผลลัพธ์เหมือนกัน</p>
+
+        <h2>สรุปเป็นภาษาคน</h2>
+        <ol>
+          <li>ไปหาข้อความที่เราต้องการเปลี่ยน</li>
+          <li>ไปหาปุ่มที่ผู้ใช้จะกด</li>
+          <li>ถ้าผู้ใช้กดปุ่ม</li>
+          <li>ให้เปลี่ยนข้อความ</li>
+        </ol>
+        <p>สี่ขั้นนี้คือพื้นฐานของ interaction บนหน้าเว็บ แทบทุกปุ่มที่คุณเคยกดบนเว็บทำงานด้วยแนวคิดเดียวกัน</p>
+
+        <h2>HTML และ JavaScript เชื่อมกันตรงไหน</h2>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>ใน <code>index.html</code></th>
+                <th>ใน <code>script.js</code></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>&lt;p id="summary"&gt;</code></td>
+                <td><code>document.getElementById("summary")</code></td>
+              </tr>
+              <tr>
+                <td><code>&lt;button id="toggleButton"&gt;</code></td>
+                <td><code>document.getElementById("toggleButton")</code></td>
+              </tr>
+              <tr>
+                <td><code>&lt;script src="script.js"&gt;&lt;/script&gt;</code></td>
+                <td>ทำให้โค้ดทั้งไฟล์นี้ถูกโหลดและรัน</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>ก่อนกด การ์ดแสดงข้อความแนะนำตัวเดิม พอกดปุ่ม <code>ดูเป้าหมายของฉัน</code> ข้อความจะเปลี่ยนเป็น <q>เป้าหมายของฉันคือการสร้างโปรเจกต์จริง เข้าใจพื้นฐาน Full-Stack และเตรียม Portfolio สำหรับสมัครงานสาย Developer</q> ทันทีโดยไม่ต้อง refresh หน้า (ถ้า refresh ข้อความจะกลับเป็นแบบเดิม เพราะ browser โหลด HTML ใหม่)</p>
+        </section>
+
+        <div class="note">
+          <p>ไม่ต้องกังวลถ้ายังจำ <code>addEventListener</code> ไม่ได้ทั้งหมด สิ่งที่สำคัญกว่าคือเข้าใจว่า JavaScript สามารถ <strong>"จับ element"</strong> และ <strong>"ตอบสนองต่อ action ของผู้ใช้"</strong> ได้ syntax จะค่อย ๆ คุ้นเองเมื่อเห็นซ้ำและฝึกบ่อยขึ้น อ่านเพิ่มได้ที่ MDN: <a href="https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener" target="_blank" rel="noreferrer">addEventListener</a> และ <a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent" target="_blank" rel="noreferrer">textContent</a></p>
+        </div>
+
+        <div class="warning">
+          <p>JavaScript เข้มงวดเรื่องสะกดมาก <code>getElementById</code> ต้องเป็น <code>Id</code> (I ใหญ่ d เล็ก) ไม่ใช่ <code>ID</code>, <code>addEventListener</code> ต้องมี L ใหญ่ และข้อความต้องอยู่ในเครื่องหมายคำพูด <code>"..."</code> ครบคู่ ถ้ากดแล้วไม่เกิดอะไร ให้ไล่เช็กจุดเหล่านี้ และดูวิธีหาสาเหตุเพิ่มเติมในบทถัดไป</p>
+        </div>
+
+        <section class="verification" aria-labelledby="check-heading">
+          <h2 id="check-heading">ก่อนไปบทถัดไป เช็กว่า</h2>
+          <ul>
+            <li>กดปุ่มแล้วข้อความแนะนำตัวเปลี่ยนเป็นข้อความเป้าหมาย</li>
+            <li>อธิบายได้ว่า <code>getElementById</code>, <code>addEventListener</code> และ <code>textContent</code> แต่ละตัวทำอะไร</li>
+            <li>ชี้ได้ว่า id ใน <code>script.js</code> ตรงกับ id ตัวไหนใน <code>index.html</code></li>
+          </ul>
+        </section>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="06_styling_the_card.html" rel="prev">ก่อนหน้า: ตกแต่งการ์ด ข้อความ และปุ่ม</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="08_challenge_and_debugging.html" rel="next">ถัดไป: ปรับให้เป็นของตัวเอง และรับมือกับ Error</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

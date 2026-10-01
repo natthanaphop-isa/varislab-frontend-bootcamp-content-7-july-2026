@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ปิดทุก route ด้วย JWT guard แบบ global ผ่าน APP_GUARD ดู e2e test สิบเอ็ดข้อแดงทั้งหมด แล้วเปิด route เดิมกลับด้วย @Public() จนเขียวครบเหมือนเดิม" />
+  <title>JWT Guard และ @Public()</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>JWT Guard และ @Public()</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ผูก guard แบบ global ด้วย <code>APP_GUARD</code> และอธิบายได้ว่าทำไมวิธีนี้ทำให้ e2e test มองเห็น guard ส่วน <code>useGlobalGuards</code> ใน <code>main.ts</code> ไม่ทำให้เห็น</li>
+        <li>บอกความต่างระหว่าง <code>401</code> กับ <code>403</code> ได้ และเลือกโยนตัวที่ถูกจาก guard</li>
+        <li>ใช้ test ชุดที่สะสมมาทั้งคอร์สเป็นเครื่องมือพิสูจน์ว่าการเปิด route สาธารณะกลับคืนนั้นครบถ้วนจริง</li>
+      </ul>
+    </section>
+
+    <div class="note"><p>บทนี้มี prompt <strong>สองอันในสองแชท</strong> และ prompt แรกจะทำให้ <strong>e2e test แดงทั้งสิบเอ็ดข้อ</strong> — นั่นคือผลลัพธ์ที่ถูกต้องของขั้นนั้น ไม่ใช่ความผิดพลาดของคุณ prompt ที่สองจะทำให้มันกลับมาเขียวครบ ถ้าอ่านถึงตรงกลางแล้วรู้สึกว่าทำพัง ให้กลับมาอ่านย่อหน้านี้อีกครั้ง</p></div>
+
+    <h2>guard ที่ผูกผิดที่ จะหายไปตอน test</h2>
+    <p>โปรเจกต์นี้มีของที่ผูกแบบ global อยู่แล้วหนึ่งตัวคือ <code>ValidationPipe</code> ซึ่งประกาศไว้ใน <code>src/main.ts</code> และเราเจอผลข้างเคียงของมันมาแล้วตอนเขียน e2e test: <code>createNestApplication()</code> ไม่ได้รัน <code>main.ts</code> ให้ ทุก spec จึงต้องประกาศ <code>useGlobalPipes(...)</code> ซ้ำเองในไฟล์ test</p>
+    <p>ถ้าเราผูก guard ด้วยวิธีเดียวกัน คือ <code>app.useGlobalGuards(...)</code> ใน <code>main.ts</code> ผลจะเป็นแบบนี้: แอปจริงถูกป้องกัน แต่ e2e test ทั้งสิบเอ็ดข้อจะไม่เห็น guard เลยและยังเขียวสบายใจ ซึ่งแปลว่า test ชุดที่เราอุตส่าห์สะสมมาทั้งคอร์สจะบอกอะไรเกี่ยวกับ auth ไม่ได้สักอย่าง</p>
+    <p>เราจึงผูกอีกแบบ: ประกาศเป็น provider ที่ใช้ token พิเศษ <code>APP_GUARD</code> ใน <code>providers</code> ของ module ข้อแตกต่างคือ guard ตัวนี้เกิดจาก DI container และเดินทางมากับ module graph แปลว่า <code>Test.createTestingModule({ imports: [AppModule] })</code> ได้มันติดมาด้วยโดยอัตโนมัติ — ไม่ต้องประกาศซ้ำในไฟล์ test และที่สำคัญกว่าคือ<strong>ลืมประกาศไม่ได้</strong></p>
+    <p>ผลพลอยได้ที่เราต้องใช้จริงคือ guard ตัวนี้ inject อะไรก็ได้ ซึ่งจำเป็น เพราะมันต้องใช้ <code>JwtService</code> ตรวจลายเซ็น และ <code>Reflector</code> อ่าน metadata</p>
+
+    <h2>ปิดทุกอย่างก่อน แล้วค่อยเปิดทีละเส้น</h2>
+    <p>มีสองทางให้เลือกตอนตัดสินใจว่า route ไหนต้องมี token</p>
+    <div class="comparison" role="region" aria-label="เปรียบเทียบสองวิธีผูก guard" tabindex="0">
+      <table>
+        <thead><tr><th>วิธี</th><th>ลืมแล้วเกิดอะไร</th><th>ใครเจอก่อน</th></tr></thead>
+        <tbody>
+          <tr><td>ติด guard ทีละเส้นที่ต้องป้องกัน</td><td>เส้นที่ลืมจะ<em>เปิดโล่ง</em>อยู่เงียบ ๆ</td><td>คนที่เจอช่องโหว่ — อาจไม่ใช่ฝ่ายเรา</td></tr>
+          <tr><td>ปิดทุกเส้นเป็นค่าปริยาย แล้วเปิดเฉพาะที่ตั้งใจ</td><td>เส้นที่ลืมจะ<em>ปิดตาย</em>และพังทันที</td><td>เราเอง ตอนรัน test</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ความผิดพลาดเกิดได้ทั้งสองทาง ต่างกันที่ว่าความผิดพลาดนั้นดังหรือเงียบ เราเลือกทางที่มันดัง และบทนี้จะทำให้ได้ยินเสียงนั้นจริง ๆ</p>
+    <p>เครื่องมือที่ใช้เปิดกลับคือ metadata: ติด <code>@Public()</code> ไว้กับ controller หรือ handler แล้วให้ guard อ่านค่านั้นก่อนตัดสินใจ จุดที่ต้องระวังคือ <strong>อ่านให้ครบทั้งสองระดับ</strong> — <code>getAllAndOverride</code> รับรายการมาสองอย่างคือ handler กับ class ถ้าอ่านแค่ระดับ handler การติด <code>@Public()</code> ไว้บนตัว controller ทั้งก้อนจะไม่มีผลเลย ซึ่งเป็นวิธีที่เราอยากใช้เปิด <code>ProductsController</code> ทั้งสี่เส้นในครั้งเดียว</p>
+
+    <h2>401 หรือ 403</h2>
+    <p>guard ที่คืน <code>false</code> เฉย ๆ จะทำให้ NestJS ตอบ <code>403 Forbidden</code> ซึ่งเป็นคำตอบที่<em>ผิด</em>สำหรับกรณีไม่มี token</p>
+    <div class="comparison" role="region" aria-label="ความต่างของ 401 กับ 403" tabindex="0">
+      <table>
+        <thead><tr><th>Status</th><th>ความหมาย</th><th>ในระบบของเรา</th></tr></thead>
+        <tbody>
+          <tr><td><code>401 Unauthorized</code></td><td>"ฉันไม่รู้ว่าคุณเป็นใคร"</td><td>ไม่มี token, token ผิดรูป, ลายเซ็นไม่ตรง หรือหมดอายุ</td></tr>
+          <tr><td><code>403 Forbidden</code></td><td>"ฉันรู้ว่าคุณเป็นใคร และคุณไม่ได้รับอนุญาต"</td><td>token ถูกต้องทุกอย่าง แต่ <code>role</code> ไม่พอ — จะได้เจอในบทที่ทำ role</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>guard ของบทนี้จึง <code>throw new UnauthorizedException()</code> แทนการ <code>return false</code> ความต่างนี้ไม่ใช่เรื่องความสวยงามของตัวเลข: client ที่เจอ <code>401</code> รู้ว่าต้อง login ใหม่หรือ refresh token ส่วน <code>403</code> บอกว่าอย่าเสียเวลาลองอีก บัญชีนี้ทำสิ่งนี้ไม่ได้</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <p>รายการด้านล่างคือไฟล์ที่เปลี่ยนใน<strong>โค้ดอ้างอิงของคอร์ส</strong> — ใช้เป็นแผนที่ตอนเทียบงาน ไม่ใช่ข้อบังคับ Cursor ของคุณอาจวางไฟล์หรือตั้งชื่อต่างไปได้ ขอแค่ผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
+    <pre><code>ecommerce-api/
+└── src/
+    ├── app.controller.ts                (แก้ไข: @Public — prompt ที่สอง)
+    ├── auth/
+    │   ├── jwt-payload.interface.ts     (สร้างใหม่ — prompt แรก)
+    │   ├── public.decorator.ts          (สร้างใหม่ — prompt แรก)
+    │   ├── jwt-auth.guard.ts            (สร้างใหม่ — prompt แรก)
+    │   ├── auth.module.ts               (แก้ไข: APP_GUARD — prompt แรก)
+    │   └── auth.controller.ts           (แก้ไข: GET /auth/me — prompt ที่สอง)
+    ├── products/products.controller.ts  (แก้ไข: @Public — prompt ที่สอง)
+    └── orders/carts.controller.ts       (แก้ไข: @Public — prompt ที่สอง)</code></pre>
+    <ul>
+      <li><strong><code>src/auth/jwt-payload.interface.ts</code></strong> — ในโค้ดอ้างอิง: <code>JwtPayload</code> ที่ตรงกับสิ่งที่เราเซ็นตอน login และ <code>AuthenticatedRequest</code> ที่ขยาย <code>Request</code> ของ Express ให้มีฟิลด์ <code>user</code></li>
+      <li><strong><code>src/auth/jwt-auth.guard.ts</code></strong> — ในโค้ดอ้างอิง: อ่าน metadata ทั้งระดับ handler และ class, ดึง token จาก header <code>Authorization</code>, ตรวจด้วย <code>verifyAsync</code> แล้วแปะ payload ไว้ที่ request · โยน <code>UnauthorizedException</code> ไม่ใช่ <code>return false</code></li>
+      <li><strong>controller ทั้งสามตัวที่มีอยู่เดิม</strong> — ในโค้ดอ้างอิง: ติด <code>@Public()</code> ที่ระดับ class · ไม่มี logic ไหนเปลี่ยน มีแค่ decorator กับ import เพิ่ม</li>
+      <li>ไม่มีไฟล์ใน <code>test/</code> เปลี่ยนในบทนี้ — ทั้งสอง prompt</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="guard-heading">
+      <h2 id="guard-heading">Prompt แรก: ปิดทุกอย่าง</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before jwt guard"</code>) — commit นี้สำคัญกว่าปกติ เพราะปลาย prompt นี้แอปจะอยู่ในสภาพที่ endpoint เดิมทั้งหมดเรียกไม่ได้ ถ้าอยากถอยกลับ <code>git reset --hard</code> ได้ทันที</p>
+      <div class="cursor-prompt"><code>ปิดทุก route ด้วย JWT guard แบบ global แล้วเปิด GET /auth/me ให้อ่านข้อมูลผู้ใช้จาก token
+@docs/auth-spec.md @src/auth/auth.module.ts @src/auth/auth.controller.ts
+
+ผลลัพธ์ที่ต้องได้:
+- GET /auth/me พร้อม header Authorization: Bearer &lt;access token&gt; → 200 และ body เป็น { id, email, role } ที่อ่านจาก payload ของ token ตรง ๆ ไม่ query ฐานข้อมูลซ้ำ
+- ไม่มี header, header ผิดรูป, token หมดอายุ หรือ token ที่เซ็นด้วย secret อื่น → 401 ทุกกรณี ไม่ใช่ 403
+- POST /auth/signup และ POST /auth/login ยังเรียกได้โดยไม่ต้องมี token
+- guard ผูกแบบ global ผ่าน APP_GUARD ใน providers ของ module ไม่ใช่ app.useGlobalGuards() ใน main.ts เพราะมันต้อง inject JwtService กับ Reflector ได้ และเพราะ e2e test ที่ boot AppModule ต้องมองเห็น guard ตัวนี้ด้วย
+- guard อ่าน metadata ของ @Public ทั้งระดับ handler และระดับ class
+- request ที่ผ่าน guard มี payload แปะไว้ให้ handler อ่านต่อได้ โดยประกาศ type ของ request ให้ชัด ห้ามใช้ index signature หรือ any
+- ยังไม่ต้องเปิด route เดิม — ตอนจบ prompt นี้ GET /products/categories ต้องตอบ 401 ซึ่งถูกต้องแล้วสำหรับขั้นนี้
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามใช้ passport หรือ @nestjs/passport
+- ห้ามแตะไฟล์ใน test/ เด็ดขาด
+- ห้ามแก้ src/products/, src/orders/ หรือ src/app.controller.ts ในรอบนี้
+- ห้ามใช้ any, as หรือ !</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="guard-review-heading">
+      <h2 id="guard-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>guard ลงทะเบียนด้วย <code>{ provide: APP_GUARD, useClass: ... }</code> ใน <code>providers</code> — ไม่ใช่ <code>app.useGlobalGuards()</code> และไม่ใช่ <code>@UseGuards()</code> แปะทีละ controller</li>
+        <li>อ่าน metadata ด้วย <code>getAllAndOverride</code> พร้อมรายการ <code>[context.getHandler(), context.getClass()]</code> — ถ้าอ่านแค่ handler ตัวเดียว prompt ถัดไปจะเปิด route ไม่ได้และคุณจะหาสาเหตุนาน</li>
+        <li><code>getRequest&lt;AuthenticatedRequest&gt;()</code> มี type argument จริง — <strong>ไม่ใช่</strong> <code>getRequest()</code> เปล่า ๆ แล้วเขียน <code>request['user'] = payload</code> ซึ่งเป็น <code>any</code> ที่ปลอมตัวมา</li>
+        <li><code>verifyAsync&lt;JwtPayload&gt;(token)</code> มี type argument — ไม่งั้น payload ที่ได้คือ <code>any</code> และมันจะไหลต่อไปทั้งแอป</li>
+        <li>โยน <code>UnauthorizedException</code> ทุกทางที่ล้มเหลว ไม่มี <code>return false</code> หลงเหลือ</li>
+        <li>แยก scheme ออกจาก token จริง — header ที่เขียนว่า <code>Basic abc</code> ต้องไม่ผ่าน ไม่ใช่แค่ตัด <code>split(' ')[1]</code> มาใช้โดยไม่ดูคำหน้า</li>
+        <li><code>git diff --stat test/</code> ว่างเปล่า</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> คัดลอกตัวอย่างจากเอกสารของ NestJS มาตรง ๆ ซึ่งเขียนว่า <code>request['user'] = payload</code> บน request ที่ไม่ได้ประกาศ type — มันผ่าน compiler ได้เพราะ index signature ทำให้กลายเป็น <code>any</code> เงียบ ๆ ซึ่งขัดกับกติกาข้อ "ห้ามใช้ any" ของโปรเจกต์นี้ตรง ๆ อีกกรณีคือลืม <code>context.getClass()</code> ใน <code>getAllAndOverride</code> ซึ่งจะไม่มีอาการอะไรเลยจนกว่าจะถึง prompt ถัดไป แล้ว test จะยังแดงทั้งที่ติด <code>@Public()</code> ครบแล้ว</p>
+      <p>โค้ดอ้างอิงของหัวข้อนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>// src/auth/jwt-payload.interface.ts
+import type { Request } from 'express';
+
+export interface JwtPayload {
+  sub: number;
+  email: string;
+  role: string;
+  iat: number;
+  exp: number;
+}
+
+export interface AuthenticatedRequest extends Request {
+  user: JwtPayload;
+}</code></pre>
+      <pre><code>// src/auth/public.decorator.ts
+import { SetMetadata } from '@nestjs/common';
+
+export const IS_PUBLIC_KEY = 'isPublic';
+
+export const Public = () =&gt; SetMetadata(IS_PUBLIC_KEY, true);</code></pre>
+      <pre><code>// src/auth/jwt-auth.guard.ts
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
+import { IS_PUBLIC_KEY } from './public.decorator.js';
+import type { AuthenticatedRequest, JwtPayload } from './jwt-payload.interface.js';
+
+@Injectable()
+export class JwtAuthGuard implements CanActivate {
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly jwt: JwtService,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise&lt;boolean&gt; {
+    const isPublic = this.reflector.getAllAndOverride&lt;boolean&gt;(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
+    const request = context.switchToHttp().getRequest&lt;AuthenticatedRequest&gt;();
+    const [scheme, token] = request.header('Authorization')?.split(' ') ?? [];
+
+    if (scheme !== 'Bearer' || token === undefined) {
+      throw new UnauthorizedException();
+    }
+
+    try {
+      request.user = await this.jwt.verifyAsync&lt;JwtPayload&gt;(token);
+    } catch {
+      throw new UnauthorizedException();
+    }
+
+    return true;
+  }
+}</code></pre>
+      <p>ท่อน <code>catch</code> ที่ไม่รับตัวแปร error เลยเป็นความตั้งใจ: เราไม่อยากส่งรายละเอียดว่า token พังเพราะอะไรกลับไปให้ client เพราะนั่นคือข้อมูลที่ช่วยคนที่กำลังลองเดาอยู่ ส่วนถ้าอยาก debug ตอน dev ให้ log ไว้ฝั่ง server ไม่ใช่ใส่ลงใน response</p>
+      <pre><code>// src/auth/auth.module.ts — เฉพาะส่วนที่เพิ่ม
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
+
+  providers: [
+    AuthService,
+    PasswordService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไปต่อไม่ได้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="guard-result-heading">
+      <h2 id="guard-result-heading">ผลลัพธ์ที่คาดหวัง — ทุกอย่างพัง และนั่นถูกแล้ว</h2>
+      <p>เอา token จากบทที่แล้วมายิง <code>GET /auth/me</code> ได้ข้อมูลผู้ใช้กลับมา</p>
+      <pre><code>{"id":1,"email":"student@example.com","role":"USER"}</code></pre>
+      <p>แต่ endpoint ที่ทำมาทั้งคอร์สตอบ <code>401</code> กันหมด รวมถึง <code>GET /</code> ที่มากับ scaffold ตั้งแต่วันแรกและเราไม่เคยเขียนเองสักบรรทัด</p>
+      <pre><code>{"message":"Unauthorized","error":"Unauthorized","statusCode":401}</code></pre>
+      <p>รัน <code>npm run test:e2e</code> แล้วจะเห็นภาพเต็ม — <strong>สิบเอ็ดข้อแดงทั้งหมด</strong> จากสามไฟล์</p>
+      <pre><code> ❯ test/app.e2e-spec.ts      (1 test | 1 failed)
+ ❯ test/orders.e2e-spec.ts   (1 test | 1 failed)
+ ❯ test/products.e2e-spec.ts (9 tests | 9 failed)
+
+ Test Files  3 failed (3)
+      Tests  11 failed (11)</code></pre>
+      <p>สังเกตว่า <code>GET /products/abc</code> ที่เคยคาดหวัง <code>400</code> จาก <code>ParseIntPipe</code> ก็แดงด้วย เพราะในลำดับการทำงานของ NestJS <strong>guard ทำงานก่อน pipe</strong> request จึงถูกตัดตั้งแต่ก่อนถึงขั้นแปลงชนิดข้อมูล ถ้าของคุณแดงไม่ครบสิบเอ็ด แปลว่ามีอะไรต่างจากที่คาดไว้ ให้กลับไปอ่านโค้ดก่อนไปต่อ</p>
+      <p>ส่วนที่ <em>ไม่</em> พังคือ Swagger — <code>http://localhost:3000/api</code> ยังเปิดได้ตามปกติ เพราะ <code>SwaggerModule.setup()</code> ติดตั้งตัวเองเป็น middleware ของ Express ไม่ใช่ route handler ของ NestJS จึงไม่มี handler ให้ guard ไปตรวจ และไม่มีที่ให้ติด <code>@Public()</code> ด้วย</p>
+      <div class="note"><p>นี่คือจุดที่ test ชุดที่สะสมมาตั้งแต่ต้นคอร์สพิสูจน์คุณค่าของตัวเอง มันไม่ได้บอกแค่ว่า "โค้ดใหม่ทำงานไหม" แต่บอกว่า "โค้ดใหม่ไปทำอะไรของเก่าพังหรือเปล่า" — และคำตอบตอนนี้คือพังหมด ซึ่งเราตั้งใจ ขั้นถัดไปคือทำให้มันเขียวกลับมาโดยไม่แตะไฟล์ test แม้แต่บรรทัดเดียว</p></div>
+    </section>
+
+    <section class="workshop" aria-labelledby="public-heading">
+      <h2 id="public-heading">Prompt ที่สอง: เปิด route เดิมกลับคืน</h2>
+      <p>commit งานของ prompt แรกไว้ก่อน (<code>git add -A &amp;&amp; git commit -m "feat: jwt auth guard"</code>) แล้ว<strong>เปิดแชทใหม่</strong>อีกครั้ง</p>
+      <div class="cursor-prompt"><code>เปิด route เดิมทั้งหกเส้นให้เรียกได้โดยไม่ต้องมี token ด้วย @Public()
+@src/auth/public.decorator.ts @src/products/products.controller.ts @src/orders/carts.controller.ts @src/app.controller.ts
+
+ผลลัพธ์ที่ต้องได้:
+- หกเส้นนี้กลับมาทำงานเหมือนก่อนใส่ guard ทุกประการโดยไม่ต้องส่ง token: GET /, GET /products/categories, GET /products, GET /products/:id, GET /products/category/:slug และ POST /carts/add
+- npm run test:e2e กลับมาได้ Test Files  3 passed (3) และ Tests  11 passed (11) — ข้อไหนยังแดงแปลว่ายังมี route ที่ลืมเปิด
+- POST /carts/add ต้องยิงได้โดยไม่มี token เพราะ React app ที่สลับมาใช้ API ของเราไม่รู้จัก token และต้องใช้งานได้เหมือนเดิม
+- GET /auth/me ยังต้องตอบ 401 เมื่อไม่มี token — การเปิด route เดิมต้องไม่เผลอเปิดทั้งแอป
+- ไฟล์ที่แก้มีแค่ decorator กับ import ที่เพิ่มเข้ามา ไม่มี logic ไหนเปลี่ยน
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแตะไฟล์ใน test/ เด็ดขาด ถ้า test ไม่ผ่านให้บอกผมว่าไม่ผ่านข้อไหน ห้ามแก้ test ให้ผ่านเอง
+- ห้ามแก้ logic ใน service หรือ mapper
+- ห้ามถอด guard ออก หรือทำให้ APP_GUARD ไม่ทำงาน
+- ห้ามใช้ any, as หรือ !</code></div>
+      <p>บรรทัด "ห้ามแตะไฟล์ใน <code>test/</code> เด็ดขาด" คือประโยคที่สำคัญที่สุดในบทนี้ เพราะทางที่<em>เร็วที่สุด</em>ในการทำให้ test เขียวคือไปแก้ <code>app.e2e-spec.ts</code> ให้คาดหวัง <code>401</code> แทน <code>200</code> ซึ่งจะทำให้ test ผ่านครบโดยที่แอปยังพังอยู่ทั้งใบ — และเราจะสูญเสียสิ่งเดียวที่ใช้ตรวจงานชิ้นนี้ได้ไปพร้อมกัน</p>
+    </section>
+
+    <section class="review" aria-labelledby="public-review-heading">
+      <h2 id="public-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li><code>git diff --stat test/</code> ว่างเปล่า — ไม่มีไฟล์ test ไหนถูกแตะ นี่คือข้อแรกที่ต้องตรวจ ก่อนดูด้วยซ้ำว่า test เขียวหรือไม่</li>
+        <li>type ที่โผล่ในลายเซ็นของ method ที่มี decorator ต้อง import ด้วย <code>import type</code> ตามกติกาใน <code>.cursor/rules</code> — <code>@Req() request: AuthenticatedRequest</code> ใน <code>GET /auth/me</code> คือกรณีแรกของโบนัสนี้ ถ้าใช้ <code>import</code> ธรรมดา <code>nest start</code> จะพังด้วย <code>TS1272</code></li>
+        <li><code>@Public()</code> ติดที่ระดับ class ทั้งสามตัว ไม่ใช่ไล่ติดทีละ handler สี่ครั้งใน <code>ProductsController</code></li>
+        <li><code>git diff src/products/ src/orders/ src/app.controller.ts</code> เห็นแค่บรรทัด import กับบรรทัด decorator — ไม่มี logic ไหนขยับ</li>
+        <li><code>APP_GUARD</code> ยังอยู่ครบใน <code>auth.module.ts</code> และไม่มีใครเติม <code>@Public()</code> ให้ <code>AuthController</code> ทั้งก้อน (ซึ่งจะเปิด <code>/auth/me</code> ทิ้งไว้ด้วย)</li>
+        <li>รัน <code>npm run test:e2e</code> ได้ <code>Tests  11 passed (11)</code> ครบ</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ติด <code>@Public()</code> ที่ <code>AuthController</code> ทั้ง class เพราะเห็นว่า signup กับ login เป็น endpoint สาธารณะทั้งคู่ — ซึ่งจะพา <code>GET /auth/me</code> เปิดโล่งไปด้วยโดยไม่มี test ไหนจับได้ เพราะยังไม่มี test ของ <code>/auth/me</code> ในสิบเอ็ดข้อนั้น นี่คือเหตุผลที่ข้อ "<code>GET /auth/me</code> ยังต้องตอบ 401" ถูกใส่ไว้ใน <code>ผลลัพธ์ที่ต้องได้</code> และต้องตรวจด้วยมือ</p>
+      <p>โค้ดอ้างอิงของหัวข้อนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>// src/products/products.controller.ts — เฉพาะสองบรรทัดที่เพิ่ม
+import { Public } from '../auth/public.decorator.js';
+
+@Public()
+@ApiTags('products')
+@Controller('products')
+export class ProductsController {</code></pre>
+      <pre><code>// src/auth/auth.controller.ts — เฉพาะส่วนที่เพิ่ม
+import type { AuthenticatedRequest } from './jwt-payload.interface.js';
+
+  @Public()
+  @Post('signup')
+  signup(@Body() dto: SignupDto) {
+    return this.authService.signup(dto);
+  }
+
+  @Public()
+  @Post('login')
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
+  }
+
+  @Get('me')
+  me(@Req() request: AuthenticatedRequest) {
+    const { sub, email, role } = request.user;
+    return { id: sub, email, role };
+  }</code></pre>
+      <p>สังเกตว่า <code>AuthController</code> ติด <code>@Public()</code> ที่ระดับ handler ทีละเส้น ต่างจากอีกสาม controller ที่ติดระดับ class — เพราะ controller นี้มีทั้งเส้นที่เปิดและเส้นที่ปิดปนกันอยู่ การติดที่ระดับ class จะเปิด <code>/auth/me</code> ไปด้วย</p>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="public-result-heading">
+      <h2 id="public-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>test กลับมาเขียวครบสิบเอ็ดข้อ โดยไม่มีไฟล์ test ไหนถูกแก้เลย</p>
+      <pre><code> ✓ test/app.e2e-spec.ts      (1 test)
+ ✓ test/orders.e2e-spec.ts   (1 test)
+ ✓ test/products.e2e-spec.ts (9 tests)
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)</code></pre>
+      <p>ตัวเลขชุดนี้คือตัวเดียวกับที่เห็นตอนจบบทคำสั่งซื้อ — แปลว่า API ที่ React app ใช้อยู่ไม่ได้เปลี่ยนพฤติกรรมแม้แต่จุดเดียว ทั้งที่ตอนนี้ทุก request วิ่งผ่าน guard ก่อนเสมอ</p>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>สี่เส้นสาธารณะยังเรียกได้โดยไม่มี token ต้องได้ <code>200</code> ทุกบรรทัด
+          <pre><code>for p in "/" "/products/categories" "/products?limit=2" "/products/1"; do
+  curl -s -o /dev/null -w "%{http_code} $p\n" "http://localhost:3000$p"
+done</code></pre></li>
+        <li>สั่งซื้อได้โดยไม่ต้องมี token — นี่คือข้อที่ทำให้ React app ยังทำงาน
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:3000/carts/add \
+  -H 'Content-Type: application/json' \
+  -d '{"userId":1,"products":[{"id":1,"quantity":2}],"address":{"address":"1 Main","email":"a@b.com","phone":"0812345678"}}'</code></pre></li>
+        <li><code>GET /auth/me</code> ต้องได้ <code>401</code> เมื่อไม่มี token และ <code>200</code> เมื่อมี
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3000/auth/me
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/auth/me</code></pre></li>
+        <li>token ที่ถูกแก้ payload ต้องใช้ไม่ได้ — ตัดตัวอักษรท้ายลายเซ็นออกหนึ่งตัวแล้วยิงใหม่ ต้องได้ <code>401</code>
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer ${TOKEN%?}" http://localhost:3000/auth/me</code></pre></li>
+        <li>scheme ที่ไม่ใช่ <code>Bearer</code> ต้องไม่ผ่าน
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Basic $TOKEN" http://localhost:3000/auth/me</code></pre></li>
+        <li>Swagger ยังเปิดได้ทั้งที่ guard ปิดทุก route — เพราะมันเป็น middleware ไม่ใช่ route
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3000/api</code></pre></li>
+        <li><code>npm run test:e2e</code> ได้ <code>Tests  11 passed (11)</code> และ <code>git diff --stat test/</code> ว่างเปล่า</li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: public routes and auth/me"</code></li>
+      </ul>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/guards">Guards: CanActivate และการผูกแบบ global (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/security/authentication#enable-authentication-globally">Enable authentication globally และ @Public() (NestJS Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/fundamentals/execution-context#reflection-and-metadata">Reflection and metadata: getAllAndOverride (NestJS Docs)</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/401">401 Unauthorized เทียบกับ 403 Forbidden (MDN)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="23_login-and-access-token.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="25_current-user-and-private-orders.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

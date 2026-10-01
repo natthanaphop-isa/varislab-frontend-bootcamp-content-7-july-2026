@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เพิ่ม Projects Section และ commit บน feature branch สลับกลับไป main เพื่อพิสูจน์ว่าแต่ละ branch มีไฟล์ต่างกัน และอ่าน commit graph" />
+    <title>พัฒนา Feature บน Branch แยก | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 11 · Branch และ Merge (Branch &amp; Merge)</p>
+          <h1>พัฒนา Feature บน Branch แยก</h1>
+          <p class="lesson-original-title" lang="en">Develop on a Feature Branch</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>แก้โค้ดและสร้าง commit บน feature branch</li>
+            <li>สลับกลับไป <code>main</code> ด้วย <code>git switch</code></li>
+            <li>อธิบายได้ว่าทำไม Projects Section “หายไป” เมื่ออยู่บน <code>main</code></li>
+            <li>อ่าน commit graph ด้วย <code>git log --oneline --graph --all</code></li>
+          </ul>
+        </section>
+
+        <p>จากบทที่แล้ว เรากำลังอยู่บน branch <code>feature/add-projects-section</code> (ตรวจด้วย <code>git branch</code> ก่อนเริ่มได้) ตอนนี้ถึงเวลาลงมือพัฒนา feature จริง</p>
+
+        <h2>เพิ่ม Projects Section</h2>
+        <p>เปิด <code>index.html</code> แล้วเพิ่ม section นี้<strong>ก่อนปุ่ม Contact Me</strong> (ต่อจาก section Current Skills):</p>
+        <pre><code class="language-html">&lt;section&gt;
+  &lt;h2&gt;My Projects&lt;/h2&gt;
+
+  &lt;ul&gt;
+    &lt;li&gt;Bootcamp Landing Page&lt;/li&gt;
+    &lt;li&gt;Developer Profile Page&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/section&gt;</code></pre>
+        <p>หลังเพิ่มแล้ว <code>&lt;main&gt;</code> ของเราจะเป็นแบบนี้:</p>
+        <pre><code class="language-html">    &lt;main class="profile-card"&gt;
+      &lt;h1&gt;Your Name&lt;/h1&gt;
+
+      &lt;p class="role"&gt;Junior Frontend Developer&lt;/p&gt;
+
+      &lt;p class="description"&gt;
+        I am learning full-stack web development and building projects to prepare
+        for my first software developer role.
+      &lt;/p&gt;
+
+      &lt;section&gt;
+        &lt;h2&gt;Current Skills&lt;/h2&gt;
+
+        &lt;ul&gt;
+          &lt;li&gt;HTML&lt;/li&gt;
+          &lt;li&gt;CSS&lt;/li&gt;
+          &lt;li&gt;JavaScript&lt;/li&gt;
+          &lt;li&gt;TypeScript Basics&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/section&gt;
+
+      &lt;section&gt;
+        &lt;h2&gt;My Projects&lt;/h2&gt;
+
+        &lt;ul&gt;
+          &lt;li&gt;Bootcamp Landing Page&lt;/li&gt;
+          &lt;li&gt;Developer Profile Page&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/section&gt;
+
+      &lt;a class="contact-button" href="mailto:your-email@example.com"&gt;
+        Contact Me
+      &lt;/a&gt;
+    &lt;/main&gt;</code></pre>
+        <p>เราไม่ต้องแก้ CSS เลย เพราะ selector <code>.profile-card section</code> และ <code>.profile-card ul</code> ใน <code>style.css</code> จัดรูปแบบ section ใหม่ให้อัตโนมัติ save แล้ว refresh browser เพื่อตรวจสอบ</p>
+
+        <p>จากนั้นตรวจสอบ Git:</p>
+        <pre><code class="language-bash">git status</code></pre>
+        <pre><code class="language-text">On branch feature/add-projects-section
+Changes not staged for commit:
+  ...
+        modified:   index.html</code></pre>
+        <p>สังเกตบรรทัดแรก — <code>git status</code> บอกด้วยว่าเราอยู่บน branch ไหน</p>
+
+        <h2>Commit บน Feature Branch</h2>
+        <pre><code class="language-bash">git add index.html
+git commit -m "Add projects section"</code></pre>
+        <p>ตรวจสอบ history:</p>
+        <pre><code class="language-bash">git log --oneline</code></pre>
+        <pre><code class="language-text">7f2a1b3 (HEAD -&gt; feature/add-projects-section) Add projects section
+f18ad55 (origin/main, main) Add project README
+92da187 Update personal profile information
+8c41a22 Create developer profile page</code></pre>
+        <p>
+          ข้อความในวงเล็บคือ “ป้าย” ที่บอกว่า branch ไหนชี้อยู่ที่ commit ใด: commit ใหม่ <code>Add projects section</code> อยู่บน
+          <code>feature/add-projects-section</code> ส่วน <code>main</code> (และ <code>origin/main</code> บน GitHub) ยังชี้อยู่ที่ <code>Add project README</code>
+          แปลว่า commit ใหม่<strong>ยังไม่ได้อยู่บน <code>main</code></strong>
+        </p>
+
+        <h2>สลับกลับไปดู main</h2>
+        <pre><code class="language-bash">git switch main</code></pre>
+        <p>ตรวจสอบ:</p>
+        <pre><code class="language-bash">git branch</code></pre>
+        <pre><code class="language-text">  feature/add-projects-section
+* main</code></pre>
+        <p>ตอนนี้ลองเปิด <code>index.html</code> ใน VS Code หรือ refresh หน้าเว็บ — <strong>Projects Section หายไป!</strong></p>
+        <p>
+          ไม่ต้องตกใจ Projects Section ไม่ได้ถูกลบ มันยังอยู่บน feature branch ครบถ้วน เราแค่สลับกลับมาอยู่บน <code>main</code>
+          ซึ่งเป็นเวอร์ชันก่อนที่เราจะเพิ่ม feature เมื่อสลับ branch Git จะเปลี่ยนไฟล์ใน working directory ให้ตรงกับ branch นั้นให้เอง
+          นี่คือประโยชน์สำคัญของ branch: <strong>แต่ละ branch มีเวอร์ชันของไฟล์ต่างกันได้</strong>
+        </p>
+
+        <div class="note">
+          <p>ลองสลับไปมาดูเองสักรอบ: <code>git switch feature/add-projects-section</code> แล้ว refresh (section กลับมา) จากนั้น <code>git switch main</code> แล้ว refresh (section หายไป) ก่อนไปต่อให้แน่ใจว่าจบที่ <code>main</code></p>
+        </div>
+
+        <h2>ดู Commit Graph</h2>
+        <pre><code class="language-bash">git log --oneline --graph --all</code></pre>
+        <p><code>--graph</code> วาดเส้นความสัมพันธ์ของ commit และ <code>--all</code> แสดง commit ของทุก branch ไม่ใช่แค่ branch ปัจจุบัน ผลลัพธ์จะคล้าย:</p>
+        <pre><code class="language-text">* 7f2a1b3 (feature/add-projects-section) Add projects section
+* f18ad55 (HEAD -&gt; main, origin/main) Add project README
+* 92da187 Update personal profile information
+* 8c41a22 Create developer profile page</code></pre>
+        <p>
+          ในกรณีนี้ history ยังดูเป็นเส้นตรง เพราะหลังแยก branch ยังไม่มี commit ใหม่เกิดบน <code>main</code> แต่ให้สังเกตว่า<strong>ป้าย branch อยู่คนละตำแหน่ง</strong>:
+          <code>main</code> ชี้ที่ <code>f18ad55</code> ส่วน feature branch ชี้ที่ <code>7f2a1b3</code> ซึ่งอยู่ถัดไปหนึ่ง commit ส่วน <code>HEAD</code> บอกว่าเรากำลังยืนอยู่ที่ <code>main</code>
+        </p>
+
+        <div class="warning">
+          <p>ถ้า <code>git switch main</code> ไม่ยอมสลับและบอกว่ามีการเปลี่ยนแปลงที่จะถูกเขียนทับ แปลว่ายังมีไฟล์ที่แก้แต่ไม่ได้ commit ให้รัน <code>git status</code> แล้ว add + commit งานบน feature branch ให้เรียบร้อยก่อนสลับ</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>มี commit <code>Add projects section</code> บน <code>feature/add-projects-section</code></li>
+            <li>เมื่ออยู่บน <code>main</code> หน้าเว็บไม่มี Projects Section และเมื่อสลับไป feature branch section กลับมา</li>
+            <li><code>git log --oneline --graph --all</code> แสดงป้าย <code>main</code> และ feature branch อยู่คนละ commit</li>
+            <li>ตอนจบบท <code>git branch</code> แสดง <code>*</code> อยู่หน้า <code>main</code></li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="10_what_is_a_branch.html" rel="prev">ก่อนหน้า: Branch คืออะไร และสร้าง Feature Branch</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="12_merge_into_main.html" rel="next">ถัดไป: Merge Feature กลับเข้า main</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

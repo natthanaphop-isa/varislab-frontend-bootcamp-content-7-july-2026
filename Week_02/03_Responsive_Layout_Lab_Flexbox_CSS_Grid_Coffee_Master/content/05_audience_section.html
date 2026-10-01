@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ฝึก page composition ด้วยการเพิ่ม section Who This Is For ที่ใช้ section header เดิมและ audience card 3 ใบจัดด้วย CSS Grid" />
+    <title>เพิ่ม Section “Bootcamp นี้เหมาะกับใคร” | Responsive Layout Lab: Flexbox + CSS Grid</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 05 · ประกอบหน้าเว็บด้วย CSS Grid (Page Composition with CSS Grid)</p>
+          <h1>เพิ่ม Section “Bootcamp นี้เหมาะกับใคร”</h1>
+          <p class="lesson-original-title" lang="en">Who This Is For Section</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เพิ่ม section ใหม่โดยใช้ pattern เดียวกับ Curriculum Section ได้เอง</li>
+            <li>ใช้ CSS Grid ซ้ำกับ card ชุดใหม่</li>
+            <li>อธิบายได้ว่า page composition คืออะไร และทำไม section ควรมีโครงสร้างคล้ายกัน</li>
+          </ul>
+        </section>
+
+        <h2>Page composition คืออะไร</h2>
+        <p>หน้าเว็บจริงมักประกอบจากหลาย section ที่มี <strong>rhythm เดียวกัน</strong> — หัวข้อหน้าตาเหมือนกัน ระยะห่างเท่ากัน card สไตล์คล้ายกัน section “Who This Is For” ช่วยให้ landing page ดูสมบูรณ์ขึ้น และเป็นโอกาสดีที่จะฝึกใช้ pattern เดิมซ้ำ: <code>section-header</code> + grid container + card</p>
+
+        <h2>HTML</h2>
+        <p>วาง section นี้<strong>ต่อจาก Curriculum Section และก่อน Pricing Section</strong>:</p>
+        <pre><code class="language-html">&lt;section class="audience-section"&gt;
+  &lt;div class="section-header"&gt;
+    &lt;p class="eyebrow"&gt;Who This Is For&lt;/p&gt;
+
+    &lt;h2&gt;Bootcamp นี้เหมาะกับใคร&lt;/h2&gt;
+
+    &lt;p&gt;
+      ออกแบบมาสำหรับผู้เรียนที่ต้องการเข้าใจการสร้างเว็บจริง
+      และอยากใช้ AI เป็นตัวช่วยอย่างถูกวิธี
+    &lt;/p&gt;
+  &lt;/div&gt;
+
+  &lt;div class="audience-grid"&gt;
+    &lt;article class="audience-card"&gt;
+      &lt;h3&gt;Career Changers&lt;/h3&gt;
+      &lt;p&gt;
+        คนที่อยากเปลี่ยนสายงานเข้าสู่สาย Software Developer
+        และต้องการเริ่มจากพื้นฐานอย่างเป็นระบบ
+      &lt;/p&gt;
+    &lt;/article&gt;
+
+    &lt;article class="audience-card"&gt;
+      &lt;h3&gt;Self-Learners&lt;/h3&gt;
+      &lt;p&gt;
+        คนที่เคยเรียนเองมาก่อน แต่ยังต่อภาพรวมของ Frontend,
+        Backend และ Deployment ไม่ครบ
+      &lt;/p&gt;
+    &lt;/article&gt;
+
+    &lt;article class="audience-card"&gt;
+      &lt;h3&gt;Working Professionals&lt;/h3&gt;
+      &lt;p&gt;
+        คนทำงานที่อยากเข้าใจการสร้างระบบจริง และใช้ AI
+        เพื่อเพิ่ม productivity ในการทำงาน
+      &lt;/p&gt;
+    &lt;/article&gt;
+  &lt;/div&gt;
+&lt;/section&gt;</code></pre>
+        <p>สังเกตว่าโครงสร้างแทบจะเหมือน Curriculum Section ทุกอย่าง ต่างกันแค่ชื่อ class และ card ชุดนี้ไม่มีเลข module</p>
+
+        <h2>CSS</h2>
+        <p>เพิ่มต่อจาก CSS ของ Curriculum:</p>
+        <pre><code class="language-css">/* Audience */
+.audience-section {
+    margin-bottom: 72px;
+}
+
+.audience-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.audience-card {
+    padding: 28px;
+    border-radius: 24px;
+    background: #0f172a;
+    border: 1px solid #334155;
+}
+
+.audience-card:hover {
+    border-color: #38bdf8;
+}
+
+.audience-card h3 {
+    margin: 0 0 12px;
+    color: #38bdf8;
+}
+
+.audience-card p {
+    margin: 0;
+    color: #cbd5e1;
+    line-height: 1.7;
+}</code></pre>
+
+        <h2>จุดที่ต่างจาก curriculum card</h2>
+        <ul>
+          <li><strong><code>background: #0f172a</code></strong> — เป็นสีเดียวกับพื้นหลังของ <code>body</code> card ชุดนี้จึงดูเป็น “กรอบเส้น” (outline) แทนที่จะเป็นกล่องทึบ ทำให้ section นี้ดูต่างจาก Curriculum ที่อยู่ติดกันเล็กน้อย แต่ยังอยู่ในระบบสีเดียวกัน</li>
+          <li><strong><code>h3</code> เป็นสีฟ้า</strong> — เพราะไม่มีเลข module คอยเป็นจุดเด่น หัวข้อกลุ่มผู้เรียนจึงรับหน้าที่นั้นแทน</li>
+          <li><strong>Grid ตั้งค่าเหมือนเดิม</strong> — 3 คอลัมน์ <code>gap: 24px</code> พอดีกับ card 3 ใบในแถวเดียว</li>
+        </ul>
+
+        <div class="note">
+          <p>ถ้าสังเกตดี ๆ <code>.curriculum-grid</code> กับ <code>.audience-grid</code> มีค่าเหมือนกันทุกบรรทัด ตอนนี้เราแยก class ไว้เพื่อให้อ่านง่ายและปรับแต่ละ section แยกกันได้ ในบทที่ 08 เราจะเห็นว่าการที่มันเหมือนกันทำให้เขียน responsive รวมกันใน selector เดียวได้สะดวก</p>
+        </div>
+
+        <div class="warning">
+          <p>ถ้า card ขึ้นมาแต่ไม่มีกรอบเลย ให้เช็กว่า HTML ใช้ <code>class="audience-card"</code> ตรงกับ CSS หรือไม่ — ถ้าเผลอ copy มาจาก curriculum แล้วลืมเปลี่ยนเป็น <code>curriculum-card</code> card จะได้ style ของ curriculum แทน (พื้นทึบ) ซึ่งดูใกล้เคียงจนจับผิดยาก</p>
+        </div>
+
+        <h2>ลองทำเอง</h2>
+        <p>เพิ่ม audience card ใบที่ 4 (เช่นกลุ่มนักศึกษาจบใหม่ — เขียนคำอธิบายเอง) แล้วสังเกตว่า Grid ส่ง card ใบที่ 4 ลงไปแถวใหม่ให้อัตโนมัติ ลองเสร็จแล้วจะเก็บไว้หรือลบออกก็ได้ (ไฟล์ <code>finish/</code> มี 3 ใบ)</p>
+
+        <div class="verification">
+          <ul>
+            <li>ลำดับ section คือ features → curriculum → audience → pricing</li>
+            <li>audience card 3 ใบเรียงในแถวเดียว พื้นสีเดียวกับหน้าเว็บ มีเส้นขอบ และขอบเปลี่ยนเป็นสีฟ้าเมื่อ hover</li>
+            <li>หัวข้อ section ใหม่หน้าตาเหมือนหัวข้อ Curriculum เพราะใช้ <code>.section-header</code> ร่วมกัน</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="04_css_grid_basics.html" rel="prev">ก่อนหน้า: จัด Curriculum Cards ด้วย CSS Grid</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="06_cta_section.html" rel="next">ถัดไป: เพิ่ม Final CTA Section</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

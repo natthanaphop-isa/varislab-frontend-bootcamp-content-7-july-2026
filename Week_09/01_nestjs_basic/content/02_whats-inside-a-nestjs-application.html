@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="สำรวจโครงสร้างโปรเจกต์ NestJS ที่ scaffold มาให้: main.ts, AppModule, controller และ service ทำงานร่วมกันอย่างไร" />
-  <title>มีอะไรอยู่ในแอปพลิเคชัน NestJS</title>
+  <title>มีอะไรอยู่ในแอป NestJS</title>
   <link rel="stylesheet" href="lesson.css" />
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 2 จาก 77</p>
-    <h1>มีอะไรอยู่ในแอปพลิเคชัน NestJS</h1>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 2/58</p>
+    <h1>มีอะไรอยู่ในแอป NestJS</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
-      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <h2 id="objectives-heading">บทนี้เราจะทำอะไรบ้าง</h2>
       <ul>
         <li>อธิบายหน้าที่ของไฟล์หลักที่ <code>nest new</code> สร้างมาให้ได้ทีละไฟล์</li>
         <li>ไล่เส้นทางของ request ตั้งแต่ <code>main.ts</code> จนถึง controller และ service</li>
@@ -75,11 +75,11 @@ cd iluvcoffee
 code .   # หรือเปิดด้วย editor ที่ใช้อยู่</code></div>
     </section>
     <section class="expected-result" aria-labelledby="exercise-result-heading">
-      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <h2 id="exercise-result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
       <p>ได้โปรเจกต์ที่มีโครงตาม tree ด้านบน และเมื่อไล่อ่านจะเห็นชัดว่า <code>AppController</code> รับ <code>AppService</code> เข้ามาทาง constructor (dependency injection) และ route <code>GET /</code> คืนข้อความ <q>Hello World!</q> ที่มาจาก service ไม่ใช่จาก controller เอง</p>
     </section>
     <section class="verification" aria-labelledby="exercise-check-heading">
-      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <h2 id="exercise-check-heading">ลองเช็กให้แน่ใจ</h2>
       <ul>
         <li>ใน <code>main.ts</code> ชี้ได้ว่า root module ที่ใช้ bootstrap คือ <code>AppModule</code></li>
         <li>ใน <code>app.module.ts</code> เห็น <code>AppController</code> ในช่อง <code>controllers</code> และ <code>AppService</code> ในช่อง <code>providers</code></li>
@@ -94,11 +94,11 @@ code .   # หรือเปิดด้วย editor ที่ใช้อย�
       <li><a href="https://docs.nestjs.com/controllers">Controllers (NestJS)</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
-      <a class="lesson-navigation__link" href="01_installing-nestjs-cli.html" rel="prev">← บทก่อนหน้า</a>
-      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="01_installing-nestjs-cli.html" rel="prev">← บทก่อน</a>
+      <a class="lesson-navigation__link" href="index.html">ดูบทเรียนทั้งหมด</a>
       <a class="lesson-navigation__link" href="03_what-well-be-building-in-this-course.html" rel="next">บทถัดไป →</a>
     </nav>
   </main>
-  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+  <footer><p>NestJS Fundamentals Workshop · เนื้อหาตรวจทานล่าสุด 1 กันยายน 2026</p></footer>
 </body>
 </html>

@@ -9,7 +9,7 @@
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 5 จาก 24</p>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
     <h1>รัน PostgreSQL ด้วย Docker Compose</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
       <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
@@ -21,7 +21,7 @@
     </section>
 
     <h2>ฐานข้อมูลอยู่ในคอนเทนเนอร์ ไม่ใช่ในเครื่องเรา</h2>
-    <p>เราใช้วิธีเดียวกับ <a href="../../../Week_09/01_nestjs_basic/content/20_running-postgresql.html">Week_09 บทที่ 20</a>: ไม่ติดตั้ง PostgreSQL ลงเครื่องโดยตรง แต่ประกาศมันเป็น service ในไฟล์ <code>docker-compose.yml</code> แล้วให้ Docker ยกขึ้นให้ ข้อดีคือทุกคนในทีมได้ PostgreSQL เวอร์ชันเดียวกันจากไฟล์เดียว และลบทิ้งทั้งชุดได้เมื่อจบคอร์ส คำสั่งที่ใช้ตลอดคอร์สมีแค่สามคำสั่งนี้</p>
+    <p>เราใช้วิธีเดียวกับ <a href="../../../Week_09/01_nestjs_basic/content/20_running-postgresql.html">NestJS Fundamentals บทรัน PostgreSQL ด้วย Docker Compose</a>: ไม่ติดตั้ง PostgreSQL ลงเครื่องโดยตรง แต่ประกาศมันเป็น service ในไฟล์ <code>docker-compose.yml</code> แล้วให้ Docker ยกขึ้นให้ ข้อดีคือทุกคนในทีมได้ PostgreSQL เวอร์ชันเดียวกันจากไฟล์เดียว และลบทิ้งทั้งชุดได้เมื่อจบคอร์ส คำสั่งที่ใช้ตลอดคอร์สมีแค่สามคำสั่งนี้</p>
     <pre><code># ยกฐานข้อมูลขึ้นแบบ background (detached)
 docker compose up -d
 
@@ -35,13 +35,13 @@ docker compose down</code></pre>
     <h2>named volume ทำให้ข้อมูลไม่หายตอน down</h2>
     <p>ถ้าไม่ประกาศ volume ข้อมูลทุกแถวจะอยู่ใน filesystem ของคอนเทนเนอร์และหายไปพร้อมกับคอนเทนเนอร์ เราจึงเมานต์ named volume ชื่อ <code>pgdata</code> ไว้ที่ <code>/var/lib/postgresql/data</code> ซึ่งเป็น data directory ของ PostgreSQL</p>
     <ul>
-      <li><code>docker compose down</code> ลบคอนเทนเนอร์ แต่ <strong>ไม่</strong> ลบ volume — ยกขึ้นใหม่แล้วสินค้าที่ seed ไว้ในบทที่ 9 ยังอยู่ครบ</li>
+      <li><code>docker compose down</code> ลบคอนเทนเนอร์ แต่ <strong>ไม่</strong> ลบ volume — ยกขึ้นใหม่แล้วสินค้าที่ seed ไว้ยังอยู่ครบ</li>
       <li><code>docker compose down -v</code> ลบ volume ด้วย — เท่ากับเริ่มจากฐานข้อมูลว่าง ต้อง <code>migrate</code> และ <code>seed</code> ใหม่ (มีประโยชน์เวลาต้องการล้างของจริง)</li>
     </ul>
     <p>เราเลือก named volume (<code>pgdata:</code>) แทน bind mount (<code>./data:/var/lib/postgresql/data</code>) เพราะ named volume ถูกจัดการโดย Docker ไม่โผล่เป็นโฟลเดอร์ในโปรเจกต์ให้เผลอ commit ขึ้น git</p>
 
     <h2>ทำไมต้อง POSTGRES_DB=ecommerce</h2>
-    <p>ใน Week_09 เราต่อกับ database ปริยายชื่อ <code>postgres</code> ได้เพราะมีโปรเจกต์เดียว คอร์สนี้เราตั้ง <code>POSTGRES_DB=ecommerce</code> ให้คอนเทนเนอร์สร้าง database เฉพาะของโปรเจกต์ตั้งแต่ boot ครั้งแรก เหตุผลคือ <code>DATABASE_URL</code> ของ Prisma ลงท้ายด้วยชื่อ database (<code>…/ecommerce</code>) ถ้าลืม key นี้ database จะไม่มีจริง แล้วบทที่ 8 (<code>prisma migrate dev</code>) จะล้มด้วย error ว่าหา database ไม่เจอ</p>
+    <p>ในคอร์ส NestJS Fundamentals เราต่อกับ database ปริยายชื่อ <code>postgres</code> ได้เพราะมีโปรเจกต์เดียว คอร์สนี้เราตั้ง <code>POSTGRES_DB=ecommerce</code> ให้คอนเทนเนอร์สร้าง database เฉพาะของโปรเจกต์ตั้งแต่ boot ครั้งแรก เหตุผลคือ <code>DATABASE_URL</code> ของ Prisma ลงท้ายด้วยชื่อ database (<code>…/ecommerce</code>) ถ้าลืม key นี้ database จะไม่มีจริง แล้วขั้น migration แรก (<code>prisma migrate dev</code>) จะล้มด้วย error ว่าหา database ไม่เจอ</p>
     <div class="note">
       <p>ตัวแปร <code>POSTGRES_PASSWORD</code> เป็น key เดียวที่ image บังคับให้ใส่ ส่วน user เราไม่ตั้งเอง จึงได้ superuser ปริยายชื่อ <code>postgres</code> — ตรงกับ <code>-U postgres</code> ในคำสั่ง <code>psql</code> และตรงกับ <code>postgres:pass123</code> ใน <code>DATABASE_URL</code> รหัสผ่านแบบนี้ใช้ได้เพราะฐานข้อมูลนี้เปิดอยู่แค่บนเครื่องเราเพื่อเรียน ไม่ใช่ของจริงบน production</p>
     </div>
@@ -52,10 +52,10 @@ docker compose down</code></pre>
       <table>
         <thead><tr><th>Key</th><th>ใครอ่าน</th><th>ใช้ทำอะไร</th></tr></thead>
         <tbody>
-          <tr><td><code>DATABASE_URL</code></td><td>Prisma CLI (<code>prisma7.config.ts</code>) และ <code>PrismaService</code></td><td>connection string ของ PostgreSQL — ใช้ตั้งแต่บทที่ 6</td></tr>
-          <tr><td><code>PORT</code></td><td><code>src/main.ts</code></td><td>port ที่แอปฟัง (บทที่ 20 จะอ่านผ่าน <code>ConfigService</code> แทนเลข 3000 ที่ฝังไว้)</td></tr>
-          <tr><td><code>APP_URL</code></td><td><code>ProductsService</code></td><td>ฐานของ <code>url</code> ในผลลัพธ์ <code>GET /products/categories</code> (บทที่ 10) เพราะ dummyjson ส่ง URL เต็มกลับมาด้วย</td></tr>
-          <tr><td><code>CORS_ORIGIN</code></td><td><code>src/main.ts</code></td><td>origin ของ React app ที่อนุญาตให้เรียกข้าม origin ได้ (บทที่ 20)</td></tr>
+          <tr><td><code>DATABASE_URL</code></td><td>Prisma CLI (<code>prisma7.config.ts</code>) และ <code>PrismaService</code></td><td>connection string ของ PostgreSQL — ใช้ตั้งแต่ตอนตั้งค่า Prisma</td></tr>
+          <tr><td><code>PORT</code></td><td><code>src/main.ts</code></td><td>port ที่แอปฟัง (ภายหลังจะอ่านผ่าน <code>ConfigService</code> แทนเลข 3000 ที่ฝังไว้)</td></tr>
+          <tr><td><code>APP_URL</code></td><td><code>ProductsService</code></td><td>ฐานของ <code>url</code> ในผลลัพธ์ <code>GET /products/categories</code> เพราะ type <code>Category</code> ฝั่ง client (<code>src/features/products/types.ts</code>) กำหนดให้มี <code>url</code> เต็มเสมอ</td></tr>
+          <tr><td><code>CORS_ORIGIN</code></td><td><code>src/main.ts</code></td><td>origin ของ React app ที่อนุญาตให้เรียกข้าม origin ได้ (ตอนเปิด CORS ภายหลัง)</td></tr>
         </tbody>
       </table>
     </div>
@@ -76,36 +76,25 @@ docker compose down</code></pre>
 
     <section class="workshop" aria-labelledby="exercise-heading">
       <h2 id="exercise-heading">ให้ Cursor สร้าง compose file และ .env</h2>
-      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: add cursor rules"</code> ถ้ายังไม่ได้ commit ของบทที่ 4) แชทใหม่หมายถึงบริบทสะอาด ไม่มีคำสั่งเก่าค้างมากวน แล้วส่ง prompt นี้ทั้งก้อน</p>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: add cursor rules"</code> ถ้ายังไม่ได้ commit ไฟล์ rules) แชทใหม่หมายถึงบริบทสะอาด ไม่มีคำสั่งเก่าค้างมากวน แล้วส่ง prompt นี้ทั้งก้อน</p>
       <div class="cursor-prompt"><code>สร้าง Docker Compose สำหรับ PostgreSQL และไฟล์ .env ของโปรเจกต์
+@.gitignore
 
-บริบท: @package.json @.gitignore @.cursor/rules/project.mdc
-โปรเจกต์นี้เป็น NestJS 12 ที่เพิ่ง scaffold ยังไม่มีฐานข้อมูล ยังไม่ได้ติดตั้ง Prisma
-เครื่องมี Docker Desktop รันอยู่แล้ว
-บทเรียนถัดไปจะติดตั้ง Prisma ซึ่งต้องการตัวแปร DATABASE_URL
-
-โครงสร้าง: สร้าง/แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
-- docker-compose.yml (สร้างใหม่)
-- .env (สร้างใหม่)
-- .env.example (สร้างใหม่)
-- .gitignore (แก้ไข: เพิ่ม .env ต่อท้าย)
-
-ข้อกำหนดทางเทคนิค:
-- docker-compose.yml ไม่มี key version (Compose รุ่นใหม่ไม่ใช้แล้ว) มี service เดียวชื่อ db
-  image: postgres:17, restart: always, ports: "5432:5432"
-  environment: POSTGRES_PASSWORD=pass123 และ POSTGRES_DB=ecommerce
-  volumes: named volume ชื่อ pgdata เมานต์ที่ /var/lib/postgresql/data และประกาศ volumes: pgdata: ไว้ท้ายไฟล์
-- .env มีสี่บรรทัดตามลำดับนี้ ไม่มีเครื่องหมายคำพูดครอบค่า
+ผลลัพธ์ที่ต้องได้:
+- docker compose up -d แล้ว docker compose ps เห็น service เดียวชื่อ db จาก image postgres:17 สถานะ Up และ port 5432 ของเครื่อง map เข้าคอนเทนเนอร์
+- docker compose exec db psql -U postgres -d ecommerce -c '\l' เห็น database ชื่อ ecommerce (รหัสผ่าน superuser คือ pass123)
+- docker compose down แล้ว up -d ใหม่ database ecommerce ยังอยู่ (ข้อมูลเก็บใน named volume ไม่ใช่ bind mount)
+- docker compose up ไม่ขึ้น warning เรื่อง key ที่เลิกใช้แล้ว
+- .env มีสี่บรรทัดตามลำดับนี้ ค่าไม่ครอบด้วยเครื่องหมายคำพูด
   DATABASE_URL=postgresql://postgres:pass123@localhost:5432/ecommerce
   PORT=3000
   APP_URL=http://localhost:3000
   CORS_ORIGIN=http://localhost:5173
-- .env.example มี key และค่าเดียวกันทั้งสี่บรรทัด (โปรเจกต์นี้ไม่มี secret จริง)
-- .gitignore เพิ่มบรรทัด .env ต่อท้ายไฟล์ ห้ามลบบรรทัดเดิม
+- diff .env .env.example ไม่มีผลต่าง (โปรเจกต์นี้ไม่มี secret จริง)
+- git status ไม่เห็น .env และบรรทัดเดิมของ .gitignore ยังอยู่ครบ
 
 ขอบเขต:
 - ห้ามติดตั้ง dependency ใหม่
-- ห้ามแก้ไฟล์อื่นนอกจากที่ระบุ
 - ห้ามรัน docker compose up ให้ผมรันเอง
 - ยังไม่ต้องติดตั้งหรือตั้งค่า Prisma</code></div>
       <p>เมื่อ Cursor สร้างไฟล์ครบแล้ว ยกฐานข้อมูลขึ้นเอง (prompt สั่งห้าม Agent รัน docker ให้)</p>
@@ -115,19 +104,19 @@ docker compose ps</code></div>
     <section class="review" aria-labelledby="review-heading">
       <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
       <ul>
-        <li>บรรทัดแรกของ <code>docker-compose.yml</code> คือ <code>services:</code> — ไม่มี key <code>version:</code> (Compose รุ่นใหม่เลิกใช้แล้ว ถ้ามีจะขึ้น warning)</li>
-        <li>image เป็น <code>postgres:17</code> ไม่ใช่ <code>postgres:latest</code> หรือ <code>postgres:16-alpine</code></li>
-        <li>มี <code>POSTGRES_DB: ecommerce</code> จริง — ขาด key นี้แล้ว <code>DATABASE_URL</code> จะชี้ไป database ที่ไม่มีอยู่</li>
-        <li><code>volumes</code> ของ service เป็น <code>pgdata:/var/lib/postgresql/data</code> และมีบล็อก <code>volumes:</code> ประกาศ <code>pgdata:</code> ท้ายไฟล์ (ไม่ใช่ bind mount แบบ <code>./data:…</code>)</li>
+        <li><code>docker compose up -d</code> ไม่ขึ้น warning ว่ามี key ที่เลิกใช้ (เช่น <code>version</code>)</li>
+        <li>image เป็น <code>postgres:17</code> ที่ปักเวอร์ชันไว้ ไม่ใช่ <code>postgres:latest</code></li>
+        <li>database <code>ecommerce</code> เกิดขึ้นจริงตอน boot — ถ้าไม่มี <code>DATABASE_URL</code> จะชี้ไป database ที่ไม่มีอยู่</li>
+        <li>ข้อมูลอยู่รอดหลัง <code>docker compose down</code> / <code>up -d</code> และไม่มีโฟลเดอร์ข้อมูลโผล่ในโปรเจกต์ (ใช้ named volume ไม่ใช่ bind mount)</li>
         <li><code>.env</code> มีสี่บรรทัดพอดี เรียงตามที่สั่ง และไม่มีเครื่องหมายคำพูดครอบค่า (<code>PORT=3000</code> ไม่ใช่ <code>PORT="3000"</code>)</li>
-        <li><code>.env.example</code> มี key และค่าเหมือน <code>.env</code> ทุกบรรทัด — <code>diff .env .env.example</code> ต้องไม่มีผลต่าง</li>
-        <li><code>git status</code> เห็นแค่ <code>docker-compose.yml</code> และ <code>.env.example</code> เป็นไฟล์ใหม่ — <strong>ไม่เห็น</strong> <code>.env</code></li>
+        <li><code>diff .env .env.example</code> ต้องไม่มีผลต่าง</li>
+        <li><code>git status</code> <strong>ไม่เห็น</strong> <code>.env</code> และไม่มีไฟล์ที่ไม่เกี่ยวกับเป้าหมายถูกแก้ (เช่นไฟล์ใน <code>src/</code>)</li>
       </ul>
       <p><strong>AI มักพลาดตรงนี้:</strong> เติม <code>version: "3"</code> ไว้บนสุด (เป็นรูปแบบเก่าที่ยังเจอในบทความทั่วเน็ต), เพิ่มบรรทัด <code>POSTGRES_USER: …</code> ที่เราไม่ได้สั่ง (ทำให้ user ไม่ตรงกับ <code>postgres</code> ใน <code>DATABASE_URL</code>), หรือครอบค่าใน <code>.env</code> ด้วยเครื่องหมายคำพูด (บาง loader จะอ่านเครื่องหมายคำพูดติดไปเป็นส่วนของค่า)</p>
       <div class="note">
         <p>scaffold ของ Nest ใส่ <code>.env</code> ไว้ใน <code>.gitignore</code> ให้แล้วใต้หัวข้อ <code># dotenv environment variable files</code> ดังนั้นถ้า Agent บอกว่า <q>ไม่ต้องแก้ <code>.gitignore</code> เพราะมีอยู่แล้ว</q> ก็ถูกต้อง สิ่งที่เราตรวจคือผลลัพธ์ (<code>git status</code> ไม่โชว์ <code>.env</code>) ไม่ใช่จำนวนบรรทัดที่ถูกเพิ่ม</p>
       </div>
-      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
       <pre><code># docker-compose.yml
 services:
   db:

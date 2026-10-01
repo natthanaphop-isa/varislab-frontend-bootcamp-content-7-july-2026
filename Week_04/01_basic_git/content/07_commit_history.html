@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ดู commit history ด้วย git log สร้าง commit ที่สองด้วยการแก้ข้อมูลส่วนตัว และเพิ่มไฟล์ README.md เป็น commit ที่สาม" />
+    <title>สร้าง Commit History และ README | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 07 · บันทึกประวัติใน Local Repository (Local Repository)</p>
+          <h1>สร้าง Commit History และ README</h1>
+          <p class="lesson-original-title" lang="en">Build Commit History</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ดู commit history ด้วย <code>git log</code> และ <code>git log --oneline</code></li>
+            <li>แก้ไฟล์ที่ Git ติดตามอยู่ แล้วเห็นสถานะ <code>modified</code></li>
+            <li>ทำ workflow แก้ไฟล์ → status → add → commit ซ้ำได้ด้วยตัวเอง</li>
+            <li>สร้างไฟล์ <code>README.md</code> อธิบายโปรเจกต์</li>
+          </ul>
+        </section>
+
+        <h2>ดู Commit History</h2>
+        <p>ดูแบบเต็ม:</p>
+        <pre><code class="language-bash">git log</code></pre>
+        <p>Git จะแสดงข้อมูลของแต่ละ commit ได้แก่ commit ID, author, date และ commit message ประมาณนี้:</p>
+        <pre><code class="language-text">commit 8c41a22... (HEAD -&gt; main)
+Author: Your Name &lt;your-email@example.com&gt;
+Date:   ...
+
+    Create developer profile page</code></pre>
+        <p>ดูแบบสั้น บรรทัดละหนึ่ง commit:</p>
+        <pre><code class="language-bash">git log --oneline</code></pre>
+        <pre><code class="language-text">8c41a22 Create developer profile page</code></pre>
+
+        <div class="note">
+          <p>ถ้า <code>git log</code> ยาวจนล้นจอ Terminal จะเข้าโหมดเลื่อนดู (pager) ใช้ลูกศรขึ้นลงเพื่อเลื่อน และกด <code>q</code> เพื่อออก</p>
+        </div>
+
+        <h2>สร้าง Commit ที่สอง</h2>
+        <p>ข้อมูลในหน้าเว็บตอนนี้ยังเป็นของ “Somchai” ถึงเวลาเปลี่ยนเป็นของเราเอง เปิด <code>index.html</code> แล้วแก้ทีละจุด</p>
+        <p>เปลี่ยนชื่อ (ใส่ชื่อจริงของคุณแทน <code>Your Name</code>):</p>
+        <pre><code class="language-html">&lt;h1&gt;Your Name&lt;/h1&gt;</code></pre>
+        <p>เปลี่ยนตำแหน่ง:</p>
+        <pre><code class="language-html">&lt;p class="role"&gt;Junior Frontend Developer&lt;/p&gt;</code></pre>
+        <p>เปลี่ยนคำอธิบาย:</p>
+        <pre><code class="language-html">&lt;p class="description"&gt;
+  I am learning full-stack web development and building projects to prepare
+  for my first software developer role.
+&lt;/p&gt;</code></pre>
+        <p>เปลี่ยนรายการทักษะ:</p>
+        <pre><code class="language-html">&lt;ul&gt;
+  &lt;li&gt;HTML&lt;/li&gt;
+  &lt;li&gt;CSS&lt;/li&gt;
+  &lt;li&gt;JavaScript&lt;/li&gt;
+  &lt;li&gt;TypeScript Basics&lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+        <p>เปลี่ยนอีเมล:</p>
+        <pre><code class="language-html">&lt;a class="contact-button" href="mailto:your-email@example.com"&gt;
+  Contact Me
+&lt;/a&gt;</code></pre>
+        <p>หลังแก้ครบ ส่วน <code>&lt;body&gt;</code> ของ <code>index.html</code> ควรเป็นแบบนี้:</p>
+        <pre><code class="language-html">  &lt;body&gt;
+    &lt;main class="profile-card"&gt;
+      &lt;h1&gt;Your Name&lt;/h1&gt;
+
+      &lt;p class="role"&gt;Junior Frontend Developer&lt;/p&gt;
+
+      &lt;p class="description"&gt;
+        I am learning full-stack web development and building projects to prepare
+        for my first software developer role.
+      &lt;/p&gt;
+
+      &lt;section&gt;
+        &lt;h2&gt;Current Skills&lt;/h2&gt;
+
+        &lt;ul&gt;
+          &lt;li&gt;HTML&lt;/li&gt;
+          &lt;li&gt;CSS&lt;/li&gt;
+          &lt;li&gt;JavaScript&lt;/li&gt;
+          &lt;li&gt;TypeScript Basics&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/section&gt;
+
+      &lt;a class="contact-button" href="mailto:your-email@example.com"&gt;
+        Contact Me
+      &lt;/a&gt;
+    &lt;/main&gt;
+  &lt;/body&gt;</code></pre>
+        <p>save ไฟล์แล้ว refresh browser เพื่อดูผล</p>
+
+        <h3>ตรวจสอบการเปลี่ยนแปลง</h3>
+        <pre><code class="language-bash">git status</code></pre>
+        <p>ควรเห็น:</p>
+        <pre><code class="language-text">Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+        modified:   index.html</code></pre>
+        <p>
+          ครั้งนี้ไม่ใช่ Untracked แล้ว แต่เป็น <strong>modified</strong> เพราะ Git ติดตาม <code>index.html</code> มาตั้งแต่ commit แรก
+          มันจึงรู้ว่าไฟล์นี้ถูกแก้ไปจากเวอร์ชันที่บันทึกไว้
+        </p>
+
+        <h3>Commit การเปลี่ยนแปลง</h3>
+        <pre><code class="language-bash">git add index.html
+git commit -m "Update personal profile information"</code></pre>
+        <p>ตรวจสอบ history:</p>
+        <pre><code class="language-bash">git log --oneline</code></pre>
+        <pre><code class="language-text">92da187 Update personal profile information
+8c41a22 Create developer profile page</code></pre>
+        <p>commit ใหม่ล่าสุดจะอยู่<strong>ด้านบนสุด</strong>เสมอ</p>
+
+        <h2>สร้าง README</h2>
+        <p>
+          <code>README.md</code> คือไฟล์แนะนำโปรเจกต์ เขียนด้วย Markdown เมื่อเราส่งโปรเจกต์ขึ้น GitHub ในบทต่อไป GitHub จะแสดงไฟล์นี้ที่หน้าแรกของ repository ให้อัตโนมัติ
+          สร้างไฟล์ <code>README.md</code> ที่ root ของโปรเจกต์ แล้วใส่เนื้อหา:
+        </p>
+        <pre><code class="language-text"># Developer Profile Page
+
+A simple personal profile page created with HTML and CSS.
+
+This project was created for practicing basic Git and GitHub workflows.
+
+## Features
+
+- Personal introduction
+- Skills list
+- Contact button
+- Responsive profile card
+
+## Technologies
+
+- HTML
+- CSS
+
+## Git Commands Practiced
+
+- git init
+- git status
+- git add
+- git commit
+- git log
+- git branch
+- git switch
+- git merge
+- git push</code></pre>
+        <p>บางคำสั่งในรายการเรายังไม่ได้ใช้ ไม่เป็นไร เราจะได้ใช้ครบก่อนจบคู่มือ</p>
+        <p>Commit:</p>
+        <pre><code class="language-bash">git add README.md
+git commit -m "Add project README"</code></pre>
+        <p>ตรวจสอบ:</p>
+        <pre><code class="language-bash">git log --oneline</code></pre>
+        <p>ผลลัพธ์ควรคล้าย:</p>
+        <pre><code class="language-text">f18ad55 Add project README
+92da187 Update personal profile information
+8c41a22 Create developer profile page</code></pre>
+
+        <p>ตอนนี้โปรเจกต์ของเรามีครบสามไฟล์ และมี 3 commit:</p>
+        <pre class="file-tree">developer-profile-page/
+├── index.html
+├── style.css
+└── README.md</pre>
+
+        <div class="warning">
+          <p>ถ้า <code>git status</code> ขึ้น <code>nothing to commit, working tree clean</code> ทั้งที่เพิ่งแก้ไฟล์ ให้ตรวจว่าได้ <strong>save</strong> ไฟล์ใน VS Code แล้ว (แท็บที่ยังไม่ save จะมีจุดกลมขึ้น)</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li><code>git log --oneline</code> แสดง 3 commit เรียงจากใหม่ไปเก่า</li>
+            <li>หน้าเว็บแสดงชื่อ ตำแหน่ง ทักษะ และอีเมลของคุณเอง</li>
+            <li>มีไฟล์ <code>README.md</code> และ <code>git status</code> ขึ้น working tree clean</li>
+            <li>อธิบายความต่างระหว่างสถานะ Untracked กับ modified ได้</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="06_first_commit.html" rel="prev">ก่อนหน้า: สร้าง Commit แรกและเขียน Commit Message ที่ดี</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="08_create_github_repository.html" rel="next">ถัดไป: Local, Remote และการสร้าง Repository บน GitHub</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="คู่มือภาษาไทยสำหรับเรียน Git และ GitHub ตั้งแต่ศูนย์ ผ่านการสร้าง Developer Profile Page ตั้งแต่ commit แรก push ขึ้น GitHub จนถึงการสร้าง feature branch และ merge กลับเข้า main"
+    />
+    <title>Git, GitHub, Branch &amp; Merge พื้นฐาน: สารบัญบทเรียน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <header class="course-header">
+        <h1>Git, GitHub, Branch &amp; Merge พื้นฐาน</h1>
+        <p>
+          คู่มือนี้พาเราสร้างโปรเจกต์เล็ก ๆ ชื่อ <strong>Developer Profile Page</strong> (HTML + CSS ล้วน) เพื่อใช้ฝึก Git โดยเฉพาะ
+          เราจะเริ่มจากโฟลเดอร์ว่าง สร้าง Git repository บันทึก commit ส่งงานขึ้น GitHub แล้วต่อด้วยการแยกพัฒนา feature บน branch
+          และ merge กลับเข้า <code>main</code> คู่มือเน้นให้เข้าใจภาพรวม (mental model) มากกว่าการท่องคำสั่ง จึงเหมาะกับคนที่ไม่เคยใช้ Git มาก่อน
+        </p>
+      </header>
+
+      <section>
+        <h2>สิ่งที่ต้องเตรียม</h2>
+        <ul>
+          <li>ติดตั้ง Git ในเครื่อง (ดูวิธีติดตั้งได้ที่ <a href="https://git-scm.com/downloads" target="_blank" rel="noreferrer">git-scm.com/downloads</a>)</li>
+          <li>VS Code และ Terminal (macOS/Linux) หรือ PowerShell (Windows)</li>
+          <li>บัญชี GitHub (<a href="https://github.com" target="_blank" rel="noreferrer">github.com</a>)</li>
+          <li>ไม่ต้องใช้ npm, Vite, JavaScript หรือ framework ใด ๆ — เราอยากให้โฟกัสกับ Git อย่างเดียว</li>
+        </ul>
+      </section>
+
+      <div class="chapter-list">
+        <section class="chapter-card">
+          <h2>1. รู้จัก Git และเตรียมเครื่อง — Getting Started</h2>
+          <ol>
+            <li><a href="01_why_version_control.html">ทำไมต้องใช้ Git และ Git ต่างจาก GitHub อย่างไร — Why Version Control</a></li>
+            <li><a href="02_install_and_configure_git.html">ตรวจสอบการติดตั้งและตั้งค่า Git — Install Check &amp; Git Config</a></li>
+          </ol>
+        </section>
+
+        <section class="chapter-card">
+          <h2>2. บันทึกประวัติใน Local Repository — Local Repository</h2>
+          <ol start="3">
+            <li><a href="03_create_profile_project.html">สร้าง Developer Profile Page — Create the Sample Project</a></li>
+            <li><a href="04_git_init_and_status.html">เริ่ม Repository ด้วย git init และ git status — git init &amp; git status</a></li>
+            <li><a href="05_staging_area.html">Working Directory, Staging Area และ git add — The Three Areas &amp; git add</a></li>
+            <li><a href="06_first_commit.html">สร้าง Commit แรกและเขียน Commit Message ที่ดี — Your First Commit</a></li>
+            <li><a href="07_commit_history.html">สร้าง Commit History และ README — Build Commit History</a></li>
+          </ol>
+        </section>
+
+        <section class="chapter-card">
+          <h2>3. ส่งงานขึ้น GitHub — GitHub &amp; Remote Repository</h2>
+          <ol start="8">
+            <li><a href="08_create_github_repository.html">Local, Remote และการสร้าง Repository บน GitHub — Create a GitHub Repository</a></li>
+            <li><a href="09_connect_and_push.html">เชื่อม Local กับ GitHub และ Push ครั้งแรก — Connect &amp; Push to GitHub</a></li>
+          </ol>
+        </section>
+
+        <section class="chapter-card">
+          <h2>4. Branch และ Merge — Branch &amp; Merge</h2>
+          <ol start="10">
+            <li><a href="10_what_is_a_branch.html">Branch คืออะไร และสร้าง Feature Branch — Introduction to Branch</a></li>
+            <li><a href="11_develop_on_feature_branch.html">พัฒนา Feature บน Branch แยก — Develop on a Feature Branch</a></li>
+            <li><a href="12_merge_into_main.html">Merge Feature กลับเข้า main — Merge into Main</a></li>
+            <li><a href="13_merge_conflict.html">รู้จัก Merge Conflict — Merge Conflict Overview</a></li>
+          </ol>
+        </section>
+
+        <section class="chapter-card">
+          <h2>5. แก้ปัญหาและสรุป — Troubleshooting &amp; Wrap Up</h2>
+          <ol start="14">
+            <li><a href="14_common_problems.html">ปัญหาที่พบบ่อยและวิธีแก้ — Common Problems</a></li>
+            <li><a href="15_wrap_up.html">สรุปบทเรียน แบบฝึกหัด และการบ้าน — Wrap Up, Practice &amp; Homework</a></li>
+          </ol>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

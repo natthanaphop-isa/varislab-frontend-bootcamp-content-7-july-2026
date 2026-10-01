@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ใช้ JavaScript หยิบ element ด้วย getElementById, ดักฟัง event submit, หยุดการ reload ด้วย preventDefault และอ่านค่าที่ผู้ใช้กรอกด้วย .value มาเก็บในตัวแปร" />
+    <title>อ่านค่าจากฟอร์มด้วย JavaScript | สร้างฟอร์มรับข้อมูลคอร์ส</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 05 · เริ่มคิดแบบ JavaScript (Thinking in JavaScript)</p>
+          <h1>อ่านค่าจากฟอร์มด้วย JavaScript</h1>
+          <p class="lesson-original-title" lang="en">Reading Form Values</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>หยิบ element จาก HTML มาเก็บในตัวแปรด้วย <code>const</code> และ <code>document.getElementById</code></li>
+            <li>ดักฟังการส่งฟอร์มด้วย <code>addEventListener("submit", …)</code></li>
+            <li>อธิบายได้ว่าทำไมต้องเรียก <code>event.preventDefault()</code></li>
+            <li>อ่านค่าที่ผู้ใช้กรอกด้วย <code>.value</code> แล้วแสดงบนหน้าเว็บด้วย <code>textContent</code></li>
+          </ul>
+        </section>
+
+        <p>ถึงตอนนี้ฟอร์มสวยแล้ว แต่ยังทำอะไรไม่ได้ ถ้าเคยเขียน JavaScript แบบ "กดปุ่มแล้วเปลี่ยนข้อความ" มาก่อน บทนี้จะขยับขึ้นอีกขั้น: ให้ JavaScript <strong>อ่านค่าจากหลายช่อง</strong> แล้วเอาข้อมูลเหล่านั้นมาประกอบเป็นข้อความใหม่</p>
+
+        <h2>Step 4.1: หยิบ element ที่ต้องใช้</h2>
+        <p>เปิดไฟล์ <code>script.js</code> แล้วเริ่มจากหยิบทุก element ที่เราจะใช้ มาเก็บไว้ในตัวแปร:</p>
+        <pre><code class="language-javascript">const inquiryForm = document.getElementById("inquiryForm");
+const fullNameInput = document.getElementById("fullName");
+const goalInput = document.getElementById("goal");
+const levelSelect = document.getElementById("level");
+const messageInput = document.getElementById("message");
+const resultBox = document.getElementById("result");
+</code></pre>
+        <ul>
+          <li><code>document.getElementById("inquiryForm")</code> — ไปหา element ในหน้าเว็บที่มี <code>id="inquiryForm"</code> (คือ <code>id</code> ที่เราตั้งไว้ใน HTML ทั้ง 6 ตัว)</li>
+          <li><code>const</code> — ประกาศตัวแปรไว้เก็บ element นั้น ใช้ <code>const</code> เพราะเราจะไม่เปลี่ยนให้ตัวแปรนี้ชี้ไปที่ element อื่น</li>
+          <li>ชื่อตัวแปรลงท้ายด้วย <code>Input</code>, <code>Select</code>, <code>Box</code> เพื่อเตือนตัวเองว่านี่คือ<em>ตัว element</em> ไม่ใช่ข้อความที่ผู้ใช้กรอก</li>
+        </ul>
+
+        <h2>Step 4.2: รอฟังว่าฟอร์มถูกส่งเมื่อไหร่</h2>
+        <pre><code class="language-javascript">inquiryForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  // โค้ดที่จะทำงานเมื่อผู้ใช้ส่งฟอร์ม
+});
+</code></pre>
+        <p><code>addEventListener</code> คือการบอกว่า "เมื่อฟอร์มนี้เกิด event <code>submit</code> ให้เรียก function นี้" event <code>submit</code> เกิดขึ้นเมื่อผู้ใช้กดปุ่ม <code>type="submit"</code> (หรือกด Enter ในช่อง input)</p>
+        <p>function ที่เราส่งเข้าไปจะได้รับ <code>event</code> มาเป็น parameter ซึ่งเป็นข้อมูลของเหตุการณ์ที่เพิ่งเกิดขึ้น</p>
+
+        <h2>ทำไมต้อง event.preventDefault()</h2>
+        <p>พฤติกรรมปกติของ HTML form คือ เมื่อ submit แล้ว browser จะพยายามส่งข้อมูลและ <strong>refresh หน้าเว็บ</strong> (ลองกดปุ่มในบทที่ 3 จะเห็นหน้ากระพริบ) แต่ในโปรเจกต์นี้เราต้องการให้ JavaScript จัดการข้อมูลบนหน้าเดิม</p>
+        <p><code>event.preventDefault()</code> จึงเป็นการบอก browser ว่า: <strong>อย่าเพิ่ง reload หน้าเว็บหลังจากกด submit</strong> ให้เรียกไว้เป็นบรรทัดแรกใน function</p>
+
+        <h2>Step 4.3: อ่านค่าด้วย .value แล้วเก็บในตัวแปร</h2>
+        <p>ภายใน function ต่อจาก <code>event.preventDefault()</code> ให้อ่านค่าจากแต่ละช่อง:</p>
+        <pre><code class="language-javascript">const fullName = fullNameInput.value;
+const goal = goalInput.value;
+const level = levelSelect.value;
+const message = messageInput.value;
+</code></pre>
+        <p><code>.value</code> คือ<strong>ค่าที่ผู้ใช้กรอกหรือเลือกไว้</strong>ในช่องนั้น เช่น ถ้าผู้ใช้กรอกชื่อว่า Man แล้ว <code>fullNameInput.value</code> ก็จะได้ค่าเป็น <code>"Man"</code> สำหรับ <code>select</code> ค่าที่ได้คือ <code>value</code> ของ <code>option</code> ที่ถูกเลือก</p>
+        <p>ลองอ่านบรรทัดนี้เป็นภาษาคน:</p>
+        <pre><code class="language-javascript">const fullName = fullNameInput.value;
+</code></pre>
+        <blockquote>เอาค่าจากช่องชื่อ มาเก็บไว้ในตัวแปรชื่อ <code>fullName</code></blockquote>
+        <p><strong>ตัวแปร (variable)</strong> คือที่เก็บข้อมูลชั่วคราวระหว่างที่โปรแกรมกำลังทำงาน ทุกครั้งที่กดส่งฟอร์ม function จะทำงานใหม่ และตัวแปรเหล่านี้จะได้ค่าล่าสุดที่ผู้ใช้กรอก</p>
+
+        <div class="comparison" role="region" aria-label="ความต่างระหว่าง element กับค่าในช่อง" tabindex="0">
+          <table>
+            <thead><tr><th>ตัวแปร</th><th>เก็บอะไร</th><th>ตัวอย่างค่า</th></tr></thead>
+            <tbody>
+              <tr><td><code>fullNameInput</code></td><td>ตัว input ทั้งกล่อง (element)</td><td>ช่องกรอกบนหน้าเว็บ</td></tr>
+              <tr><td><code>fullName</code></td><td>ข้อความที่ผู้ใช้พิมพ์ในกล่อง</td><td><code>"Man"</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <p>ตัวแปร <code>fullName</code> ต้องประกาศ<strong>ข้างใน</strong> function เพราะเราต้องการค่า ณ ตอนที่ผู้ใช้กดส่ง ถ้าประกาศไว้ด้านบนนอก function มันจะอ่านค่าตอนเปิดหน้าเว็บ ซึ่งตอนนั้นช่องยังว่างอยู่</p>
+        </div>
+
+        <h2>Step 4.4: แสดงผลบนหน้าเว็บด้วย textContent</h2>
+        <p>สุดท้าย เอาค่าทั้งหมดมาต่อกันเป็นข้อความ แล้วใส่ลงในกล่องผลลัพธ์ ไฟล์ <code>script.js</code> ทั้งไฟล์ตอนนี้เป็นแบบนี้:</p>
+        <pre><code class="language-javascript">const inquiryForm = document.getElementById("inquiryForm");
+const fullNameInput = document.getElementById("fullName");
+const goalInput = document.getElementById("goal");
+const levelSelect = document.getElementById("level");
+const messageInput = document.getElementById("message");
+const resultBox = document.getElementById("result");
+
+inquiryForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const fullName = fullNameInput.value;
+  const goal = goalInput.value;
+  const level = levelSelect.value;
+  const message = messageInput.value;
+
+  resultBox.textContent =
+    "สวัสดีครับคุณ " +
+    fullName +
+    " เป้าหมายของคุณคือ " +
+    goal +
+    " ระดับพื้นฐานตอนนี้คือ " +
+    level +
+    " ข้อความเพิ่มเติม: " +
+    message;
+});
+</code></pre>
+        <ul>
+          <li><code>resultBox.textContent = …</code> — แทนที่ข้อความในกล่องผลลัพธ์ด้วยข้อความใหม่</li>
+          <li>เครื่องหมาย <code>+</code> ระหว่างข้อความ (string) คือการ<strong>ต่อข้อความ</strong>เข้าด้วยกัน</li>
+          <li>สังเกตช่องว่างใน <code>" เป้าหมายของคุณคือ "</code> — ถ้าไม่เว้นไว้ ข้อความจะติดกันเป็นพรืด</li>
+        </ul>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>กรอกชื่อ Man, เป้าหมาย "เปลี่ยนสายงานเป็น Developer", เลือก "เริ่มจากศูนย์" แล้วกด "ส่งข้อมูล" — หน้าเว็บ<strong>ไม่</strong> reload และกล่องด้านล่างแสดงข้อความ "สวัสดีครับคุณ Man เป้าหมายของคุณคือ เปลี่ยนสายงานเป็น Developer ระดับพื้นฐานตอนนี้คือ เริ่มจากศูนย์ ข้อความเพิ่มเติม: …"</p>
+        </section>
+
+        <div class="warning">
+          <p>ตอนนี้ถ้ากดส่งทั้งที่ยังไม่กรอกอะไรเลย ก็ยังได้ข้อความ "สวัสดีครับคุณ  เป้าหมายของคุณคือ …" ที่มีช่องว่างโหว่ ๆ อยู่ ยังไม่ต้องกังวล — เราจะแก้ด้วย validation ในบทที่ 7</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>กดส่งแล้วหน้าไม่ reload และข้อความในกล่องผลลัพธ์เปลี่ยน</li>
+            <li>อธิบายได้ว่า <code>fullNameInput</code> กับ <code>fullNameInput.value</code> ต่างกันอย่างไร</li>
+            <li>บอกได้ว่า <code>event.preventDefault()</code> ป้องกันอะไร</li>
+            <li>เปลี่ยนตัวเลือกใน dropdown แล้วกดส่งใหม่ ข้อความเปลี่ยนตาม</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="04_styling_the_form.html" rel="prev">ก่อนหน้า: ตกแต่งฟอร์มด้วย CSS</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="06_template_literals.html" rel="next">ถัดไป: ประกอบข้อความด้วย Template Literal</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

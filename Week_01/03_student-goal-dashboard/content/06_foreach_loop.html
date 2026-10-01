@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ใช้ forEach วนทำงานซ้ำกับข้อมูลทุกรายการใน array แทนการเขียนโค้ดซ้ำด้วยมือ" />
+    <title>วนลูปด้วย forEach | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 06 · ข้อมูลหลายรายการ (Arrays, Objects &amp; Loops)</p>
+          <h1>วนลูปด้วย forEach</h1>
+          <p class="lesson-original-title" lang="en">Looping with forEach</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายได้ว่า loop คืออะไรและช่วยลดโค้ดซ้ำอย่างไร</li>
+            <li>ใช้ <code>forEach</code> วนผ่านสมาชิกทุกตัวใน array</li>
+            <li>อ่านโค้ด <code>forEach</code> เป็น “ภาษาคน” ได้</li>
+            <li>ไล่ได้ว่าแต่ละรอบของ loop ตัวแปร <code>student</code> มีค่าเป็นอะไร</li>
+          </ul>
+        </section>
+
+        <h2>ทำไมต้องมี loop</h2>
+        <p>ถ้าเรามีนักเรียน 3 คน แล้วอยากแสดงชื่อทุกคน ด้วยความรู้จากบทที่แล้วเราอาจเขียนแบบนี้:</p>
+        <pre><code class="language-javascript">console.log(students[0].name);
+console.log(students[1].name);
+console.log(students[2].name);</code></pre>
+        <p>ทำงานได้ แต่ถ้ามีนักเรียน 100 คน เราต้องเขียน 100 บรรทัด และถ้าเพิ่มนักเรียนคนใหม่ ก็ต้องกลับมาเพิ่มโค้ดทุกครั้ง เราไม่ควรเขียนโค้ดซ้ำด้วยมือแบบนี้ แต่ควรใช้ <strong>loop</strong></p>
+        <p><strong>Loop</strong> คือการสั่งให้โปรแกรมทำงานซ้ำกับข้อมูลหลายรายการ</p>
+
+        <h2><code>forEach</code></h2>
+        <p><code>forEach</code> คือ loop แบบหนึ่งที่ใช้บ่อยมากกับ array</p>
+        <pre><code class="language-javascript">students.forEach(function (student) {
+  console.log(student.name);
+});</code></pre>
+        <p>แปลเป็นภาษาคนคือ: <em>สำหรับนักเรียนแต่ละคนใน list <code>students</code> ให้แสดงชื่อของนักเรียนคนนั้นออกมา</em></p>
+
+        <h3>แยกส่วนประกอบทีละชิ้น</h3>
+        <ul>
+          <li><code>students.forEach(...)</code> — สั่งให้วนผ่านสมาชิกทุกตัวใน array <code>students</code></li>
+          <li><code>function (student) { ... }</code> — ฟังก์ชันที่จะถูกเรียก<strong>หนึ่งครั้งต่อสมาชิกหนึ่งตัว</strong></li>
+          <li><code>student</code> — ตัวแปรที่เก็บ “สมาชิกของรอบนี้” เราตั้งชื่อเองได้ แต่นิยมใช้ชื่อเอกพจน์ของชื่อ array (<code>students</code> → <code>student</code>) เพื่อให้อ่านง่าย</li>
+          <li>โค้ดใน <code>{ }</code> — สิ่งที่อยากทำกับสมาชิกแต่ละตัว</li>
+        </ul>
+
+        <h3>แต่ละรอบเกิดอะไรขึ้น</h3>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>รอบที่</th><th><code>student</code> คือ</th><th>Console แสดง</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td><code>students[0]</code></td><td>Man</td></tr>
+              <tr><td>2</td><td><code>students[1]</code></td><td>Jane</td></tr>
+              <tr><td>3</td><td><code>students[2]</code></td><td>Pond</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>จำนวนรอบเท่ากับจำนวนสมาชิกใน array (<code>students.length</code>) เสมอ ถ้าเพิ่มนักเรียนคนที่ 4 เข้าไปใน array loop ก็จะวน 4 รอบเองโดยเราไม่ต้องแก้โค้ดใน loop เลย</p>
+
+        <h2>ทำหลายอย่างในรอบเดียว</h2>
+        <p>ในแต่ละรอบ เราทำได้มากกว่าหนึ่งคำสั่ง เช่น แสดงทุก field ของนักเรียนคนนั้น:</p>
+        <pre><code class="language-javascript">students.forEach(function (student) {
+  console.log(student.name);
+  console.log(student.goal);
+  console.log(student.level);
+});</code></pre>
+
+        <div class="warning">
+          <p>ข้อผิดพลาดที่เจอบ่อยกับ <code>forEach</code>:</p>
+          <ul>
+            <li><strong>ใช้ชื่อ array แทนชื่อสมาชิก</strong> เช่น <code>students.name</code> ภายใน loop — array ไม่มี field <code>name</code> จึงได้ <code>undefined</code> ที่ถูกคือ <code>student.name</code></li>
+            <li><strong>วงเล็บปิดไม่ครบ</strong> — ท้าย <code>forEach</code> ต้องปิดด้วย <code>});</code> (ปีกกาปิดฟังก์ชัน + วงเล็บปิด <code>forEach</code>) ถ้าขาดจะได้ <code>SyntaxError</code></li>
+            <li><strong>สะกด <code>forEach</code> ผิด</strong> เช่น <code>foreach</code> — JavaScript แยกตัวพิมพ์เล็ก–ใหญ่ จะได้ error ว่า <code>students.foreach is not a function</code></li>
+          </ul>
+        </div>
+
+        <div class="note">
+          <p>ถ้าไม่แน่ใจว่าแต่ละรอบ loop ได้ข้อมูลอะไร ใส่ <code>console.log(student);</code> เป็นบรรทัดแรกใน loop เพื่อดู object ทั้งตัวของทุกรอบ — นี่คือเทคนิค debug จากบทที่ 3 ที่ใช้กับ loop ได้ดีมาก</p>
+        </div>
+
+        <h2>ลองทำ</h2>
+        <ol>
+          <li>ใช้ array <code>students</code> จากบทที่แล้ว เขียน <code>forEach</code> ที่แสดงข้อความ <code>ชื่อ - เป้าหมาย</code> ของทุกคนใน Console (ต่อข้อความด้วย <code>+</code> เช่น <code>student.name + " - " + student.goal</code>)</li>
+          <li>เพิ่มนักเรียนคนใหม่เข้าไปใน array แล้วสังเกตว่า Console แสดงเพิ่มเองโดยไม่ต้องแก้ loop</li>
+          <li>ลองเปลี่ยน <code>student.name</code> ใน loop เป็น <code>students.name</code> แล้วดูผลใน Console จากนั้นแก้กลับ</li>
+        </ol>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า loop = การทำงานซ้ำกับข้อมูลแต่ละรายการ</li>
+            <li>เขียน <code>array.forEach(function (item) { ... });</code> ได้ถูก syntax</li>
+            <li>บอกได้ว่ารอบที่ 1 ตัวแปรใน loop คือสมาชิก index <code>0</code></li>
+            <li>รู้ว่าใน loop ต้องใช้ตัวแปรของรอบนั้น (<code>student</code>) ไม่ใช่ชื่อ array (<code>students</code>)</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="05_objects.html" rel="prev">ก่อนหน้า: Object และ Array of Objects</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="07_project_html_css.html" rel="next">ถัดไป: เตรียมโปรเจกต์ HTML และ CSS</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

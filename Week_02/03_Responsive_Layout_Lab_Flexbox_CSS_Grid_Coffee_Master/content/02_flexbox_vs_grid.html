@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เข้าใจความต่างระหว่าง Flexbox ที่จัดของในแนวเดียว กับ CSS Grid ที่จัดของเป็นหลายแถวหลายคอลัมน์ และเลือกใช้ให้เหมาะกับงาน" />
+    <title>Flexbox กับ Grid ใช้ตอนไหน | Responsive Layout Lab: Flexbox + CSS Grid</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 02 · ทบทวนโปรเจกต์และเลือกเครื่องมือ (Review &amp; Flexbox vs Grid)</p>
+          <h1>Flexbox กับ Grid ใช้ตอนไหน</h1>
+          <p class="lesson-original-title" lang="en">Flexbox vs Grid</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายความต่างระหว่าง Flexbox กับ CSS Grid ได้ในประโยคเดียว</li>
+            <li>เลือกได้ว่า layout แบบไหนควรใช้ Flexbox และแบบไหนควรใช้ Grid</li>
+            <li>วางแผนได้ว่า section ใหม่ในหน้า landing page จะใช้เครื่องมือตัวไหน</li>
+          </ul>
+        </section>
+
+        <h2>หลักจำง่าย ๆ</h2>
+        <pre><code class="language-text">Flexbox = จัดของในแนวเดียวเป็นหลัก
+Grid    = จัดของเป็นตาราง หลายแถว หลายคอลัมน์</code></pre>
+        <p>Flexbox และ Grid <strong>ไม่ได้มาแทนกัน</strong> แต่ใช้คนละสถานการณ์ ตอนสร้างหน้าเดิมเราใช้ Flexbox เพราะ layout ส่วนใหญ่เป็นแถวเดียว เช่น navbar ซ้าย-ขวา หรือ hero ซ้าย-ขวา แต่รอบนี้เราจะเพิ่ม Curriculum Section ที่มี card หลายใบ ซึ่ง Grid จะเหมาะกว่า</p>
+
+        <div class="comparison" role="region" aria-label="เปรียบเทียบ Flexbox กับ Grid" tabindex="0">
+          <table>
+            <thead><tr><th></th><th>Flexbox</th><th>CSS Grid</th></tr></thead>
+            <tbody>
+              <tr><td>คิดแบบ</td><td>แถวเดียว (หรือคอลัมน์เดียว)</td><td>ตาราง — ทั้งแถวและคอลัมน์พร้อมกัน</td></tr>
+              <tr><td>เหมาะกับ</td><td>Navbar, hero ซ้าย-ขวา, ปุ่มหลายปุ่มในแถวเดียว, pricing cards จำนวนน้อย, จัด element ให้อยู่กึ่งกลาง</td><td>Curriculum cards หลายใบ, course modules, product cards, gallery, dashboard cards, layout หลายแถวหลายคอลัมน์</td></tr>
+              <tr><td>ในหน้าของเรา</td><td><code>.navbar</code>, <code>.hero-section</code>, <code>.features-section</code>, <code>.pricing-cards</code>, <code>.cta-section</code></td><td><code>.curriculum-grid</code>, <code>.audience-grid</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>ตัวอย่าง: card 6 ใบ</h2>
+        <p>สมมติเรามี 6 modules แล้วอยากให้:</p>
+        <pre><code class="language-text">Desktop = 3 columns (2 แถว แถวละ 3 ใบ)
+Tablet  = 2 columns
+Mobile  = 1 column</code></pre>
+        <p>ถ้าใช้ Flexbox แบบที่ทำกับ <code>.features-section</code> (<code>flex: 1</code>) card ทั้ง 6 ใบจะพยายามเบียดกันอยู่ในแถวเดียว เราต้องไปเพิ่ม <code>flex-wrap</code> และคำนวณความกว้างของ card เอง แต่ใน Grid เราแค่บอก parent ว่า “ขอ 3 คอลัมน์เท่า ๆ กัน” แล้ว card จะไหลลงแถวใหม่ให้อัตโนมัติ:</p>
+        <pre><code class="language-css">.curriculum-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}</code></pre>
+        <p>รายละเอียดของแต่ละบรรทัดเราจะลงมือทำจริงในบทที่ 04</p>
+
+        <div class="note">
+          <p>ไม่ใช่ทุก layout ต้องใช้ Grid — ท้ายหน้าเว็บเราจะมี CTA section ที่มีแค่ “ข้อความซ้าย + ปุ่มขวา” ซึ่งยังใช้ Flexbox เหมาะกว่า <strong>เลือกเครื่องมือให้เหมาะกับงาน</strong></p>
+        </div>
+
+        <h2>ลองฝึกแยกประเภท</h2>
+        <p>ก่อนไปบทถัดไป ลองตอบเองว่าแต่ละข้อควรใช้อะไร:</p>
+        <ol>
+          <li>โลโก้ซ้าย เมนูขวา ใน header</li>
+          <li>รูปสินค้า 12 รูปเรียงเป็นตาราง</li>
+          <li>ปุ่ม “สมัคร” กับ “ดูรายละเอียด” วางข้างกัน</li>
+          <li>การ์ดสถิติ 8 ใบในหน้า dashboard</li>
+        </ol>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า Flexbox เหมาะกับ layout แนวเดียว ส่วน Grid เหมาะกับหลายแถวหลายคอลัมน์</li>
+            <li>ยกตัวอย่าง section ในหน้าของเราที่ใช้ Flexbox ได้อย่างน้อย 2 ตัวอย่าง</li>
+            <li>อธิบายได้ว่าทำไม card 6 ใบที่อยากให้เป็น 3 คอลัมน์จึงเหมาะกับ Grid</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="01_project_review.html" rel="prev">ก่อนหน้า: ทบทวนโปรเจกต์เริ่มต้น</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="03_curriculum_section_html.html" rel="next">ถัดไป: เพิ่ม HTML ของ Curriculum Section</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

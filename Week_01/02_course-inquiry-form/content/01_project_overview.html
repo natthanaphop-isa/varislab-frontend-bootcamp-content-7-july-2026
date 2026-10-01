@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="รู้จักโปรเจกต์ Course Inquiry Form, เข้าใจว่าฟอร์มในเว็บจริงใช้ทำอะไร และเตรียมโฟลเดอร์กับไฟล์ index.html, style.css, script.js" />
+    <title>ภาพรวมโปรเจกต์และการเตรียมไฟล์ | สร้างฟอร์มรับข้อมูลคอร์ส</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 01 · เริ่มต้น (Getting Started)</p>
+          <h1>ภาพรวมโปรเจกต์และการเตรียมไฟล์</h1>
+          <p class="lesson-original-title" lang="en">Project Overview &amp; Setup</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายได้ว่า HTML Form ในเว็บจริงใช้ทำอะไร</li>
+            <li>บอก flow หลักของโปรแกรมที่เราจะสร้าง: รับข้อมูล → ตรวจสอบ → ประมวลผล → แสดงผล</li>
+            <li>สร้างโฟลเดอร์โปรเจกต์พร้อมไฟล์ <code>index.html</code>, <code>style.css</code> และ <code>script.js</code></li>
+          </ul>
+        </section>
+
+        <h2>ทบทวนพื้นฐานสั้น ๆ</h2>
+        <p>จากพื้นฐาน HTML, CSS และ JavaScript เราเห็นภาพแล้วว่าหน้าเว็บหนึ่งหน้าแบ่งหน้าที่กันเป็น 3 ส่วน:</p>
+        <div class="comparison" role="region" aria-label="หน้าที่ของ HTML, CSS และ JavaScript" tabindex="0">
+          <table>
+            <thead><tr><th>ภาษา</th><th>หน้าที่</th><th>ในโปรเจกต์นี้</th></tr></thead>
+            <tbody>
+              <tr><td>HTML</td><td>โครงสร้าง</td><td>ช่องกรอกข้อมูล ปุ่มส่ง และกล่องแสดงผลลัพธ์</td></tr>
+              <tr><td>CSS</td><td>หน้าตา</td><td>ทำให้ฟอร์มดูเป็นระบบ อ่านง่าย และรู้ว่ากำลังกรอกช่องไหน</td></tr>
+              <tr><td>JavaScript</td><td>พฤติกรรม</td><td>อ่านค่าที่ผู้ใช้กรอก ตรวจสอบ แล้วแสดงข้อความสรุป</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>ฟอร์มในเว็บจริงใช้ทำอะไร</h2>
+        <p>Form คือส่วนที่เจอบ่อยที่สุดส่วนหนึ่งใน Web Application จริง ลองนึกถึงหน้าเหล่านี้:</p>
+        <ul>
+          <li>หน้า Login</li>
+          <li>หน้าสมัครเรียน หรือหน้าสมัครงาน</li>
+          <li>หน้า Checkout ตอนซื้อของออนไลน์</li>
+          <li>Contact Form</li>
+          <li>ระบบหลังบ้านของบริษัท</li>
+        </ul>
+        <p>ทุกหน้าที่กล่าวมามี pattern เดียวกัน คือ <strong>รับข้อมูลจากผู้ใช้</strong> แล้วเอาไปทำอะไรบางอย่างต่อ ในคอร์สนี้เราจะได้ลองทำ pattern นี้ด้วยตัวเองแบบครบวงจร</p>
+
+        <h2>สิ่งที่เราจะสร้าง: Course Inquiry Form Card</h2>
+        <p>เราจะสร้างการ์ดฟอร์มเล็ก ๆ สำหรับกรอกข้อมูลความสนใจเรียน Bootcamp หน้าตาโดยรวมของฟอร์มเป็นแบบนี้:</p>
+        <pre><code class="language-text">ชื่อ:
+เป้าหมาย:
+พื้นฐานตอนนี้:
+ข้อความเพิ่มเติม:
+
+[ส่งข้อมูล]
+</code></pre>
+        <p>เมื่อผู้ใช้กรอกข้อมูลแล้วกดปุ่ม หน้าเว็บจะแสดงข้อความสรุปประมาณนี้:</p>
+        <pre><code class="language-text">สวัสดีครับคุณ Man
+เป้าหมายของคุณคือ เปลี่ยนสายงานเป็น Developer
+ระดับพื้นฐานตอนนี้คือ เริ่มจากศูนย์
+ข้อความเพิ่มเติม: ไม่มีข้อความเพิ่มเติม
+</code></pre>
+        <p>โปรเจกต์นี้ช่วยให้เห็นว่า JavaScript ไม่ได้มีไว้แค่ "กดปุ่มแล้วเปลี่ยนข้อความ" แต่ทำงานเป็นขั้นตอนแบบโปรแกรมจริงได้:</p>
+        <blockquote><strong>รับข้อมูล → เก็บข้อมูล → ตรวจสอบข้อมูล → แสดงผลลัพธ์</strong></blockquote>
+        <p>flow นี้คือพื้นฐานของ logic ที่เราจะใช้ต่อไปใน React, Backend, Database และระบบ Full-Stack ในอนาคต</p>
+
+        <h2>สิ่งที่จะได้เรียนในคอร์สนี้</h2>
+        <div class="comparison" role="region" aria-label="concept หลักของคอร์ส" tabindex="0">
+          <table>
+            <thead><tr><th>ส่วน</th><th>Concept</th></tr></thead>
+            <tbody>
+              <tr><td>HTML</td><td><code>form</code>, <code>label</code>, <code>input</code>, <code>select</code>, <code>textarea</code>, <code>button</code></td></tr>
+              <tr><td>CSS</td><td>form layout, input styling, spacing, focus state, result box</td></tr>
+              <tr><td>JavaScript</td><td><code>const</code>, <code>document.getElementById</code>, <code>addEventListener</code>, <code>event.preventDefault()</code>, <code>.value</code>, <code>.trim()</code>, <code>if / else</code>, <code>textContent</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Step 1: สร้างโปรเจกต์</h2>
+        <p>สร้างโฟลเดอร์ใหม่ชื่อ <code>course-inquiry-form</code> แล้วสร้างไฟล์เปล่า 3 ไฟล์ไว้ข้างใน:</p>
+        <pre class="file-tree">course-inquiry-form/
+├── index.html
+├── style.css
+└── script.js
+</pre>
+        <ul>
+          <li><code>index.html</code> — โครงสร้างของฟอร์ม</li>
+          <li><code>style.css</code> — หน้าตาของการ์ดและช่องกรอกข้อมูล</li>
+          <li><code>script.js</code> — logic อ่านค่า ตรวจสอบ และแสดงผล</li>
+        </ul>
+        <p>จากนั้นเปิดโฟลเดอร์นี้ใน code editor ของคุณ เราจะเริ่มเขียน HTML กันในบทถัดไป</p>
+
+        <div class="note">
+          <p>ชื่อไฟล์ต้องสะกดให้ตรงเป๊ะ (ตัวพิมพ์เล็กทั้งหมด) เพราะเดี๋ยว <code>index.html</code> จะอ้างถึง <code>style.css</code> และ <code>script.js</code> ด้วยชื่อนี้ ถ้าสะกดไม่ตรง browser จะหาไฟล์ไม่เจอ</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า form ในเว็บจริงถูกใช้ในหน้าไหนบ้าง อย่างน้อย 3 ตัวอย่าง</li>
+            <li>พูด flow รับข้อมูล → ตรวจสอบ → ประมวลผล → แสดงผล ได้ด้วยคำพูดของตัวเอง</li>
+            <li>มีโฟลเดอร์ <code>course-inquiry-form</code> ที่มีไฟล์ <code>index.html</code>, <code>style.css</code>, <code>script.js</code> ครบ</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="02_form_label_input.html" rel="next">ถัดไป: form, label และ input</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

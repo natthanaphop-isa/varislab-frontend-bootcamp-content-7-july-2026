@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="แยกความต่างของ padding กับ margin แล้วใช้จัดระยะห่างของ hero section, feature cards และ footer" />
+    <title>padding กับ margin ต่างกันอย่างไร | Semantic HTML และ CSS Box Model</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 06 · CSS Box Model และระยะห่าง</p>
+          <h1>padding กับ margin ต่างกันอย่างไร</h1>
+          <p class="lesson-original-title" lang="en">Padding vs Margin</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เลือกใช้ <code>padding</code> หรือ <code>margin</code> ได้ถูกกับสถานการณ์</li>
+            <li>อ่านค่า shorthand ของ <code>margin</code> และ <code>padding</code> แบบ 1, 2 และ 3 ค่าได้</li>
+            <li>จัดระยะห่างและหน้าตาของ hero section, feature cards และ footer</li>
+          </ul>
+        </section>
+
+        <h2>กฎจำง่าย</h2>
+
+        <pre><code class="language-text">padding = ระยะห่างด้านใน
+margin  = ระยะห่างด้านนอก</code></pre>
+
+        <ul>
+          <li>ถ้าอยากให้<strong>เนื้อหาข้างใน</strong>ไม่ชิดขอบกล่อง ให้ใช้ <code>padding</code></li>
+          <li>ถ้าอยากให้<strong>กล่องนี้ห่างจากกล่องอื่น</strong> ให้ใช้ <code>margin</code></li>
+        </ul>
+
+        <p>นึกถึงกล่องพัสดุจากบทที่ 04: padding คือโฟมกันกระแทกที่อยู่<em>ในกล่อง</em> ส่วน margin คือระยะที่เราเว้นไว้<em>ระหว่างกล่อง</em>แต่ละใบบนชั้นวาง</p>
+
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>อยากได้ผลแบบนี้</th>
+                <th>ใช้</th>
+                <th>ตัวอย่างในหน้าเรา</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ข้อความใน card ไม่ชิดขอบ card</td>
+                <td><code>padding</code></td>
+                <td><code>.feature-card { padding: 24px; }</code></td>
+              </tr>
+              <tr>
+                <td>hero section ห่างจาก section ถัดไป</td>
+                <td><code>margin</code></td>
+                <td><code>.hero-section { margin-bottom: 56px; }</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>อ่านค่า shorthand ให้เป็น</h2>
+
+        <p><code>margin</code> และ <code>padding</code> เขียนค่าได้หลายแบบ ซึ่งเราจะเจอทั้งหมดในบทนี้:</p>
+
+        <pre><code class="language-css">padding: 24px;          /* ทั้ง 4 ด้าน = 24px */
+padding: 64px 32px;     /* บน/ล่าง = 64px, ซ้าย/ขวา = 32px */
+margin: 0 0 16px;       /* บน = 0, ซ้าย/ขวา = 0, ล่าง = 16px */
+margin-bottom: 56px;    /* กำหนดเฉพาะด้านล่าง */</code></pre>
+
+        <h2>ขั้นที่ 1: Hero Section</h2>
+
+        <p>เพิ่มโค้ดนี้ต่อท้าย <code>style.css</code>:</p>
+
+        <pre><code class="language-css">.hero-section {
+  max-width: 760px;
+  margin-bottom: 56px;
+}
+
+.eyebrow {
+  margin: 0 0 16px;
+  color: #38bdf8;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+h1 {
+  margin: 0 0 24px;
+  font-size: 52px;
+  line-height: 1.1;
+}
+
+.hero-description {
+  margin: 0 0 32px;
+  color: #cbd5e1;
+  font-size: 20px;
+}</code></pre>
+
+        <ul>
+          <li><code>.hero-section</code> — <code>max-width: 760px</code> ทำให้ข้อความใน hero ไม่ยาวเกินไปจนอ่านยาก (แคบกว่า <code>main</code>) และ <code>margin-bottom: 56px</code> ดัน section การ์ดด้านล่างให้ห่างออกไป</li>
+          <li><code>.eyebrow</code> — สีฟ้า <code>#38bdf8</code> ตัวหนา <code>text-transform: uppercase</code> แปลงอักษรอังกฤษเป็นตัวพิมพ์ใหญ่ และ <code>letter-spacing</code> เพิ่มระยะห่างระหว่างตัวอักษรเล็กน้อย</li>
+          <li><code>h1</code> — ตัวใหญ่ 52px และ <code>line-height: 1.1</code> ให้หัวข้อหลายบรรทัดชิดกันพอดี</li>
+          <li>ทั้ง <code>.eyebrow</code>, <code>h1</code> และ <code>.hero-description</code> เริ่มด้วย <code>margin: 0 0 ...</code> คือล้าง margin เริ่มต้นที่เบราว์เซอร์ใส่ให้ แล้วกำหนดเองเฉพาะ<strong>ด้านล่าง</strong> ระยะห่างทุกจุดจึงคาดเดาได้</li>
+        </ul>
+
+        <div class="note">
+          <p>เบราว์เซอร์ใส่ margin เริ่มต้นให้ tag อย่าง <code>h1</code>, <code>h2</code> และ <code>p</code> อยู่แล้ว ถ้าเราไม่ล้างมัน ระยะห่างจะมาจากสองแหล่ง (ค่าเริ่มต้น + ค่าที่เราตั้ง) และคุมยาก การใช้ margin ด้านเดียว (ด้านล่าง) อย่างสม่ำเสมอเป็นนิสัยที่ดี</p>
+        </div>
+
+        <h2>ขั้นที่ 2: Feature Cards</h2>
+
+        <pre><code class="language-css">.feature-card {
+  padding: 24px;
+  border-radius: 20px;
+  background: #1e293b;
+}
+
+.feature-card h2 {
+  margin: 0 0 12px;
+  color: #38bdf8;
+}
+
+.feature-card p {
+  margin: 0;
+  color: #cbd5e1;
+}</code></pre>
+
+        <ul>
+          <li><code>padding: 24px</code> — ข้อความใน card ห่างจากขอบ card ทุกด้าน 24px</li>
+          <li><code>border-radius: 20px</code> — ทำให้มุม card โค้งมน</li>
+          <li><code>background: #1e293b</code> — พื้นหลังสีอ่อนกว่า body เล็กน้อย ทำให้เห็นขอบเขตของกล่องชัดเจน</li>
+          <li><code>.feature-card h2</code> และ <code>.feature-card p</code> คือ<strong>descendant selector</strong> — เลือกเฉพาะ <code>h2</code> และ <code>p</code> ที่อยู่ใน <code>.feature-card</code> ไม่กระทบ <code>p</code> ที่อื่นในหน้า</li>
+        </ul>
+
+        <h2>ขั้นที่ 3: Footer</h2>
+
+        <pre><code class="language-css">.site-footer {
+  border-top: 1px solid #1e293b;
+  padding: 24px 32px;
+  text-align: center;
+  color: #94a3b8;
+}</code></pre>
+
+        <p>Footer มีเส้นขอบบนคั่นจากเนื้อหา (เข้าคู่กับเส้นขอบล่างของ header) มี padding ภายใน จัดข้อความกึ่งกลางด้วย <code>text-align: center</code> และใช้สีเทาอ่อน <code>#94a3b8</code> เพราะเป็นข้อมูลที่สำคัญน้อยกว่าเนื้อหาหลัก</p>
+
+        <div class="expected-result">
+          <p>hero section ดูเป็นระเบียบ มี eyebrow สีฟ้า หัวข้อใหญ่ และคำอธิบายสีเทาอ่อน การ์ดทั้งสามมีพื้นหลังและมุมโค้ง แต่ยัง<strong>เรียงซ้อนกันลงมาในแนวตั้ง</strong>และติดกันอยู่ (บทถัดไปจะจัดให้เรียงเป็นแถว) footer อยู่ด้านล่างสุดพร้อมเส้นขอบบน</p>
+        </div>
+
+        <h2>ลองทำดู: padding vs margin</h2>
+
+        <p>เพื่อให้เห็นความต่างด้วยตาตัวเอง ลองแก้ <code>.feature-card</code> ชั่วคราว:</p>
+
+        <ol>
+          <li>
+            <p>เปลี่ยน padding เป็น 40px แล้ว refresh:</p>
+            <pre><code class="language-css">.feature-card {
+  padding: 40px;
+}</code></pre>
+            <p>เนื้อหา<strong>ข้างใน</strong> card ห่างจากขอบ card มากขึ้น ตัว card ใหญ่ขึ้น</p>
+          </li>
+          <li>
+            <p>เปลี่ยนกลับเป็น <code>padding: 24px</code> แล้วลองเพิ่ม margin:</p>
+            <pre><code class="language-css">.feature-card {
+  margin: 40px;
+}</code></pre>
+            <p>รอบนี้เนื้อหาข้างในเท่าเดิม แต่ <strong>card ทั้งใบ</strong>ห่างจาก element รอบ ๆ แทน</p>
+          </li>
+        </ol>
+
+        <div class="warning">
+          <p>ทดลองเสร็จแล้วอย่าลืมลบ <code>margin: 40px</code> ออก และให้ <code>.feature-card</code> กลับไปเป็นโค้ดในขั้นที่ 2 ก่อนไปบทถัดไป</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>ตอบได้ทันทีว่า "อยากให้ข้อความไม่ชิดขอบ card" ใช้ <code>padding</code> และ "อยากให้ section ห่างจาก section ถัดไป" ใช้ <code>margin</code></li>
+            <li>อ่าน <code>margin: 0 0 16px</code> ได้ว่าเป็นระยะห่างด้านล่าง 16px</li>
+            <li><code>style.css</code> มี <code>.hero-section</code>, <code>.eyebrow</code>, <code>h1</code>, <code>.hero-description</code>, <code>.feature-card</code>, <code>.feature-card h2</code>, <code>.feature-card p</code> และ <code>.site-footer</code></li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="05_container_layout.html" rel="prev">ก่อนหน้า: จัด content ให้อยู่กลางหน้าด้วย max-width</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="07_flexbox_basics.html" rel="next">ถัดไป: จัดแถวด้วย display: flex</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

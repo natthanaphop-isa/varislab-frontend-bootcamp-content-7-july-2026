@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เขียน index.html ของ Landing Page ทีละส่วนด้วย Semantic HTML ตั้งแต่ header, hero section, feature cards ไปจนถึง footer" />
+    <title>สร้างโครงสร้าง Landing Page | Semantic HTML และ CSS Box Model</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 03 · โครงสร้างหน้าเว็บด้วย Semantic HTML</p>
+          <h1>สร้างโครงสร้าง Landing Page</h1>
+          <p class="lesson-original-title" lang="en">Building the Page Structure</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เขียนโครงไฟล์ HTML พื้นฐานพร้อมเชื่อมไฟล์ <code>style.css</code></li>
+            <li>สร้าง header, hero section, feature cards และ footer ด้วย semantic tags</li>
+            <li>ตั้งชื่อ class ให้สื่อความหมาย เพื่อเตรียมเลือกด้วย CSS ในบทถัดไป</li>
+          </ul>
+        </section>
+
+        <p>บทนี้เราจะนำ Semantic HTML จากบทที่แล้วมาใช้จริง โดยเขียน <code>index.html</code> ของ Landing Page ทีละส่วน ตอนจบบทหน้าเว็บจะยังดูเรียบ ๆ ไม่มีสี (เพราะยังไม่มี CSS) แต่โครงสร้างจะครบทั้งหมดแล้ว</p>
+
+        <h2>ขั้นที่ 1: โครงไฟล์ HTML</h2>
+
+        <p>เปิด <code>index.html</code> แล้วเริ่มจากโครงพื้นฐาน:</p>
+
+        <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="th"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+    &lt;title&gt;Bootcamp Landing Page&lt;/title&gt;
+    &lt;link rel="stylesheet" href="style.css" /&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <ul>
+          <li><code>lang="th"</code> — บอกเบราว์เซอร์และ screen reader ว่าเนื้อหาหลักของหน้าเป็นภาษาไทย</li>
+          <li><code>meta charset="UTF-8"</code> — ทำให้ภาษาไทยแสดงผลถูกต้อง</li>
+          <li><code>meta name="viewport"</code> — ทำให้หน้าเว็บแสดงผลพอดีกับความกว้างจอบนมือถือ</li>
+          <li><code>&lt;title&gt;</code> — ชื่อที่แสดงบนแท็บของเบราว์เซอร์</li>
+          <li><code>&lt;link rel="stylesheet" href="style.css" /&gt;</code> — เชื่อมไฟล์ CSS ที่เราจะเขียนในบทถัดไป</li>
+        </ul>
+
+        <h2>ขั้นที่ 2: Header และ Navbar</h2>
+
+        <p>ใส่โค้ดนี้ไว้ใน <code>&lt;body&gt;</code>:</p>
+
+        <pre><code class="language-html">&lt;header class="site-header"&gt;
+  &lt;nav class="navbar"&gt;
+    &lt;p class="logo"&gt;Varis Lab&lt;/p&gt;
+
+    &lt;div class="nav-links"&gt;
+      &lt;a href="#"&gt;ภาพรวม&lt;/a&gt;
+      &lt;a href="#"&gt;หลักสูตร&lt;/a&gt;
+      &lt;a href="#"&gt;สมัครเรียน&lt;/a&gt;
+    &lt;/div&gt;
+  &lt;/nav&gt;
+&lt;/header&gt;</code></pre>
+
+        <ul>
+          <li><code>header</code> คือส่วนหัวของหน้า และข้างในมี <code>nav</code> ซึ่งเป็นเมนูนำทาง</li>
+          <li>ใน <code>nav</code> มีสองส่วน: โลโก้ (<code>p.logo</code>) กับกลุ่มลิงก์ (<code>div.nav-links</code>) — เราครอบลิงก์ทั้งสามด้วย <code>div</code> เพื่อให้ CSS จัดกลุ่มลิงก์นี้เป็นก้อนเดียวได้ในบทที่ 07</li>
+          <li><code>href="#"</code> คือลิงก์ชั่วคราวที่ยังไม่ไปไหน ใช้ระหว่างที่ยังไม่มีหน้าจริง</li>
+        </ul>
+
+        <h2>ขั้นที่ 3: Main และ Hero Section</h2>
+
+        <p>ต่อจาก <code>header</code> ให้เพิ่ม <code>main</code> ซึ่งจะครอบเนื้อหาหลักทั้งหมด แล้วใส่ section แรกคือ <strong>Hero Section</strong> — ส่วนบนสุดของหน้าที่บอกว่าเว็บนี้เกี่ยวกับอะไร:</p>
+
+        <pre><code class="language-html">&lt;main&gt;
+  &lt;section class="hero-section"&gt;
+    &lt;p class="eyebrow"&gt;Full-Stack Bootcamp — AI Edition&lt;/p&gt;
+
+    &lt;h1&gt;
+      เรียนสร้างเว็บแอปจริง ตั้งแต่พื้นฐานจน Deploy ได้
+    &lt;/h1&gt;
+
+    &lt;p class="hero-description"&gt;
+      เริ่มจากการเขียนโค้ดแบบ Manual ให้เข้าใจพื้นฐานจริง
+      ก่อนต่อยอดไปสู่ React, Backend, Database และ AI Coding Workflow
+    &lt;/p&gt;
+
+    &lt;a class="primary-button" href="#"&gt;
+      ดูรายละเอียดคอร์ส
+    &lt;/a&gt;
+  &lt;/section&gt;
+&lt;/main&gt;</code></pre>
+
+        <ul>
+          <li><code>p.eyebrow</code> — ข้อความเล็กเหนือหัวข้อ ช่วยบอกหมวดหรือบริบทของหน้า</li>
+          <li><code>h1</code> — หัวข้อหลักของหน้า หนึ่งหน้าควรมี <code>h1</code> เพียงตัวเดียว</li>
+          <li><code>p.hero-description</code> — คำอธิบายสั้น ๆ ใต้หัวข้อ</li>
+          <li><code>a.primary-button</code> — ปุ่ม Call-to-Action เราใช้ <code>&lt;a&gt;</code> เพราะมันคือ<strong>ลิงก์</strong>ไปยังหน้ารายละเอียดคอร์ส แล้วค่อยใช้ CSS ทำให้ดูเหมือนปุ่มในบทที่ 08</li>
+        </ul>
+
+        <h2>ขั้นที่ 4: Feature Cards</h2>
+
+        <p>ใน <code>main</code> ต่อจาก hero section ให้เพิ่ม section ที่สองซึ่งมีการ์ด 3 ใบ การ์ดแต่ละใบเป็นเนื้อหาชิ้นหนึ่งที่แยกออกมาได้ จึงใช้ <code>article</code>:</p>
+
+        <pre><code class="language-html">&lt;section class="features-section"&gt;
+  &lt;article class="feature-card"&gt;
+    &lt;h2&gt;Manual Foundation&lt;/h2&gt;
+    &lt;p&gt;
+      เข้าใจ HTML, CSS, JavaScript และ logic พื้นฐานด้วยตัวเองก่อนใช้ AI
+    &lt;/p&gt;
+  &lt;/article&gt;
+
+  &lt;article class="feature-card"&gt;
+    &lt;h2&gt;Frontend Development&lt;/h2&gt;
+    &lt;p&gt;
+      สร้าง UI ด้วย React, Tailwind CSS และ component thinking
+    &lt;/p&gt;
+  &lt;/article&gt;
+
+  &lt;article class="feature-card"&gt;
+    &lt;h2&gt;Backend &amp; Database&lt;/h2&gt;
+    &lt;p&gt;
+      สร้าง API, Authentication และเชื่อมต่อ Database แบบ Full-Stack
+    &lt;/p&gt;
+  &lt;/article&gt;
+&lt;/section&gt;</code></pre>
+
+        <p>สังเกตว่าการ์ดทุกใบใช้ class เดียวกันคือ <code>feature-card</code> เพราะหน้าตาเหมือนกัน เขียน CSS ครั้งเดียวก็ใช้ได้ทั้งสามใบ และหัวข้อในการ์ดใช้ <code>h2</code> เพราะเป็นหัวข้อรองลงมาจาก <code>h1</code> ของหน้า</p>
+
+        <h2>ขั้นที่ 5: Footer</h2>
+
+        <p>ปิดท้ายหน้าด้วย <code>footer</code> ซึ่งวางต่อจาก <code>&lt;/main&gt;</code> (อยู่นอก <code>main</code> เพราะไม่ใช่เนื้อหาหลัก):</p>
+
+        <pre><code class="language-html">&lt;footer class="site-footer"&gt;
+  &lt;p&gt;© 2026 Varis Lab. All rights reserved.&lt;/p&gt;
+&lt;/footer&gt;</code></pre>
+
+        <h2>โค้ด index.html ฉบับสมบูรณ์</h2>
+
+        <p>เมื่อรวมทุกส่วนเข้าด้วยกัน <code>index.html</code> จะเป็นแบบนี้ (ตรงกับไฟล์ใน <code>finish/index.html</code>):</p>
+
+        <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="th"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+    &lt;title&gt;Bootcamp Landing Page&lt;/title&gt;
+    &lt;link rel="stylesheet" href="style.css" /&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+    &lt;header class="site-header"&gt;
+      &lt;nav class="navbar"&gt;
+        &lt;p class="logo"&gt;Varis Lab&lt;/p&gt;
+
+        &lt;div class="nav-links"&gt;
+          &lt;a href="#"&gt;ภาพรวม&lt;/a&gt;
+          &lt;a href="#"&gt;หลักสูตร&lt;/a&gt;
+          &lt;a href="#"&gt;สมัครเรียน&lt;/a&gt;
+        &lt;/div&gt;
+      &lt;/nav&gt;
+    &lt;/header&gt;
+
+    &lt;main&gt;
+      &lt;section class="hero-section"&gt;
+        &lt;p class="eyebrow"&gt;Full-Stack Bootcamp — AI Edition&lt;/p&gt;
+
+        &lt;h1&gt;
+          เรียนสร้างเว็บแอปจริง ตั้งแต่พื้นฐานจน Deploy ได้
+        &lt;/h1&gt;
+
+        &lt;p class="hero-description"&gt;
+          เริ่มจากการเขียนโค้ดแบบ Manual ให้เข้าใจพื้นฐานจริง
+          ก่อนต่อยอดไปสู่ React, Backend, Database และ AI Coding Workflow
+        &lt;/p&gt;
+
+        &lt;a class="primary-button" href="#"&gt;
+          ดูรายละเอียดคอร์ส
+        &lt;/a&gt;
+      &lt;/section&gt;
+
+      &lt;section class="features-section"&gt;
+        &lt;article class="feature-card"&gt;
+          &lt;h2&gt;Manual Foundation&lt;/h2&gt;
+          &lt;p&gt;
+            เข้าใจ HTML, CSS, JavaScript และ logic พื้นฐานด้วยตัวเองก่อนใช้ AI
+          &lt;/p&gt;
+        &lt;/article&gt;
+
+        &lt;article class="feature-card"&gt;
+          &lt;h2&gt;Frontend Development&lt;/h2&gt;
+          &lt;p&gt;
+            สร้าง UI ด้วย React, Tailwind CSS และ component thinking
+          &lt;/p&gt;
+        &lt;/article&gt;
+
+        &lt;article class="feature-card"&gt;
+          &lt;h2&gt;Backend &amp; Database&lt;/h2&gt;
+          &lt;p&gt;
+            สร้าง API, Authentication และเชื่อมต่อ Database แบบ Full-Stack
+          &lt;/p&gt;
+        &lt;/article&gt;
+      &lt;/section&gt;
+    &lt;/main&gt;
+
+    &lt;footer class="site-footer"&gt;
+      &lt;p&gt;© 2026 Varis Lab. All rights reserved.&lt;/p&gt;
+    &lt;/footer&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <div class="expected-result">
+          <p>เปิด <code>index.html</code> ในเบราว์เซอร์ จะเห็นข้อความทั้งหมดเรียงจากบนลงล่าง พื้นหลังขาว ตัวอักษรสีดำ ลิงก์มีขีดเส้นใต้สีน้ำเงิน และการ์ดทั้งสามเรียงต่อกันลงมาเป็นแนวตั้ง — นี่คือหน้าตาปกติของ HTML ที่ยังไม่มี CSS</p>
+        </div>
+
+        <div class="warning">
+          <p>ระวังเรื่องพิมพ์ข้อความผิดหรือปิด tag ไม่ครบ เช่น ลืม <code>&lt;/html&gt;</code> ท้ายไฟล์ หรือพิมพ์ "ให้" เป็น "ให" เบราว์เซอร์มักจะยังแสดงผลได้โดยไม่เตือนอะไร ทำให้ข้อผิดพลาดหลุดไปถึงผู้ใช้ได้ง่าย ลองอ่านโค้ดทวนอีกรอบก่อนไปบทถัดไป</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>ไฟล์ใช้ semantic tags ครบ: <code>header</code>, <code>nav</code>, <code>main</code>, <code>section</code>, <code>article</code>, <code>footer</code></li>
+            <li>มี <code>h1</code> เพียงตัวเดียวในหน้า และการ์ดทั้งสามใบใช้ class <code>feature-card</code></li>
+            <li><code>footer</code> อยู่นอก <code>main</code></li>
+            <li>มี <code>&lt;link rel="stylesheet" href="style.css" /&gt;</code> ใน <code>head</code></li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="02_semantic_html.html" rel="prev">ก่อนหน้า: Semantic HTML คืออะไร</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="04_css_box_model.html" rel="next">ถัดไป: CSS Box Model และ box-sizing</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

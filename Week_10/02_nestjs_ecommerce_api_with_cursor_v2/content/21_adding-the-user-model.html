@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เปิดโบนัส auth ด้วยการเขียนสัญญา docs/auth-spec.md ด้วยมือเอง แล้วสั่ง Cursor เพิ่ม model User กับ enum Role ใน Prisma พร้อม unique index ของอีเมล" />
+  <title>ออกแบบสัญญาของ auth และ Model ของผู้ใช้</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>ออกแบบสัญญาของ auth และ Model ของผู้ใช้</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>ออกแบบสัญญาของ endpoint ชุดใหม่ขึ้นมาเองทั้งชุด ในสถานการณ์ที่<em>ไม่มี</em> client ตัวไหนมาบังคับรูปทรงให้</li>
+        <li>ออกแบบตาราง <code>User</code> ที่เก็บรหัสผ่านแบบ hash และบังคับความไม่ซ้ำของอีเมลที่ระดับฐานข้อมูล ไม่ใช่ที่ระดับโค้ด</li>
+        <li>อธิบายได้ว่าทำไม <code>Order.userId</code> ถึงยัง<strong>ไม่</strong>ผูก foreign key ไปที่ <code>User</code> ทั้งที่ตอนนี้มีตาราง <code>User</code> แล้ว</li>
+      </ul>
+    </section>
+
+    <div class="note"><p>เจ็ดบทจากนี้เป็น<strong>โบนัส</strong> — React app ที่เราสลับมาใช้ API ตัวนี้ไปแล้วไม่ต้องการ auth เลย และจะทำงานได้เหมือนเดิมทุกประการตลอดทั้งโบนัส ถ้าคุณหยุดอ่านตรงนี้แล้วข้ามไปบทสรุป งานที่ทำมาทั้งหมดก็ยังสมบูรณ์ สิ่งที่เจ็ดบทนี้เพิ่มให้คือชั้นของผู้ใช้: สมัคร เข้าสู่ระบบ ถือ token แล้วเรียก endpoint ที่คนอื่นเรียกไม่ได้</p></div>
+
+    <h2>สัญญาที่ไม่มีใครบังคับ เราจึงต้องออกแบบเอง</h2>
+    <p>ตลอดคอร์สที่ผ่านมา <code>docs/api-spec.md</code> ทำหน้าที่เดียว: บันทึกสัญญาที่ React app <em>พึ่งพาอยู่แล้ว</em> ทุกหัวข้อในไฟล์นั้นจึงมีวงเล็บกำกับว่าถอดมาจากไฟล์ไหนของ client — <code>(from src/features/products/types.ts)</code> และเพื่อน ๆ นั่นคือเหตุผลที่เราแก้มันไม่ได้: มีคนใช้อยู่ปลายทาง</p>
+    <p>auth ไม่มีเงื่อนไขนั้นเลย ไม่มีหน้าจอ login ไม่มี client ตัวไหนรอเรียก <code>POST /auth/signup</code> เราจึงไม่ได้<em>ถอด</em>สัญญามาจากใคร แต่<em>ออกแบบ</em>มันขึ้นมาเอง ซึ่งเป็นงานคนละชนิดและต้องอยู่คนละไฟล์: <code>docs/auth-spec.md</code></p>
+    <p>การแยกสองไฟล์นี้ไม่ใช่เรื่องความเป็นระเบียบ มันคือการแยก "สิ่งที่เปลี่ยนไม่ได้" ออกจาก "สิ่งที่เรายังตัดสินใจได้" ซึ่งจะมีผลตรง ๆ ในบทที่เราใส่ guard: e2e test สิบเอ็ดข้อที่มีอยู่คุ้มครองสัญญาที่คนอื่นพึ่งพา ถ้าโบนัสนี้ทำให้ข้อไหนแดง นั่นไม่ใช่ trade-off ที่ยอมรับได้ แต่เป็นการทำของพังโดยตรง</p>
+    <div class="warning"><p>ไฟล์นี้<strong>เขียนด้วยมือ</strong> ไม่ใช้ Cursor เขียนให้ ด้วยเหตุผลเดียวกับที่ <code>docs/api-spec.md</code> เขียนเอง: สัญญาคือการตัดสินใจ ไม่ใช่โค้ด ถ้า AI ตัดสินใจแทนคุณว่า endpoint ไหนตอบอะไร คุณจะไม่มีอะไรเอาไว้ตรวจงานของมันเลย ตอนต้นคอร์สเราบอกว่ามีห้าขั้นที่พิมพ์เอง — โบนัสนี้เพิ่มขั้นที่หก ด้วยเหตุผลข้อแรกของทั้งห้าข้อนั้น</p></div>
+
+    <h2>เจ็ด endpoint ที่โบนัสนี้จะสร้าง</h2>
+    <p>เขียนสัญญาให้ครบทั้งเจ็ดตั้งแต่ตอนนี้ แม้ห้าเส้นสุดท้ายจะยังไม่ได้สร้างไปอีกหลายบท — เหมือนที่ตอนออกแบบสัญญาของสินค้า เราเขียนครบทุก endpoint ก่อนจะลงมือสร้างตัวแรก การเห็นปลายทางทั้งหมดพร้อมกันคือสิ่งที่ทำให้ตัดสินใจเรื่องรูปทรงได้ถูกตั้งแต่ต้น</p>
+    <div class="comparison" role="region" aria-label="endpoint ทั้งเจ็ดของโบนัส auth" tabindex="0">
+      <table>
+        <thead><tr><th>Method + Path</th><th>ต้องมี token?</th><th>ตอบอะไร</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST /auth/signup</code></td><td>ไม่</td><td><code>201</code> + ข้อมูลผู้ใช้ (ไม่มีรหัสผ่าน)</td></tr>
+          <tr><td><code>POST /auth/login</code></td><td>ไม่</td><td><code>200</code> + <code>accessToken</code> และ <code>refreshToken</code></td></tr>
+          <tr><td><code>POST /auth/refresh</code></td><td>ไม่ (ใช้ refresh token ใน body)</td><td><code>200</code> + token คู่ใหม่</td></tr>
+          <tr><td><code>POST /auth/logout</code></td><td>ใช่</td><td><code>204</code> ไม่มี body</td></tr>
+          <tr><td><code>GET /auth/me</code></td><td>ใช่</td><td><code>200</code> + ข้อมูลผู้ใช้จาก token</td></tr>
+          <tr><td><code>GET /orders/me</code></td><td>ใช่</td><td><code>200</code> + คำสั่งซื้อของผู้ใช้คนนั้น</td></tr>
+          <tr><td><code>GET /admin/orders</code></td><td>ใช่ และต้องเป็น <code>ADMIN</code></td><td><code>200</code> + คำสั่งซื้อทุกใบในระบบ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>สังเกตว่า <code>POST /auth/refresh</code> อยู่ในกลุ่ม "ไม่ต้องมี token" ทั้งที่ชื่อฟังดูเหมือนต้องมี — เหตุผลอยู่ในบทที่เราทำ refresh: หน้าที่ของมันคือทำงานตอน access token <em>หมดอายุไปแล้ว</em> ถ้ามันเองต้องใช้ access token ที่ยังไม่หมดอายุ มันก็ไม่มีประโยชน์อะไรเลย</p>
+
+    <h2><code>User</code> เก็บอะไร และเก็บอย่างไร</h2>
+    <p>สามเรื่องที่ตัดสินใจตอนนี้แล้วจะส่งผลไปอีกหกบท</p>
+    <p><strong>ชื่อฟิลด์ของรหัสผ่านต้องบอกความจริง</strong> — เราเก็บ <code>passwordHash</code> ไม่ใช่ <code>password</code> เพราะสิ่งที่อยู่ในนั้นไม่ใช่รหัสผ่าน มันคือผลลัพธ์ของฟังก์ชันทางเดียวที่ย้อนกลับไม่ได้ ชื่อที่ตรงกับความจริงทำให้วันที่มีคนเผลอเขียน <code>user.password</code> ในโค้ด มันจะ compile ไม่ผ่านทันทีแทนที่จะเงียบ ๆ ส่งรหัสผ่านออกไป</p>
+    <p><strong>ความไม่ซ้ำของอีเมลต้องอยู่ที่ฐานข้อมูล</strong> — ไม่ใช่แค่ <code>findUnique</code> เช็คก่อน insert เพราะระหว่างสองคำสั่งนั้นมีช่องว่างที่ request อีกอันแทรกเข้ามาสมัครอีเมลเดียวกันได้พอดี (race condition) <code>@unique</code> ใน Prisma กลายเป็น <code>CREATE UNIQUE INDEX</code> จริงใน SQL ซึ่งฐานข้อมูลบังคับให้เสมอไม่ว่าจะมีกี่ request พร้อมกัน</p>
+    <p><strong>บทบาทเป็น enum ไม่ใช่ string</strong> — <code>role String</code> รับค่าอะไรก็ได้รวมถึง <code>"admni"</code> ที่พิมพ์ผิด ส่วน <code>enum Role</code> กลายเป็น type จริงใน PostgreSQL ที่ปฏิเสธค่านอกรายการตั้งแต่ระดับฐานข้อมูล และฝั่ง TypeScript ก็ได้ union type มาให้ตรวจตอน compile ด้วย นี่เป็น enum ตัวแรกของคอร์สนี้</p>
+
+    <h2>ทำไม <code>Order.userId</code> ยังไม่ผูกกับ <code>User</code></h2>
+    <p>พอมีตาราง <code>User</code> แล้ว สัญชาตญาณแรกคือเติม relation ให้ <code>Order.userId</code> ชี้ไปหามันเสีย — และนั่นคือสิ่งที่บทนี้<strong>ห้ามทำ</strong></p>
+    <p>เหตุผลอยู่ที่สัญญาเดิม <code>POST /carts/add</code> รับ <code>userId</code> มาจาก body ที่ client ส่ง และ React app ส่งเลข <code>1</code> คงที่มาเสมอเพราะมันไม่มีระบบ login ถ้าเราเติม foreign key ตอนนี้ ฐานข้อมูลจะปฏิเสธทุกคำสั่งซื้อที่ <code>userId</code> ไม่มีแถวคู่กันในตาราง <code>User</code> — แปลว่า React app ที่เราเพิ่งพิสูจน์ว่าใช้งานได้ครบวงจรจะพังทันที และ e2e test ข้อที่สิบก็พังตาม</p>
+    <p>นี่คือรูปร่างของงานจริงที่เจอบ่อยกว่าที่คิด: สัญญาถูก freeze ไปแล้วเพราะมีคนใช้อยู่ เราจึงเพิ่มความสามารถ<em>รอบ ๆ</em> มันแทนที่จะแก้ตัวมันเอง คำสั่งซื้อที่ผูกกับผู้ใช้จริงจะทำได้ในวันที่ client ยอมเปลี่ยน ไม่ใช่วันนี้ ส่วน <code>GET /orders/me</code> ที่จะมาในบทถัด ๆ ไปนั้นทำงานได้โดยไม่ต้องมี foreign key อยู่แล้ว เพราะมันแค่กรอง <code>userId</code> ให้ตรงกับเลขใน token</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <p>รายการด้านล่างคือไฟล์ที่เปลี่ยนใน<strong>โค้ดอ้างอิงของคอร์ส</strong> — ใช้เป็นแผนที่ตอนเทียบงาน ไม่ใช่ข้อบังคับ Cursor ของคุณอาจวางไฟล์หรือตั้งชื่อต่างไปได้ ขอแค่ผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
+    <pre><code>ecommerce-api/
+├── docs/
+│   └── auth-spec.md    (สร้างใหม่ — เขียนด้วยมือ ไม่ใช้ Cursor)
+└── prisma/
+    ├── schema.prisma   (แก้ไข: เพิ่ม enum Role และ model User)
+    └── migrations/
+        └── &lt;timestamp&gt;_add_users/   (สร้างโดย prisma migrate dev)</code></pre>
+    <ul>
+      <li><strong><code>docs/auth-spec.md</code></strong> — เขียนเอง: ตาราง endpoint ทั้งเจ็ด, รูปทรง body ที่รับและที่ตอบของแต่ละเส้น, และรูปแบบ error ของ <code>401</code> กับ <code>403</code></li>
+      <li><strong><code>prisma/schema.prisma</code></strong> — ในโค้ดอ้างอิง: มี <code>enum Role</code> สองค่าและ <code>model User</code> ครบหกฟิลด์ · ไม่แตะ <code>Order</code>, <code>OrderItem</code>, <code>Product</code>, <code>Category</code> หรือ <code>Review</code> แม้แต่บรรทัดเดียว</li>
+      <li>ไม่มีไฟล์ใน <code>src/</code> หรือ <code>test/</code> เปลี่ยนในบทนี้ — ยังไม่มี endpoint ไหนเกิดขึ้น service กับ controller ของ auth รออยู่บทถัดไป</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="spec-heading">
+      <h2 id="spec-heading">เขียน <code>docs/auth-spec.md</code> ด้วยมือ</h2>
+      <p>สร้างไฟล์ <code>docs/auth-spec.md</code> แล้วพิมพ์สัญญาลงไปเอง ไม่ต้องเปิดแชท Cursor สำหรับขั้นนี้ ข้างล่างคือฉบับของโค้ดอ้างอิง — ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด แต่ทุกอย่างที่คุณเขียนไว้จะกลายเป็น <code>ผลลัพธ์ที่ต้องได้</code> ของ prompt ในหกบทถัดไป เขียนสิ่งที่คุณตั้งใจจะตรวจจริง</p>
+      <pre><code># Auth Spec — สัญญาที่เราออกแบบเอง (ไม่มี client ตัวไหนบังคับ)
+
+ต่างจาก api-spec.md ตรงที่ไฟล์นั้นถอดมาจากโค้ดของ React app
+ส่วนไฟล์นี้เราออกแบบเองทั้งหมด เพราะยังไม่มี client ตัวไหนใช้ auth
+
+## Endpoints
+
+| Method | Path           | ต้องมี token | Body ที่รับ                    |
+| ------ | -------------- | ------------ | ------------------------------ |
+| POST   | /auth/signup   | ไม่           | { email, password, name }      |
+| POST   | /auth/login    | ไม่           | { email, password }            |
+| POST   | /auth/refresh  | ไม่           | { refreshToken }               |
+| POST   | /auth/logout   | ใช่          | (ไม่มี)                         |
+| GET    | /auth/me       | ใช่          | (ไม่มี)                         |
+| GET    | /orders/me     | ใช่          | (ไม่มี)                         |
+| GET    | /admin/orders  | ใช่ + ADMIN  | (ไม่มี)                         |
+
+## User
+
+ใช้เป็น response ของ POST /auth/signup (201) และ GET /auth/me (200)
+
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: "USER" | "ADMIN";
+  createdAt: string;   // ISO 8601
+}
+
+ห้ามมี password หรือ passwordHash ใน response ของ endpoint ใดทั้งสิ้น
+
+## Tokens
+
+ใช้เป็น response ของ POST /auth/login (200) และ POST /auth/refresh (200)
+
+interface TokenPair {
+  accessToken: string;    // JWT อายุสั้น payload = { sub, email, role }
+  refreshToken: string;   // JWT อายุยาว เซ็นด้วย secret คนละตัว
+}
+
+- access token อายุ 900 วินาที (15 นาที)
+- refresh token อายุ 604800 วินาที (7 วัน) และใช้ได้ครั้งเดียว
+  พอ refresh สำเร็จ ใบเดิมต้องใช้ไม่ได้อีก
+
+## กฎของรหัสผ่าน
+
+- อย่างน้อย 8 ตัวอักษร
+- เก็บแบบ hash เท่านั้น ห้ามเก็บรหัสผ่านดิบในฐานข้อมูลหรือใน log
+
+## Errors
+
+- ไม่มี token, token ผิด หรือ token หมดอายุ → 401
+  { "message": "Unauthorized", "error": "Unauthorized", "statusCode": 401 }
+- token ถูกต้องแต่ role ไม่พอ → 403
+  { "message": "Forbidden resource", "error": "Forbidden", "statusCode": 403 }
+- อีเมลหรือรหัสผ่านผิดตอน login → 401 message "Invalid credentials"
+  ทั้งสองกรณีต้องได้ข้อความเดียวกัน ห้ามบอกว่าอีเมลนั้นมีอยู่จริงหรือไม่
+- สมัครด้วยอีเมลที่มีอยู่แล้ว → 409 message "Email already registered"
+- body ผิดรูป → 400 message เป็น array ตามรูปแบบเดิมของ ValidationPipe</code></pre>
+      <p>บรรทัดที่ทำงานหนักที่สุดในไฟล์นี้คือ "ทั้งสองกรณีต้องได้ข้อความเดียวกัน" ถ้า login ตอบ <code>"ไม่พบอีเมลนี้"</code> กับ <code>"รหัสผ่านไม่ถูกต้อง"</code> แยกกัน ใครก็ตามที่ยิง API ได้จะไล่เดาได้ว่าอีเมลไหนสมัครไว้แล้วบ้าง โดยไม่ต้องรู้รหัสผ่านสักตัว — ช่องโหว่ชนิดนี้เรียกว่า user enumeration และมันเกิดจากความพยายามจะช่วยผู้ใช้ให้ข้อความ error ที่ "เป็นประโยชน์" มากเกินไป</p>
+    </section>
+
+    <section class="workshop" aria-labelledby="schema-heading">
+      <h2 id="schema-heading">สั่ง Cursor เพิ่ม model User แล้วรัน migration ด้วยมือ</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "docs: auth spec"</code>) — และจำ<a href="01_what-well-be-building.html">กติกาของคอร์ส</a>ไว้: AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้</p>
+      <div class="cursor-prompt"><code>เพิ่ม Prisma model ชื่อ User และ enum ชื่อ Role ตาม docs/auth-spec.md
+@prisma/schema.prisma @docs/auth-spec.md
+
+ผลลัพธ์ที่ต้องได้:
+- หลังผมรัน npx prisma migrate dev --name add-users ฐานข้อมูลมีตารางใหม่ User (\dt ได้ 7 แถว จากเดิม 6) โดย migration ไม่ถามยืนยันและไม่ทำข้อมูลเดิมหาย
+- User เก็บ: อีเมลที่ซ้ำกันไม่ได้, รหัสผ่านที่ hash แล้ว (ชื่อฟิลด์ต้องบอกชัดว่าเป็น hash ไม่ใช่รหัสผ่านดิบ), ชื่อที่ใช้แสดง, บทบาท และเวลาที่สมัคร
+- บทบาทเป็น enum ของ Prisma สองค่า USER กับ ADMIN ค่าปริยายเป็น USER — ใน migration.sql ต้องเห็น CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
+- migration.sql มี CREATE UNIQUE INDEX "User_email_key" ON "User"("email"); — ความซ้ำของอีเมลถูกกันที่ฐานข้อมูล ไม่ใช่แค่ที่โค้ด
+- Order.userId ยังเป็น Int เปล่า ๆ ไม่มี relation ไปหา User — model Order ต้องไม่มีบรรทัดไหนเปลี่ยน และ migration.sql ต้องไม่มี ALTER TABLE "Order" เลย
+- npm run db:seed ยังได้ Seeded 24 categories, 208 products, 624 reviews เท่าเดิม
+- model Category, Product, Review, Order, OrderItem ไม่เปลี่ยน และ npm run build ผ่าน
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามรัน migrate หรือ generate ให้ผมรันเอง
+- ห้ามแก้ prisma/seed.ts และห้ามแตะไฟล์ใน src/ หรือ test/
+- ยังไม่ต้องสร้าง DTO, service, controller หรือ module ของ auth</code></div>
+      <p>บรรทัดที่ห้ามแก้ <code>prisma/seed.ts</code> ไม่ใช่ของแถม: ถ้า AI เติม <code>tx.user.deleteMany()</code> เข้าไปในลำดับการล้างข้อมูลตามสัญชาตญาณ บัญชีที่คุณสมัครไว้จะหายทุกครั้งที่ seed ใหม่ แล้วบทที่ทำ refresh token กับ role จะพังด้วยอาการที่ไม่มีอะไรชี้กลับมาที่ seed เลย</p>
+      <p>อ่าน schema ที่ AI เขียนให้จบก่อน แล้วจึงรันสองคำสั่งนี้ด้วยมือ</p>
+      <div class="prompt-example"><code>npx prisma migrate dev --name add-users
+npx prisma generate</code></div>
+      <div class="note"><p>เหมือนทุกครั้งที่ schema เปลี่ยน: <code>prisma migrate dev</code> ของ Prisma 7 ไม่ได้ generate client ให้ ถ้าข้ามคำสั่งที่สอง <code>tx.user</code> จะยังไม่มีใน Prisma Client และบทถัดไปจะพังด้วย type error ส่วน <code>npm run db:seed</code> รอบนี้ไม่ต้องรันก็ได้ เพราะเราไม่ได้แตะ seed — แต่ถ้ารันก็ต้องได้ตัวเลขเดิมทุกตัว</p></div>
+    </section>
+
+    <section class="review" aria-labelledby="schema-review-heading">
+      <h2 id="schema-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>ฟิลด์รหัสผ่านชื่อ <code>passwordHash</code> (หรือชื่ออื่นที่บอกชัดว่าเป็น hash) — ไม่ใช่ <code>password</code></li>
+        <li><code>email</code> มี <code>@unique</code> และ <code>migration.sql</code> มี <code>CREATE UNIQUE INDEX</code> จริง ไม่ใช่แค่ <code>@@index</code> ธรรมดาที่ยอมให้ซ้ำได้</li>
+        <li><code>role</code> เป็น <code>Role</code> ไม่ใช่ <code>String</code> และมี <code>@default(USER)</code> — ผู้ใช้ใหม่ต้องไม่ได้สิทธิ์ admin มาฟรี ๆ</li>
+        <li><code>model Order</code> ไม่มีบรรทัดไหนเปลี่ยน และไม่มี <code>users User[]</code> หรือ relation ใด ๆ งอกขึ้นมา (<code>git diff prisma/schema.prisma</code> ต้องเห็นแค่บรรทัดที่เพิ่มท้ายไฟล์)</li>
+        <li><code>prisma/seed.ts</code> ไม่ถูกแตะ — <code>git status</code> ต้องไม่มีชื่อไฟล์นี้</li>
+        <li>ไม่มี <code>@updatedAt</code> ใน <code>User</code> ถ้าไม่ได้ขอ และไม่มีฟิลด์แถมอย่าง <code>isActive</code> หรือ <code>lastLoginAt</code> ที่สัญญาไม่ได้พูดถึง</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> เติม relation ระหว่าง <code>User</code> กับ <code>Order</code> ให้เองเพราะ "มันควรจะผูกกัน" — สัญชาตญาณนี้ถูกในโปรเจกต์ที่เริ่มจากศูนย์ แต่ผิดที่นี่ และจะทำให้ <code>POST /carts/add</code> พังทันทีที่มี <code>userId</code> ที่ไม่มีแถวคู่กัน อีกกรณีคือประกาศ <code>role String @default("USER")</code> ซึ่ง compile ผ่านและดูเหมือนทำงานได้ แต่ฐานข้อมูลจะยอมรับค่าอะไรก็ได้ที่พิมพ์เข้ามา</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>// prisma/schema.prisma — ต่อท้ายไฟล์ (model เดิมทั้งหมดไม่เปลี่ยน)
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="schema-result-heading">
+      <h2 id="schema-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>npx prisma migrate dev --name add-users</code> สร้าง migration ใหม่และ apply ให้เลยโดย<strong>ไม่</strong>ถามยืนยัน เพราะการเพิ่มตารางใหม่ไม่ทำข้อมูลเดิมหาย</p>
+      <pre><code>Loaded Prisma config from prisma7.config.ts.
+
+Prisma schema loaded from prisma/schema.prisma.
+Datasource "db": PostgreSQL database "ecommerce", schema "public" at "localhost:5432"
+
+Applying migration `20260921104512_add_users`
+
+The following migration(s) have been created and applied from new schema changes:
+
+prisma/migrations/
+  └─ 20260921104512_add_users/
+    └─ migration.sql
+
+Your database is now in sync with your schema.</code></pre>
+      <p>เปิด <code>prisma/migrations/…_add_users/migration.sql</code> แล้วอ่านให้ครบ นี่คือหลักฐานสามอย่างพร้อมกัน: enum กลายเป็น type จริงของ PostgreSQL, อีเมลถูกกันซ้ำด้วย unique index และ<strong>ไม่มี</strong>บรรทัดไหนแตะตาราง <code>Order</code></p>
+      <pre><code>-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" SERIAL NOT NULL,
+    "email" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "role" "Role" NOT NULL DEFAULT 'USER',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");</code></pre>
+      <p>ไฟล์นี้จบแค่นี้ — ถ้าของคุณมี <code>ALTER TABLE "Order"</code> ต่อท้าย แปลว่า AI เติม relation ให้โดยไม่ได้ขอ ให้ย้อน migration ทิ้ง แก้ schema แล้วสั่งใหม่</p>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>มีตารางใหม่หนึ่งตัว รวมเป็น 7 แถว (ตอนทำคำสั่งซื้อเราเห็น 6)
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce -c '\dt'</code></pre></li>
+        <li>คอลัมน์ <code>role</code> มีชนิดเป็น <code>"Role"</code> และมีค่าปริยาย ส่วน <code>email</code> มี unique index
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce -c '\d "User"'</code></pre>
+          ท้ายผลลัพธ์ต้องเห็นสองบรรทัดนี้
+          <pre><code> role         | "Role"       | not null default 'USER'::"Role"
+Indexes:
+    "User_email_key" UNIQUE, btree (email)</code></pre></li>
+        <li>enum มีสองค่าจริงในฐานข้อมูล ไม่ใช่แค่ในไฟล์ schema (ส่วนการพิสูจน์ว่ามันปฏิเสธอีเมลซ้ำจริง จะทำในบทถัดไปตอนสมัครซ้ำ — อย่าเพิ่ง <code>INSERT</code> เองตอนนี้ เพราะจะกิน id ของตารางไป แล้วเลขผู้ใช้ในบทถัด ๆ ไปจะไม่ตรงกับตัวอย่าง)
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce -c '\dT+ "Role"'</code></pre></li>
+        <li><code>git diff --stat</code> เห็นแค่ <code>prisma/schema.prisma</code> กับไฟล์ migration ที่สร้างใหม่ — ไม่มี <code>prisma/seed.ts</code> และไม่มีอะไรใน <code>src/</code> หรือ <code>test/</code></li>
+        <li><code>npm run build</code> ผ่าน และ <code>npm run test:e2e</code> ยังได้ <code>Tests  11 passed (11)</code> เท่าเดิม — บทนี้ไม่ได้แตะ endpoint ไหนเลย</li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: user model and role enum"</code> (commit ไฟล์ migration ไปด้วย)</li>
+      </ul>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/models#defining-enums">Defining enums (Prisma Docs)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/indexes">Indexes and unique constraints (Prisma Docs)</a></li>
+      <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html">Password Storage Cheat Sheet (OWASP)</a></li>
+      <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#authentication-and-error-messages">Authentication: error messages and user enumeration (OWASP)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="20_switching-the-react-app.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="22_signup-endpoint.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

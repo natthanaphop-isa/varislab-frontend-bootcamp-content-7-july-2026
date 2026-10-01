@@ -235,7 +235,7 @@ export default ProductsList;
           <li><strong><code>products: Product[] | undefined</code></strong> — จงใจยอมรับ <code>undefined</code> เพราะคนที่จะส่ง prop นี้คือหน้าเพจที่ส่ง <code>data?.products</code> จาก useQuery มาตรง ๆ ซึ่งเป็น <code>undefined</code> ได้เสมอระหว่างรอโหลด optional chaining ใน <code>products?.map(…)</code> จัดการกรณีนั้นให้เงียบ ๆ (ไม่ render อะไรเลย) โดยหน้าเพจไม่ต้องเช็คก่อนส่ง</li>
           <li><strong>destructuring กลาง parameter ของ map</strong> — แทนที่จะรับ <code>(product) =&gt;</code> แล้วเขียน <code>product.title</code>, <code>product.price</code> ยาว ๆ เราแตกเฉพาะ field ที่ใช้ออกมาตั้งแต่หน้าประตู อ่านปุ๊บรู้เลยว่าคอมโพเนนต์นี้ใช้ข้อมูลอะไรจาก Product บ้าง</li>
           <li><strong>แปลงข้อมูลตรงนี้ที่เดียว</strong> — <code>calculateOriginalPrice</code> จาก utility เมื่อครู่ถูกเรียกตรงนี้ และ <code>reviews.length</code> ก็ถูกนับตรงนี้ ProductCard เลยได้รับค่าที่พร้อมแสดงผลทันที ไม่ต้องรู้จักโครงสร้าง Product ของ dummyjson เลยแม้แต่นิดเดียว</li>
-          <li><strong><code>key={id}</code></strong> — ใช้ id จริงของสินค้าเป็น key ตามกฎเหล็กของ list rendering จาก Week 4 ไม่ใช้ index เพราะรายการนี้เปลี่ยนชุดได้ทั้งชุดเวลาสลับหมวดหมู่หรือเปลี่ยนหน้า</li>
+          <li><strong><code>key={id}</code></strong> — ใช้ id จริงของสินค้าเป็น key ตามกฎเหล็กของ list rendering จากคอร์ส React พื้นฐาน ไม่ใช้ index เพราะรายการนี้เปลี่ยนชุดได้ทั้งชุดเวลาสลับหมวดหมู่หรือเปลี่ยนหน้า</li>
         </ul>
 
         <blockquote>💡 สังเกตว่าเมื่อสินค้าไม่มีส่วนลด <code>calculateOriginalPrice</code> คืนราคาเดิมกลับมา การ์ดจึงยังแสดงราคาขีดฆ่าที่เท่ากับราคาจริง — ฟังดูแปลก แต่ในทางปฏิบัติสินค้าของ dummyjson มี <code>discountPercentage</code> ติดมาแทบทุกตัว เคสนี้จึงแทบไม่ปรากฏบนจอ (ส่วนป้าย "% Off" ถูกซ่อนอยู่แล้วด้วย <code>{discount &amp;&amp; …}</code> ใน ProductCard)</blockquote>
@@ -294,7 +294,7 @@ export default CategoryMenu;
           <li><strong><code>onCategoryClick: (category: Category) =&gt; void</code></strong> — ขาออกกลับส่ง<em>ทั้ง object</em> คืนให้ ทำไมไม่ส่งแค่ slug? เพราะหน้าเพจที่รับ event ไปต้องใช้มากกว่านั้น — ต้องใช้ <code>slug</code> ยิง query และใช้ <code>name</code> แสดงหัวหน้า การส่ง object เต็มทำให้ผู้ใช้เมนูไม่ต้องไปไล่หา object จาก slug อีกรอบ</li>
         </ul>
 
-        <p>แบบแผนเดิมกลับมาอีกครั้ง: CategoryMenu ไม่มี state ของตัวเองเลยสักตัว มันไม่จำว่าหมวดไหนถูกเลือก — หน้าเพจเป็นคนจำ แล้วส่งกลับลงมาผ่าน <code>activeCategory</code> คอมโพเนนต์แบบนี้เรียกกันว่า controlled component (แนวคิดเดียวกับ controlled input จาก Week 4 แค่ขยับมาอยู่ระดับคอมโพเนนต์) ข้อดีคือหน้า Home กับหน้า Category ใช้เมนูตัวเดียวกันได้ทั้งที่พฤติกรรมหลังคลิกไม่เหมือนกันเลย — เดี๋ยวคุณจะได้เห็นในสองบทถัดไป</p>
+        <p>แบบแผนเดิมกลับมาอีกครั้ง: CategoryMenu ไม่มี state ของตัวเองเลยสักตัว มันไม่จำว่าหมวดไหนถูกเลือก — หน้าเพจเป็นคนจำ แล้วส่งกลับลงมาผ่าน <code>activeCategory</code> คอมโพเนนต์แบบนี้เรียกกันว่า controlled component (แนวคิดเดียวกับ controlled input จากคอร์ส React พื้นฐาน แค่ขยับมาอยู่ระดับคอมโพเนนต์) ข้อดีคือหน้า Home กับหน้า Category ใช้เมนูตัวเดียวกันได้ทั้งที่พฤติกรรมหลังคลิกไม่เหมือนกันเลย — เดี๋ยวคุณจะได้เห็นในสองบทถัดไป</p>
 
         <h2>Checkpoint</h2>
 

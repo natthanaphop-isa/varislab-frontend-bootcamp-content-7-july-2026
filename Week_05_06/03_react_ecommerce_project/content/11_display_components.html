@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="สร้างคอมโพเนนต์แสดงผลสี่ตัว: StarReview, FeatureCard, CountdownTimer และ ImageZoom พร้อมทวนเรื่อง effects และ cleanup จาก Week 4" />
+    <meta name="description" content="สร้างคอมโพเนนต์แสดงผลสี่ตัว: StarReview, FeatureCard, CountdownTimer และ ImageZoom พร้อมทวนเรื่อง effects และ cleanup จากคอร์ส React พื้นฐาน" />
     <title>คอมโพเนนต์แสดงผล | สร้างเว็บ E-commerce ด้วย React</title>
     <link rel="stylesheet" href="lesson.css" />
   </head>
@@ -150,7 +150,7 @@ export default FeatureCard;
 
         <h2>CountdownTimer</h2>
 
-        <p>ตัวเดียวในบทนี้ที่<em>มีชีวิต</em> — นาฬิกาถอยหลังของโซน "ดีลจะหมดใน…" บนหน้า Home ตัวเลขต้องเดินทุกวินาที ซึ่งแปลว่าเราต้องได้ใช้สองเครื่องมือจาก Week 4 พร้อมกัน: <code>useState</code> เก็บเวลาที่เหลือ และ <code>useEffect</code> จัดการ side effect (ตั้ง interval) พร้อม cleanup</p>
+        <p>ตัวเดียวในบทนี้ที่<em>มีชีวิต</em> — นาฬิกาถอยหลังของโซน "ดีลจะหมดใน…" บนหน้า Home ตัวเลขต้องเดินทุกวินาที ซึ่งแปลว่าเราต้องได้ใช้สองเครื่องมือจากคอร์ส React พื้นฐาน พร้อมกัน: <code>useState</code> เก็บเวลาที่เหลือ และ <code>useEffect</code> จัดการ side effect (ตั้ง interval) พร้อม cleanup</p>
 
         <pre><code class="language-bash">mkdir -p src/shared/components/CountdownTimer
 </code></pre>
@@ -233,7 +233,7 @@ export default CountdownTimer;
           <li><strong>กันเวลาติดลบ</strong> — ถ้าเลยเวลาเป้าหมายไปแล้ว (<code>difference &lt;= 0</code>) ตั้งทุกช่องเป็นศูนย์ ไม่ปล่อยให้โชว์ตัวเลขติดลบประหลาด ๆ</li>
         </ul>
 
-        <p>ส่วนโครง effect คือแพตเทิร์น interval + cleanup ตรงตำราจาก Week 4: <code>setInterval(calculateTimeLeft, 1000)</code> สั่งให้คำนวณใหม่ทุกวินาที (แต่ละรอบเรียก <code>setTimeLeft</code> → re-render → ตัวเลขบนจอเดิน) และ<strong>บรรทัดที่สำคัญที่สุดคือ <code>return () =&gt; clearInterval(timer)</code></strong> — ถ้าไม่มี cleanup ตอนคอมโพเนนต์ unmount (ผู้ใช้กดไปหน้าอื่น) interval จะยังวิ่งอยู่เบื้องหลังและเรียก setState ใส่คอมโพเนนต์ที่ตายไปแล้ว กลายเป็น memory leak สะสม dependency array <code>[targetDate]</code> ก็ทำงานร่วมกับ cleanup อย่างถูกต้อง: ถ้าเป้าหมายเปลี่ยน React จะ cleanup interval เก่าก่อนแล้วตั้งตัวใหม่ให้เอง</p>
+        <p>ส่วนโครง effect คือแพตเทิร์น interval + cleanup ตรงตำราจากคอร์ส React พื้นฐาน: <code>setInterval(calculateTimeLeft, 1000)</code> สั่งให้คำนวณใหม่ทุกวินาที (แต่ละรอบเรียก <code>setTimeLeft</code> → re-render → ตัวเลขบนจอเดิน) และ<strong>บรรทัดที่สำคัญที่สุดคือ <code>return () =&gt; clearInterval(timer)</code></strong> — ถ้าไม่มี cleanup ตอนคอมโพเนนต์ unmount (ผู้ใช้กดไปหน้าอื่น) interval จะยังวิ่งอยู่เบื้องหลังและเรียก setState ใส่คอมโพเนนต์ที่ตายไปแล้ว กลายเป็น memory leak สะสม dependency array <code>[targetDate]</code> ก็ทำงานร่วมกับ cleanup อย่างถูกต้อง: ถ้าเป้าหมายเปลี่ยน React จะ cleanup interval เก่าก่อนแล้วตั้งตัวใหม่ให้เอง</p>
 
         <blockquote>💡 สังเกตอะไรไหม? <code>calculateTimeLeft</code> ถูกเรียกครั้งแรกเมื่อ interval ครบวินาทีแรก แปลว่าหลัง mount นาฬิกาจะโชว์ <code>0:0:0:0</code> ประมาณหนึ่งวินาทีก่อนกระโดดเป็นค่าจริง — ถ้าอยากให้ขึ้นทันทีก็แค่เรียก <code>calculateTimeLeft()</code> หนึ่งครั้งก่อน <code>setInterval</code> โปรเจกต์นี้เลือกแบบเรียบง่ายตามต้นฉบับ แต่การ<em>มองเห็น</em>รายละเอียดแบบนี้ในโค้ดคือทักษะ code review ที่ดี</blockquote>
 

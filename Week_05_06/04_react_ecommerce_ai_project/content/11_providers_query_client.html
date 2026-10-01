@@ -16,7 +16,7 @@
           <p class="lesson-original-title" lang="en">Providers &amp; QueryClient</p>
         </header>
 
-        <p>บทนี้เป็นชิ้นสุดท้ายของโครงแอป: วางระบบจัดการข้อมูลจาก server ให้พร้อมใช้ทั่วทั้งแอป ก่อนลงมือ ทวนแนวคิดสำคัญจาก Week 4 กันหนึ่งย่อหน้า — state ในแอปเรามีสองพันธุ์ที่ต้องจัดการคนละวิธี:</p>
+        <p>บทนี้เป็นชิ้นสุดท้ายของโครงแอป: วางระบบจัดการข้อมูลจาก server ให้พร้อมใช้ทั่วทั้งแอป ก่อนลงมือ ทวนแนวคิดสำคัญจากคอร์ส React พื้นฐาน กันหนึ่งย่อหน้า — state ในแอปเรามีสองพันธุ์ที่ต้องจัดการคนละวิธี:</p>
 
         <ul>
           <li><strong>Server state</strong> — ข้อมูลที่เจ้าของตัวจริงอยู่บน server เช่น รายการสินค้า ราคา รีวิว เราเป็นแค่ผู้ยืมมาแสดง มันเลยมีปัญหาเฉพาะตัว: ต้องโหลด อาจโหลดพลาด อาจหมดอายุ ต้อง cache — ทั้งหมดนี้คือหน้าที่ของ <strong>TanStack Query</strong></li>
@@ -43,7 +43,7 @@
         <p>แอปจริงมักมี provider หลายตัวซ้อนกันเป็นหัวหอม: query client, theme, auth, cart ฯลฯ ถ้าซ้อนกันสด ๆ ใน App.tsx ไฟล์นั้นจะรกขึ้นเรื่อย ๆ ทุกครั้งที่มีของใหม่ pattern ที่โปรเจกต์นี้ใช้คือสร้าง component <code>AppProviders</code> ที่เดียวจบ — ใครอยากรู้ว่าแอปนี้มี provider อะไรบ้าง ลำดับไหน เปิดไฟล์เดียวเห็นครบ</p>
 
         <ul>
-          <li><strong><code>children: ReactNode</code></strong> — pattern เดียวกับที่เรียนใน Week 4: component ที่รับ "อะไรก็ได้ที่ render ได้" มาห่อ ทำให้ AppProviders ไม่ต้องรู้จักเนื้อในของแอปแม้แต่นิดเดียว</li>
+          <li><strong><code>children: ReactNode</code></strong> — pattern เดียวกับที่เรียนในคอร์ส React พื้นฐาน: component ที่รับ "อะไรก็ได้ที่ render ได้" มาห่อ ทำให้ AppProviders ไม่ต้องรู้จักเนื้อในของแอปแม้แต่นิดเดียว</li>
           <li><strong><code>QueryClientProvider</code></strong> — ส่ง <code>queryClient</code> ของเราลงไปผ่าน context ให้ทุก component ใต้ต้นไม้เรียกใช้ <code>useQuery</code> ได้ ตัว client อยู่ไฟล์หนึ่ง ตัว provider อยู่อีกไฟล์ — แยกหน้าที่ "สร้างของ" กับ "แจกของ" ออกจากกัน</li>
           <li><strong><code>import.meta.env.DEV</code></strong> — ตัวแปรพิเศษที่ Vite แทนค่าให้<em>ตอน build</em>: ระหว่าง <code>npm run dev</code> มันคือ <code>true</code> แต่ใน production build มันคือ <code>false</code> ทั้งบรรทัดจึงกลายเป็น dead code ที่ถูกตัดทิ้งจาก bundle ไปเลย — Devtools จึงไม่มีทางหลุดไปถึงหน้าจอผู้ใช้จริงแม้แต่ byte เดียว สอดคล้องกับที่เราติดตั้งมันเป็น devDependency</li>
           <li><strong><code>initialIsOpen={false}</code></strong> — ให้ Devtools เริ่มแบบหุบอยู่ เหลือแค่ปุ่มลอยเล็ก ๆ ไว้กดเปิดเมื่ออยากดู</li>

@@ -9,36 +9,36 @@
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS E-commerce API Workshop · บทที่ 14 จาก 24</p>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
     <h1>GET /products/category/:slug</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
       <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
       <ul>
         <li>กรองสินค้าด้วยเงื่อนไขที่อยู่บน relation (<code>{ category: { slug } }</code>) โดยไม่ต้อง query ตาราง category แยก</li>
         <li>อธิบายว่าทำไม slug ที่ไม่มีอยู่จริงต้องได้ 200 พร้อม list ว่าง ไม่ใช่ 404</li>
-        <li>เห็นผลตอบแทนของการแยก <code>paginate</code> ออกมาในบทที่ 13: endpoint ใหม่ใช้โค้ดสองบรรทัด</li>
+        <li>เห็นผลตอบแทนของการแยก <code>paginate</code> ออกมาก่อนหน้านี้: endpoint ใหม่ใช้โค้ดสองบรรทัด</li>
       </ul>
     </section>
 
     <h2>บทนี้สั้นมาก และนั่นคือประเด็น</h2>
-    <p>บทที่ 13 เราไม่ได้เขียนแค่ <code>findAll</code> — เราเขียน <code>paginate(where, skip, limit)</code> ที่รับ <em>เงื่อนไขอะไรก็ได้</em> เข้ามา แล้วให้ <code>findAll</code> ส่ง <code>{}</code> (ไม่กรองอะไร) เข้าไป บทนี้จึงเหลืองานแค่หาว่า "เงื่อนไขของหมวดหมู่" เขียนอย่างไร</p>
+    <p>ก่อนหน้านี้เราไม่ได้เขียนแค่ <code>findAll</code> — เราเขียน <code>paginate(where, skip, limit)</code> ที่รับ <em>เงื่อนไขอะไรก็ได้</em> เข้ามา แล้วให้ <code>findAll</code> ส่ง <code>{}</code> (ไม่กรองอะไร) เข้าไป บทนี้จึงเหลืองานแค่หาว่า "เงื่อนไขของหมวดหมู่" เขียนอย่างไร</p>
     <pre><code>findByCategory(slug: string, query: PaginationQueryDto) {
   return this.paginate({ category: { slug } }, query.skip, query.limit);
 }</code></pre>
-    <p>เท่านี้ก็ได้ pagination, <code>total</code> ที่นับเฉพาะหมวดนั้น, <code>orderBy</code>, <code>include</code>, การ map เป็น contract และกติกา <code>limit=0</code> มาครบ โดยไม่ต้อง copy อะไรเลย ถ้าตอนนั้นเราปล่อยให้ <code>findAll</code> เขียน <code>$transaction</code> ไว้ในตัวเอง บทนี้จะกลายเป็นการ copy สามสิบบรรทัดมาแก้คำเดียว — ซึ่งคือจุดเริ่มของความไม่ตรงกันในอนาคต</p>
+    <p>เท่านี้ก็ได้ pagination, <code>total</code> ที่นับเฉพาะหมวดนั้น, <code>orderBy</code>, <code>include</code> และการ map เป็น contract มาครบ โดยไม่ต้อง copy อะไรเลย ถ้าตอนนั้นเราปล่อยให้ <code>findAll</code> เขียน <code>$transaction</code> ไว้ในตัวเอง บทนี้จะกลายเป็นการ copy สามสิบบรรทัดมาแก้คำเดียว — ซึ่งคือจุดเริ่มของความไม่ตรงกันในอนาคต</p>
 
     <h2>กรองผ่าน relation ไม่ใช่ผ่าน <code>categoryId</code></h2>
-    <p>ในฐานข้อมูล สินค้าอ้างหมวดหมู่ด้วยคอลัมน์ <code>categoryId</code> ที่เป็นตัวเลข แต่ client ส่ง <code>slug</code> มาให้ ทางที่คิดขึ้นมาก่อนคือสองขั้น: หา category จาก slug ก่อน ได้ <code>id</code> แล้วค่อยกรองสินค้า — แต่ Prisma ให้เราเขียนเงื่อนไขข้าม relation ได้ในครั้งเดียว (ทบทวน Week_09 บทที่ 26)</p>
+    <p>ในฐานข้อมูล สินค้าอ้างหมวดหมู่ด้วยคอลัมน์ <code>categoryId</code> ที่เป็นตัวเลข แต่ client ส่ง <code>slug</code> มาให้ ทางที่คิดขึ้นมาก่อนคือสองขั้น: หา category จาก slug ก่อน ได้ <code>id</code> แล้วค่อยกรองสินค้า — แต่ Prisma ให้เราเขียนเงื่อนไขข้าม relation ได้ในครั้งเดียว (ทบทวน NestJS Fundamentals ตอน relation queries)</p>
     <pre><code>where: { category: { slug } }</code></pre>
     <p>Prisma แปลงก้อนนี้เป็น SQL ที่ join ไปที่ตาราง <code>Category</code> แล้วกรองด้วย <code>slug</code> ในคำสั่งเดียว ผลคือไป-กลับฐานข้อมูลครั้งเดียวแทนสองครั้ง และไม่มีช่องให้ข้อมูลเปลี่ยนระหว่างสอง query</p>
 
     <h2>slug ที่ไม่มีอยู่: 200 ไม่ใช่ 404</h2>
-    <p>นี่คือจุดที่ความรู้สึกเรื่อง REST จะขัดกับสัญญา เปิด <code>docs/contract/products-by-category-unknown.json</code> ที่วางไว้ในบทที่ 3 — dummyjson ตอบ status 200 พร้อม</p>
-    <pre><code>{"products":[],"total":0,"skip":0,"limit":0}</code></pre>
-    <p>เหตุผลที่มันสมเหตุสมผล: endpoint นี้ตอบ <em>ผลการค้นหา</em> ไม่ใช่ <em>ตัว resource</em> การค้นหาที่ไม่พบอะไรคือการค้นหาที่สำเร็จแต่ได้ศูนย์รายการ ต่างจาก <code>GET /products/9999</code> ในบทที่ 12 ที่ขอ resource ชิ้นหนึ่งซึ่งไม่มีอยู่ — อันนั้น 404 ถูกต้อง</p>
-    <p>และเหตุผลที่สำคัญกว่า: หน้า Category ของ React app อ่าน <code>total</code> เพื่อตัดสินใจว่าจะโชว์ข้อความ "ไม่พบสินค้า" หรือโชว์ตะแกรงสินค้า ถ้าเราตอบ 404 มันจะเด้งไปหน้า error ทั้งหน้า แทนที่จะโชว์ข้อความว่างเปล่าอย่างสุภาพ</p>
-    <p>สังเกต <code>limit: 0</code> ด้วย — ตามกติกาที่เราคุยไว้ในบทที่ 13 คือ <code>limit</code> = จำนวนสินค้าที่ส่งกลับจริง ไม่ใช่ค่าที่ client ขอมา ดังนั้นแม้จะยิง <code>?limit=5</code> หมวดที่ว่างเปล่าก็ตอบ <code>limit: 0</code> — และเพราะ <code>paginate</code> ของเราคืน <code>rows.length</code> อยู่แล้ว ข้อนี้จึงถูกต้องโดยอัตโนมัติ ไม่ต้องเขียนกรณีพิเศษ</p>
-    <div class="note"><p>ข้อกำหนดในรอบนี้จึงมีคำว่า <strong>ห้าม throw</strong> อยู่ด้วย — เป็นการปิดทางที่ AI (และคนส่วนใหญ่) จะเลือกโดยสัญชาตญาณ</p></div>
+    <p>นี่คือจุดที่ความรู้สึกเรื่อง REST จะขัดกับสัญญา เปิด <code>docs/api-spec.md</code> ดู section List envelope + pagination — เราออกแบบให้ slug ที่ไม่มีอยู่ตอบ status 200 พร้อม (ตัวอย่างนี้ยิง <code>?limit=2&amp;skip=0</code>)</p>
+    <pre><code>{"products":[],"total":0,"skip":0,"limit":2}</code></pre>
+    <p>เหตุผลที่มันสมเหตุสมผล: endpoint นี้ตอบ <em>ผลการค้นหา</em> ไม่ใช่ <em>ตัว resource</em> การค้นหาที่ไม่พบอะไรคือการค้นหาที่สำเร็จแต่ได้ศูนย์รายการ ต่างจาก <code>GET /products/9999</code> ที่ขอ resource ชิ้นหนึ่งซึ่งไม่มีอยู่ — อันนั้น 404 ถูกต้อง</p>
+    <p>และเหตุผลที่สำคัญกว่า: <code>Category.tsx</code> ยิง <code>useQuery</code> ทันทีที่หมวดหมู่เปลี่ยน โดยไม่มีการ์ดพิเศษสำหรับ "หมวดที่ว่างเปล่า" เลย — component เช็คแค่ <code>isError</code> กับ <code>isLoading</code> ถ้า endpoint ตอบ 404 ตอนหมวดนั้นไม่มีสินค้า <code>isError</code> จะเป็น <code>true</code> ทันที แล้วหน้า Category เด้งไปโชว์ <code>&lt;ErrorMessage /&gt;</code> เต็มหน้า แทนที่จะโชว์ตะแกรงสินค้าที่ว่างเปล่าตามที่ควรเป็น</p>
+    <p>สังเกต <code>limit</code> ด้วย — ตามกติกา pagination ที่ตกลงไว้ก่อนหน้านี้ คือ <code>limit</code> ต้อง echo ค่าที่ client ขอมาเสมอ แม้หมวดนั้นจะไม่มีสินค้าเลย เช่นยิง <code>?limit=5</code> กับหมวดที่ว่างเปล่าก็ต้องได้ <code>limit: 5</code> (ไม่ใช่ 0) เพราะ <code>paginate</code> ของเราคืน <code>limit</code> ตามที่รับเข้ามาตรง ๆ อยู่แล้ว (ไม่ใช่ <code>rows.length</code>) ข้อนี้จึงถูกต้องโดยอัตโนมัติ ไม่ต้องเขียนกรณีพิเศษ</p>
+    <div class="note"><p>ผลลัพธ์ที่ต้องได้ในรอบนี้จึงเขียนไว้ชัดว่า slug ที่ไม่มีอยู่ต้องได้ <strong>200 ห้ามตอบ 404</strong> — เป็นการปิดทางที่ AI (และคนส่วนใหญ่) จะเลือกโดยสัญชาตญาณ</p></div>
 
     <h2>ลำดับ route: ปลอดภัยอยู่แล้ว แต่ยังต้องวางให้ถูก</h2>
     <p><code>category/:slug</code> มีสอง segment ส่วน <code>:id</code> มีหนึ่ง segment จึงชนกันไม่ได้ทางเทคนิค — <code>/products/category/beauty</code> ไม่มีทางถูกจับด้วย <code>/products/:id</code> แต่เราก็ยังวาง handler ใหม่ไว้<em>ก่อน</em> <code>@Get()</code> และ <code>@Get(':id')</code> ด้วยเหตุผลสองข้อ</p>
@@ -49,53 +49,45 @@
     <p>ลำดับสุดท้ายของ <code>ProductsController</code> คือ <code>findCategories</code> → <code>findByCategory</code> → <code>findAll</code> → <code>findOne</code></p>
 
     <h2>เป้าหมายของบทนี้</h2>
+    <p>รายการด้านล่างคือไฟล์ที่เปลี่ยนใน<strong>โค้ดอ้างอิงของคอร์ส</strong> — ใช้เป็นแผนที่ตอนเทียบงาน ไม่ใช่ข้อบังคับ Cursor ของคุณอาจวางไฟล์หรือตั้งชื่อต่างไปได้ ขอแค่ผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
     <pre><code>src/products/
 ├── products.controller.ts            (แก้ไข: เพิ่ม handler เดียว)
 └── products.service.ts               (แก้ไข: เพิ่ม method เดียว)</code></pre>
     <ul>
-      <li><strong><code>src/products/products.service.ts</code></strong> — สัญญา: ต้องเพิ่ม <code>findByCategory(slug, query)</code> ที่เรียก <code>this.paginate({ category: { slug } }, …)</code> / ต้องไม่ query ตาราง <code>Category</code> แยก และต้องไม่ <code>throw</code> เมื่อไม่พบหมวดหมู่</li>
-      <li><strong><code>src/products/products.controller.ts</code></strong> — สัญญา: ต้องเพิ่ม <code>@Get('category/:slug')</code> ไว้ถัดจาก <code>findCategories</code> และก่อน <code>findAll</code> / ต้องไม่แก้ handler อื่น</li>
+      <li><strong><code>src/products/products.service.ts</code></strong> — ในโค้ดอ้างอิง: เพิ่ม <code>findByCategory(slug, query)</code> ที่เรียก <code>this.paginate({ category: { slug } }, …)</code> / ไม่ query ตาราง <code>Category</code> แยก และไม่ <code>throw</code> เมื่อไม่พบหมวดหมู่</li>
+      <li><strong><code>src/products/products.controller.ts</code></strong> — ในโค้ดอ้างอิง: เพิ่ม <code>@Get('category/:slug')</code> ไว้ถัดจาก <code>findCategories</code> และก่อน <code>findAll</code> / ไม่แก้ handler อื่น</li>
     </ul>
-    <p>ห้ามแตะ <code>paginate</code>, <code>findAll</code>, <code>findOne</code> และ <code>productInclude</code> — ถ้า diff ของบทนี้ยาวกว่าสิบบรรทัด แปลว่ามีอะไรเกินมา</p>
+    <p>ในโค้ดอ้างอิง diff ของบทนี้ไม่ถึงสิบบรรทัดและไม่แตะ <code>paginate</code>, <code>findAll</code>, <code>findOne</code> หรือ <code>productInclude</code> — ถ้าของคุณยาวกว่านั้นมาก ให้ดูว่ามีอะไรเกินจากเป้าหมายหรือเปล่า</p>
 
     <section class="workshop" aria-labelledby="exercise-heading">
       <h2 id="exercise-heading">สั่ง Cursor เพิ่ม endpoint ตามหมวดหมู่</h2>
       <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before category endpoint"</code>) จากนั้นส่ง prompt นี้</p>
       <div class="cursor-prompt"><code>เพิ่ม endpoint GET /products/category/:slug ที่ใช้ pagination เดิม และตอบ list ว่างเมื่อไม่พบหมวดหมู่
+@src/products/products.controller.ts @src/products/products.service.ts (สองไฟล์นี้คือชื่อในโค้ดอ้างอิง ถ้าโปรเจกต์ของคุณตั้งชื่อต่างออกไป ให้ @ ไฟล์ controller กับ service ของ products ที่คุณมีจริง)
 
-บริบท: @src/products/products.controller.ts @src/products/products.service.ts @src/products/dto/pagination-query.dto.ts @docs/contract/products-by-category.json @docs/contract/products-by-category-unknown.json @.cursor/rules/project.mdc
-มี private method paginate(where, skip, limit) ที่คืน ProductListResponseDto อยู่แล้ว
-docs/contract/products-by-category.json คือ response จริงของ GET /products/category/beauty?limit=2&amp;skip=0 (envelope เดียวกับ GET /products, total คือจำนวนสินค้าในหมวดนั้น)
-docs/contract/products-by-category-unknown.json คือ response จริงของ slug ที่ไม่มี: status 200 กับ { products: [], total: 0, skip, limit } — ไม่ใช่ 404
-
-โครงสร้าง: แก้ไฟล์ตามนี้ ไม่มากไม่น้อยกว่านี้
-- src/products/products.service.ts (แก้ไข: เพิ่ม method เดียว)
-- src/products/products.controller.ts (แก้ไข: เพิ่ม handler เดียว)
-
-ข้อกำหนดทางเทคนิค:
-- service: findByCategory(slug: string, query: PaginationQueryDto) คืน this.paginate({ category: { slug } }, query.skip, query.limit)
-  ห้าม query ตาราง category แยกต่างหาก ห้าม throw เมื่อไม่พบ
-- controller: handler @Get('category/:slug') findByCategory(@Param('slug') slug: string, @Query() query: PaginationQueryDto)
-  วางไว้ถัดจาก findCategories และก่อน findAll
-- ห้ามแก้ paginate, findAll, findOne, productInclude
+ผลลัพธ์ที่ต้องได้:
+- GET /products/category/beauty?limit=2&amp;skip=1 ตอบ 200 envelope { products, total, skip, limit } ได้ total 5, skip 1, limit 2 และสินค้า id 2 กับ 3
+- GET /products/category/groceries?limit=2&amp;skip=0 ได้ total 27 (นับเฉพาะสินค้าในหมวดนั้น) และ key ของ envelope มีแค่ products, total, skip, limit
+- slug ที่ไม่มีอยู่จริง เช่น GET /products/category/nope?limit=2&amp;skip=0 ตอบ 200 body {"products":[],"total":0,"skip":0,"limit":2} พอดี — ห้ามตอบ 404
+- limit/skip ผิดช่วงตอบ 400 เหมือน GET /products
+- GET /products/categories, GET /products และ GET /products/:id ยังตอบเหมือนเดิมทุกอย่าง
 
 ขอบเขต:
 - ห้ามติดตั้ง dependency ใหม่
-- ห้ามแก้ไฟล์อื่นนอกจากที่ระบุ
-- ยังไม่ต้องเขียน script ตรวจ contract</code></div>
+- ห้ามแตะไฟล์ใน test/ — e2e test เป็น prompt แยกในแชทถัดไป</code></div>
     </section>
     <section class="review" aria-labelledby="review-heading">
       <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
       <ul>
-        <li>เงื่อนไขเขียนเป็น relation filter <code>{ category: { slug } }</code> — ไม่ใช่ <code>{ categoryId: … }</code></li>
-        <li>ไม่มี <code>findUnique</code> หรือ <code>findFirst</code> บนตาราง <code>category</code> เพิ่มเข้ามา</li>
-        <li>ไม่มี <code>NotFoundException</code> ใน <code>findByCategory</code> และไม่มี <code>if (!category)</code> ใด ๆ</li>
-        <li>ใน controller handler ใหม่อยู่ระหว่าง <code>findCategories</code> กับ <code>findAll</code></li>
-        <li><code>@Param('slug') slug: string</code> ไม่มี pipe แปลงค่า (slug เป็น string ตามธรรมชาติ)</li>
-        <li><code>git diff --stat</code> เห็นแค่สองไฟล์ และรวมกันประมาณสิบบรรทัด — <code>paginate</code>, <code>findAll</code>, <code>findOne</code>, <code>productInclude</code> ไม่ถูกแตะ</li>
+        <li>slug ที่ไม่มีอยู่ตอบ 200 กับ envelope ว่าง — ไม่มีทางไหนในโค้ดที่ทำให้ endpoint นี้ตอบ 404</li>
+        <li><code>total</code> นับเฉพาะสินค้าในหมวดนั้น (beauty ได้ 5, groceries ได้ 27) ไม่ใช่ 208</li>
+        <li><code>limit</code> ใน response echo ค่าที่ขอมาเสมอ แม้หมวดจะว่าง</li>
+        <li><code>GET /products/category/beauty</code> ไม่ถูก route <code>/products/:id</code> แย่งจับ (log ตอน start มี route <code>/products/category/:slug</code>)</li>
+        <li>ไม่มีการ copy logic แบ่งหน้าซ้ำ — ถ้าโปรเจกต์มีตัวช่วยแบ่งหน้าอยู่แล้ว endpoint ใหม่ควรใช้ตัวเดิม</li>
+        <li>ไม่มีไฟล์ที่ไม่เกี่ยวกับเป้าหมายถูกแก้ (ดูจาก <code>git status</code>), endpoint เดิมสามตัวยังตอบเหมือนเดิม และไม่มี <code>any</code>, <code>as</code> หรือ <code>!</code> เพิ่มเข้ามา</li>
       </ul>
-      <p><strong>AI มักพลาดตรงนี้:</strong> หา category จาก slug ก่อนแล้วโยน 404 ถ้าไม่พบ — เป็นพฤติกรรมที่ดูถูกหลักการ REST และเป็นสิ่งที่ทุกคอร์สสอน แต่มันผิดสัญญาของ dummyjson และทำให้หน้า Category ของ React app เด้งไปหน้า error ตอนที่ควรจะโชว์ข้อความ "ไม่พบสินค้า" ถ้าเจอโค้ดแบบนี้ ให้ลบทั้งก้อนทิ้ง ไม่ใช่แก้ status code</p>
-      <p>โค้ดอ้างอิงของบทนี้ (เทียบกับของคุณทีละบรรทัด):</p>
+      <p><strong>AI มักพลาดตรงนี้:</strong> หา category จาก slug ก่อนแล้วโยน 404 ถ้าไม่พบ — เป็นพฤติกรรมที่ดูถูกหลักการ REST และเป็นสิ่งที่ทุกคอร์สสอน แต่มันผิดสัญญาที่เราออกแบบไว้ใน docs/api-spec.md และทำให้หน้า Category ของ React app เด้งไปหน้า error ตอนที่ควรจะโชว์ข้อความ "ไม่พบสินค้า" ถ้าเจอโค้ดแบบนี้ ให้ลบทั้งก้อนทิ้ง ไม่ใช่แก้ status code</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
       <p><code>src/products/products.service.ts</code></p>
       <pre><code>import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -141,7 +133,7 @@ export class ProductsService {
       include: productInclude,
     });
     if (!product) {
-      throw new NotFoundException(`Product with id '${id}' not found`);
+      throw new NotFoundException(`Product ${id} not found`);
     }
     return toProductResponse(product);
   }
@@ -155,13 +147,13 @@ export class ProductsService {
       this.prisma.product.findMany({
         where,
         skip,
-        take: limit === 0 ? undefined : limit,
+        take: limit,
         orderBy: { id: 'asc' },
         include: productInclude,
       }),
       this.prisma.product.count({ where }),
     ]);
-    return { products: rows.map(toProductResponse), total, skip, limit: rows.length };
+    return { products: rows.map(toProductResponse), total, skip, limit };
   }
 }</code></pre>
       <p><code>src/products/products.controller.ts</code></p>
@@ -202,9 +194,9 @@ export class ProductsController {
 [RouterExplorer] Mapped {/products/category/:slug, GET} route
 [RouterExplorer] Mapped {/products, GET} route
 [RouterExplorer] Mapped {/products/:id, GET} route</code></pre>
-      <p><code>GET /products/category/beauty?limit=2&amp;skip=1</code> ตอบ <code>total: 5</code> (หมวด beauty มีสินค้า 5 ชิ้น) <code>skip: 1</code> <code>limit: 2</code> และสินค้า id 2 กับ 3 ส่วน slug ที่ไม่มีอยู่จริงตอบ 200 พร้อมไบต์เท่านี้พอดี</p>
-      <pre><code>{"products":[],"total":0,"skip":0,"limit":0}</code></pre>
-      <p>ตอนนี้ endpoint ฝั่งอ่านของสินค้าครบทั้งสี่ตัวแล้ว — บทถัดไปเราจะเลิกยิง curl ทีละคำสั่งแล้วเขียน script ที่ตรวจทั้งสี่ตัวเทียบกับ dummyjson ให้ทีเดียว</p>
+      <p><code>GET /products/category/beauty?limit=2&amp;skip=1</code> ตอบ <code>total: 5</code> (หมวด beauty มีสินค้า 5 ชิ้น) <code>skip: 1</code> <code>limit: 2</code> และสินค้า id 2 กับ 3 ส่วน slug ที่ไม่มีอยู่จริงตอบ 200 พร้อมไบต์เท่านี้พอดี (ตัวอย่างนี้ยิง <code>?limit=2&amp;skip=0</code>)</p>
+      <pre><code>{"products":[],"total":0,"skip":0,"limit":2}</code></pre>
+      <p>ตอนนี้ endpoint ฝั่งอ่านของสินค้าครบทั้งสี่ตัวแล้ว และ e2e test เก้าข้อที่สะสมมาสามขั้นก็คุ้มครองมันครบทุกตัว — ต่อจากนี้เราจะไปฝั่งเขียนข้อมูล คือรับคำสั่งซื้อจาก React app</p>
     </section>
     <section class="verification" aria-labelledby="exercise-check-heading">
       <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
@@ -213,32 +205,63 @@ export class ProductsController {
           <pre><code>curl -s "http://localhost:3000/products/category/beauty?limit=2&amp;skip=1" \
   | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;{const j=JSON.parse(d);console.log(j.total,j.skip,j.limit,j.products.map(p=&gt;p.id))})"</code></pre>
         </li>
-        <li>slug ที่ไม่มีอยู่ ตรงกับ contract ทุกไบต์ — ต้องได้ <code>IDENTICAL</code>
-          <pre><code>curl -s "http://localhost:3000/products/category/nope?limit=2&amp;skip=0" &gt; /tmp/actual-unknown.json
-diff /tmp/actual-unknown.json docs/contract/products-by-category-unknown.json &amp;&amp; echo IDENTICAL</code></pre>
+        <li>slug ที่ไม่มีอยู่ ตรงกับ envelope ที่ออกแบบไว้เป๊ะ
+          <pre><code>curl -s "http://localhost:3000/products/category/nope?limit=2&amp;skip=0" \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;{const j=JSON.parse(d);console.log(JSON.stringify(j)===JSON.stringify({products:[],total:0,skip:0,limit:2}))})"</code></pre>
+          ต้องพิมพ์ <code>true</code>
         </li>
-        <li>หน้าแรกของ beauty เทียบ contract แบบเรียงคีย์ — ต้องได้ <code>IDENTICAL</code>
-          <pre><code>curl -s "http://localhost:3000/products/category/beauty?limit=2&amp;skip=0" \
-  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log(JSON.stringify(JSON.parse(d),Object.keys(JSON.parse(d)).sort())))" &gt; /tmp/actual-by-category.json
-node -e "const d=require('./docs/contract/products-by-category.json');console.log(JSON.stringify(d,Object.keys(d).sort()))" &gt; /tmp/expected-by-category.json
-diff /tmp/actual-by-category.json /tmp/expected-by-category.json &amp;&amp; echo IDENTICAL</code></pre>
+        <li>หมวด groceries (27 ชิ้น) ตรงกับ envelope shape และ total ที่ถูกต้อง
+          <pre><code>curl -s "http://localhost:3000/products/category/groceries?limit=2&amp;skip=0" \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;{const j=JSON.parse(d);const keys=Object.keys(j).sort();console.log(JSON.stringify(keys)===JSON.stringify(['limit','products','skip','total'])&amp;&amp;j.total===27)})"</code></pre>
+          ต้องพิมพ์ <code>true</code>
         </li>
-        <li>สาม endpoint เดิมยังทำงาน: <code>/products/categories</code> ได้ 24 ก้อน, <code>/products?limit=2</code> ได้ <code>total: 194</code>, <code>/products/1</code> ได้สินค้าชิ้นแรก</li>
-        <li><code>git diff --stat</code> เห็นแค่ <code>products.controller.ts</code> กับ <code>products.service.ts</code></li>
+        <li>สาม endpoint เดิมยังทำงาน: <code>/products/categories</code> ได้ 24 ก้อน, <code>/products?limit=2</code> ได้ <code>total: 208</code>, <code>/products/1</code> ได้สินค้าชิ้นแรก</li>
+        <li><code>git diff --stat</code> ไม่มีไฟล์ที่ไม่เกี่ยวกับ endpoint นี้ (ในโค้ดอ้างอิงคือแค่ไฟล์ใน <code>src/products/</code>)</li>
         <li>commit ผลงานด้วย <code>git add -A &amp;&amp; git commit -m "feat: GET /products/category/:slug"</code></li>
       </ul>
+    </section>
+    <section class="workshop" aria-labelledby="contract-test-heading">
+      <h2 id="contract-test-heading">เพิ่มสอง test ของหมวดหมู่ลงในไฟล์เดิม</h2>
+      <p>ไฟล์ <code>test/products.e2e-spec.ts</code> ตอนนี้มีเจ็ด test แล้ว ขั้นนี้เพิ่มอีกสองข้อของ endpoint ใหม่ลงไปในไฟล์เดิม รวมเป็น<strong>เก้า</strong> — <strong>เปิดแชทใหม่</strong>แล้วสั่ง Cursor เขียนให้เหมือนตอน test ชุดแรก ด้วยเหตุผลเดียวกัน: สิ่งที่ทำให้ test เชื่อถือได้คือความเป็นอิสระของมัน (แชทใหม่ + ผลลัพธ์ที่มาจากสัญญา + ห้ามมันแก้ <code>src/</code>) ไม่ใช่ว่าใครเป็นคนพิมพ์</p>
+      <div class="cursor-prompt"><code>เพิ่ม test ของ endpoint ตามหมวดหมู่ลงในไฟล์ e2e ที่มีอยู่แล้ว
+@test/products.e2e-spec.ts @docs/api-spec.md
+
+ผลลัพธ์ที่ต้องได้:
+- เพิ่มสอง it() ต่อท้ายไฟล์เดิม ใช้ app ตัวเดิมที่ beforeAll boot ไว้แล้ว — ห้ามสร้างไฟล์ test ใหม่ และห้ามแก้เจ็ด test ที่มีอยู่
+  1. ชื่อ test: GET /products/category/groceries → total 27 — ยิง /products/category/groceries?limit=20&amp;skip=0 ได้ 200 และ total เป็น 27
+  2. ชื่อ test: GET /products/category/nope → 200, empty envelope — ยิง /products/category/nope?limit=5&amp;skip=0 ได้ 200, products เป็น array ว่าง และ total เป็น 0 (สัญญาข้อนี้คือ 200 ไม่ใช่ 404)
+- ยิงผ่าน request(app.getHttpServer()) — ไม่ mock อะไรเลย และไม่ยิงไป URL หรือ port ภายนอก
+- import ในไฟล์ test ลงท้ายด้วย .js ตามกติกา ESM ของโปรเจกต์
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ห้ามแก้ไฟล์ใน src/ เด็ดขาด ถ้า test ไม่ผ่านให้บอกผมว่าไม่ผ่านข้อไหน ห้ามแก้โค้ดให้ test ผ่านเอง
+- ห้ามรัน test ให้ ผมจะรันเอง</code></div>
+      <p>อ่าน diff ที่ได้ก่อนรัน สามข้อนี้คือจุดที่ agent พลาดบ่อยที่สุดในไฟล์ test</p>
+      <ul>
+        <li><code>git status</code> ต้องเห็นไฟล์ที่ถูกแก้แค่ <code>test/products.e2e-spec.ts</code> — <strong>ไม่มีไฟล์ใน <code>src/</code> ถูกแตะ</strong> ถ้ามี แปลว่า agent ไปแก้ endpoint ให้เข้ากับ test ของมันเอง ให้ย้อนกลับแล้วสั่งใหม่</li>
+        <li><code>git diff</code> ของไฟล์ test ต้องมีแต่บรรทัดที่<em>เพิ่ม</em>เข้ามา เจ็ด test เดิมต้องอยู่ครบและไม่ถูกเขียนใหม่ — วิธีเร็วที่สุดคือดูว่า <code>npm run test:e2e</code> นับได้เก้า ไม่ใช่สอง</li>
+        <li>test ของ slug ที่ไม่มีจริงต้องคาดหวัง <strong>200 พร้อม envelope ว่าง</strong> ไม่ใช่ 404 — ข้อนี้คือสัญญาที่เราออกแบบไว้เอง และเป็นจุดที่ AI มักเขียนผิดเพราะ 404 คือสิ่งที่ API ส่วนใหญ่ในโลกทำกัน ถ้ามันเขียน <code>.expect(404)</code> มา แปลว่ามันเดาจากความเคยชิน ไม่ได้อ่าน <code>docs/api-spec.md</code></li>
+      </ul>
+      <p>เปิดฐานข้อมูลไว้แล้วรัน <code>npm run test:e2e</code> ต้องผ่านครบ<strong>เก้า</strong> test</p>
+      <pre><code> ✓ test/app.e2e-spec.ts (1 test)
+ ✓ test/products.e2e-spec.ts (9 tests)
+
+ Test Files  2 passed (2)
+      Tests  10 passed (10)</code></pre>
+      <p>reporter ปริยายของ Vitest ยุบไฟล์ที่ผ่านให้เหลือบรรทัดเดียว ถ้าอยากเห็นชื่อ test ทีละข้อให้เติม <code>--reporter=verbose</code> ต่อท้าย (<code>npm run test:e2e -- --reporter=verbose</code>) และอย่าลืมว่า test ชุดนี้ boot แอปของตัวเอง ฐานข้อมูลจึงต้องรันอยู่ แต่ไม่ต้องเปิด <code>npm run start:dev</code> ค้างไว้ก็ได้ — ต่างจาก <code>curl</code> ทุกข้อด้านบนที่ต้องมี dev server จริง</p>
+      <p>เก้าข้อนี้จะอยู่กับเราไปจนจบคอร์ส — ทุกบทหลังจากนี้ต้องรันผ่านครบเหมือนเดิม ถ้าบทไหนทำให้ข้อใดข้อหนึ่งล้ม แปลว่าเราเพิ่งทำสัญญาที่ให้ React app ไว้พัง จากนั้น commit ด้วย <code>git add -A &amp;&amp; git commit -m "test: contract e2e for the category endpoint"</code></p>
     </section>
     <h2>แหล่งอ้างอิง</h2>
     <ul class="source-list">
       <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries">Relation queries: filter on relations (Prisma Docs)</a></li>
       <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/filtering-and-sorting">Filtering and sorting (Prisma Docs)</a></li>
       <li><a href="https://docs.nestjs.com/controllers">Controllers: route ordering (NestJS Docs)</a></li>
-      <li><a href="https://dummyjson.com/docs/products">Products by category (DummyJSON Docs)</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
       <a class="lesson-navigation__link" href="13_get-products-with-pagination.html" rel="prev">← บทก่อนหน้า</a>
       <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
-      <a class="lesson-navigation__link" href="15_checking-the-contract.html" rel="next">บทถัดไป →</a>
+      <a class="lesson-navigation__link" href="15_modeling-orders.html" rel="next">บทถัดไป →</a>
     </nav>
   </main>
   <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>

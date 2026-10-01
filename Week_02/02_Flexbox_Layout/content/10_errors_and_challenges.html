@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="รวมข้อผิดพลาดที่เจอบ่อยเมื่อเริ่มใช้ Flexbox พร้อมวิธีแก้ และโจทย์ฝึกต่อยอดจากหน้า landing page ที่สร้างเสร็จแล้ว" />
+    <title>Error ที่เจอบ่อย และ Mini Challenge | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 10 · Responsive และฝึกฝน (Responsive &amp; Practice)</p>
+          <h1>Error ที่เจอบ่อย และ Mini Challenge</h1>
+          <p class="lesson-original-title" lang="en">Common Errors &amp; Mini Challenges</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>วินิจฉัยและแก้ปัญหา Flexbox ที่เจอบ่อย 3 แบบได้ด้วยตัวเอง</li>
+            <li>ต่อยอดหน้า landing page ด้วยการเพิ่ม card และ section ใหม่</li>
+            <li>ทดลองเปลี่ยนค่า property แล้วอธิบายผลที่เกิดขึ้นได้</li>
+          </ul>
+        </section>
+
+        <h2>Error 1: ใส่ <code>display: flex</code> ผิดที่</h2>
+        <p><strong>อาการ:</strong> card ยังเรียงบน-ล่าง แต่เนื้อหาข้างใน card กลับเรียงเป็นแถวแปลก ๆ</p>
+        <p><strong>สาเหตุ:</strong> ใส่ที่ลูก แต่ลืมใส่ที่ parent</p>
+        <pre><code class="language-css">/* ผิด: ใส่ที่ card แต่ละใบ */
+.feature-card {
+    display: flex;
+}</code></pre>
+        <p><strong>วิธีแก้:</strong> ถ้าอยากจัด card หลายใบ ต้องใส่ <code>display: flex</code> ที่ parent ที่ครอบ card เหล่านั้น</p>
+        <pre><code class="language-css">/* ถูก: ใส่ที่ container ที่ครอบ card */
+.features-section {
+    display: flex;
+}</code></pre>
+
+        <h2>Error 2: ลืม <code>gap</code></h2>
+        <p><strong>อาการ:</strong> card ยังเรียงเป็นแถวอยู่ แต่ชิดติดกันเกินไป</p>
+        <p><strong>วิธีแก้:</strong> เพิ่ม <code>gap</code> ที่ parent แทนการไปใส่ <code>margin</code> ให้ card ทีละใบ <code>gap</code> ช่วยทำให้ layout หายใจได้</p>
+        <pre><code class="language-css">.features-section {
+    display: flex;
+    gap: 20px;
+}</code></pre>
+
+        <h2>Error 3: ใช้ <code>align-items</code> แล้วไม่เห็นผล</h2>
+        <p><strong>อาการ:</strong> ใส่ <code>align-items: center</code> แล้วหน้าตาไม่เปลี่ยน</p>
+        <p><strong>สาเหตุที่เป็นไปได้:</strong></p>
+        <ul>
+          <li>ลูกทุกตัวสูงใกล้กันอยู่แล้ว จึงไม่มีที่ว่างในแนวตั้งให้เห็นการจัดตำแหน่ง</li>
+          <li>ลืมใส่ <code>display: flex</code> ที่ element เดียวกัน <code>align-items</code> จึงไม่มีผล</li>
+        </ul>
+        <p><strong>วิธีตรวจ:</strong> ลองเพิ่มความสูงหรือเนื้อหาให้ลูกบางตัวมากกว่าตัวอื่น แล้วสลับค่า <code>align-items</code> ดูผล</p>
+
+        <div class="note">
+          <p>เครื่องมือช่วย debug ที่ดีที่สุดคือ DevTools: คลิกขวาที่ element &gt; Inspect ในแผง Elements จะมีป้าย <code>flex</code> ติดอยู่ข้าง element ที่เป็น flex container ถ้าไม่เห็นป้ายนี้ที่ parent ที่คุณคิดไว้ แปลว่าใส่ <code>display: flex</code> ผิดที่</p>
+        </div>
+
+        <h2>Mini Challenge</h2>
+        <p>ใช้เวลาประมาณ 10–15 นาที ทำกับโปรเจกต์ที่เพิ่งสร้างเสร็จ</p>
+
+        <h3>Challenge 1: เพิ่ม feature card ใบที่ 4</h3>
+        <p>เพิ่ม <code>&lt;article class="feature-card"&gt;</code> อีกหนึ่งใบใน <code>.features-section</code> แล้วสังเกตว่าทำไมไม่ต้องแก้ CSS เลย card ทั้ง 4 ใบก็ยังกว้างเท่ากัน</p>
+
+        <h3>Challenge 2: เปลี่ยน <code>gap</code></h3>
+        <p>เปลี่ยน <code>gap</code> ใน <code>.features-section</code> จาก <code>20px</code> เป็น <code>32px</code> แล้วดูผลลัพธ์</p>
+
+        <h3>Challenge 3: เปลี่ยน <code>justify-content</code> ของ navbar</h3>
+        <p>เปลี่ยน <code>justify-content</code> ใน <code>.navbar</code> เป็นค่าอื่น เช่น:</p>
+        <pre><code class="language-css">justify-content: center;</code></pre>
+        <p>แล้วดูว่า layout เปลี่ยนอย่างไร</p>
+
+        <h3>Challenge 4: เพิ่ม pricing card ใบที่ 3</h3>
+        <p>เพิ่มแผนราคาอีกหนึ่งแผนใน <code>.pricing-cards</code> ลองตัดสินใจเองว่าใบไหนควรมี class <code>highlight</code></p>
+
+        <h3>Bonus: section ใหม่</h3>
+        <p>เพิ่ม section ใหม่ชื่อ:</p>
+        <pre><code class="language-text">Who This Bootcamp Is For</code></pre>
+        <p>แล้วใช้ Flexbox จัด card 3 ใบ เช่น:</p>
+        <ul>
+          <li>Career Changers</li>
+          <li>Self-Learners</li>
+          <li>Working Professionals</li>
+        </ul>
+        <p>คำใบ้: ใช้แพตเทิร์นเดียวกับ feature cards (parent <code>display: flex</code> + <code>gap</code>, ลูก <code>flex: 1</code>) และอย่าลืมเพิ่ม class ใหม่ของ section นี้เข้าไปใน <code>@media</code> ด้วย ไม่อย่างนั้นบนจอเล็ก card จะยังเรียงแนวนอน</p>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่าทำไมใส่ <code>display: flex</code> ที่ลูกแล้ว card ไม่เรียงแถว</li>
+            <li>ทำ Challenge 1–4 ครบ และหน้าเว็บยังเป็นระเบียบ</li>
+            <li>(Bonus) section ใหม่เรียงแถวบนจอกว้าง และเรียงบน-ล่างบนจอเล็ก</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="09_responsive_basics.html" rel="prev">ก่อนหน้า: Responsive เบื้องต้นด้วย @media และ flex-wrap</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="11_wrap_up_and_homework.html" rel="next">ถัดไป: สรุปบทเรียนและการบ้าน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

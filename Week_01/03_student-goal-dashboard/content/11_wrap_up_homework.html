@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สรุป array, object, loop และการ debug พร้อม assignment สร้าง dashboard แสดงข้อมูลหลายรายการของตัวเอง และคำถามทบทวนหลังเรียน" />
+    <title>สรุปบทเรียนและการบ้าน | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 11 · ฝึกต่อยอดและสรุป (Practice &amp; Wrap Up)</p>
+          <h1>สรุปบทเรียนและการบ้าน</h1>
+          <p class="lesson-original-title" lang="en">Wrap Up &amp; Homework</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>สรุป concept หลักของคอร์สนี้ได้ด้วยคำพูดของตัวเอง</li>
+            <li>เข้าใจโจทย์และ requirement ของ assignment Student Goal Dashboard</li>
+            <li>ทบทวนความเข้าใจด้วยคำถามหลังเรียนและ reflection</li>
+          </ul>
+        </section>
+
+        <h2>สรุปสิ่งที่เรียนมา</h2>
+        <p>คอร์สนี้เราขยับจากการทำงานกับหน้าเว็บหนึ่งหน้า ปุ่มหนึ่งปุ่ม และ form หนึ่ง form ไปสู่การจัดการ<strong>ข้อมูลหลายรายการ</strong> ซึ่งเป็นพื้นฐานที่สำคัญมาก เพราะในโลกจริงข้อมูลแทบทุกอย่างมาเป็น list เช่น รายชื่อนักเรียน รายการสินค้า รายการบทเรียน รายการผู้สมัครงาน หรือรายการ task</p>
+        <p>ถ้ายังจำ syntax ไม่ได้ทั้งหมด ไม่เป็นไร ขอให้จำ concept นี้ให้ได้ก่อน:</p>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>Concept</th><th>ความหมาย</th><th>ตัวอย่างในโปรเจกต์</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Array</td><td>รายการหลายชิ้น</td><td><code>const students = [ ... ];</code></td></tr>
+              <tr><td>Object</td><td>ข้อมูลหนึ่งชิ้นที่มีหลายรายละเอียด</td><td><code>{ name: "Man", goal: "...", level: "..." }</code></td></tr>
+              <tr><td>Loop</td><td>การทำงานซ้ำกับข้อมูลแต่ละรายการ</td><td><code>students.forEach(function (student) { ... });</code></td></tr>
+              <tr><td>Debugging</td><td>การไล่หาปัญหาอย่างเป็นขั้นตอน</td><td>อ่าน error → ดูสิ่งที่เพิ่งแก้ → เช็กการเชื่อมโยง → <code>console.log</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>คำสั่งสำหรับสร้าง element ด้วย JavaScript</h3>
+        <ul>
+          <li><code>document.createElement("article")</code> — สร้าง element ใหม่</li>
+          <li><code>element.classList.add("student-card")</code> — ใส่ class</li>
+          <li><code>element.innerHTML = `...`</code> — ใส่ HTML ข้างใน โดยแทรกข้อมูลด้วย <code>${ }</code></li>
+          <li><code>container.appendChild(element)</code> — นำ element ไปแสดงบนหน้าเว็บ</li>
+        </ul>
+
+        <h3>เช็กลิสต์ debug ติดตัว</h3>
+        <ul>
+          <li>Save file แล้วหรือยัง? Refresh แล้วหรือยัง? แก้ถูกไฟล์หรือเปล่า?</li>
+          <li>เปิด Console แล้วมี error สีแดงไหม? บอกบรรทัดไหน?</li>
+          <li>id / class ใน HTML, CSS และ JavaScript ตรงกันไหม? เชื่อมไฟล์ครบไหม?</li>
+          <li>ได้ <code>null</code> → เช็ก id / ได้ <code>undefined</code> → เช็กชื่อ field หรือ index</li>
+          <li>ไม่แน่ใจค่าอะไร → <code>console.log</code> ดูเลย อย่าเดา</li>
+        </ul>
+
+        <h2>การบ้าน: Student Goal Dashboard ของคุณเอง</h2>
+        <p>สร้างหน้า Dashboard เล็ก ๆ ที่แสดงข้อมูลหลายรายการ โดยใช้ array, object และ loop เลือกหัวข้อได้ตามความสนใจ เช่น</p>
+        <ul>
+          <li>Student Goal Dashboard</li>
+          <li>Course List</li>
+          <li>Portfolio Project List</li>
+          <li>Job Application Tracker</li>
+          <li>Product List</li>
+          <li>Task List</li>
+        </ul>
+
+        <h3>Requirements</h3>
+        <ol>
+          <li>มี array อย่างน้อย 4 รายการ</li>
+          <li>แต่ละรายการเป็น object</li>
+          <li>object แต่ละตัวมีอย่างน้อย 3 fields</li>
+          <li>ใช้ <code>forEach</code> เพื่อแสดงข้อมูลทุก item บนหน้าเว็บ</li>
+          <li>ใช้ <code>document.createElement</code> หรือ <code>innerHTML</code> เพื่อสร้าง card</li>
+          <li>ใช้ CSS ตกแต่ง card ให้ดูเป็นระบบ</li>
+          <li>มีอย่างน้อย 1 จุดที่ใช้ <code>if</code> เพื่อตัดสินใจแสดงข้อความแตกต่างกัน</li>
+        </ol>
+
+        <div class="note">
+          <p>ใช้โปรเจกต์ในบทที่ 7–10 เป็นแม่แบบได้ เริ่มจากออกแบบข้อมูล (array of objects) ให้เสร็จ แล้วตรวจใน Console ก่อน จากนั้นค่อยสร้างการ์ด — ทำทีละขั้นแบบเดียวกับที่เราทำในคอร์สนี้ และ Bonus ในบทที่ 10 คือตัวอย่างของ requirement ข้อ 7</p>
+        </div>
+
+        <h3>Reflection</h3>
+        <p>ตอบคำถามสั้น ๆ ส่งมาพร้อมงาน:</p>
+        <ol>
+          <li>Array คืออะไร?</li>
+          <li>Object คืออะไร?</li>
+          <li>Loop ช่วยเราอย่างไร?</li>
+          <li>ระหว่างทำงานนี้ เจอ error อะไร?</li>
+          <li>คุณ debug อย่างไร?</li>
+          <li>อยากให้ review จุดไหน?</li>
+        </ol>
+
+        <h2>คำถามทบทวนหลังเรียน</h2>
+        <p>ลองตอบด้วยตัวเองก่อนแล้วค่อยย้อนกลับไปเช็กในบทที่เกี่ยวข้อง</p>
+        <ol>
+          <li>
+            Array ใช้ทำอะไร?
+            <ol type="A">
+              <li>เก็บข้อมูลหลายรายการ</li>
+              <li>เปลี่ยนสีพื้นหลัง</li>
+              <li>เปิด browser</li>
+              <li>ลบไฟล์ในเครื่อง</li>
+            </ol>
+          </li>
+          <li>
+            Object เหมาะกับข้อมูลแบบไหน?
+            <ol type="A">
+              <li>ข้อมูลหนึ่งรายการที่มีหลายรายละเอียด</li>
+              <li>เฉพาะข้อความสั้น ๆ เท่านั้น</li>
+              <li>เฉพาะตัวเลขเท่านั้น</li>
+              <li>ใช้แทน CSS</li>
+            </ol>
+          </li>
+          <li>
+            <code>forEach</code> ใช้ทำอะไร?
+            <ol type="A">
+              <li>วนทำงานกับข้อมูลแต่ละรายการใน array</li>
+              <li>เปลี่ยนชื่อไฟล์</li>
+              <li>ติดตั้ง Node.js</li>
+              <li>ทำให้ปุ่มมีสีฟ้า</li>
+            </ol>
+          </li>
+          <li>
+            <code>document.createElement("article")</code> ใช้ทำอะไร?
+            <ol type="A">
+              <li>สร้าง HTML element ใหม่ด้วย JavaScript</li>
+              <li>ลบหน้าเว็บ</li>
+              <li>เปลี่ยนสี text</li>
+              <li>เปิด GitHub</li>
+            </ol>
+          </li>
+          <li>
+            ถ้า JavaScript หา element ไม่เจอและได้ค่า <code>null</code> ควรเช็กอะไร?
+            <ol type="A">
+              <li>id ใน HTML ตรงกับ JavaScript หรือไม่</li>
+              <li>สีปุ่มสวยหรือไม่</li>
+              <li>ชื่อคนเรียนถูกไหม</li>
+              <li>ใช้ font อะไร</li>
+            </ol>
+          </li>
+        </ol>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบาย Array, Object, Loop และ Debugging ได้ด้วยประโยคสั้น ๆ ของตัวเอง</li>
+            <li>โปรเจกต์ Student Goal Dashboard ของคุณแสดงการ์ดครบและไม่มี error ใน Console</li>
+            <li>assignment มีครบทั้ง 7 requirements</li>
+            <li>ตอบ reflection ครบ 6 ข้อ</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="10_mini_challenges.html" rel="prev">ก่อนหน้า: Mini Challenge: ต่อยอด Dashboard</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สรุปหลักคิดและ property สำคัญของ Flexbox พร้อมโจทย์การบ้าน Flexbox Landing Page Layout และคำถามทบทวน" />
+    <title>สรุปบทเรียนและการบ้าน | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 11 · Responsive และฝึกฝน (Responsive &amp; Practice)</p>
+          <h1>สรุปบทเรียนและการบ้าน</h1>
+          <p class="lesson-original-title" lang="en">Wrap Up &amp; Homework</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>สรุปหลักคิดและ property หลักของ Flexbox ได้ด้วยคำพูดของตัวเอง</li>
+            <li>เข้าใจโจทย์การบ้านและเกณฑ์ที่ต้องทำให้ครบ</li>
+            <li>ทบทวนความเข้าใจด้วยคำถามท้ายบท</li>
+          </ul>
+        </section>
+
+        <h2>สิ่งที่เราได้เรียน</h2>
+        <p>ถ้าเรื่อง Box Model สอนให้เรามองว่า element ทุกตัวคือกล่อง คอร์สนี้ก็สอนวิธีจัดกล่องหลายใบให้อยู่ในตำแหน่งที่ต้องการ สิ่งที่อยากให้จำที่สุดคือ:</p>
+        <pre><code class="language-text">Flexbox ใส่ที่ parent
+แล้วมันจะจัด children ข้างใน</code></pre>
+        <p>property หลักที่ควรจำ:</p>
+        <pre><code class="language-text">display: flex
+justify-content
+align-items
+gap
+flex: 1
+flex-wrap</code></pre>
+
+        <h2>Flexbox ในโปรเจกต์ของเรา</h2>
+        <div class="comparison" role="region" aria-label="สรุปการใช้ Flexbox ในโปรเจกต์" tabindex="0">
+          <table>
+            <thead><tr><th>ส่วนของหน้า</th><th>Flexbox ที่ใช้</th></tr></thead>
+            <tbody>
+              <tr><td>Navbar</td><td><code>display: flex</code> + <code>justify-content: space-between</code> + <code>align-items: center</code></td></tr>
+              <tr><td>Nav links</td><td><code>display: flex</code> + <code>gap: 20px</code> (และ <code>flex-wrap: wrap</code> บนจอเล็ก)</td></tr>
+              <tr><td>Hero</td><td><code>display: flex</code> + <code>align-items: center</code> + <code>gap: 40px</code>, ลูก <code>flex: 1.4</code> / <code>flex: 1</code></td></tr>
+              <tr><td>Feature cards</td><td><code>display: flex</code> + <code>gap: 20px</code>, ลูก <code>flex: 1</code></td></tr>
+              <tr><td>Pricing cards</td><td><code>display: flex</code> + <code>gap: 20px</code>, ลูก <code>flex: 1</code></td></tr>
+              <tr><td>จอเล็ก</td><td><code>@media (max-width: 768px)</code> + <code>flex-direction: column</code> + <code>align-items: stretch</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>เมื่อเข้าใจ Flexbox แล้ว เราสร้าง layout ที่เหมือนเว็บจริงได้มากขึ้น เช่น navbar, hero section, card layout, pricing section และ responsive layout เบื้องต้น ขั้นต่อไปคือ <strong>CSS Grid และ Responsive Layout</strong> ซึ่งช่วยจัด layout ที่ซับซ้อนขึ้น เช่น การจัดทั้งแถวและคอลัมน์พร้อมกัน</p>
+
+        <h2>การบ้าน: Flexbox Landing Page Layout</h2>
+        <p>สร้างหรือปรับหน้า landing page โดยใช้ Flexbox เป็นหลัก หัวข้อเลือกเองได้ เช่น:</p>
+        <ul>
+          <li>Bootcamp Landing Page</li>
+          <li>Portfolio Landing Page</li>
+          <li>Product Landing Page</li>
+          <li>Service Page</li>
+          <li>Event Page</li>
+        </ul>
+
+        <h3>Requirements</h3>
+        <ol>
+          <li>มี navbar ที่ใช้ Flexbox</li>
+          <li>มี hero section แบบ 2 columns</li>
+          <li>มี feature cards อย่างน้อย 3 ใบ</li>
+          <li>มีอีก 1 section ที่ใช้ Flexbox เช่น pricing, testimonial หรือ target audience</li>
+          <li>ใช้ <code>gap</code> อย่างน้อย 2 จุด</li>
+          <li>ใช้ <code>justify-content</code> อย่างน้อย 1 จุด</li>
+          <li>ใช้ <code>align-items</code> อย่างน้อย 1 จุด</li>
+          <li>ใช้ <code>flex: 1</code> หรือ flex ratio อย่างน้อย 1 จุด</li>
+          <li>มี responsive เบื้องต้นด้วย <code>@media</code></li>
+        </ol>
+
+        <div class="note">
+          <p>ใช้โปรเจกต์ในคู่มือนี้เป็นต้นแบบได้ แต่ลองเปลี่ยนเนื้อหา สี และจำนวน card ให้เป็นของตัวเอง แล้วตรวจทุกข้อใน Requirements ด้วย DevTools ว่า flex container อยู่ถูกที่</p>
+        </div>
+
+        <h3>Reflection</h3>
+        <p>ตอบคำถามสั้น ๆ แนบมากับการบ้าน:</p>
+        <ol>
+          <li>Flexbox ใช้แก้ปัญหาอะไร?</li>
+          <li>Parent container กับ child item ต่างกันอย่างไร?</li>
+          <li><code>justify-content</code> กับ <code>align-items</code> ต่างกันอย่างไร?</li>
+          <li><code>gap</code> มีประโยชน์อย่างไร?</li>
+          <li>ตอนทำ responsive layout เจอปัญหาอะไร?</li>
+        </ol>
+
+        <h2>คำถามทบทวน</h2>
+        <p>ลองตอบด้วยตัวเองก่อน ถ้าไม่แน่ใจให้ย้อนกลับไปอ่านบทที่เกี่ยวข้อง</p>
+        <ol>
+          <li>Flexbox ต้องใส่ที่ element แบบไหน?</li>
+          <li><code>display: flex;</code> ใช้ทำอะไร?</li>
+          <li><code>justify-content: space-between;</code> ทำอะไร?</li>
+          <li><code>align-items: center;</code> ใช้ทำอะไร?</li>
+          <li><code>gap</code> ใช้ทำอะไร?</li>
+          <li><code>flex: 1;</code> หมายถึงอะไรโดยทั่วไป?</li>
+          <li>ถ้าอยากให้ card หลายใบเรียงในแถวเดียวกัน ควรใส่ <code>display: flex</code> ที่ไหน?</li>
+          <li><code>flex-wrap: wrap;</code> ใช้ทำอะไร?</li>
+          <li><code>@media</code> ใช้ทำอะไร?</li>
+          <li>navbar ที่มี logo ซ้าย เมนูขวา ควรใช้ property ของ Flexbox ตัวไหนบ้าง?</li>
+        </ol>
+
+        <div class="verification">
+          <ul>
+            <li>หน้า landing page ของคุณตรงกับ <code>finish/</code> ทั้งบนจอกว้างและจอเล็ก</li>
+            <li>อธิบายประโยค "Flexbox ใส่ที่ parent แล้วมันจะจัด children ข้างใน" ให้เพื่อนฟังได้</li>
+            <li>ตอบคำถามทบทวนได้ครบทุกข้อ</li>
+            <li>เริ่มทำการบ้านและตรวจ Requirements ครบทั้ง 9 ข้อ</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="10_errors_and_challenges.html" rel="prev">ก่อนหน้า: Error ที่เจอบ่อย และ Mini Challenge</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

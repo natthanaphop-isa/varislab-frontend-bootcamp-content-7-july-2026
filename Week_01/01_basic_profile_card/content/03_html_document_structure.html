@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เขียนโครงพื้นฐานของไฟล์ index.html ทั้ง DOCTYPE, html, head และ body พร้อมเชื่อมไฟล์ style.css" />
+    <title>โครงของเอกสาร HTML | สร้าง Professional Profile Card</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 03 · โครงสร้างด้วย HTML (HTML Structure)</p>
+          <h1>โครงของเอกสาร HTML</h1>
+          <p class="lesson-original-title" lang="en">HTML Document Structure</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เขียนโครงพื้นฐานของไฟล์ HTML ได้ครบ</li>
+            <li>อธิบายความต่างระหว่าง <code>&lt;head&gt;</code> กับ <code>&lt;body&gt;</code></li>
+            <li>เชื่อมไฟล์ CSS เข้ากับหน้าเว็บด้วย <code>&lt;link&gt;</code></li>
+          </ul>
+        </section>
+
+        <h2>HTML ทำหน้าที่อะไร</h2>
+        <p>HTML มีหน้าที่สร้าง<strong>โครงสร้าง</strong>ของหน้าเว็บ หรือพูดง่าย ๆ คือบอก browser ว่า "ในหน้านี้มีอะไรบ้าง" HTML เขียนด้วย <strong>tag</strong> ซึ่งอยู่ในวงเล็บมุม เช่น <code>&lt;p&gt;</code> ส่วนใหญ่มาเป็นคู่ มี tag เปิดและ tag ปิด (tag ปิดมี <code>/</code> นำหน้า) และเนื้อหาจะอยู่ตรงกลาง:</p>
+        <pre><code class="language-html">&lt;p&gt;นี่คือข้อความหนึ่งย่อหน้า&lt;/p&gt;</code></pre>
+        <p>tag เปิด + เนื้อหา + tag ปิด รวมกันเรียกว่า <strong>element</strong> คำนี้จะเจอบ่อยมากตลอดคอร์ส</p>
+
+        <h2>เขียนโครงของไฟล์ index.html</h2>
+        <p>เปิดไฟล์ <code>index.html</code> ที่สร้างไว้ แล้วพิมพ์โค้ดด้านล่าง แนะนำให้<strong>พิมพ์เองทีละส่วน</strong> แทนการ copy ทั้งก้อน เพราะมือจะเริ่มคุ้นกับ syntax ไปพร้อมกัน</p>
+        <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="th"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+    &lt;title&gt;Professional Profile Card&lt;/title&gt;
+    &lt;link rel="stylesheet" href="style.css" /&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+        <p><code>&lt;body&gt;</code> ยังว่างอยู่ เนื้อหาของการ์ดเราจะใส่กันในบทถัดไป ตอนนี้มาทำความเข้าใจทีละบรรทัดก่อน</p>
+
+        <h2>อ่านโค้ดทีละส่วน</h2>
+
+        <h3><code>&lt;!DOCTYPE html&gt;</code></h3>
+        <p>บรรทัดแรกของไฟล์ บอก browser ว่าเอกสารนี้เป็น HTML สมัยใหม่ (HTML5) ใส่ไว้บนสุดเสมอ</p>
+
+        <h3><code>&lt;html lang="th"&gt;</code></h3>
+        <p>element ที่ครอบทุกอย่างในหน้า ส่วน <code>lang="th"</code> บอกว่าภาษาหลักของเนื้อหาเป็นภาษาไทย ข้อความ <code>lang="th"</code> แบบนี้เรียกว่า <strong>attribute</strong> คือข้อมูลเพิ่มเติมที่เขียนไว้ใน tag เปิด ในรูปแบบ <code>ชื่อ="ค่า"</code></p>
+
+        <h3><code>&lt;head&gt;</code></h3>
+        <p>เก็บ<strong>ข้อมูลเกี่ยวกับหน้าเว็บ</strong> ที่ผู้ใช้ไม่ได้เห็นเป็นเนื้อหาโดยตรง เช่น ชื่อหน้า การตั้งค่า และการเชื่อมไฟล์ CSS:</p>
+        <ul>
+          <li><code>&lt;meta charset="UTF-8" /&gt;</code> — ตั้งค่าการเข้ารหัสตัวอักษร ทำให้ภาษาไทยแสดงผลถูกต้อง ไม่เป็นตัวอักษรเพี้ยน</li>
+          <li><code>&lt;meta name="viewport" ... /&gt;</code> — ทำให้หน้าเว็บปรับขนาดตามความกว้างหน้าจอ เช่น บนมือถือ</li>
+          <li><code>&lt;title&gt;Professional Profile Card&lt;/title&gt;</code> — ชื่อหน้าที่จะไปโผล่บนแท็บของ browser</li>
+          <li><code>&lt;link rel="stylesheet" href="style.css" /&gt;</code> — <strong>เชื่อมไฟล์ <code>style.css</code> เข้ามา</strong> ถ้าไม่มีบรรทัดนี้ CSS ที่เราจะเขียนจะไม่มีผลกับหน้าเว็บเลย</li>
+        </ul>
+
+        <h3><code>&lt;body&gt;</code></h3>
+        <p>ทุกอย่างที่อยู่ใน <code>&lt;body&gt;</code> คือ<strong>สิ่งที่ผู้ใช้เห็นจริงบนหน้าเว็บ</strong> การ์ดของเราทั้งใบจะอยู่ในส่วนนี้</p>
+
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>ส่วน</th>
+                <th>เก็บอะไร</th>
+                <th>ผู้ใช้เห็นบนหน้าจอไหม</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>&lt;head&gt;</code></td>
+                <td>ข้อมูลเกี่ยวกับหน้า การตั้งค่า การเชื่อมไฟล์ CSS</td>
+                <td>ไม่เห็นเป็นเนื้อหา (ยกเว้น title บนแท็บ)</td>
+              </tr>
+              <tr>
+                <td><code>&lt;body&gt;</code></td>
+                <td>เนื้อหาของหน้า เช่น หัวข้อ ข้อความ ปุ่ม</td>
+                <td>เห็น</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <p>สังเกตว่าบางบรรทัดอย่าง <code>&lt;meta ... /&gt;</code> และ <code>&lt;link ... /&gt;</code> ไม่มี tag ปิดแยก เพราะเป็น element ที่ไม่มีเนื้อหาข้างใน ส่วนการย่อหน้า (indent) ช่วยให้คนอ่านโค้ดเห็นว่าอะไรอยู่ข้างในอะไร browser ไม่ได้บังคับ แต่ควรทำให้เป็นนิสัย</p>
+        </div>
+
+        <div class="warning">
+          <p>ลืมปิด tag หรือปิดผิดลำดับเป็นความผิดพลาดที่เจอบ่อย เช่น เปิด <code>&lt;head&gt;</code> แล้วลืม <code>&lt;/head&gt;</code> ให้เช็กว่า tag ที่เปิดทีหลังต้องปิดก่อนเสมอ</p>
+        </div>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>Save ไฟล์ แล้ว refresh browser หน้าเว็บยังว่างเปล่า (เพราะ <code>&lt;body&gt;</code> ยังไม่มีเนื้อหา) แต่แท็บของ browser จะแสดงชื่อ <code>Professional Profile Card</code></p>
+        </section>
+
+        <section class="verification" aria-labelledby="check-heading">
+          <h2 id="check-heading">ก่อนไปบทถัดไป เช็กว่า</h2>
+          <ul>
+            <li>แท็บ browser แสดงชื่อ <code>Professional Profile Card</code></li>
+            <li>ใน <code>&lt;head&gt;</code> มีบรรทัด <code>&lt;link rel="stylesheet" href="style.css" /&gt;</code> และชื่อไฟล์สะกดตรงกับไฟล์จริง</li>
+            <li>tag ทุกตัวที่เปิดไว้ถูกปิดครบ</li>
+          </ul>
+        </section>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="02_project_setup.html" rel="prev">ก่อนหน้า: ดูผลลัพธ์และสร้างโปรเจกต์แรก</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="04_building_the_card.html" rel="next">ถัดไป: สร้างเนื้อหาของการ์ด</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

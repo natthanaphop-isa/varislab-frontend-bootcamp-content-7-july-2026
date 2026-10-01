@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ลองทำให้โค้ดพังแบบตั้งใจ 3 แบบที่มือใหม่เจอบ่อยกับฟอร์ม: ลืม preventDefault, id ไม่ตรงกัน และลืม .value พร้อมวิธีสังเกตและแก้ไข" />
+    <title>Error ที่เจอบ่อยและวิธีแก้ | สร้างฟอร์มรับข้อมูลคอร์ส</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 08 · ฝึกฝนและสรุป (Practice &amp; Wrap Up)</p>
+          <h1>Error ที่เจอบ่อยและวิธีแก้</h1>
+          <p class="lesson-original-title" lang="en">Common Errors</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>จำอาการของฟอร์มที่ลืม <code>event.preventDefault()</code> ได้</li>
+            <li>ไล่เช็ก <code>id</code> ระหว่าง HTML กับ JavaScript เมื่อ JavaScript ไม่ทำงาน</li>
+            <li>แยกได้ว่าเมื่อไหร่ต้องใช้ element และเมื่อไหร่ต้องใช้ <code>.value</code></li>
+          </ul>
+        </section>
+
+        <p>การทำให้โค้ดพังแบบตั้งใจแล้วดูว่าเกิดอะไรขึ้น คือวิธีที่ดีมากในการจำ error เพราะวันที่มันพังจริง คุณจะจำอาการได้ทันที ในบทนี้ให้ลองทำทีละข้อกับโปรเจกต์ที่เสร็จแล้ว <strong>และอย่าลืมแก้กลับทุกครั้ง</strong>ก่อนไปข้อถัดไป</p>
+
+        <div class="note">
+          <p>เปิด DevTools ของ browser ไว้ที่แท็บ <strong>Console</strong> ระหว่างทดลอง (คลิกขวาที่หน้าเว็บ → Inspect แล้วเลือก Console) error ของ JavaScript จะแสดงเป็นข้อความสีแดงที่นี่</p>
+        </div>
+
+        <h2>Error 1: ลืม event.preventDefault()</h2>
+        <p>ลองลบ (หรือใส่ <code>//</code> หน้า) บรรทัดนี้ใน <code>script.js</code>:</p>
+        <pre><code class="language-javascript">event.preventDefault();
+</code></pre>
+        <p>แล้วกรอกฟอร์มและกดส่ง</p>
+        <div class="warning">
+          <p><strong>อาการ:</strong> หน้าเว็บ refresh ทันทีหลัง submit ผลคือเราอาจไม่เห็นข้อความที่ JavaScript แสดงเลย หรือเห็นแว้บเดียวแล้วหายไป และข้อมูลที่กรอกไว้ก็หายไปด้วย</p>
+        </div>
+        <p><strong>ทำไมถึงเป็นแบบนี้:</strong> นี่คือพฤติกรรมปกติของ form ใน HTML — submit แล้ว reload หน้า JavaScript ของเราทำงานจริง แต่หน้าเว็บถูกโหลดใหม่ทับไปก่อนที่เราจะได้เห็น</p>
+        <p><strong>วิธีแก้:</strong> ใส่ <code>event.preventDefault();</code> กลับไปเป็นบรรทัดแรกใน function ของ <code>submit</code></p>
+
+        <h2>Error 2: id ไม่ตรงกัน</h2>
+        <p>ใน HTML ช่องชื่อของเรามี <code>id="fullName"</code>:</p>
+        <pre><code class="language-html">&lt;input id="fullName" /&gt;
+</code></pre>
+        <p>ลองแก้ JavaScript ให้พิมพ์ id ผิดเป็น:</p>
+        <pre><code class="language-javascript">const fullNameInput = document.getElementById("name");
+</code></pre>
+        <div class="warning">
+          <p><strong>อาการ:</strong> กดส่งแล้วฟอร์มอ่านค่าจากช่องนี้ไม่ได้ ใน Console จะเห็น error สีแดงประมาณว่าอ่าน <code>value</code> จาก <code>null</code> ไม่ได้ (Cannot read properties of null) และเพราะ <code>event.preventDefault()</code> ถูกเรียกไปก่อนแล้ว หน้าเว็บจึงไม่ reload แต่กล่องผลลัพธ์ก็ไม่เปลี่ยน</p>
+        </div>
+        <p><strong>ทำไมถึงเป็นแบบนี้:</strong> JavaScript ไปหา element ที่มี id ชื่อ <code>name</code> แต่ใน HTML ไม่มี id นี้ <code>getElementById</code> จึงคืนค่า <code>null</code> (ไม่เจออะไร) พอเราสั่ง <code>null.value</code> โปรแกรมก็พัง</p>
+        <p><strong>วิธีแก้:</strong> เวลา JavaScript ไม่ทำงาน ให้เช็ก <strong>id ใน HTML กับ JavaScript ให้ตรงกันก่อนเสมอ</strong> — ตัวสะกด ตัวพิมพ์เล็ก-ใหญ่ ต้องเหมือนกันทุกตัวอักษร</p>
+
+        <h2>Error 3: ลืม .value</h2>
+        <p>ลองแก้บรรทัดอ่านค่าชื่อให้ผิดเป็น (ลบ <code>.trim()</code> ออกด้วยเพื่อให้เห็นอาการชัด):</p>
+        <pre><code class="language-javascript">const fullName = fullNameInput;
+</code></pre>
+        <p>แทนที่จะเป็น:</p>
+        <pre><code class="language-javascript">const fullName = fullNameInput.value;
+</code></pre>
+        <div class="warning">
+          <p><strong>อาการ:</strong> ไม่มี error สีแดง แต่ข้อความสรุปแสดงชื่อเป็นอะไรแปลก ๆ อย่าง <code>[object HTMLInputElement]</code> แทนชื่อที่พิมพ์ — error แบบนี้หาเจอยากกว่า เพราะโปรแกรมไม่ได้พัง แค่ได้ค่าผิด</p>
+        </div>
+        <p><strong>ทำไมถึงเป็นแบบนี้:</strong> <code>fullNameInput</code> คือตัว input <strong>ทั้งกล่อง</strong> ส่วน <code>fullNameInput.value</code> คือ<strong>ค่าที่ผู้ใช้พิมพ์เข้าไปในกล่อง</strong></p>
+        <p><strong>วิธีแก้:</strong> ถ้าต้องการข้อมูลที่ผู้ใช้กรอก ต้องใช้ <code>.value</code> เสมอ</p>
+
+        <h2>สรุป checklist เวลาฟอร์มไม่ทำงาน</h2>
+        <div class="comparison" role="region" aria-label="สรุปอาการและวิธีแก้" tabindex="0">
+          <table>
+            <thead><tr><th>อาการ</th><th>สาเหตุที่น่าสงสัย</th><th>เช็กอะไร</th></tr></thead>
+            <tbody>
+              <tr><td>กดส่งแล้วหน้ากระพริบ/reload ข้อความหาย</td><td>ไม่มี <code>event.preventDefault()</code></td><td>บรรทัดแรกใน function ของ <code>submit</code></td></tr>
+              <tr><td>มี error สีแดงเกี่ยวกับ <code>null</code> ใน Console</td><td><code>id</code> ไม่ตรงกัน</td><td>เทียบ <code>id</code> ใน HTML กับ <code>getElementById</code> ทีละตัว</td></tr>
+              <tr><td>ข้อความแสดง <code>[object HTML…Element]</code></td><td>ลืม <code>.value</code></td><td>บรรทัดที่อ่านค่ามาเก็บในตัวแปร</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>ลองทำทั้ง 3 error และเห็นอาการของแต่ละแบบด้วยตาตัวเอง</li>
+            <li>เปิดแท็บ Console แล้วอ่าน error สีแดงของ Error 2 ได้</li>
+            <li>แก้โค้ดกลับครบทุกจุด และฟอร์มทำงานได้ตามปกติเหมือนตอนจบบทที่ 7</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="07_if_else_validation.html" rel="prev">ก่อนหน้า: ตรวจสอบข้อมูลด้วย if/else</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="09_mini_challenges.html" rel="next">ถัดไป: Mini Challenge</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

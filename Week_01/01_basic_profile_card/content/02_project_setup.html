@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ดูว่า Profile Card ที่จะสร้างมีอะไรบ้าง แล้วสร้างโฟลเดอร์โปรเจกต์พร้อมไฟล์ index.html, style.css และ script.js" />
+    <title>ดูผลลัพธ์และสร้างโปรเจกต์แรก | สร้าง Professional Profile Card</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 02 · ภาพรวมก่อนเริ่ม (Getting Started)</p>
+          <h1>ดูผลลัพธ์และสร้างโปรเจกต์แรก</h1>
+          <p class="lesson-original-title" lang="en">Project Preview &amp; Setup</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>บอกได้ว่า Profile Card ที่จะสร้างประกอบด้วยอะไรบ้าง</li>
+            <li>สร้างโฟลเดอร์โปรเจกต์และไฟล์ 3 ไฟล์ใน Cursor หรือ VS Code</li>
+            <li>อธิบายได้ว่าไฟล์ <code>index.html</code>, <code>style.css</code> และ <code>script.js</code> มีหน้าที่อะไร</li>
+          </ul>
+        </section>
+
+        <h2>สิ่งที่เรากำลังจะสร้าง</h2>
+        <p>ผลลัพธ์ของคอร์สนี้คือการ์ดแนะนำตัวหนึ่งใบ วางอยู่กลางหน้าจอบนพื้นหลังสีเข้ม ในการ์ดมี:</p>
+        <ul>
+          <li><strong>Label</strong> บอกเป้าหมาย เช่น <code>Aspiring Software Developer</code></li>
+          <li><strong>ชื่อของเรา</strong> เป็นหัวข้อตัวใหญ่</li>
+          <li><strong>ข้อความแนะนำตัว</strong> สั้น ๆ</li>
+          <li><strong>ปุ่ม</strong> หนึ่งปุ่ม</li>
+          <li>เมื่อ<strong>กดปุ่ม ข้อความแนะนำตัวจะเปลี่ยน</strong>เป็นข้อความบอกเป้าหมาย</li>
+        </ul>
+        <p>นี่ยังไม่ใช่ระบบใหญ่ แต่ concept ข้างในคือพื้นฐานของเว็บจริง และการ์ดแบบนี้ต่อยอดไปเป็นหน้า Portfolio, หน้าโปรไฟล์ผู้สมัครงาน, หน้าแนะนำคอร์ส หรือส่วนหนึ่งของระบบจริงได้ เราจะค่อย ๆ สร้างมันขึ้นมาจากไฟล์ว่าง ๆ</p>
+
+        <h2>สร้างโฟลเดอร์โปรเจกต์</h2>
+        <p>เปิด Cursor หรือ VS Code แล้วสร้างโฟลเดอร์ใหม่ชื่อ:</p>
+        <pre><code class="language-text">professional-profile-card</code></pre>
+        <p>จากนั้นเปิดโฟลเดอร์นี้ใน editor (เมนู File → Open Folder) เพื่อให้เห็นไฟล์ทั้งหมดของโปรเจกต์ในแถบด้านข้าง</p>
+
+        <h2>สร้างไฟล์ 3 ไฟล์</h2>
+        <p>ในโฟลเดอร์นี้ สร้างไฟล์ว่าง ๆ 3 ไฟล์ ให้ได้โครงแบบนี้:</p>
+        <pre class="file-tree">professional-profile-card/
+├── index.html   # โครงสร้างของหน้าเว็บ
+├── style.css    # ตกแต่งหน้าตา
+└── script.js    # ทำให้หน้าเว็บมี interaction</pre>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>ไฟล์</th>
+                <th>ภาษา</th>
+                <th>หน้าที่</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>index.html</code></td>
+                <td>HTML</td>
+                <td>โครงสร้าง — ในหน้านี้มีอะไรบ้าง</td>
+              </tr>
+              <tr>
+                <td><code>style.css</code></td>
+                <td>CSS</td>
+                <td>หน้าตา — สี ระยะห่าง ขนาด การจัดวาง</td>
+              </tr>
+              <tr>
+                <td><code>script.js</code></td>
+                <td>JavaScript</td>
+                <td>พฤติกรรม — กดปุ่มแล้วเกิดอะไรขึ้น</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="warning">
+          <p>สะกดชื่อไฟล์ให้ตรงเป๊ะ ใช้ตัวพิมพ์เล็กทั้งหมด และระวังนามสกุลไฟล์ เช่น <code>style.css</code> ไม่ใช่ <code>styles.css</code> หรือ <code>style.css.txt</code> เพราะในบทต่อ ๆ ไป HTML จะอ้างถึงไฟล์เหล่านี้ด้วยชื่อ ถ้าชื่อไม่ตรง browser จะหาไฟล์ไม่เจอ</p>
+        </div>
+
+        <h2>เปิดหน้าเว็บใน browser</h2>
+        <p>ไฟล์ <code>index.html</code> คือหน้าเว็บที่เราจะเปิดดูใน browser วิธีง่ายที่สุดคือไปที่โฟลเดอร์โปรเจกต์ในเครื่อง แล้วดับเบิลคลิกไฟล์ <code>index.html</code> (หรือลากไฟล์ไปวางในหน้าต่าง browser) ตอนนี้ไฟล์ยังว่างอยู่ หน้าจอจึงว่างเปล่า เดี๋ยวบทถัดไปเราจะเริ่มเติมเนื้อหากัน</p>
+
+        <div class="note">
+          <p>รูปแบบการทำงานที่เราจะใช้ตลอดคอร์สคือ <strong>แก้โค้ด → Save ไฟล์ → Refresh browser → ดูผลลัพธ์</strong> ทำซ้ำไปเรื่อย ๆ ถ้าแก้แล้วหน้าเว็บไม่เปลี่ยน ให้นึกถึงลำดับนี้ก่อนเสมอ</p>
+        </div>
+
+        <section class="verification" aria-labelledby="check-heading">
+          <h2 id="check-heading">ก่อนไปบทถัดไป เช็กว่า</h2>
+          <ul>
+            <li>มีโฟลเดอร์ <code>professional-profile-card</code> เปิดอยู่ใน editor</li>
+            <li>ในโฟลเดอร์มีไฟล์ <code>index.html</code>, <code>style.css</code> และ <code>script.js</code> ครบ ชื่อสะกดถูก</li>
+            <li>เปิด <code>index.html</code> ใน browser ได้ (ตอนนี้หน้าว่างเป็นเรื่องปกติ)</li>
+          </ul>
+        </section>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="01_what_is_a_web_page.html" rel="prev">ก่อนหน้า: หน้าเว็บประกอบขึ้นจากอะไร</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="03_html_document_structure.html" rel="next">ถัดไป: โครงของเอกสาร HTML</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

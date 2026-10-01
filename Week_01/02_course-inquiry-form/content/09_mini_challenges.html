@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ฝึกต่อยอดฟอร์มด้วยตัวเอง: เปลี่ยนเป็นฟอร์มของตัวเอง เพิ่มช่องใหม่ อ่านค่าและ validate ช่องนั้น และโบนัสแสดงข้อความให้กำลังใจตามระดับพื้นฐาน" />
+    <title>Mini Challenge | สร้างฟอร์มรับข้อมูลคอร์ส</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 09 · ฝึกฝนและสรุป (Practice &amp; Wrap Up)</p>
+          <h1>Mini Challenge</h1>
+          <p class="lesson-original-title" lang="en">Mini Challenges</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ปรับข้อความในฟอร์มให้เป็นฟอร์มของตัวเอง</li>
+            <li>เพิ่มช่องกรอกใหม่ครบทั้ง 3 ชั้น: HTML, JavaScript อ่านค่า และ validation</li>
+            <li>ใช้ <code>let</code> กับ <code>if</code> สร้างข้อความที่เปลี่ยนไปตามค่าที่ผู้ใช้เลือก</li>
+          </ul>
+        </section>
+
+        <p>ถึงเวลาลองเองแล้ว ทำ challenge ตามลำดับ เพราะแต่ละข้อต่อยอดจากข้อก่อนหน้า ถ้าติด ให้ย้อนกลับไปดู pattern ในบทที่ 2–7 — ทุกข้อใช้แค่สิ่งที่เราเรียนมาแล้ว ไม่ต้องกลัวพัง การทำให้พังแล้วค่อยแก้คือวิธีเรียนเขียนโค้ดที่ดีที่สุดวิธีหนึ่ง</p>
+
+        <h2>Challenge 1: ทำให้เป็นฟอร์มของตัวเอง</h2>
+        <p>เปลี่ยนข้อความในฟอร์ม (หัวข้อ, คำอธิบาย, label, placeholder, ข้อความในกล่องผลลัพธ์) ให้เป็นฟอร์มของคุณเอง เช่น:</p>
+        <ul>
+          <li>Job Application Form</li>
+          <li>Portfolio Contact Form</li>
+        </ul>
+        <div class="note">
+          <p>เปลี่ยนแค่<strong>ข้อความที่ผู้ใช้เห็น</strong> อย่าเพิ่งเปลี่ยน <code>id</code> ถ้าจะเปลี่ยน <code>id</code> ต้องไปแก้ใน JavaScript ให้ตรงกันด้วย (จำ Error 2 จากบทที่แล้วได้ไหม)</p>
+        </div>
+
+        <h2>Challenge 2: เพิ่มช่องใหม่ 1 ช่อง</h2>
+        <p>เพิ่ม input ใหม่ เช่น email หรือ phone ใช้ pattern <code>form-group</code> + <code>label</code> + <code>input</code> เดิม และอย่าลืมให้ <code>for</code> ตรงกับ <code>id</code></p>
+        <p>คำใบ้: สำหรับ email ลองใช้ <code>type="email"</code> และสำหรับเบอร์โทรใช้ <code>type="tel"</code> — CSS ที่เราเขียนไว้กับ <code>input</code> จะใช้กับช่องใหม่ให้อัตโนมัติ</p>
+        <div class="note">
+          <p>ถ้าใช้ <code>type="email"</code> แล้วพิมพ์ข้อความที่ไม่ใช่รูปแบบ email (เช่น <code>abc</code>) browser จะขึ้นคำเตือนเองและ<strong>ไม่ส่งฟอร์ม</strong> event <code>submit</code> จึงไม่เกิด และ JavaScript ของเราจะดูเหมือนไม่ทำงาน — นี่ไม่ใช่ bug ให้ทดสอบด้วย email ที่ถูกรูปแบบ</p>
+        </div>
+
+        <h2>Challenge 3: อ่านค่าจากช่องใหม่แล้วแสดงผล</h2>
+        <p>ให้ JavaScript อ่านค่าจากช่องใหม่ แล้วแสดงใน result box ต้องทำ 3 จุด:</p>
+        <ol>
+          <li>หยิบ element ด้วย <code>document.getElementById</code> ไว้ด้านบนร่วมกับตัวอื่น</li>
+          <li>อ่าน <code>.value</code> (และ <code>.trim()</code>) มาเก็บในตัวแปรข้างใน function</li>
+          <li>แทรกตัวแปรนั้นลงใน template literal ด้วย <code>${…}</code></li>
+        </ol>
+
+        <h2>Challenge 4: validate ช่องใหม่</h2>
+        <p>เพิ่มเงื่อนไขว่าช่องใหม่ต้องไม่ว่าง คำใบ้: เติมเงื่อนไขต่อท้ายใน <code>if</code> เดิมด้วย <code>||</code> แล้วอย่าลืมแก้ข้อความเตือนให้บอกผู้ใช้ครบว่าต้องกรอกอะไรบ้าง</p>
+
+        <h2>Bonus: ข้อความให้กำลังใจสำหรับคนเริ่มจากศูนย์</h2>
+        <p>ถ้าผู้ใช้เลือกพื้นฐานเป็น "เริ่มจากศูนย์" ให้แสดงข้อความให้กำลังใจเพิ่ม เช่น "ไม่เป็นไรครับ Bootcamp นี้ออกแบบมาให้เริ่มอย่างเป็นขั้นตอน" ตัวอย่าง logic:</p>
+        <pre><code class="language-javascript">let extraMessage = "";
+
+if (level === "เริ่มจากศูนย์") {
+  extraMessage =
+    "ไม่เป็นไรครับ Bootcamp นี้ออกแบบมาให้เริ่มอย่างเป็นขั้นตอน";
+}
+
+resultBox.textContent = `สวัสดีครับคุณ ${fullName}
+เป้าหมายของคุณคือ ${goal}
+ระดับพื้นฐานตอนนี้คือ ${level}
+${extraMessage}`;
+</code></pre>
+        <ul>
+          <li><code>let</code> — ประกาศตัวแปรที่<strong>เปลี่ยนค่าได้ทีหลัง</strong> ต่างจาก <code>const</code> เราเริ่มด้วยข้อความว่าง <code>""</code> แล้วค่อยใส่ข้อความเมื่อเงื่อนไขเป็นจริง</li>
+          <li>ถ้าเลือกระดับอื่น <code>extraMessage</code> ยังเป็น <code>""</code> จึงไม่มีอะไรแสดงเพิ่ม</li>
+          <li>โค้ดส่วนนี้ต้องวาง<strong>หลัง</strong> <code>if</code> ที่ตรวจข้อมูลว่าง และแทนที่ <code>resultBox.textContent</code> เดิม — ลองคิดดูว่าจะรวมบรรทัด "ข้อความเพิ่มเติม" กลับเข้าไปด้วยอย่างไร</li>
+        </ul>
+
+        <div class="warning">
+          <p>ถ้าประกาศ <code>extraMessage</code> ด้วย <code>const</code> แล้วพยายามกำหนดค่าใหม่ใน <code>if</code> จะเกิด error เพราะ <code>const</code> เปลี่ยนค่าไม่ได้ กรณีที่ต้องเปลี่ยนค่าทีหลังต้องใช้ <code>let</code></p>
+        </div>
+
+        <h2>ทดลองเพิ่มเติม (ไม่บังคับ): แสดงผลแยกบรรทัด</h2>
+        <p>จากบทที่ 6 เรารู้ว่า browser ยุบการขึ้นบรรทัดใหม่ในข้อความเป็นช่องว่าง ถ้าอยากให้ข้อความสรุปแสดงแยกบรรทัดตามที่เขียนใน template literal ลองเพิ่ม property นี้ใน <code>.result-box</code> ของ <code>style.css</code>:</p>
+        <pre><code class="language-css">.result-box {
+  /* property เดิมทั้งหมด … */
+  white-space: pre-line;
+}
+</code></pre>
+        <p><code>white-space: pre-line</code> บอก browser ให้เคารพการขึ้นบรรทัดใหม่ในข้อความ อ่านเพิ่มได้ที่ <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/white-space" target="_blank" rel="noreferrer">MDN: white-space</a></p>
+
+        <div class="verification">
+          <ul>
+            <li>ฟอร์มมีหัวข้อและ label เป็นของตัวเอง</li>
+            <li>มีช่องใหม่อย่างน้อย 1 ช่อง ที่คลิก label แล้ว focus เข้าช่องถูกต้อง</li>
+            <li>ค่าจากช่องใหม่แสดงใน result box</li>
+            <li>ปล่อยช่องใหม่ว่างแล้วกดส่ง ได้ข้อความเตือน</li>
+            <li>(Bonus) เลือก "เริ่มจากศูนย์" แล้วเห็นข้อความให้กำลังใจ เลือกระดับอื่นแล้วไม่เห็น</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="08_common_errors.html" rel="prev">ก่อนหน้า: Error ที่เจอบ่อยและวิธีแก้</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="10_wrap_up_homework.html" rel="next">ถัดไป: สรุปบทเรียนและการบ้าน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

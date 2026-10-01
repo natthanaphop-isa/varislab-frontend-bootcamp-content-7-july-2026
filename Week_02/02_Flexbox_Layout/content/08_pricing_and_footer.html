@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ใช้ Flexbox ที่เรียนมาทำ pricing card 2 ใบ พร้อม card แนะนำแบบ highlight และปิดท้ายหน้าด้วย footer" />
+    <title>Pricing Section และ Footer | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 08 · สร้าง Landing Page ด้วย Flexbox (Building the Page)</p>
+          <h1>Pricing Section และ Footer</h1>
+          <p class="lesson-original-title" lang="en">Pricing Cards &amp; Footer</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>นำแพตเทิร์น "parent flex + gap + ลูก flex: 1" มาใช้ซ้ำกับ pricing cards ได้ด้วยตัวเอง</li>
+            <li>ใช้ class เสริม (<code>.highlight</code>) ทำให้ card ใบหนึ่งเด่นกว่าใบอื่น</li>
+            <li>สังเกตผลของ specificity เมื่อ selector สองตัวแย่งกันกำหนดสีเดียวกัน</li>
+            <li>ปิดหน้าด้วย footer</li>
+          </ul>
+        </section>
+
+        <h2>หัวข้อของ section</h2>
+        <p>ก่อนถึง card มีหัวข้อ section ที่ใช้ <code>.eyebrow</code> ร่วมกับ hero (เราแต่งไว้แล้วในบทที่ 06) เหลือแค่คุมความกว้างและขนาดหัวข้อ:</p>
+        <pre><code class="language-css">.section-header {
+    max-width: 640px;
+    margin-bottom: 28px;
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 36px;
+}</code></pre>
+        <p><code>max-width: 640px</code> ป้องกันไม่ให้หัวข้อยาวเป็นบรรทัดเดียวยืดเต็มความกว้างของหน้า ซึ่งอ่านยาก</p>
+
+        <h2>ลองคิดก่อน: pricing cards</h2>
+        <p>โครงสร้างของ pricing เหมือน feature cards เลย:</p>
+        <pre><code class="language-html">&lt;div class="pricing-cards"&gt;
+  &lt;article class="pricing-card"&gt;...&lt;/article&gt;
+  &lt;article class="pricing-card highlight"&gt;...&lt;/article&gt;
+&lt;/div&gt;</code></pre>
+        <p>ก่อนดูเฉลย ลองเขียน CSS เองก่อนให้ card 2 ใบเรียงแถว ห่างกัน 20px และกว้างเท่ากัน แล้วค่อยเทียบกับโค้ดด้านล่าง</p>
+
+        <h2>Flexbox ของ pricing</h2>
+        <pre><code class="language-css">.pricing-cards {
+    display: flex;
+    gap: 20px;
+}
+
+.pricing-card {
+    flex: 1;
+    padding: 28px;
+    border-radius: 24px;
+    background: #1e293b;
+    border: 1px solid #334155;
+}
+
+.pricing-card.highlight {
+    border-color: #38bdf8;
+}</code></pre>
+        <ul>
+          <li><code>.pricing-cards</code> คือ parent — <code>display: flex</code> + <code>gap</code></li>
+          <li><code>.pricing-card</code> คือ children — <code>flex: 1</code> แบ่งพื้นที่เท่ากัน พร้อมขอบสีเทา</li>
+          <li><code>.pricing-card.highlight</code> (ไม่มีช่องว่างระหว่างสอง class) — เลือก element ที่มี<strong>ทั้งสอง class</strong> พร้อมกัน เปลี่ยนแค่สีขอบเป็นสีฟ้า ทำให้แผนผ่อนดูเด่น</li>
+        </ul>
+        <div class="note">
+          <p><code>.pricing-card.highlight</code> (ติดกัน) กับ <code>.pricing-card .highlight</code> (มีช่องว่าง) ความหมายต่างกันมาก แบบมีช่องว่างแปลว่า "element ที่มี class <code>highlight</code> ซึ่งอยู่<em>ข้างใน</em> <code>.pricing-card</code>" ซึ่งไม่ตรงกับ HTML ของเรา</p>
+        </div>
+
+        <h2>ข้อความใน card</h2>
+        <pre><code class="language-css">.pricing-card h3 {
+    margin: 0 0 16px;
+}
+
+.price {
+    margin: 0 0 16px;
+    color: #38bdf8;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.pricing-card p {
+    color: #cbd5e1;
+    line-height: 1.7;
+}</code></pre>
+
+        <div class="warning">
+          <p><strong>ลองสังเกต:</strong> ราคาในหน้าเว็บเป็นสีฟ้าหรือสีเทา? <code>.price</code> ตั้งสีฟ้าไว้ แต่ <code>.pricing-card p</code> ก็เลือก <code>&lt;p class="price"&gt;</code> ด้วย และตั้งสีเทา selector ที่มี class + ชื่อ tag (<code>.pricing-card p</code>) มี specificity สูงกว่า class เดียว (<code>.price</code>) สีเทาจึงชนะ ราคาจึงแสดงเป็นสีเทา ตัวหนา ขนาด 28px (property ที่ไม่ได้ชนกัน เช่น <code>font-size</code> ยังมาจาก <code>.price</code> ตามปกติ)</p>
+          <p>โค้ดใน <code>finish/</code> เป็นแบบนี้ ถ้าอยากทดลองให้ราคาเป็นสีฟ้า ลองเปลี่ยน selector <code>.price</code> เป็น <code>.pricing-card .price</code> ซึ่งมี 2 class จึงมี specificity สูงกว่า <code>.pricing-card p</code> (1 class + 1 tag) แล้ว refresh ดูผล</p>
+        </div>
+
+        <h2>Footer</h2>
+        <pre><code class="language-css">.site-footer {
+    border-top: 1px solid #1e293b;
+    padding: 24px 32px;
+    text-align: center;
+    color: #94a3b8;
+}</code></pre>
+        <p>footer ไม่ต้องใช้ Flexbox เพราะมีข้อความบรรทัดเดียว ใช้ <code>text-align: center</code> จัดกลางก็พอ และมีเส้นขอบบนสีเดียวกับเส้นใต้ header ให้หน้าดูสมดุล</p>
+        <div class="note">
+          <p>Flexbox ไม่ได้จำเป็นทุกที่ ใช้เมื่อมี "กล่องหลายใบที่ต้องจัดวางร่วมกัน" ส่วนข้อความบรรทัดเดียวที่อยากจัดกลาง <code>text-align</code> ง่ายกว่า</p>
+        </div>
+
+        <div class="expected-result">
+          <p>ส่วน Pricing มีป้าย "PRICING" สีฟ้า หัวข้อ "เลือกรูปแบบการเรียนที่เหมาะกับคุณ" และ card 2 ใบกว้างเท่ากัน ใบขวา (Installment) มีขอบสีฟ้า ด้านล่างสุดมี footer ข้อความสีเทาอยู่กลางหน้า ตอนนี้บนจอกว้าง หน้าเว็บของเราควรเหมือน <code>finish/</code> แล้ว เหลือแค่ responsive</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>pricing card 2 ใบเรียงแถว กว้างเท่ากัน ใบ Installment ขอบสีฟ้า</li>
+            <li>อธิบายได้ว่า <code>.pricing-card.highlight</code> เลือก element แบบไหน</li>
+            <li>บอกได้ว่าทำไมราคาแสดงเป็นสีเทาแม้ <code>.price</code> จะตั้งสีฟ้า</li>
+            <li>footer อยู่ล่างสุด ข้อความอยู่กลาง</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="07_feature_cards.html" rel="prev">ก่อนหน้า: Feature Cards เรียงแถวด้วย flex: 1</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="09_responsive_basics.html" rel="next">ถัดไป: Responsive เบื้องต้นด้วย @media และ flex-wrap</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

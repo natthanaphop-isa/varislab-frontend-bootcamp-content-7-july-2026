@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="จัด feature card 3 ใบให้เรียงเป็นแถวเดียวกัน มีระยะห่างเท่ากัน และกว้างเท่ากันด้วย display: flex, gap และ flex: 1" />
+    <title>Feature Cards เรียงแถวด้วย flex: 1 | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 07 · สร้าง Landing Page ด้วย Flexbox (Building the Page)</p>
+          <h1>Feature Cards เรียงแถวด้วย flex: 1</h1>
+          <p class="lesson-original-title" lang="en">Feature Cards</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>จัด card หลายใบให้เรียงเป็นแถวด้วย Flexbox ที่ parent</li>
+            <li>ใช้ <code>flex: 1</code> ให้ card ทุกใบกว้างเท่ากัน แม้เนื้อหาจะยาวไม่เท่ากัน</li>
+            <li>อธิบายได้ว่าทำไม <code>gap</code> ช่วยให้ layout "หายใจได้"</li>
+          </ul>
+        </section>
+
+        <h2>ใครคือแม่ ใครคือลูก</h2>
+        <pre><code class="language-html">&lt;section class="features-section"&gt;
+  &lt;article class="feature-card"&gt;...&lt;/article&gt;
+  &lt;article class="feature-card"&gt;...&lt;/article&gt;
+  &lt;article class="feature-card"&gt;...&lt;/article&gt;
+&lt;/section&gt;</code></pre>
+        <ul>
+          <li><code>.features-section</code> เป็น parent</li>
+          <li><code>.feature-card</code> 3 ใบเป็น children</li>
+        </ul>
+
+        <h2>ขั้นที่ 1: เรียงเป็นแถว</h2>
+        <pre><code class="language-css">.features-section {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 72px;
+}</code></pre>
+        <p><code>display: flex</code> ทำให้ card เรียงเป็นแถว และ <code>gap</code> กำหนดระยะห่างระหว่าง card ส่วน <code>margin-bottom</code> คือระยะห่างก่อน pricing section</p>
+        <p>ลอง refresh ตอนนี้ จะเห็นว่า card เรียงแถวแล้ว แต่ความกว้างของแต่ละใบอาจไม่เท่ากัน เพราะ flex item จะกว้างตามเนื้อหาข้างใน card ที่ข้อความยาวกว่าจึงกว้างกว่า (ยังไม่มีพื้นหลัง อาจสังเกตยาก ขั้นถัดไปจะเห็นชัดขึ้น)</p>
+
+        <h2>ขั้นที่ 2: แบ่งพื้นที่เท่า ๆ กันด้วย <code>flex: 1</code></h2>
+        <pre><code class="language-css">.feature-card {
+    flex: 1;
+    padding: 24px;
+    border-radius: 20px;
+    background: #1e293b;
+}</code></pre>
+        <p><code>flex: 1</code> ทำให้ card แต่ละใบแบ่งพื้นที่ในแถวเท่า ๆ กัน ไม่ว่าข้อความในแต่ละใบจะยาวแค่ไหน ส่วน <code>padding</code>, <code>border-radius</code> และ <code>background</code> แต่งให้เป็นการ์ดสีเข้มมุมโค้ง</p>
+        <div class="note">
+          <p>สังเกตว่า card ทั้ง 3 ใบสูงเท่ากันด้วย ทั้งที่ข้อความยาวไม่เท่ากัน เพราะ <code>.features-section</code> ไม่ได้ตั้ง <code>align-items</code> จึงใช้ค่าเริ่มต้น <code>stretch</code> ที่ยืดลูกทุกตัวให้สูงเท่ากัน — ต่างจาก hero ที่เราตั้ง <code>center</code> ไว้</p>
+        </div>
+
+        <h2>ขั้นที่ 3: ข้อความใน card</h2>
+        <pre><code class="language-css">.feature-card h2 {
+    margin: 0 0 12px;
+    color: #38bdf8;
+}
+
+.feature-card p {
+    margin: 0;
+    color: #cbd5e1;
+    line-height: 1.7;
+}</code></pre>
+        <p>หัวข้อ card เป็นสีฟ้า ลบ margin บนออกเพื่อไม่ให้มีช่องว่างเกินที่หัว card และเว้นระยะล่าง 12px ก่อนย่อหน้า</p>
+
+        <div class="expected-result">
+          <p>ใต้ hero มี card สีเข้ม 3 ใบ (Manual First, Full-Stack Skills, AI Workflow) เรียงในแถวเดียว กว้างเท่ากัน สูงเท่ากัน และห่างกัน 20px</p>
+        </div>
+
+        <h2>ทดลอง: ถ้าไม่มี <code>gap</code></h2>
+        <p>ลองคอมเมนต์ <code>gap: 20px;</code> ใน <code>.features-section</code> ออก แล้ว refresh:</p>
+        <pre><code class="language-css">.features-section {
+    display: flex;
+    /* gap: 20px; */
+    margin-bottom: 72px;
+}</code></pre>
+        <p>card ยังเรียงเป็นแถวอยู่ แต่ชิดติดกันเกินไปจนแยกไม่ออกว่าใบไหนเป็นใบไหน <code>gap</code> คือสิ่งที่ช่วยให้ layout หายใจได้ ทดลองเสร็จแล้วเอาคอมเมนต์ออก</p>
+
+        <div class="warning">
+          <p><strong>ผิดบ่อย: ใส่ <code>display: flex</code> ผิดที่</strong></p>
+          <p>ถ้าเขียนแบบนี้ แต่ลืมใส่ที่ parent:</p>
+          <pre><code class="language-css">.feature-card {
+    display: flex;
+}</code></pre>
+          <p>card จะยังเรียงบน-ล่างเหมือนเดิม แถมข้างใน card กลับเพี้ยน เพราะ <code>h2</code> กับ <code>p</code> ถูกจัดให้อยู่แถวเดียวกันแทน ถ้าอยากจัด card หลายใบ ต้องใส่ <code>display: flex</code> ที่ parent ที่ครอบ card เหล่านั้น คือ <code>.features-section</code></p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>card 3 ใบอยู่แถวเดียวกัน กว้างเท่ากัน</li>
+            <li>อธิบายได้ว่า <code>display: flex</code>, <code>gap</code> และ <code>flex: 1</code> แต่ละตัวทำหน้าที่อะไรใน section นี้</li>
+            <li>บอกได้ว่าทำไม card ทุกใบสูงเท่ากันโดยที่เราไม่ได้ตั้ง <code>height</code></li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="06_hero_section.html" rel="prev">ก่อนหน้า: Hero Section แบบซ้าย-ขวา และ Flex Ratio</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="08_pricing_and_footer.html" rel="next">ถัดไป: Pricing Section และ Footer</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

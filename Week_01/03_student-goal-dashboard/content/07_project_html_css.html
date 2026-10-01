@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สร้างโฟลเดอร์โปรเจกต์ Student Goal Dashboard พร้อมโครง HTML ที่มีกล่องว่างรอ JavaScript และ CSS สำหรับ layout แบบ grid และการ์ดนักเรียน" />
+    <title>เตรียมโปรเจกต์ HTML และ CSS | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 07 · สร้าง Student Goal Dashboard (Building the Dashboard)</p>
+          <h1>เตรียมโปรเจกต์ HTML และ CSS</h1>
+          <p class="lesson-original-title" lang="en">Project Setup, HTML &amp; CSS</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>สร้างโฟลเดอร์และไฟล์ของโปรเจกต์ Student Goal Dashboard</li>
+            <li>เขียนโครง HTML ที่มี container ว่าง (<code>#studentList</code>) รอให้ JavaScript เติมการ์ด</li>
+            <li>เขียน CSS สำหรับหน้า dashboard, layout แบบ grid 3 คอลัมน์ และการ์ดนักเรียน</li>
+            <li>เข้าใจว่า class ที่ยังไม่มีใน HTML (<code>.student-card</code>, <code>.badge</code>) จะถูกใช้เมื่อ JavaScript สร้าง element</li>
+          </ul>
+        </section>
+
+        <h2>เราจะสร้างอะไร</h2>
+        <p>เราจะสร้างหน้า <strong>Mini Dashboard</strong> ที่แสดงรายชื่อนักเรียนและเป้าหมายของแต่ละคนเป็นการ์ดเรียงกัน โดยข้อมูลนักเรียนทั้งหมดอยู่ใน JavaScript (array of objects) และให้ <code>forEach</code> สร้างการ์ดให้ทีละใบ</p>
+        <p>concept นี้ต่อยอดได้อีกมากในชีวิตจริง เช่น Student dashboard, Candidate list, Course enrollment list, Product list, Task list หรือ CRM list — ทั้งหมดคือ “ข้อมูลหลายรายการที่แสดงเป็นการ์ดหรือแถว” เหมือนกัน</p>
+
+        <h2>สร้างโฟลเดอร์และไฟล์</h2>
+        <p>สร้างโฟลเดอร์ใหม่ชื่อ <code>student-goal-dashboard</code> แล้วสร้างไฟล์เปล่า 3 ไฟล์ข้างใน:</p>
+        <pre class="file-tree">student-goal-dashboard/
+├── index.html
+├── style.css
+└── script.js</pre>
+
+        <h2>HTML</h2>
+        <p>ใส่โค้ดนี้ใน <code>index.html</code>:</p>
+        <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="th"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+    &lt;title&gt;Student Goal Dashboard&lt;/title&gt;
+    &lt;link rel="stylesheet" href="style.css" /&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+    &lt;main class="page"&gt;
+      &lt;section class="dashboard"&gt;
+        &lt;p class="label"&gt;Manual Logic&lt;/p&gt;
+
+        &lt;h1&gt;Student Goal Dashboard&lt;/h1&gt;
+
+        &lt;p class="description"&gt;
+          ตัวอย่างการใช้ Array, Object และ Loop เพื่อแสดงข้อมูลหลายรายการบนหน้าเว็บ
+        &lt;/p&gt;
+
+        &lt;div id="studentList" class="student-list"&gt;&lt;/div&gt;
+      &lt;/section&gt;
+    &lt;/main&gt;
+
+    &lt;script src="script.js"&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <h3>จุดที่ควรสังเกต</h3>
+        <ul>
+          <li><code>&lt;div id="studentList" class="student-list"&gt;&lt;/div&gt;</code> — กล่อง<strong>ว่าง</strong>ที่ตั้งใจไว้ให้ JavaScript เอาการ์ดมาใส่ มี <code>id</code> ไว้ให้ JavaScript หาเจอ และมี <code>class</code> ไว้ให้ CSS จัด layout</li>
+          <li><code>&lt;link rel="stylesheet" href="style.css" /&gt;</code> ใน <code>&lt;head&gt;</code> — เชื่อม CSS</li>
+          <li><code>&lt;script src="script.js"&gt;&lt;/script&gt;</code> ก่อนปิด <code>&lt;/body&gt;</code> — เชื่อม JavaScript โดยวางไว้ท้ายสุด เพื่อให้ HTML ด้านบน (รวมถึง <code>#studentList</code>) ถูกสร้างเสร็จก่อนที่ JavaScript จะเริ่มหา element</li>
+        </ul>
+
+        <div class="warning">
+          <p>ถ้าย้าย <code>&lt;script src="script.js"&gt;&lt;/script&gt;</code> ขึ้นไปไว้ใน <code>&lt;head&gt;</code> โดยไม่ได้ตั้งค่าอะไรเพิ่ม JavaScript จะทำงานก่อนที่ <code>#studentList</code> จะมีอยู่บนหน้า <code>getElementById</code> จะได้ <code>null</code> ทั้งที่ id สะกดถูกทุกตัว — อาการเหมือน id ไม่ตรงกันทุกอย่าง จำไว้ว่าเป็นอีกสาเหตุหนึ่งที่ต้องเช็ก</p>
+        </div>
+
+        <h2>CSS</h2>
+        <p>ใส่โค้ดนี้ใน <code>style.css</code>:</p>
+        <pre><code class="language-css">* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+.page {
+  min-height: 100vh;
+  padding: 40px;
+}
+
+.dashboard {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.label {
+  color: #38bdf8;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 12px 0;
+  font-size: 40px;
+}
+
+.description {
+  color: #cbd5e1;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.student-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.student-card {
+  padding: 24px;
+  border-radius: 20px;
+  background: #1e293b;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+}
+
+.student-card h2 {
+  margin: 0 0 12px;
+  color: #38bdf8;
+}
+
+.student-card p {
+  margin: 8px 0;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.badge {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #7dd3fc;
+  font-size: 14px;
+  font-weight: bold;
+}</code></pre>
+
+        <h3>แต่ละส่วนทำอะไร</h3>
+        <ul>
+          <li><code>* { box-sizing: border-box; }</code> — ให้ <code>padding</code> ถูกนับรวมในความกว้างของ element คำนวณขนาดง่ายขึ้น</li>
+          <li><code>body</code> — พื้นหลังสีน้ำเงินเข้ม ตัวอักษรสีขาว สูงอย่างน้อยเต็มจอ (<code>100vh</code>)</li>
+          <li><code>.dashboard</code> — กว้างไม่เกิน <code>900px</code> และจัดกึ่งกลางด้วย <code>margin: 0 auto</code></li>
+          <li><code>.label</code> — ข้อความเล็กสีฟ้าเหนือหัวข้อ แปลงเป็นตัวพิมพ์ใหญ่ด้วย <code>text-transform: uppercase</code></li>
+          <li><code>.student-list</code> — ใช้ <code>display: grid</code> แบ่งเป็น 3 คอลัมน์เท่า ๆ กัน (<code>repeat(3, 1fr)</code>) เว้นระยะห่าง <code>18px</code> การ์ดที่ JavaScript ใส่เข้ามาจะเรียงลงช่องเองอัตโนมัติ</li>
+          <li><code>.student-card</code>, <code>.student-card h2</code>, <code>.student-card p</code> — หน้าตาการ์ดและข้อความข้างในการ์ด</li>
+          <li><code>.badge</code> — ป้ายทรงแคปซูล (<code>border-radius: 999px</code>) ท้ายการ์ด</li>
+        </ul>
+
+        <div class="note">
+          <p>ตอนนี้ยังไม่มี element ไหนใน HTML ที่ใช้ class <code>student-card</code> หรือ <code>badge</code> เลย ไม่ใช่ความผิดพลาด — เราเขียน CSS รอไว้ก่อน แล้วในบทที่ 9 JavaScript จะสร้างการ์ดที่มี class เหล่านี้ขึ้นมาเอง CSS จะมีผลกับ element ที่ JavaScript สร้างทันทีเหมือน element ที่เขียนใน HTML ตรง ๆ</p>
+        </div>
+
+        <section class="expected-result">
+          <h2>ผลลัพธ์ที่ควรเห็น</h2>
+          <p>เปิด <code>index.html</code> ในเบราว์เซอร์ จะเห็นพื้นหลังสีน้ำเงินเข้ม ข้อความ <strong>MANUAL LOGIC</strong> สีฟ้า หัวข้อใหญ่ <strong>Student Goal Dashboard</strong> และคำอธิบายสีเทาอ่อน ด้านล่างยังว่างอยู่ เพราะยังไม่มีการ์ด</p>
+        </section>
+
+        <h2>ฝึก debug: หัวข้อไม่ใหญ่ตามที่ตั้งไว้</h2>
+        <p>ลองเปลี่ยน <code>&lt;h1&gt;Student Goal Dashboard&lt;/h1&gt;</code> ใน HTML เป็น <code>&lt;h2&gt;Student Goal Dashboard&lt;/h2&gt;</code> แล้ว refresh สังเกตว่าหัวข้อเล็กลงและระยะห่างเปลี่ยนไป ทั้งที่ CSS ไม่ได้แก้เลย</p>
+        <p>สาเหตุ: rule <code>h1 { font-size: 40px; }</code> เลือกเฉพาะแท็ก <code>h1</code> เมื่อเปลี่ยนแท็กเป็น <code>h2</code> rule นี้จึงไม่มีผล นี่คือขั้น “เช็กการเชื่อมโยงระหว่าง HTML กับ CSS” — selector ใน CSS ต้องตรงกับแท็กหรือ class ใน HTML เหมือนที่ id ใน JavaScript ต้องตรงกับ HTML แก้กลับเป็น <code>h1</code> ก่อนไปต่อ</p>
+
+        <div class="verification">
+          <ul>
+            <li>มีโฟลเดอร์ <code>student-goal-dashboard</code> ที่มี <code>index.html</code>, <code>style.css</code>, <code>script.js</code></li>
+            <li>HTML มี <code>&lt;div id="studentList" class="student-list"&gt;&lt;/div&gt;</code> ที่ว่างอยู่</li>
+            <li>HTML เชื่อม <code>style.css</code> ใน <code>&lt;head&gt;</code> และ <code>script.js</code> ก่อนปิด <code>&lt;/body&gt;</code></li>
+            <li>เปิดในเบราว์เซอร์แล้วเห็นพื้นหลังสีเข้ม หัวข้อ และคำอธิบายตามที่ออกแบบ</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="06_foreach_loop.html" rel="prev">ก่อนหน้า: วนลูปด้วย forEach</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="08_console_first.html" rel="next">ถัดไป: ตรวจข้อมูลใน Console ก่อน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

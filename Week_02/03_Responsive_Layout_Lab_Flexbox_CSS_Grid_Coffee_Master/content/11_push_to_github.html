@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เขียน README.md สร้าง repository บน GitHub แล้ว push โปรเจกต์ Bootcamp Landing Page ขึ้นไปด้วยชุดคำสั่ง Git ครบทุกขั้น พร้อมวิธีอัปเดตงานครั้งถัดไป" />
+    <title>Push โปรเจกต์ขึ้น GitHub | Responsive Layout Lab: Flexbox + CSS Grid</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 11 · ส่งงานขึ้น GitHub (GitHub Submission)</p>
+          <h1>Push โปรเจกต์ขึ้น GitHub</h1>
+          <p class="lesson-original-title" lang="en">Push Project to GitHub</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เขียนไฟล์ <code>README.md</code> อธิบาย project แบบสั้น ๆ</li>
+            <li>สร้าง repository บน GitHub และ push project แรกขึ้นไปได้สำเร็จ</li>
+            <li>อัปเดตงานที่แก้ไขเพิ่มขึ้น GitHub ในครั้งถัดไป</li>
+          </ul>
+        </section>
+
+        <p>เป้าหมายของบทนี้มีข้อเดียว: <strong>เอา project landing page ของเราขึ้น GitHub ให้สำเร็จ</strong></p>
+
+        <h2>ขั้นที่ 1: เขียน README.md</h2>
+        <p><strong>README</strong> คือไฟล์ที่บอกคนอื่นว่า project นี้คืออะไร เวลาเปิด repo บน GitHub คนอื่นจะเห็น README ก่อน จึงควรเขียนให้สั้นและเข้าใจง่าย สร้างไฟล์ <code>README.md</code> ในโฟลเดอร์ project (ระดับเดียวกับ <code>index.html</code>) แล้วใส่:</p>
+        <pre><code class="language-text"># Bootcamp Landing Page
+
+This project is a landing page built with HTML and CSS.
+
+## What I practiced
+
+- Semantic HTML
+- CSS Box Model
+- Flexbox
+- CSS Grid
+- Responsive Layout
+- Git and GitHub basics</code></pre>
+        <p>ไฟล์นี้เขียนด้วย Markdown: <code>#</code> คือหัวข้อใหญ่ <code>##</code> คือหัวข้อรอง และ <code>-</code> คือรายการ GitHub จะแสดงผลให้สวยงามเอง</p>
+        <p>ตอนนี้โฟลเดอร์ project ควรมีหน้าตาแบบนี้:</p>
+        <pre class="file-tree">bootcamp-landing-page/
+├── index.html
+├── style.css
+└── README.md</pre>
+
+        <h2>ขั้นที่ 2: สร้าง repository บน GitHub</h2>
+        <ol>
+          <li>เข้าสู่ระบบที่ github.com แล้วสร้าง repository ใหม่ (ปุ่ม <strong>New</strong>)</li>
+          <li>ตั้งชื่อ repo เช่น <code>bootcamp-landing-page</code></li>
+          <li>สร้าง repo ว่าง ๆ แล้ว copy URL ของ repo ที่ลงท้ายด้วย <code>.git</code> เก็บไว้</li>
+        </ol>
+        <div class="warning">
+          <p>ตอนสร้าง repo <strong>ไม่ต้องติ๊กให้ GitHub สร้าง README ให้</strong> เพราะเรามี <code>README.md</code> ในเครื่องแล้ว ถ้าบน GitHub มี commit อยู่ก่อน การ <code>git push</code> ครั้งแรกจะถูกปฏิเสธ (rejected) เพราะประวัติสองฝั่งไม่ตรงกัน</p>
+        </div>
+        <p>ถ้ายังไม่แน่ใจขั้นตอนบนหน้าเว็บ ดูคู่มือทางการได้ที่ <a href="https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository" target="_blank" rel="noreferrer">docs.github.com — Creating a new repository</a></p>
+
+        <h2>ขั้นที่ 3: รันชุดคำสั่ง push</h2>
+        <p>เปิด terminal ในโฟลเดอร์ project แล้วรันทีละบรรทัด (เปลี่ยน URL เป็นของคุณเอง):</p>
+        <pre><code class="language-bash">git init
+git add .
+git commit -m "Complete bootcamp landing page"
+git branch -M main
+git remote add origin https://github.com/username/bootcamp-landing-page.git
+git push -u origin main</code></pre>
+        <p>รูปแบบทั่วไปของชุดคำสั่งนี้คือ:</p>
+        <pre><code class="language-bash">git init
+git add .
+git commit -m "Complete bootcamp landing page"
+git branch -M main
+git remote add origin &lt;your-repo-url&gt;
+git push -u origin main</code></pre>
+        <div class="note">
+          <p>ก่อน <code>git commit</code> ลองรัน <code>git status</code> ดูว่ารายการไฟล์ที่จะเข้า commit มี <code>index.html</code>, <code>style.css</code> และ <code>README.md</code> ครบ ถ้าตอน push ถูกถามให้ยืนยันตัวตน ให้ทำตามที่ GitHub แนะนำ — ดูรายละเอียดได้ที่ <a href="https://docs.github.com/" target="_blank" rel="noreferrer">docs.github.com</a></p>
+        </div>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>refresh หน้า repo บน GitHub แล้วเห็นไฟล์ <code>index.html</code>, <code>style.css</code>, <code>README.md</code> และใต้รายการไฟล์มีเนื้อหา README แสดงผลเป็นหัวข้อ “Bootcamp Landing Page” — URL ของหน้านี้คือ repository link ที่ใช้ส่งงาน</p>
+        </section>
+
+        <h2>ครั้งถัดไป: ถ้าเคย init แล้ว</h2>
+        <p>ถ้า project มี Git อยู่แล้ว <strong>ไม่ต้อง <code>git init</code> ซ้ำ</strong> และไม่ต้อง <code>remote add</code> ใหม่ เวลาแก้งานเพิ่ม (เช่นทำ mini challenge) ใช้แค่:</p>
+        <pre><code class="language-bash">git status
+git add .
+git commit -m "Update bootcamp landing page"
+git push</code></pre>
+
+        <div class="warning">
+          <p><strong>ปัญหาที่พบบ่อย</strong></p>
+          <ul>
+            <li><code>fatal: not a git repository</code> — รันคำสั่งผิดโฟลเดอร์ หรือยังไม่ได้ <code>git init</code> ให้เช็กว่า terminal อยู่ในโฟลเดอร์ project</li>
+            <li><code>nothing to commit</code> — ยังไม่ได้ save ไฟล์ หรือไม่ได้แก้อะไรตั้งแต่ commit ล่าสุด</li>
+            <li><code>error: remote origin already exists</code> — เคย <code>remote add</code> ไปแล้ว ไม่ต้องเพิ่มซ้ำ ถ้าใส่ URL ผิดให้แก้ด้วย <code>git remote set-url origin &lt;your-repo-url&gt;</code></li>
+            <li>Git ขอให้ตั้งชื่อและอีเมลก่อน commit — ตั้งครั้งเดียวต่อเครื่องด้วย <code>git config --global user.name "Your Name"</code> และ <code>git config --global user.email "you@example.com"</code></li>
+            <li><code>git init</code> ในโฟลเดอร์ที่ใหญ่เกินไป (เช่นโฟลเดอร์ home ทั้งหมด) — ให้ init เฉพาะในโฟลเดอร์ project เท่านั้น</li>
+          </ul>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>ในโฟลเดอร์ project มี <code>README.md</code> ตามตัวอย่าง</li>
+            <li><code>git status</code> แสดงว่าไม่มีไฟล์ค้าง (working tree clean) หลัง commit</li>
+            <li>เปิด repository link แล้วเห็น <code>index.html</code>, <code>style.css</code> และ <code>README.md</code> บน GitHub</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="10_git_github_basics.html" rel="prev">ก่อนหน้า: Git และ GitHub เบื้องต้น</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="12_wrap_up_assignment.html" rel="next">ถัดไป: สรุปบทเรียนและการบ้าน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เลือก class ด้วยจุดให้ถูกต้อง ตกแต่งลิงก์ด้วย text-decoration และ :hover ทำลิงก์ให้เป็นปุ่มด้วย inline-block และเพิ่มความอ่านง่ายด้วย line-height" />
+    <title>Class Selector, ปุ่ม, hover และความอ่านง่าย | Semantic HTML และ CSS Box Model</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 08 · Layout และรายละเอียดที่ทำให้หน้าเว็บดูเป็นมืออาชีพ</p>
+          <h1>Class Selector, ปุ่ม, hover และความอ่านง่าย</h1>
+          <p class="lesson-original-title" lang="en">Selectors, Buttons &amp; Readability</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เลือก class ด้วย <code>.</code> และ id ด้วย <code>#</code> ได้ถูกต้อง และแก้บั๊ก "CSS ไม่ทำงาน" ที่เกิดจากลืมจุด</li>
+            <li>เอาเส้นใต้ของลิงก์ออกด้วย <code>text-decoration: none</code> และเพิ่ม <code>:hover</code> state</li>
+            <li>ทำลิงก์ <code>&lt;a&gt;</code> ให้ดูเหมือนปุ่มด้วย <code>display: inline-block</code></li>
+            <li>ใช้ <code>line-height</code> ทำให้ข้อความยาวอ่านสบายขึ้น</li>
+          </ul>
+        </section>
+
+        <h2>Class Selector: อย่าลืมจุด</h2>
+
+        <p>ใน HTML การ์ดของเราเขียนแบบนี้:</p>
+
+        <pre><code class="language-html">&lt;article class="feature-card"&gt;
+  &lt;h2&gt;Manual Foundation&lt;/h2&gt;
+  &lt;p&gt;เข้าใจ HTML, CSS และ JavaScript ด้วยตัวเองก่อนใช้ AI&lt;/p&gt;
+&lt;/article&gt;</code></pre>
+
+        <p>เมื่อ HTML ใช้ <code>class="feature-card"</code> เวลาเลือกใน CSS ต้องเขียน <code>.feature-card</code> — <strong>มีจุด <code>.</code> ข้างหน้าเสมอ</strong></p>
+
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>เขียนผิด</th>
+                <th>เขียนถูก</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <pre><code class="language-css">feature-card {
+  background: #1e293b;
+}</code></pre>
+                </td>
+                <td>
+                  <pre><code class="language-css">.feature-card {
+  background: #1e293b;
+}</code></pre>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>ถ้าเขียน <code>feature-card</code> แบบไม่มีจุด CSS จะเข้าใจว่าเรากำลังเลือก <strong>HTML tag</strong> ชื่อ <code>feature-card</code> (แบบเดียวกับที่ <code>main</code> หรือ <code>h1</code> เลือก tag) แต่ในหน้าไม่มี tag นี้ rule นั้นจึงไม่ส่งผลกับอะไรเลย และเบราว์เซอร์ไม่แจ้ง error ใด ๆ ทั้งสิ้น</p>
+
+        <pre><code class="language-text">เลือก tag   → main, h1        (ไม่มีสัญลักษณ์)
+เลือก class → .feature-card    (ใช้จุด .)
+เลือก id    → #hero            (ใช้ #)</code></pre>
+
+        <div class="warning">
+          <p>ถ้าเขียน CSS แล้วหน้าเว็บไม่เปลี่ยน สิ่งแรกที่ควรเช็กคือ selector: มีจุดหน้า class ไหม และชื่อ class ใน CSS สะกดตรงกับใน HTML ทุกตัวอักษรหรือเปล่า (เช่น <code>feature-card</code> กับ <code>features-card</code> ถือเป็นคนละชื่อ)</p>
+        </div>
+
+        <h2>ขั้นที่ 1: ลิงก์ใน Navbar</h2>
+
+        <p>ลิงก์ <code>&lt;a&gt;</code> มีค่าเริ่มต้นเป็นสีน้ำเงินและมีเส้นใต้ ซึ่งไม่เข้ากับ navbar ธีมมืดของเรา เพิ่มโค้ดนี้ต่อจาก <code>.nav-links</code>:</p>
+
+        <pre><code class="language-css">.nav-links a {
+  color: #cbd5e1;
+  text-decoration: none;
+}
+
+.nav-links a:hover {
+  color: #38bdf8;
+}</code></pre>
+
+        <ul>
+          <li><code>.nav-links a</code> — เลือกเฉพาะลิงก์ที่อยู่ใน <code>.nav-links</code> เปลี่ยนเป็นสีเทาอ่อน และ <code>text-decoration: none</code> เอาเส้นใต้ default ออก</li>
+          <li><code>:hover</code> — คือสถานะตอนผู้ใช้เอา mouse ไปชี้บน element เมื่อชี้ที่ลิงก์ สีจะเปลี่ยนเป็นฟ้า</li>
+        </ul>
+
+        <p>เมื่อเอาเส้นใต้ออกแล้ว เราต้องมีสัญญาณอื่นบอกผู้ใช้ว่าสิ่งนี้กดได้ hover state คือส่วนเล็ก ๆ ของ user experience ที่ทำหน้าที่นี้ — ชี้แล้วสีเปลี่ยน ผู้ใช้ก็รู้ทันทีว่ามัน interactive</p>
+
+        <h2>ขั้นที่ 2: ทำลิงก์ให้เป็นปุ่ม</h2>
+
+        <p>ปุ่ม "ดูรายละเอียดคอร์ส" ของเราเป็น <code>&lt;a&gt;</code> เพราะมันคือลิงก์ไปยังหน้าอื่น แต่เราอยากให้มัน<strong>ดูเหมือนปุ่ม</strong> ปัญหาคือ <code>&lt;a&gt;</code> โดยธรรมชาติเป็น <strong>inline element</strong> ซึ่ง padding ด้านบน/ล่างจะไม่ดันพื้นที่รอบ ๆ ออกไปเหมือนกล่องปกติ เพิ่มโค้ดนี้ต่อจาก <code>.hero-description</code>:</p>
+
+        <pre><code class="language-css">.primary-button {
+  display: inline-block;
+  padding: 14px 24px;
+  border-radius: 999px;
+  background: #38bdf8;
+  color: #0f172a;
+  font-weight: bold;
+  text-decoration: none;
+}</code></pre>
+
+        <ul>
+          <li><code>display: inline-block</code> — ยังวางต่อในบรรทัดได้เหมือน inline แต่มีคุณสมบัติของกล่องครบ ใส่ padding แล้วตัวปุ่มขยายตามจริง</li>
+          <li><code>padding: 14px 24px</code> — ระยะด้านในของปุ่ม บน/ล่าง 14px ซ้าย/ขวา 24px</li>
+          <li><code>border-radius: 999px</code> — ค่าที่มากกว่าความสูงของปุ่มมาก ๆ ทำให้ปลายปุ่มโค้งมนเต็มที่เป็นทรงแคปซูล</li>
+          <li><code>background</code> สีฟ้า กับ <code>color</code> สีเข้ม — ตัดกันชัดเจนเพื่อให้ปุ่มเด่น</li>
+          <li><code>text-decoration: none</code> — เอาเส้นใต้ของลิงก์ออก</li>
+        </ul>
+
+        <div class="note">
+          <p>สรุปสั้น ๆ: ถ้าอยากให้ link ดูเหมือนปุ่ม ใช้ <code>display: inline-block</code> แล้วตกแต่งด้วย <code>padding</code>, <code>background</code> และ <code>border-radius</code></p>
+        </div>
+
+        <h2>ขั้นที่ 3: line-height และความอ่านง่าย</h2>
+
+        <p><code>line-height</code> คือความสูงของบรรทัด ถ้าข้อความหลายบรรทัดชิดกันเกินไปจะอ่านยาก เว็บที่ดู professional ไม่ได้เกิดจากสีอย่างเดียว spacing และ readability สำคัญมาก ข้อความยาวควรมี <code>line-height</code> ประมาณ <strong>1.5–1.8</strong></p>
+
+        <p>เพิ่ม <code>line-height: 1.7</code> ให้ข้อความยาวสองจุด คือคำอธิบายใน hero และข้อความในการ์ด:</p>
+
+        <pre><code class="language-css">.hero-description {
+  margin: 0 0 32px;
+  color: #cbd5e1;
+  font-size: 20px;
+  line-height: 1.7;
+}</code></pre>
+
+        <pre><code class="language-css">.feature-card p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.7;
+}</code></pre>
+
+        <p>ค่า <code>1.7</code> ที่ไม่มีหน่วย แปลว่า 1.7 เท่าของขนาดตัวอักษรของ element นั้น ส่วน <code>h1</code> ใช้ <code>1.1</code> เพราะหัวข้อตัวใหญ่ไม่ต้องการช่องว่างระหว่างบรรทัดมาก</p>
+
+        <h2>โค้ด style.css ฉบับสมบูรณ์</h2>
+
+        <p>เมื่อรวมทุกบทเข้าด้วยกัน <code>style.css</code> จะเป็นแบบนี้ (ตรงกับ <code>finish/style.css</code>):</p>
+
+        <pre><code class="language-css">* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+.site-header {
+  border-bottom: 1px solid #1e293b;
+}
+
+.navbar {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  margin: 0;
+  color: #38bdf8;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links a {
+  color: #cbd5e1;
+  text-decoration: none;
+}
+
+.nav-links a:hover {
+  color: #38bdf8;
+}
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 64px 32px;
+}
+
+.hero-section {
+  max-width: 760px;
+  margin-bottom: 56px;
+}
+
+.eyebrow {
+  margin: 0 0 16px;
+  color: #38bdf8;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+h1 {
+  margin: 0 0 24px;
+  font-size: 52px;
+  line-height: 1.1;
+}
+
+.hero-description {
+  margin: 0 0 32px;
+  color: #cbd5e1;
+  font-size: 20px;
+  line-height: 1.7;
+}
+
+.primary-button {
+  display: inline-block;
+  padding: 14px 24px;
+  border-radius: 999px;
+  background: #38bdf8;
+  color: #0f172a;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.features-section {
+  display: flex;
+  gap: 20px;
+}
+
+.feature-card {
+  flex: 1;
+  padding: 24px;
+  border-radius: 20px;
+  background: #1e293b;
+}
+
+.feature-card h2 {
+  margin: 0 0 12px;
+  color: #38bdf8;
+}
+
+.feature-card p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.7;
+}
+
+.site-footer {
+  border-top: 1px solid #1e293b;
+  padding: 24px 32px;
+  text-align: center;
+  color: #94a3b8;
+}</code></pre>
+
+        <div class="expected-result">
+          <p>หน้า Landing Page เสร็จสมบูรณ์: navbar ลิงก์สีเทาอ่อนไม่มีเส้นใต้ ชี้แล้วเปลี่ยนเป็นสีฟ้า ปุ่ม "ดูรายละเอียดคอร์ส" เป็นทรงแคปซูลสีฟ้า ข้อความคำอธิบายและในการ์ดมีระยะบรรทัดโปร่งอ่านสบาย</p>
+        </div>
+
+        <h3>ลองทำดู</h3>
+
+        <ul>
+          <li>ลองลบจุดหน้า <code>.primary-button</code> ชั่วคราว แล้วสังเกตว่าปุ่มกลับไปเป็นลิงก์ธรรมดา จากนั้นใส่จุดกลับคืน</li>
+          <li>ลองเปลี่ยน <code>display: inline-block</code> ของปุ่มเป็นค่าเริ่มต้น (ลบบรรทัดนี้ออก) แล้วดูว่า padding ด้านบน/ล่างของปุ่มไปทับข้อความด้านบนหรือไม่ จากนั้นใส่กลับคืน</li>
+          <li>ท้าทายเพิ่ม: เพิ่ม hover state ให้ปุ่มด้วยตัวเอง เช่น <code>.primary-button:hover { background: #7dd3fc; }</code> (โค้ดนี้ไม่ได้อยู่ใน <code>finish/</code> — เป็นแบบฝึกหัดเพิ่มเติม)</li>
+        </ul>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่าทำไม <code>feature-card { ... }</code> ที่ไม่มีจุดจึงไม่ทำงาน และรู้ว่าเลือก id ต้องใช้ <code>#</code></li>
+            <li>ลิงก์ใน navbar ไม่มีเส้นใต้และเปลี่ยนสีเมื่อ hover</li>
+            <li>ปุ่ม "ดูรายละเอียดคอร์ส" มี padding และมุมโค้งเหมือนปุ่มจริง</li>
+            <li><code>style.css</code> ของคุณตรงกับโค้ดฉบับสมบูรณ์ด้านบน</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="07_flexbox_basics.html" rel="prev">ก่อนหน้า: จัดแถวด้วย display: flex</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="09_wrap_up_and_homework.html" rel="next">ถัดไป: สรุปบทเรียนและการบ้าน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ทบทวนบทบาทของ HTML, CSS และ JavaScript แล้วดูภาพรวมของ Landing Page ที่เราจะสร้างในคอร์สนี้" />
+    <title>ภาพรวมคอร์สและทบทวนพื้นฐาน | Semantic HTML และ CSS Box Model</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 01 · โครงสร้างหน้าเว็บด้วย Semantic HTML</p>
+          <h1>ภาพรวมคอร์สและทบทวนพื้นฐาน</h1>
+          <p class="lesson-original-title" lang="en">Intro &amp; Recap</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายหน้าที่ของ HTML, CSS และ JavaScript ได้ด้วยประโยคเดียว</li>
+            <li>บอกได้ว่าทำไมเราต้องกลับมาเก็บพื้นฐาน HTML และ CSS ก่อนเข้า React</li>
+            <li>เห็นภาพ Landing Page ที่เราจะสร้าง และเตรียมไฟล์โปรเจกต์ให้พร้อม</li>
+          </ul>
+        </section>
+
+        <h2>ทบทวนสิ่งที่เรียนมาแล้ว</h2>
+
+        <p>ก่อนเริ่มเรื่องใหม่ ลองทบทวนกันก่อนว่าเราเรียนอะไรมาแล้ว หน้าเว็บหนึ่งหน้าประกอบด้วยสามภาษาที่ทำงานคนละหน้าที่:</p>
+
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>ภาษา</th>
+                <th>หน้าที่</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HTML</td>
+                <td>สร้าง<strong>โครงสร้าง</strong>ของหน้าเว็บ — มีหัวข้อ ย่อหน้า ลิงก์ ปุ่ม อะไรบ้าง</td>
+              </tr>
+              <tr>
+                <td>CSS</td>
+                <td>จัด<strong>หน้าตา</strong> — สี ขนาด ระยะห่าง และการจัดวาง</td>
+              </tr>
+              <tr>
+                <td>JavaScript</td>
+                <td>เพิ่ม <strong>interaction</strong> — ทำให้หน้าเว็บตอบสนองต่อผู้ใช้</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>ฝั่ง JavaScript เราได้ใช้เครื่องมือเหล่านี้ไปแล้ว:</p>
+
+        <ul>
+          <li><code>getElementById</code> — เลือก element จาก id</li>
+          <li><code>addEventListener</code> — รอฟัง event เช่น การคลิก</li>
+          <li><code>value</code> และ <code>textContent</code> — อ่านค่าจาก input และเปลี่ยนข้อความบนหน้าเว็บ</li>
+          <li><code>if</code>, array, object และ <code>forEach</code> — logic และการจัดการข้อมูลพื้นฐาน</li>
+        </ul>
+
+        <h2>ทำไมต้องกลับมาที่ HTML และ CSS</h2>
+
+        <p>คอร์สนี้เราจะยังไม่เพิ่ม JavaScript มากนัก แต่จะกลับมาเก็บ HTML และ CSS ให้แข็งแรงขึ้น เพราะถ้า<strong>โครงสร้าง</strong>และ <strong>layout</strong> ยังไม่ดี พอเข้าสู่ React เราจะสับสนได้ง่ายมาก — React component ทุกตัวสุดท้ายก็ render ออกมาเป็น HTML และจัดหน้าตาด้วย CSS เหมือนเดิม</p>
+
+        <p>เป้าหมายของคอร์สนี้คือเข้าใจสองเรื่องหลัก:</p>
+
+        <ol>
+          <li><strong>Semantic HTML</strong> — ใช้ tag ที่มีความหมายตรงกับเนื้อหา แทนการใช้ <code>div</code> ทั้งหน้า</li>
+          <li><strong>CSS Box Model</strong> — มองทุก element เป็นกล่อง แล้วควบคุมขนาด ระยะห่าง และการจัดวางอย่างเป็นระบบ</li>
+        </ol>
+
+        <h2>สิ่งที่เราจะสร้าง</h2>
+
+        <p>ตลอดคู่มือนี้ เราจะสร้าง <strong>Landing Page ของ Full-Stack Bootcamp</strong> หนึ่งหน้า ธีมสีเข้ม ประกอบด้วย:</p>
+
+        <ul>
+          <li><strong>Navbar</strong> — โลโก้ "Varis Lab" ด้านซ้าย และลิงก์เมนู 3 ลิงก์ด้านขวา</li>
+          <li><strong>Hero Section</strong> — ข้อความเล็กด้านบน (eyebrow) หัวข้อใหญ่ คำอธิบาย และปุ่ม "ดูรายละเอียดคอร์ส"</li>
+          <li><strong>Feature Cards</strong> — การ์ด 3 ใบเรียงเป็นแถว: Manual Foundation, Frontend Development, Backend &amp; Database</li>
+          <li><strong>Footer</strong> — ข้อความลิขสิทธิ์ด้านล่าง</li>
+        </ul>
+
+        <h2>เตรียมไฟล์โปรเจกต์</h2>
+
+        <p>โปรเจกต์นี้ใช้แค่ไฟล์ HTML และ CSS อย่างละไฟล์ ไม่ต้องติดตั้งอะไรเพิ่ม สร้างโฟลเดอร์ใหม่ของเราเองแล้วสร้างไฟล์ว่างสองไฟล์:</p>
+
+        <pre class="file-tree">bootcamp-landing-page/
+├── index.html   ← โครงสร้างหน้าเว็บ (บทที่ 02–03)
+└── style.css    ← หน้าตาและ layout (บทที่ 04–08)</pre>
+
+        <p>ในโฟลเดอร์ของคอร์สจะมีโฟลเดอร์ <code>finish/</code> ซึ่งเก็บ <code>index.html</code> และ <code>style.css</code> ฉบับสมบูรณ์ไว้ เราจะค่อย ๆ เขียนโค้ดทีละส่วนตามคู่มือ และโค้ดสุดท้ายของเราจะตรงกับไฟล์ใน <code>finish/</code></p>
+
+        <div class="note">
+          <p>ระหว่างทำ ให้เปิด <code>index.html</code> ในเบราว์เซอร์ค้างไว้ แล้วกด refresh ทุกครั้งที่บันทึกไฟล์ จะได้เห็นผลของโค้ดแต่ละบรรทัดทันที การเห็นว่า "เพิ่มบรรทัดนี้แล้วหน้าเว็บเปลี่ยนตรงไหน" คือวิธีที่เร็วที่สุดในการเข้าใจ CSS</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า HTML = โครงสร้าง, CSS = หน้าตา, JavaScript = interaction</li>
+            <li>รู้ว่าคอร์สนี้เราจะเรียน Semantic HTML และ CSS Box Model</li>
+            <li>มีโฟลเดอร์โปรเจกต์พร้อมไฟล์ <code>index.html</code> และ <code>style.css</code> แล้ว</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="02_semantic_html.html" rel="next">ถัดไป: Semantic HTML คืออะไร</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

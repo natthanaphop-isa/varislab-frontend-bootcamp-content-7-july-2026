@@ -9,10 +9,10 @@
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 25 จาก 77</p>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 25/58</p>
     <h1>สร้าง Relation ระหว่างสอง Models</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
-      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <h2 id="objectives-heading">บทนี้เราจะทำอะไรบ้าง</h2>
       <ul>
         <li>แยกความแตกต่างของ relation ทั้งสามแบบ: one-to-one, one-to-many/many-to-one และ many-to-many และรู้ว่าแต่ละแบบเขียนอย่างไรใน <code>schema.prisma</code></li>
         <li>ผูก <code>Coffee</code> กับ <code>Flavor</code> แบบ many-to-many ด้วย relation field <code>Flavor[]</code> / <code>Coffee[]</code> ทั้งสองฝั่ง</li>
@@ -72,11 +72,11 @@ npm run start:dev
 #   _CoffeeToFlavor   - ตารางเชื่อม many-to-many (คอลัมน์ A, B)</code></div>
     </section>
     <section class="expected-result" aria-labelledby="exercise-result-heading">
-      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <h2 id="exercise-result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
       <p>ฐานข้อมูลมี 3 ตาราง: <code>coffee</code> (ไม่มีคอลัมน์ <code>flavors</code> แล้ว), <code>flavor</code> และตารางเชื่อม <code>_CoffeeToFlavor</code> ที่ถือ foreign key ของทั้งสองฝั่งในคอลัมน์ <code>A</code> และ <code>B</code> ตอนนี้ endpoint สร้างกาแฟพร้อม flavor จะยังทำงานไม่ครบ — เราจะแก้ให้บันทึกลง relation จริงในบทที่ 27 เรื่อง nested writes</p>
     </section>
     <section class="verification" aria-labelledby="exercise-check-heading">
-      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <h2 id="exercise-check-heading">ลองเช็กให้แน่ใจ</h2>
       <ul>
         <li><code>npx prisma validate</code> ผ่านโดยไม่มี error เรื่อง relation ขาดฝั่ง — ทั้ง <code>flavors Flavor[]</code> และ <code>coffees Coffee[]</code> ประกาศครบ</li>
         <li>เห็นตาราง <code>_CoffeeToFlavor</code> ใน pgAdmin พร้อมคอลัมน์ <code>A</code>/<code>B</code> ที่เป็น foreign key ไปยัง <code>coffee.id</code> และ <code>flavor.id</code></li>
@@ -92,11 +92,11 @@ npm run start:dev
       <li><a href="https://learn.nestjs.com/">NestJS Fundamentals — คอร์สต้นฉบับ</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
-      <a class="lesson-navigation__link" href="24_using-prisma-client-to-access-database.html" rel="prev">← บทก่อนหน้า</a>
-      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="24_using-prisma-client-to-access-database.html" rel="prev">← บทก่อน</a>
+      <a class="lesson-navigation__link" href="index.html">ดูบทเรียนทั้งหมด</a>
       <a class="lesson-navigation__link" href="26_retrieve-models-with-their-relations.html" rel="next">บทถัดไป →</a>
     </nav>
   </main>
-  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+  <footer><p>NestJS Fundamentals Workshop · เนื้อหาตรวจทานล่าสุด 1 กันยายน 2026</p></footer>
 </body>
 </html>

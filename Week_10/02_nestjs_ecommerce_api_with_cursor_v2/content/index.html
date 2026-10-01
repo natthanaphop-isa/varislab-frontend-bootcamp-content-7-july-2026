@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="สารบัญ Workshop ภาษาไทย สร้าง E-commerce API ด้วย NestJS + Cursor AI: 24 บทเรียน สร้าง API แทน dummyjson.com ทีละ endpoint ด้วย Cursor Agent" />
+  <meta name="description" content="สารบัญ Workshop ภาษาไทย สร้าง E-commerce API ด้วย NestJS + Cursor AI: 28 บทเรียน ออกแบบสัญญา API เองจากโค้ด client แล้วสร้างทีละ endpoint ด้วย Cursor Agent" />
   <title>สร้าง E-commerce API ด้วย NestJS + Cursor AI</title>
   <link rel="stylesheet" href="lesson.css" />
 </head>
@@ -12,7 +12,7 @@
     <p class="eyebrow">Workshop ภาษาไทย ต่อยอดจากคอร์ส <a href="../../../Week_09/01_nestjs_basic/content/index.html">NestJS Fundamentals</a></p>
     <h1>สร้าง E-commerce API ด้วย NestJS + Cursor AI</h1>
 
-    <p>เส้นทางเรียนรู้แบบต่อเนื่อง 24 บทเรียน: เราจะสร้าง <code>ecommerce-api</code> ที่ใช้แทน <a href="https://dummyjson.com/">dummyjson.com</a> ได้ทันทีโดย React e-commerce app จาก Week_05_06 ไม่ต้องแก้โค้ด นอกจากเปลี่ยนแค่ base URL (<code>VITE_API_BASE_URL</code>) ทุก endpoint ในคอร์สนี้จะถูกสร้างด้วย Cursor Agent จาก prompt ที่มีโครงสร้างชัดเจน แล้วตรวจโค้ดที่ AI สร้างทีละบรรทัดก่อนใช้งานจริง</p>
+    <p>เส้นทางเรียนรู้แบบต่อเนื่อง 28 บทเรียน: เราจะอ่านโค้ดฝั่ง client ของ React e-commerce app จากคอร์ส React E-commerce แล้วออกแบบสัญญา (contract) ของ API เอง จากนั้นสร้าง <code>ecommerce-api</code> ที่ React app สลับมาใช้แทน <a href="https://dummyjson.com/">dummyjson.com</a> ได้ทันทีโดยไม่ต้องแก้โค้ด นอกจากเปลี่ยนแค่ base URL (<code>VITE_API_BASE_URL</code>) ทุก endpoint ในคอร์สนี้จะถูกสร้างด้วย Cursor Agent จาก prompt ที่มีโครงสร้างชัดเจน แล้วตรวจโค้ดที่ AI สร้างทีละบรรทัดก่อนใช้งานจริง</p>
     <p>เนื้อหาต่อยอดจากพื้นฐาน NestJS ของคอร์ส <a href="https://learn.nestjs.com/">NestJS Fundamentals</a> และอ้างอิงเอกสารทางการของ <a href="https://docs.nestjs.com/">NestJS</a> และ <a href="https://www.prisma.io/docs">Prisma</a> เพื่อให้ผู้เรียนตรวจสอบรายละเอียดปัจจุบันได้เอง</p>
 
     <section aria-label="ผลลัพธ์การเรียนรู้">
@@ -20,7 +20,7 @@
     </section>
 
     <section aria-label="ความรู้ที่ควรมี">
-      <p><strong>สิ่งที่ควรเตรียม:</strong> เรียน <a href="../../../Week_09/01_nestjs_basic/content/index.html">NestJS Fundamentals</a> (Week_09) จบแล้ว; ติดตั้งและเคยใช้ Cursor มาแล้วจาก Week_05_06; มี <a href="https://nodejs.org">Node.js 24 LTS</a> ขึ้นไป และ Docker Desktop; มีโปรเจกต์ React e-commerce จาก Week_05_06 อยู่ในเครื่องพร้อมใช้งาน</p>
+      <p><strong>สิ่งที่ควรเตรียม:</strong> เรียน <a href="../../../Week_09/01_nestjs_basic/content/index.html">NestJS Fundamentals</a> จบแล้ว; ติดตั้งและเคยใช้ Cursor มาแล้วจากคอร์ส React E-commerce + Cursor AI; มี <a href="https://nodejs.org">Node.js 24 LTS</a> ขึ้นไป และ Docker Desktop; มีโปรเจกต์ React e-commerce จากคอร์ส React E-commerce อยู่ในเครื่องพร้อมใช้งาน</p>
     </section>
 
     <section class="workshop" aria-labelledby="setup-heading">
@@ -33,7 +33,7 @@ npm run start:dev</code></pre>
       <ol>
         <li><a href="01_what-well-be-building.html">สิ่งที่เราจะสร้างและกติกาของคอร์ส</a></li>
         <li><a href="02_scaffolding-the-project.html">Scaffold โปรเจกต์ด้วย Nest CLI</a></li>
-        <li><a href="03_capturing-the-dummyjson-contract.html">อ่านสัญญาของ dummyjson แล้ววางลงในโปรเจกต์</a></li>
+        <li><a href="03_capturing-the-dummyjson-contract.html">อ่านโค้ดฝั่ง client แล้วออกแบบสัญญาเป็นของตัวเอง</a></li>
         <li><a href="04_cursor-rules-and-the-prompt-template.html">Cursor Rules และแม่แบบ Prompt</a></li>
       </ol>
     </section>
@@ -45,40 +45,57 @@ npm run start:dev</code></pre>
         <li><a href="06_setting-up-prisma.html">ติดตั้ง Prisma และ PrismaModule</a></li>
         <li><a href="07_modeling-products-in-prisma.html">ออกแบบ Prisma Model ของสินค้า</a></li>
         <li><a href="08_running-the-first-migration.html">รัน Migration แรกและดูตารางจริง</a></li>
-        <li><a href="09_seeding-real-products.html">Seed สินค้าจริงจาก dummyjson</a></li>
+        <li><a href="09_seeding-real-products.html">เขียน Seed Generator ด้วย Faker</a></li>
       </ol>
     </section>
 
     <section class="lesson-index" aria-labelledby="products-heading">
-      <h2 id="products-heading">10–15. Products Endpoints ทีละตัว</h2>
+      <h2 id="products-heading">10–14. Products Endpoints ทีละตัว</h2>
       <ol start="10">
         <li><a href="10_get-products-categories.html">GET /products/categories</a></li>
-        <li><a href="11_mapping-rows-to-the-contract.html">แปลงแถวจากฐานข้อมูลเป็นรูปทรงของ dummyjson</a></li>
+        <li><a href="11_mapping-rows-to-the-contract.html">แปลงแถวจากฐานข้อมูลเป็นรูปทรง Product ใน api-spec.md</a></li>
         <li><a href="12_get-product-by-id.html">GET /products/:id</a></li>
         <li><a href="13_get-products-with-pagination.html">GET /products พร้อม skip และ limit</a></li>
         <li><a href="14_get-products-by-category.html">GET /products/category/:slug</a></li>
-        <li><a href="15_checking-the-contract.html">ตรวจสัญญากับ dummyjson อัตโนมัติ</a></li>
       </ol>
     </section>
 
     <section class="lesson-index" aria-labelledby="orders-heading">
-      <h2 id="orders-heading">16–19. Orders: POST /carts/add</h2>
-      <ol start="16">
-        <li><a href="16_modeling-orders.html">ออกแบบ Model ของคำสั่งซื้อ</a></li>
-        <li><a href="17_validating-the-cart-payload.html">Validate Payload ของ POST /carts/add</a></li>
-        <li><a href="18_creating-orders-in-a-transaction.html">สร้างคำสั่งซื้อใน Transaction</a></li>
-        <li><a href="19_post-carts-add.html">POST /carts/add</a></li>
+      <h2 id="orders-heading">15–16. Orders: POST /carts/add</h2>
+      <ol start="15">
+        <li><a href="15_modeling-orders.html">ออกแบบ Model และ DTO ของคำสั่งซื้อ</a></li>
+        <li><a href="16_post-carts-add.html">สร้างคำสั่งซื้อและเปิด POST /carts/add</a></li>
       </ol>
     </section>
 
     <section class="lesson-index" aria-labelledby="react-heading">
-      <h2 id="react-heading">20–24. เชื่อมกับ React app</h2>
-      <ol start="20">
-        <li><a href="20_enabling-cors-and-port-config.html">เปิด CORS และตั้งค่า PORT</a></li>
-        <li><a href="21_adding-swagger.html">เพิ่มเอกสาร API ด้วย Swagger</a></li>
-        <li><a href="22_documenting-dtos-and-responses.html">ตกแต่ง DTO และ Response ให้เอกสารครบ</a></li>
-        <li><a href="23_switching-the-react-app.html">สลับ React app มาใช้ API ของเรา</a></li>
-        <li><a href="24_wrap-up.html">สรุปและก้าวต่อไป</a></li>
+      <h2 id="react-heading">17–20. เชื่อมกับ React app</h2>
+      <ol start="17">
+        <li><a href="17_enabling-cors-and-port-config.html">เปิด CORS และตั้งค่า PORT</a></li>
+        <li><a href="18_adding-swagger.html">เพิ่มเอกสาร API ด้วย Swagger</a></li>
+        <li><a href="19_documenting-dtos-and-responses.html">ตกแต่ง DTO และ Response ให้เอกสารครบ</a></li>
+        <li><a href="20_switching-the-react-app.html">สลับ React app มาใช้ API ของเรา</a></li>
+      </ol>
+    </section>
+
+    <section class="lesson-index" aria-labelledby="auth-heading">
+      <h2 id="auth-heading">21–27. โบนัส: Authentication และ Authorization</h2>
+      <p>เจ็ดบทนี้เป็นส่วนเสริม — React app ที่สลับมาใช้ API ตัวนี้แล้วไม่ต้องการ auth เลย และจะทำงานได้เหมือนเดิมทุกประการตลอดทั้งเจ็ดบท สิ่งที่เพิ่มเข้ามาคือชั้นของผู้ใช้: สมัคร เข้าสู่ระบบ ถือ token แล้วเรียก endpoint ที่คนอื่นเรียกไม่ได้</p>
+      <ol start="21">
+        <li><a href="21_adding-the-user-model.html">ออกแบบสัญญาของ auth และ Model ของผู้ใช้</a></li>
+        <li><a href="22_signup-endpoint.html">POST /auth/signup และการเก็บรหัสผ่าน</a></li>
+        <li><a href="23_login-and-access-token.html">POST /auth/login และ Access Token</a></li>
+        <li><a href="24_the-jwt-auth-guard.html">JWT Guard และ @Public()</a></li>
+        <li><a href="25_current-user-and-private-orders.html">@CurrentUser() และ GET /orders/me</a></li>
+        <li><a href="26_refresh-token-rotation.html">Refresh Token ที่หมุนได้ และ Logout</a></li>
+        <li><a href="27_roles-and-admin-endpoints.html">Roles, RolesGuard และ e2e ของ auth</a></li>
+      </ol>
+    </section>
+
+    <section class="lesson-index" aria-labelledby="wrap-heading">
+      <h2 id="wrap-heading">28. สรุป</h2>
+      <ol start="28">
+        <li><a href="28_wrap-up.html">สรุปและก้าวต่อไป</a></li>
       </ol>
     </section>
 

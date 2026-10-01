@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เขียน HTML ของหน้า landing page ทั้งหน้า พร้อม CSS พื้นฐานอย่าง box-sizing และ body เพื่อเตรียมจัด layout ด้วย Flexbox" />
+    <title>โครงสร้าง HTML และ CSS พื้นฐาน | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 04 · สร้าง Landing Page ด้วย Flexbox (Building the Page)</p>
+          <h1>โครงสร้าง HTML และ CSS พื้นฐาน</h1>
+          <p class="lesson-original-title" lang="en">HTML Structure &amp; Base Styles</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เขียน HTML ของหน้า landing page ครบทุก section ด้วย Semantic HTML</li>
+            <li>มองเห็นว่าแต่ละ section มี parent และ children อะไรที่จะถูกจัดด้วย Flexbox</li>
+            <li>ตั้งค่า CSS พื้นฐานของหน้า (<code>box-sizing</code>, พื้นหลัง, ฟอนต์)</li>
+          </ul>
+        </section>
+
+        <h2>เขียน <code>index.html</code></h2>
+        <p>เราจะเขียน HTML ให้ครบทั้งหน้าในครั้งเดียว แล้วใช้บทที่เหลือค่อย ๆ เติม CSS ทีละส่วน เปิดไฟล์ <code>index.html</code> แล้วใส่โค้ดนี้:</p>
+        <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="th"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+    &lt;title&gt;Flexbox Bootcamp Landing Page&lt;/title&gt;
+    &lt;link rel="stylesheet" href="style.css" /&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+    &lt;header class="site-header"&gt;
+      &lt;nav class="navbar"&gt;
+        &lt;p class="logo"&gt;Varis Lab&lt;/p&gt;
+
+        &lt;div class="nav-links"&gt;
+          &lt;a href="#"&gt;Overview&lt;/a&gt;
+          &lt;a href="#"&gt;Curriculum&lt;/a&gt;
+          &lt;a href="#"&gt;Pricing&lt;/a&gt;
+        &lt;/div&gt;
+      &lt;/nav&gt;
+    &lt;/header&gt;
+
+    &lt;main&gt;
+      &lt;section class="hero-section"&gt;
+        &lt;div class="hero-content"&gt;
+          &lt;p class="eyebrow"&gt;Full-Stack Bootcamp — AI Edition&lt;/p&gt;
+
+          &lt;h1&gt;เรียนสร้างเว็บแอปจริง พร้อมพื้นฐานที่ใช้ทำงานได้&lt;/h1&gt;
+
+          &lt;p class="hero-description"&gt;
+            เริ่มจาก Manual Coding Foundation ก่อนต่อยอดไปสู่ React,
+            Backend, Database และ AI Coding Workflow อย่างเป็นระบบ
+          &lt;/p&gt;
+
+          &lt;a class="primary-button" href="#"&gt;ดูรายละเอียดคอร์ส&lt;/a&gt;
+        &lt;/div&gt;
+
+        &lt;aside class="hero-card"&gt;
+          &lt;p class="card-label"&gt;Bootcamp Format&lt;/p&gt;
+
+          &lt;h2&gt;12 Weeks&lt;/h2&gt;
+
+          &lt;ul&gt;
+            &lt;li&gt;84 Live Hours&lt;/li&gt;
+            &lt;li&gt;5 Portfolio Projects&lt;/li&gt;
+            &lt;li&gt;Weekly Code Review&lt;/li&gt;
+            &lt;li&gt;Capstone Demo Day&lt;/li&gt;
+          &lt;/ul&gt;
+        &lt;/aside&gt;
+      &lt;/section&gt;
+
+      &lt;section class="features-section"&gt;
+        &lt;article class="feature-card"&gt;
+          &lt;h2&gt;Manual First&lt;/h2&gt;
+          &lt;p&gt;
+            ฝึกเขียนโค้ดเองก่อน เพื่อเข้าใจ logic และ debugging อย่างแท้จริง
+          &lt;/p&gt;
+        &lt;/article&gt;
+
+        &lt;article class="feature-card"&gt;
+          &lt;h2&gt;Full-Stack Skills&lt;/h2&gt;
+          &lt;p&gt;
+            เรียนทั้ง Frontend, Backend, Database และ Deployment
+          &lt;/p&gt;
+        &lt;/article&gt;
+
+        &lt;article class="feature-card"&gt;
+          &lt;h2&gt;AI Workflow&lt;/h2&gt;
+          &lt;p&gt;
+            ใช้ AI เป็นผู้ช่วยหลังจากเข้าใจพื้นฐาน ไม่ใช่ใช้แทนความเข้าใจ
+          &lt;/p&gt;
+        &lt;/article&gt;
+      &lt;/section&gt;
+
+      &lt;section class="pricing-section"&gt;
+        &lt;div class="section-header"&gt;
+          &lt;p class="eyebrow"&gt;Pricing&lt;/p&gt;
+          &lt;h2&gt;เลือกรูปแบบการเรียนที่เหมาะกับคุณ&lt;/h2&gt;
+        &lt;/div&gt;
+
+        &lt;div class="pricing-cards"&gt;
+          &lt;article class="pricing-card"&gt;
+            &lt;h3&gt;One-Time Payment&lt;/h3&gt;
+            &lt;p class="price"&gt;39,900 THB&lt;/p&gt;
+            &lt;p&gt;จ่ายครั้งเดียว เข้าเรียนครบทั้ง Bootcamp&lt;/p&gt;
+          &lt;/article&gt;
+
+          &lt;article class="pricing-card highlight"&gt;
+            &lt;h3&gt;Installment&lt;/h3&gt;
+            &lt;p class="price"&gt;3,990 THB / month&lt;/p&gt;
+            &lt;p&gt;ผ่อน 0% 10 เดือน ตามเงื่อนไขธนาคารที่ร่วมรายการ&lt;/p&gt;
+          &lt;/article&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+    &lt;/main&gt;
+
+    &lt;footer class="site-footer"&gt;
+      &lt;p&gt;© 2026 Varis Lab. All rights reserved.&lt;/p&gt;
+    &lt;/footer&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <h2>อ่านโครงสร้างแบบ "แม่-ลูก"</h2>
+        <p>ก่อนเขียน CSS ลองไล่ดูว่ากล่องไหนจะเป็น flex container และลูกของมันคืออะไร นี่คือแผนที่ของทั้งบทที่เหลือ:</p>
+        <div class="comparison" role="region" aria-label="flex container ในหน้า" tabindex="0">
+          <table>
+            <thead><tr><th>Parent (flex container)</th><th>Children</th><th>อยากให้เป็นแบบไหน</th><th>บทที่</th></tr></thead>
+            <tbody>
+              <tr><td><code>.navbar</code></td><td><code>.logo</code>, <code>.nav-links</code></td><td>logo ซ้าย เมนูขวา</td><td>05</td></tr>
+              <tr><td><code>.nav-links</code></td><td>ลิงก์ <code>&lt;a&gt;</code> 3 ตัว</td><td>เรียงเป็นแถว มีระยะห่าง</td><td>05</td></tr>
+              <tr><td><code>.hero-section</code></td><td><code>.hero-content</code>, <code>.hero-card</code></td><td>ข้อความซ้าย กล่องข้อมูลขวา</td><td>06</td></tr>
+              <tr><td><code>.features-section</code></td><td><code>.feature-card</code> 3 ใบ</td><td>card เรียงแถว กว้างเท่ากัน</td><td>07</td></tr>
+              <tr><td><code>.pricing-cards</code></td><td><code>.pricing-card</code> 2 ใบ</td><td>card เรียงแถว กว้างเท่ากัน</td><td>08</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          <p>สังเกตว่าเราใช้ Semantic HTML จากคอร์ส HTML/CSS พื้นฐานเต็มที่: <code>&lt;aside&gt;</code> สำหรับกล่องข้อมูลเสริมข้าง hero, <code>&lt;article&gt;</code> สำหรับ card แต่ละใบที่เนื้อหาจบในตัว ส่วน <code>&lt;div&gt;</code> ใช้เฉพาะกล่องที่มีไว้จัด layout อย่าง <code>.nav-links</code> และ <code>.pricing-cards</code></p>
+        </div>
+
+        <h2>CSS พื้นฐานของหน้า</h2>
+        <p>เปิด <code>style.css</code> แล้วเริ่มจากส่วนที่ใช้กับทั้งหน้า:</p>
+        <pre><code class="language-css">* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+}</code></pre>
+        <ul>
+          <li><code>box-sizing: border-box</code> — ให้ <code>width</code> รวม <code>padding</code> และ <code>border</code> ไว้แล้ว คำนวณขนาดกล่องง่ายขึ้น (ทบทวนจากเรื่อง Box Model)</li>
+          <li><code>margin: 0</code> ที่ <code>body</code> — ลบระยะขอบที่เบราว์เซอร์ใส่มาให้</li>
+          <li><code>background: #0f172a</code> และ <code>color: white</code> — ธีมสีเข้ม ตัวอักษรสีขาว</li>
+        </ul>
+
+        <div class="expected-result">
+          <p>เปิด <code>index.html</code> ในเบราว์เซอร์ จะเห็นพื้นหลังสีน้ำเงินเข้ม ตัวอักษรสีขาว และทุกอย่างยังเรียงลงมาเป็นบน-ล่าง ลิงก์ยังเป็นสีน้ำเงินขีดเส้นใต้ นี่คือจุดเริ่มต้นที่ถูกต้อง เพราะเรายังไม่ได้ใส่ Flexbox เลย</p>
+        </div>
+
+        <div class="warning">
+          <p>ถ้าหน้าเว็บยังเป็นพื้นขาว ให้ตรวจว่า <code>&lt;link rel="stylesheet" href="style.css" /&gt;</code> สะกดชื่อไฟล์ถูก และ <code>style.css</code> อยู่ในโฟลเดอร์เดียวกับ <code>index.html</code></p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li><code>index.html</code> มีครบ: header/navbar, hero, features, pricing และ footer</li>
+            <li>หน้าเว็บเป็นพื้นหลังสีเข้ม ตัวอักษรสีขาว</li>
+            <li>ชี้ได้ว่า flex container ในหน้านี้มีกี่ตัว และแต่ละตัวมีลูกอะไรบ้าง</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="03_flexbox_properties.html" rel="prev">ก่อนหน้า: Property หลักของ Flexbox ที่ควรรู้</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="05_navbar.html" rel="next">ถัดไป: สร้าง Navbar ด้วย Flexbox</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

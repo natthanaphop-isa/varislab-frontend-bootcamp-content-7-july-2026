@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ปรับ Profile Card ให้เป็นของตัวเอง แล้วลองทำ error ที่เจอบ่อยให้เกิดขึ้นเองเพื่อฝึกหาสาเหตุและแก้ไข" />
+    <title>ปรับให้เป็นของตัวเอง และรับมือกับ Error | สร้าง Professional Profile Card</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 08 · JavaScript และก้าวต่อไป (Interaction &amp; Wrap Up)</p>
+          <h1>ปรับให้เป็นของตัวเอง และรับมือกับ Error</h1>
+          <p class="lesson-original-title" lang="en">Mini Challenge &amp; Debugging</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>แก้ HTML, CSS และ JavaScript เพื่อปรับการ์ดให้เป็นของตัวเอง</li>
+            <li>ไล่เช็กสาเหตุพื้นฐานเมื่อแก้แล้วหน้าเว็บไม่เปลี่ยน</li>
+            <li>รู้จักและแก้ error ที่เจอบ่อย: id ไม่ตรงกัน และลืมเชื่อม <code>script.js</code></li>
+          </ul>
+        </section>
+
+        <h2>Mini Challenge: ทำให้เป็นการ์ดของคุณ</h2>
+        <p>ถึงเวลาลงมือแก้เอง เป้าหมายยังไม่ใช่ความ perfect แต่คือ<strong>ลองแก้โค้ดแล้วดูผลลัพธ์</strong> ใช้เวลาประมาณ 10 นาที ทำ 4 อย่างนี้:</p>
+        <ol>
+          <li>เปลี่ยนชื่อใน <code>&lt;h1&gt;</code> เป็นชื่อของคุณ</li>
+          <li>เปลี่ยน label เป็นเป้าหมายของคุณ เช่น <code>Aspiring Frontend Developer</code></li>
+          <li>เปลี่ยนข้อความใน <code>&lt;p id="summary"&gt;</code> เป็นประโยคแนะนำตัวของคุณ</li>
+          <li>เปลี่ยนข้อความที่แสดงหลังจากกดปุ่ม (ใน <code>script.js</code>)</li>
+        </ol>
+        <p>ถ้าทำเสร็จเร็ว ลองเปลี่ยน<strong>สีการ์ด</strong> (<code>background</code> ใน <code>.profile-card</code>) หรือ<strong>สีปุ่ม</strong> (<code>background</code> ใน <code>button</code> และ <code>button:hover</code>) ด้วย</p>
+
+        <div class="note">
+          <p>ข้อ 1–3 แก้ที่ <code>index.html</code>, ข้อ 4 แก้ที่ <code>script.js</code> และเรื่องสีแก้ที่ <code>style.css</code> การรู้ว่า "อยากเปลี่ยนอะไร ต้องไปแก้ไฟล์ไหน" คือการใช้ภาพ HTML = โครงสร้าง, CSS = หน้าตา, JavaScript = พฤติกรรม ในงานจริง</p>
+        </div>
+
+        <h2>แก้แล้วหน้าเว็บไม่เปลี่ยน? เช็ก 3 อย่างนี้ก่อน</h2>
+        <ol>
+          <li><strong>Save ไฟล์แล้วหรือยัง</strong> — ใน editor แท็บของไฟล์ที่ยังไม่ save มักมีจุดหรือเครื่องหมายแสดงอยู่</li>
+          <li><strong>Refresh browser แล้วหรือยัง</strong></li>
+          <li><strong>แก้ถูกไฟล์หรือเปล่า</strong> — เช่น เปิดไฟล์ในโฟลเดอร์อื่นอยู่ หรือแก้ CSS แต่ไปแก้ในไฟล์ HTML</li>
+        </ol>
+        <p>ถ้าเจอปัญหา ไม่ต้องตกใจ ให้ดูว่า<strong>แก้ตรงไหนล่าสุด</strong> แล้วผลลัพธ์เปลี่ยนไปอย่างไร แก้ทีละจุดแล้วดูผลลัพธ์ นี่คือ process จริงของ Developer</p>
+
+        <h2>ฝึกรับมือ Error ด้วยการทำให้พังเอง</h2>
+        <p>เวลาทำงานเอง สิ่งที่เจอแน่นอนคือ error หรือบางครั้งกดแล้วไม่เกิดอะไรขึ้นเลย การเจอ error ไม่ใช่เรื่องแปลก สิ่งสำคัญคือค่อย ๆ ไล่ว่าปัญหาน่าจะอยู่ตรงไหน วิธีฝึกที่ดีคือ<strong>ตั้งใจทำให้พัง</strong> แล้วสังเกตอาการ เมื่อเจอของจริงจะจำได้ทันที</p>
+
+        <h3>Error 1: id ไม่ตรงกัน</h3>
+        <p>ใน <code>script.js</code> ลองแก้บรรทัดแรกจาก:</p>
+        <pre><code class="language-javascript">const summary = document.getElementById("summary");</code></pre>
+        <p>เป็น:</p>
+        <pre><code class="language-javascript">const summary = document.getElementById("summaries");</code></pre>
+        <p>Save, refresh แล้วลองกดปุ่ม</p>
+        <p><strong>เกิดอะไรขึ้น:</strong> ข้อความไม่เปลี่ยน เพราะ JavaScript พยายามหา element ที่มี id ชื่อ <code>summaries</code> แต่ใน HTML มีแค่ id ชื่อ <code>summary</code> จึงหาไม่เจอ</p>
+        <p><strong>วิธีแก้:</strong> กลับไปเช็กว่า id หรือ class ใน HTML สะกดตรงกับที่เขียนใน JavaScript ไหม แล้วแก้กลับเป็น <code>"summary"</code></p>
+
+        <div class="note">
+          <p>อยากเห็นว่า browser บอกอะไรเราบ้าง? เปิด Developer Tools ของ browser (คลิกขวาบนหน้าเว็บ → Inspect แล้วไปที่แท็บ Console) ขณะที่ id ยังผิดอยู่แล้วลองกดปุ่ม จะเห็นข้อความ error สีแดงเกี่ยวกับการตั้งค่า <code>textContent</code> ให้กับค่า <code>null</code> ซึ่งแปลว่า "หา element ไม่เจอ" การอ่าน Console เป็นทักษะที่จะใช้ไปตลอด</p>
+        </div>
+
+        <h3>Error 2: ลืมเชื่อม script.js</h3>
+        <p>ใน <code>index.html</code> ลองลบ (หรือ comment) บรรทัดนี้ออก:</p>
+        <pre><code class="language-html">&lt;script src="script.js"&gt;&lt;/script&gt;</code></pre>
+        <p>ถ้าจะ comment ใน HTML ให้ครอบด้วย <code>&lt;!-- --&gt;</code> แบบนี้:</p>
+        <pre><code class="language-html">&lt;!-- &lt;script src="script.js"&gt;&lt;/script&gt; --&gt;</code></pre>
+        <p>Save, refresh แล้วลองกดปุ่ม</p>
+        <p><strong>เกิดอะไรขึ้น:</strong> ปุ่มไม่ทำงาน เพราะ HTML ไม่ได้โหลดไฟล์ JavaScript เข้ามา ต่อให้โค้ดใน <code>script.js</code> ถูกทั้งหมด browser ก็ไม่รู้ว่าต้องรันมัน</p>
+        <p><strong>วิธีแก้:</strong> ใส่บรรทัด <code>&lt;script src="script.js"&gt;&lt;/script&gt;</code> กลับไว้ก่อน <code>&lt;/body&gt;</code></p>
+
+        <div class="warning">
+          <p><strong>หลักคิดเวลาอะไรไม่ทำงาน</strong></p>
+          <ul>
+            <li>ถ้า <strong>CSS</strong> ไม่ทำงาน → เช็กว่า <code>&lt;link&gt;</code> ที่เชื่อม CSS ถูกไหม</li>
+            <li>ถ้า <strong>JavaScript</strong> ไม่ทำงาน → เช็กว่า <code>&lt;script&gt;</code> ถูกโหลดเข้ามาไหม</li>
+            <li>ถ้า<strong>กดปุ่มแล้วไม่เกิดอะไร</strong> → เช็ก id และ event listener</li>
+          </ul>
+        </div>
+
+        <section class="verification" aria-labelledby="check-heading">
+          <h2 id="check-heading">ก่อนไปบทถัดไป เช็กว่า</h2>
+          <ul>
+            <li>การ์ดแสดงชื่อ label และข้อความแนะนำตัวของคุณเอง</li>
+            <li>กดปุ่มแล้วข้อความเปลี่ยนเป็นข้อความที่คุณเขียน</li>
+            <li>ลองทำ Error 1 และ Error 2 แล้ว และ<strong>แก้กลับจนปุ่มทำงานปกติ</strong></li>
+            <li>บอกได้ว่าถ้า CSS ไม่ทำงาน, JavaScript ไม่ทำงาน หรือกดปุ่มแล้วไม่เกิดอะไร ควรเช็กตรงไหนก่อน</li>
+          </ul>
+        </section>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="07_javascript_interaction.html" rel="prev">ก่อนหน้า: ทำให้ปุ่มทำงานด้วย JavaScript</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="09_wrap_up_and_homework.html" rel="next">ถัดไป: สรุปบทเรียนและการบ้าน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

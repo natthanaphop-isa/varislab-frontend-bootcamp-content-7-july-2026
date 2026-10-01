@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ใส่เนื้อหาของ Profile Card ลงใน body ทั้ง label ชื่อ ข้อความแนะนำตัว และปุ่ม พร้อมเข้าใจความต่างของ class กับ id" />
+    <title>สร้างเนื้อหาของการ์ด | สร้าง Professional Profile Card</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 04 · โครงสร้างด้วย HTML (HTML Structure)</p>
+          <h1>สร้างเนื้อหาของการ์ด</h1>
+          <p class="lesson-original-title" lang="en">Building the Card Content</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ใส่ element ของการ์ดลงใน <code>&lt;body&gt;</code> ได้ครบ</li>
+            <li>อธิบายความต่างระหว่าง <code>class</code> กับ <code>id</code></li>
+            <li>เชื่อมไฟล์ <code>script.js</code> เข้ากับหน้าเว็บ และรู้ว่าทำไมต้องวางไว้ท้าย <code>&lt;body&gt;</code></li>
+          </ul>
+        </section>
+
+        <h2>เติมเนื้อหาลงใน body</h2>
+        <p>ต่อจากบทที่แล้ว ใส่โค้ดของการ์ดลงไปใน <code>&lt;body&gt;</code> ไฟล์ <code>index.html</code> ทั้งไฟล์จะเป็นแบบนี้:</p>
+        <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="th"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+    &lt;title&gt;Professional Profile Card&lt;/title&gt;
+    &lt;link rel="stylesheet" href="style.css" /&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+    &lt;main class="profile-card"&gt;
+      &lt;p class="label"&gt;Aspiring Software Developer&lt;/p&gt;
+
+      &lt;h1&gt;สวัสดีครับ ผมชื่อ Varis&lt;/h1&gt;
+
+      &lt;p id="summary"&gt;
+        ผมกำลังเริ่มต้นเส้นทางสู่สายงาน Software Developer
+        และกำลังเรียนรู้พื้นฐานการสร้าง Web Application
+      &lt;/p&gt;
+
+      &lt;button id="toggleButton"&gt;
+        ดูเป้าหมายของฉัน
+      &lt;/button&gt;
+    &lt;/main&gt;
+
+    &lt;script src="script.js"&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <div class="note">
+          <p>ตอนนี้พิมพ์ตามตัวอย่างไปก่อน รวมถึงชื่อ <code>Varis</code> ได้เลย ในบทที่ 08 เราจะมาเปลี่ยนชื่อ label และข้อความให้เป็นของคุณเอง</p>
+        </div>
+
+        <h2>อ่านโค้ดทีละส่วน</h2>
+
+        <h3><code>&lt;main class="profile-card"&gt;</code></h3>
+        <p><code>&lt;main&gt;</code> คือพื้นที่เนื้อหาหลักของหน้า ในโปรเจกต์นี้เราใช้มันเป็น<strong>ตัวการ์ด</strong>ที่ครอบทุกอย่างไว้ และตั้ง <code>class</code> ชื่อ <code>profile-card</code> เพื่อให้ CSS ตามมาตกแต่งได้ในภายหลัง</p>
+
+        <h3><code>&lt;p class="label"&gt;</code></h3>
+        <p><code>&lt;p&gt;</code> คือ paragraph หรือย่อหน้าข้อความ อันนี้เป็นข้อความเล็ก ๆ บอกเป้าหมายด้านบนการ์ด ตั้ง class ชื่อ <code>label</code> เพื่อให้ CSS ทำให้มันเด่นต่างจากข้อความอื่น</p>
+
+        <h3><code>&lt;h1&gt;</code></h3>
+        <p>หัวข้อที่สำคัญที่สุดของหน้า ใช้สำหรับชื่อของเรา</p>
+
+        <h3><code>&lt;p id="summary"&gt;</code></h3>
+        <p>ข้อความแนะนำตัว ตั้ง <code>id</code> ชื่อ <code>summary</code> เพราะในบทที่ 07 JavaScript จะกลับมา<strong>หาข้อความนี้แล้วเปลี่ยนมัน</strong>เมื่อผู้ใช้กดปุ่ม</p>
+
+        <h3><code>&lt;button id="toggleButton"&gt;</code></h3>
+        <p>ปุ่มที่ผู้ใช้กดได้ ตั้ง id ชื่อ <code>toggleButton</code> เพื่อให้ JavaScript รู้ว่าปุ่มไหนคือปุ่มที่ต้องรอฟังการคลิก</p>
+
+        <h3><code>&lt;script src="script.js"&gt;&lt;/script&gt;</code></h3>
+        <p>บรรทัดนี้<strong>เชื่อมไฟล์ JavaScript</strong> เข้ามาในหน้าเว็บ ถ้าไม่มีบรรทัดนี้ ต่อให้เขียน JavaScript ใน <code>script.js</code> ถูกทั้งหมด ปุ่มก็จะไม่ทำงาน เพราะ HTML ไม่ได้โหลดไฟล์นั้นเข้ามา</p>
+        <p>เราวาง <code>&lt;script&gt;</code> ไว้<strong>ท้าย <code>&lt;body&gt;</code></strong> หลังการ์ด เพราะ browser อ่าน HTML จากบนลงล่าง เมื่อถึงบรรทัด script การ์ดและปุ่มถูกสร้างเสร็จแล้ว JavaScript จึงหา element เหล่านั้นเจอ</p>
+
+        <h2>class กับ id ต่างกันอย่างไร</h2>
+        <p>ทั้งคู่เป็น attribute ที่ใช้ "ตั้งชื่อ" ให้ element เพื่อให้ CSS หรือ JavaScript อ้างถึงได้ แต่ใช้ต่างกันแบบนี้:</p>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th><code>class</code></th>
+                <th><code>id</code></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ความหมาย</td>
+                <td>กลุ่ม/ประเภทของ element</td>
+                <td>ชื่อเฉพาะของ element ตัวเดียว</td>
+              </tr>
+              <tr>
+                <td>ใช้ซ้ำในหน้าเดียวกันได้ไหม</td>
+                <td>ได้ หลาย element ใช้ class เดียวกันได้</td>
+                <td>ไม่ควร หนึ่งหน้าควรมี id นั้นแค่ตัวเดียว</td>
+              </tr>
+              <tr>
+                <td>ในโปรเจกต์นี้</td>
+                <td><code>profile-card</code>, <code>label</code> — ให้ CSS ตกแต่ง</td>
+                <td><code>summary</code>, <code>toggleButton</code> — ให้ JavaScript หาเจอแบบเจาะจง</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="warning">
+          <p>ชื่อ id และ class <strong>สะกดตัวพิมพ์เล็ก-ใหญ่ต้องตรงกันทุกที่</strong> <code>toggleButton</code> กับ <code>togglebutton</code> ถือเป็นคนละชื่อ ถ้าพิมพ์ไม่ตรงกับที่ CSS หรือ JavaScript ใช้ จะหา element ไม่เจอ</p>
+        </div>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>Save แล้ว refresh browser จะเห็นข้อความ <code>Aspiring Software Developer</code> หัวข้อตัวใหญ่ <code>สวัสดีครับ ผมชื่อ Varis</code> ข้อความแนะนำตัว และปุ่ม <code>ดูเป้าหมายของฉัน</code> ทั้งหมดเป็นตัวหนังสือดำบนพื้นขาวแบบเรียบ ๆ และ<strong>กดปุ่มแล้วยังไม่เกิดอะไรขึ้น</strong></p>
+        </section>
+        <p>นี่คือสิ่งที่ควรเห็นภาพให้ชัด: HTML ยังไม่ได้ทำให้เว็บสวย และยังไม่ได้ทำให้ปุ่มทำงาน HTML แค่บอกว่า "ในหน้านี้มีอะไรบ้าง" บทถัดไปเราจะใช้ CSS ทำให้มันดูดีขึ้น</p>
+
+        <section class="verification" aria-labelledby="check-heading">
+          <h2 id="check-heading">ก่อนไปบทถัดไป เช็กว่า</h2>
+          <ul>
+            <li>หน้าเว็บแสดง label, ชื่อ, ข้อความแนะนำตัว และปุ่มครบ</li>
+            <li>ข้อความแนะนำตัวมี <code>id="summary"</code> และปุ่มมี <code>id="toggleButton"</code></li>
+            <li>มีบรรทัด <code>&lt;script src="script.js"&gt;&lt;/script&gt;</code> อยู่ก่อน <code>&lt;/body&gt;</code></li>
+          </ul>
+        </section>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="03_html_document_structure.html" rel="prev">ก่อนหน้า: โครงของเอกสาร HTML</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="05_css_basics.html" rel="next">ถัดไป: พื้นฐาน CSS และการจัดพื้นหลัง</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

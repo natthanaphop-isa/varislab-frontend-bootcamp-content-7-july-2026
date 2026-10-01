@@ -16,7 +16,7 @@
           <p class="lesson-original-title" lang="en">Intro</p>
         </header>
 
-        <p>ยินดีต้อนรับสู่โปรเจกต์ใหญ่ของสองสัปดาห์นี้! ใน Week 4 คุณได้เรียนพื้นฐาน React ครบทุกเรื่องแล้ว ไม่ว่าจะเป็น components, hooks, effects, context, การเรียก API, การทำ routing, TanStack Query ไปจนถึงการเขียนเทสต์ — แต่การเรียนแนวคิดทีละเรื่องกับการ<em>ประกอบทุกอย่างเข้าด้วยกันเป็นแอปจริง</em>คือคนละทักษะกัน และทักษะอย่างหลังนี่แหละที่บริษัทจ้างคุณไปทำ</p>
+        <p>ยินดีต้อนรับสู่โปรเจกต์ใหญ่ของคอร์สนี้! ในคอร์ส React พื้นฐาน คุณได้เรียนพื้นฐาน React ครบทุกเรื่องแล้ว ไม่ว่าจะเป็น components, hooks, effects, context, การเรียก API, การทำ routing, TanStack Query ไปจนถึงการเขียนเทสต์ — แต่การเรียนแนวคิดทีละเรื่องกับการ<em>ประกอบทุกอย่างเข้าด้วยกันเป็นแอปจริง</em>คือคนละทักษะกัน และทักษะอย่างหลังนี่แหละที่บริษัทจ้างคุณไปทำ</p>
 
         <p>ตลอด 34 บทเรียนต่อจากนี้ เราจะสร้าง<strong>เว็บ E-commerce ที่ทำงานได้จริงทั้งเว็บ ตั้งแต่คำสั่ง <code>npm create vite</code> บรรทัดแรก ไปจนถึงแอปที่มีเทสต์ครอบคลุมและพร้อม deploy</strong> โดยไม่ใช่แค่ "ทำให้มันทำงานได้" แต่ทำให้<em>ถูกวิธี</em>แบบเดียวกับโปรเจกต์มืออาชีพ: โครงสร้างโฟลเดอร์แบบ feature-based, ชั้นข้อมูลที่เป็นระบบ, การจัดการ error ที่ครบถ้วน และชุดเทสต์ที่ทำให้เรากล้าแก้โค้ดโดยไม่กลัวของพัง</p>
 
@@ -39,23 +39,23 @@
 
         <h2>เครื่องมือที่เราจะใช้</h2>
 
-        <p>ทุกตัวคือของที่คุณเจอมาแล้วใน Week 4 หรือเป็นญาติใกล้ชิดของมัน:</p>
+        <p>ทุกตัวคือของที่คุณเจอมาแล้วในคอร์ส React พื้นฐาน หรือเป็นญาติใกล้ชิดของมัน:</p>
 
         <ul>
           <li><strong>React 19 + TypeScript</strong> บน <strong>Vite 8</strong> — ฐานเดิมที่คุณคุ้นเคย</li>
-          <li><strong>react-router 8 (data mode)</strong> — ใน Week 4 เราใช้ TanStack Router คราวนี้เราจะใช้ react-router ซึ่งเป็น router ที่เจอบ่อยที่สุดในโปรเจกต์จริง แนวคิดเดิมทั้งหมด (routes, layout, <code>Outlet</code>, dynamic params) แค่หน้าตา API ต่างกันนิดหน่อย — การใช้เครื่องมือคล้ายกันสองตัวได้ คือสัญญาณว่าคุณเข้าใจ<em>แนวคิด</em> ไม่ใช่แค่จำ API</li>
+          <li><strong>react-router 8 (data mode)</strong> — ในคอร์ส React พื้นฐาน เราใช้ TanStack Router คราวนี้เราจะใช้ react-router ซึ่งเป็น router ที่เจอบ่อยที่สุดในโปรเจกต์จริง แนวคิดเดิมทั้งหมด (routes, layout, <code>Outlet</code>, dynamic params) แค่หน้าตา API ต่างกันนิดหน่อย — การใช้เครื่องมือคล้ายกันสองตัวได้ คือสัญญาณว่าคุณเข้าใจ<em>แนวคิด</em> ไม่ใช่แค่จำ API</li>
           <li><strong>TanStack Query 5</strong> — จัดการ server state ทั้งหมด คราวนี้เราจะใช้ท่าขั้นกว่า: query key factory และ <code>queryOptions</code></li>
           <li><strong>axios</strong> — HTTP client ที่มาแทน <code>fetch</code> ตรง ๆ พร้อม interceptor ที่แปลง error ให้อยู่ในรูปแบบเดียวกันทั้งแอป</li>
           <li><strong>Context + useReducer</strong> — จัดการ state ของตะกร้าสินค้า (client state) แยกจาก server state อย่างชัดเจน</li>
-          <li><strong>react-hook-form + zod</strong> — ฟอร์ม checkout ที่ validate จริงจัง ต่อยอดจากบท Uncontrolled Forms ของ Week 4</li>
+          <li><strong>react-hook-form + zod</strong> — ฟอร์ม checkout ที่ validate จริงจัง ต่อยอดจากบท Uncontrolled Forms ของคอร์ส React พื้นฐาน</li>
           <li><strong>SCSS Modules</strong> — เขียน style แบบ scoped ต่อ component ไม่มี class ชนกันข้ามไฟล์</li>
-          <li><strong>Vitest + React Testing Library + MSW</strong> — ชุดเทสต์เดิมจาก Week 4 เพิ่ม MSW (Mock Service Worker) สำหรับจำลอง API ในเทสต์</li>
+          <li><strong>Vitest + React Testing Library + MSW</strong> — ชุดเทสต์เดิมจากคอร์ส React พื้นฐาน เพิ่ม MSW (Mock Service Worker) สำหรับจำลอง API ในเทสต์</li>
           <li><strong>Cursor</strong> — editor ที่มี AI อยู่ข้างใน คนที่พิมพ์โค้ดส่วนใหญ่ให้เรา เราจะติดตั้งและตั้งค่ากันในบทเรียน 06</li>
         </ul>
 
         <h2>"ถูกวิธี" หมายความว่าอย่างไร</h2>
 
-        <p>แอปเดียวกันนี้เขียนแบบลวก ๆ ให้เสร็จใน 3 วันก็ได้ แต่เราจะใช้เวลาสองสัปดาห์เพื่อฝึกนิสัยที่ทีมพัฒนาจริงคาดหวัง:</p>
+        <p>แอปเดียวกันนี้เขียนแบบลวก ๆ ให้เสร็จใน 3 วันก็ได้ แต่เราจะค่อย ๆ สร้างทีละขั้นเพื่อฝึกนิสัยที่ทีมพัฒนาจริงคาดหวัง:</p>
 
         <ul>
           <li><strong>โครงสร้างแบบ feature-based</strong> — โค้ดแบ่งตามฟีเจอร์ (<code>products</code>, <code>cart</code>, <code>checkout</code>) ไม่ใช่ตามชนิดไฟล์ ใครเปิดโปรเจกต์มาก็หาของเจอใน 10 วินาที</li>
@@ -91,7 +91,7 @@
         <h2>สิ่งที่ต้องมีก่อนเริ่ม</h2>
 
         <ul>
-          <li>เนื้อหา Week 4 ทั้งหมด — ถ้าเรื่องไหนลืมไปแล้ว (โดยเฉพาะ hooks, context และ TanStack Query) เปิดกลับไปทวนได้ตลอด เราจะอ้างถึงบ่อย</li>
+          <li>เนื้อหาคอร์ส React พื้นฐาน ทั้งหมด — ถ้าเรื่องไหนลืมไปแล้ว (โดยเฉพาะ hooks, context และ TanStack Query) เปิดกลับไปทวนได้ตลอด เราจะอ้างถึงบ่อย</li>
           <li><strong>Node.js เวอร์ชัน 22.22 ขึ้นไป</strong> — react-router 8 กำหนดขั้นต่ำไว้เท่านี้ เดี๋ยวบทถัดไปเราจะตั้งค่ากันด้วย nvm</li>
           <li>เครื่องมือเดิม: VS Code (หรือ editor ที่ถนัด), Terminal และ Git</li>
           <li><strong>Cursor</strong> — ติดตั้งในบทเรียน 06 ยังไม่ต้องโหลดตอนนี้ บทเรียน 02–05 เราพิมพ์เองใน editor ที่คุณใช้อยู่ก็พอ</li>

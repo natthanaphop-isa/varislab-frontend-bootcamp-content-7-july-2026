@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ติดตั้ง Swagger ในแอป NestJS เปิด Swagger UI และใช้ CLI plugin สร้าง schema จาก DTO ให้โดยอัตโนมัติ" />
+  <title>ตั้งค่า Swagger และเปิดใช้ CLI Plugin</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 43/58</p>
+    <h1>ตั้งค่า Swagger และเปิดใช้ CLI Plugin</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">บทนี้เราจะทำอะไรบ้าง</h2>
+      <ul>
+        <li>อธิบายบทบาทของ OpenAPI และ Swagger UI ต่อการสื่อสาร API</li>
+        <li>ติดตั้งและตั้งค่า <code>@nestjs/swagger</code> ใน <code>main.ts</code></li>
+        <li>เปิดใช้ Swagger CLI plugin ใน <code>nest-cli.json</code></li>
+        <li>ตรวจว่า request body schema ถูกสร้างจาก DTO โดยอัตโนมัติ</li>
+      </ul>
+    </section>
+
+    <h2>OpenAPI: ภาษากลางสำหรับบรรยาย REST API</h2>
+    <p>บทชุดนี้จะสร้างเอกสาร OpenAPI จากแอป NestJS โดยใช้เครื่องมือของ Nest ช่วยดึงข้อมูลจากโค้ด ลดงานที่ต้องเขียนซ้ำด้วยมือ <strong>OpenAPI specification</strong> คือรูปแบบมาตรฐานสำหรับอธิบาย REST API และไม่ผูกกับภาษาโปรแกรมใด ภายในเอกสารเดียวระบุข้อมูลสำคัญได้ครบ เช่น</p>
+    <ul>
+      <li>operations (endpoints) ที่มีให้เรียกทั้งหมด</li>
+      <li>parameters ของแต่ละ operation — ทั้ง input และ output</li>
+      <li>วิธี authentication</li>
+      <li>ข้อมูลติดต่อ, license, เงื่อนไขการใช้งาน และ metadata อื่น ๆ</li>
+    </ul>
+    <p>ผลพลอยได้ที่สำคัญคือ <em>Swagger UI</em> — หน้าเว็บ interactive ที่ทีม frontend หรือผู้ใช้ API เปิดดู endpoint ทั้งหมดและลองยิงได้จากเบราว์เซอร์เลย</p>
+
+    <h2>ติดตั้งและตั้งค่าใน main.ts</h2>
+    <p>แอปของเราใช้ Express อยู่เบื้องหลัง จึงติดตั้ง <code>swagger-ui-express</code> คู่กับ <code>@nestjs/swagger</code> (ถ้าใช้ Fastify ให้ติดตั้ง <code>fastify-swagger</code> แทน)</p>
+    <pre><code>npm install --save @nestjs/swagger swagger-ui-express</code></pre>
+    <p>จากนั้นประกอบ document ใน <code>main.ts</code> ก่อน <code>app.listen()</code>: <code>DocumentBuilder</code> ใช้กำหนด metadata ของเอกสาร, <code>SwaggerModule.createDocument</code> สแกนแอปทั้งหมดเพื่อสร้างสเปก และ <code>SwaggerModule.setup('api', ...)</code> กำหนด path ที่จะเสิร์ฟ UI</p>
+    <pre><code>const options = new DocumentBuilder()
+  .setTitle('Iluvcoffee')
+  .setDescription('Coffee application')
+  .setVersion('1.0')
+  .build();
+
+const document = SwaggerModule.createDocument(app, options);
+
+SwaggerModule.setup('api', app, document);</code></pre>
+    <p>เมื่อแอปรันอยู่ (<code>npm run start:dev</code>) เปิด <a href="http://localhost:3000/api">http://localhost:3000/api</a> จะพบ Swagger UI พร้อม endpoint ของ <code>coffees</code> และ <code>coffee-rating</code> เรียงให้เห็นทันที</p>
+    <div class="note"><p>ตอนนี้เอกสารยังโล่ง — เห็นแค่ path กับ HTTP method แต่ไม่มีรายละเอียด body หรือ response เพราะ TypeScript type ถูกลบทิ้งตอน compile ทำให้ Swagger มองไม่เห็น DTO ของเรา ช่วงถัดไปจะแก้ด้วย CLI plugin ที่สอนให้ compiler ฝัง metadata เหล่านี้ให้อัตโนมัติ</p></div>
+
+    <h2>ปัญหา: TypeScript type หายไปตอน runtime</h2>
+    <p>หลังจากเปิด Swagger UI เราจะเห็นว่าเอกสารยังโล่ง — <code>POST /coffees</code> ไม่บอกเลยว่า body ต้องหน้าตาอย่างไร สาเหตุคือ type ของ TypeScript (รวมถึง DTO ทุกตัวของเรา) ถูกลบทิ้งระหว่าง compile เหลือเพียง JavaScript ล้วน ๆ ตอน runtime จึงไม่มีข้อมูลให้ <code>SwaggerModule</code> สแกน ทางแก้แบบ manual คือไล่ติด <code>@ApiProperty()</code> ทุกฟิลด์ของทุก DTO — ทำได้แต่ซ้ำซากและลืมง่าย</p>
+    <p>ทางแก้ที่คอร์สนี้เลือกคือ <strong>CLI plugin</strong>: ปลั๊กอินของ compiler ที่วิเคราะห์โค้ดตอน build แล้วฝัง metadata ที่ Swagger ต้องใช้ให้เองอัตโนมัติ — DTO, entity, ชนิดข้อมูล, ความ optional ของฟิลด์ ทั้งหมดถูกอ่านจาก type ที่เราเขียนอยู่แล้ว</p>
+
+    <h2>เปิดใช้ใน nest-cli.json</h2>
+    <p>เพิ่ม plugin เข้าไปใน <code>compilerOptions</code> ของไฟล์ <code>nest-cli.json</code> ที่ root ของโปรเจกต์</p>
+    <pre><code>"compilerOptions": {
+  "deleteOutDir": true,
+  "plugins": ["@nestjs/swagger/plugin"]
+}</code></pre>
+    <p>plugin ทำงานตามข้อตกลงชื่อไฟล์ (convention): โดย default มันประมวลผลไฟล์ที่ลงท้าย <code>.dto.ts</code> และ <code>.entity.ts</code> — ตรงกับที่เราตั้งชื่อมาตลอดคอร์สพอดี จึงไม่ต้องตั้งค่าอะไรเพิ่ม สิ่งที่ plugin ทำให้ ได้แก่ ติด <code>@ApiProperty</code> ให้ทุก property ของ DTO, อนุมานชนิดข้อมูลจาก type annotation และตั้ง required/optional ตามเครื่องหมาย <code>?</code></p>
+    <div class="warning"><p>plugin ทำงานตอน <em>compile</em> — แก้ <code>nest-cli.json</code> แล้วต้อง restart <code>npm run start:dev</code> ใหม่จึงเห็นผล ถ้าเอกสารยังโล่งอยู่ ให้เช็กก่อนเลยว่า dev server ถูก start หลังแก้ไฟล์แล้วจริง ๆ</p></div>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">เปิด Swagger UI และให้ DTO แสดงในเอกสารอัตโนมัติ</h2>
+      <h3>ขั้นที่ 1: เปิด Swagger UI ให้ iluvcoffee</h3>
+      <p>ติดตั้ง dependency ทั้งสองตัว เพิ่มโค้ดตั้งค่า document ใน <code>main.ts</code> แล้วเปิดเบราว์เซอร์ดูผล</p>
+      <div class="prompt-example"><code>npm install --save @nestjs/swagger swagger-ui-express
+
+# main.ts — ก่อน app.listen()
+const options = new DocumentBuilder()
+  .setTitle('Iluvcoffee')
+  .setDescription('Coffee application')
+  .setVersion('1.0')
+  .build();
+const document = SwaggerModule.createDocument(app, options);
+SwaggerModule.setup('api', app, document);
+
+# เปิดดู
+open http://localhost:3000/api</code></div>
+      <h3>ขั้นที่ 2: ให้ DTO ของ iluvcoffee โผล่ในเอกสารเอง</h3>
+      <p>เพิ่ม plugin ใน <code>nest-cli.json</code> restart dev server แล้วเปิด Swagger UI ดู <code>POST /coffees</code> อีกครั้ง</p>
+      <div class="prompt-example"><code># nest-cli.json
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "plugins": ["@nestjs/swagger/plugin"]
+  }
+}
+
+# restart แล้วเปิดดู
+npm run start:dev
+open http://localhost:3000/api</code></div>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+      <p>Swagger UI ที่ <code>/api</code> แสดง endpoint ทั้งหมดและทดลองยิง request ได้ ส่วน <code>POST /coffees</code> แสดง schema ของ <code>CreateCoffeeDto</code> ครบทั้ง <code>name</code>, <code>brand</code> และ <code>flavors</code> หลังเปิด CLI plugin โดยไม่ต้องติด decorator ให้ทุก property เอง</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ลองเช็กให้แน่ใจ</h2>
+      <ul>
+        <li>เปิด <code>http://localhost:3000/api</code> แล้วเห็น Swagger UI โหลดสำเร็จ</li>
+        <li>เห็น endpoint ของ <code>coffees</code> ครบทุก HTTP method ที่เราสร้างไว้</li>
+        <li>ลอง <q>Try it out</q> กับ <code>GET /coffees</code> — ถ้า route ไม่ติด <code>@Public()</code> อย่าลืมใส่ <code>Authorization</code> header</li>
+        <li>เปิด <code>http://localhost:3000/api-json</code> เพื่อดูสเปก OpenAPI ดิบเป็น JSON</li>
+        <li>กาง <code>POST /coffees</code> แล้วเห็น example body ที่ generate จาก <code>CreateCoffeeDto</code></li>
+        <li>ดู schema ของ <code>PATCH /coffees/{id}</code> คร่าว ๆ — ตอนนี้ <code>UpdateCoffeeDto</code> ยังใช้ <code>PartialType</code> จาก <code>@nestjs/mapped-types</code> (บทที่ 18) อยู่ ฟิลด์อาจยังไม่ถูกทำเครื่องหมาย optional ครบในเอกสารจนกว่าจะสลับไปใช้ <code>PartialType</code> จาก <code>@nestjs/swagger</code> ในบทถัดไป — ยังไม่ต้องแก้อะไรตอนนี้</li>
+        <li>ดูส่วน Schemas ว่ามี DTO ของ pagination ด้วย (<code>PaginationQueryDto</code>)</li>
+        <li>ลองลบ plugin ออกชั่วคราวแล้ว restart เพื่อเห็นความต่าง จากนั้นใส่กลับ</li>
+      </ul>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/openapi/introduction">OpenAPI introduction (NestJS docs)</a></li>
+      <li><a href="https://docs.nestjs.com/openapi/cli-plugin">OpenAPI CLI plugin (NestJS docs)</a></li>
+      <li><a href="https://docs.nestjs.com/openapi/types-and-parameters">OpenAPI types and parameters (NestJS docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="42_bonus-create-custom-param-decorators.html" rel="prev">← บทก่อน</a>
+      <a class="lesson-navigation__link" href="index.html">ดูบทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="44_decorating-model-properties.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS Fundamentals Workshop · เนื้อหาตรวจทานล่าสุด 1 กันยายน 2026</p></footer>
+</body>
+</html>

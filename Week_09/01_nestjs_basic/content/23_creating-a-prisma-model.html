@@ -9,10 +9,10 @@
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 23 จาก 77</p>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 23/58</p>
     <h1>สร้าง Prisma Model</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
-      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <h2 id="objectives-heading">บทนี้เราจะทำอะไรบ้าง</h2>
       <ul>
         <li>นิยาม model ใน <code>schema.prisma</code> ด้วย field, ชนิดข้อมูล และ attribute อย่าง <code>@id</code>, <code>@default()</code> และ <code>@@map()</code></li>
         <li>ใช้ <code>prisma db push</code> สร้างตารางในฐานข้อมูลจาก schema และ <code>prisma generate</code> สร้าง type ให้ตรงกัน</li>
@@ -66,11 +66,11 @@ npx prisma generate
 # Databases &gt; postgres &gt; Schemas &gt; public &gt; Tables &gt; coffee</code></div>
     </section>
     <section class="expected-result" aria-labelledby="exercise-result-heading">
-      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
-      <p><code>db push</code> จบด้วยข้อความ <q>Your database is now in sync with your Prisma schema</q> และเมื่อ refresh ใน pgAdmin จะเห็นตาราง <code>coffee</code> โผล่ขึ้นมาพร้อมคอลัมน์ <code>id</code>, <code>name</code>, <code>brand</code>, <code>flavors</code> ตรงตาม model ทุกประการ — โดยที่เราไม่ได้เขียน SQL <code>CREATE TABLE</code> เองแม้แต่บรรทัดเดียว ส่วน <code>generate</code> ทำให้ <code>import { Coffee } from '../generated/prisma/client.js'</code> ใช้ได้พร้อม autocomplete ครบทั้ง 4 field</p>
+      <h2 id="exercise-result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+      <p><code>db push</code> จบด้วยข้อความ <q>Your database is now in sync with your Prisma schema</q> เมื่อ refresh pgAdmin เราควรเห็นตาราง <code>coffee</code> พร้อมคอลัมน์ <code>id</code>, <code>name</code>, <code>brand</code> และ <code>flavors</code> ตามที่ประกาศไว้ โดยไม่ต้องเขียน <code>CREATE TABLE</code> เอง ส่วน <code>generate</code> ทำให้ import <code>Coffee</code> จาก Prisma Client และใช้ autocomplete ของทั้ง 4 fields ได้</p>
     </section>
     <section class="verification" aria-labelledby="exercise-check-heading">
-      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <h2 id="exercise-check-heading">ลองเช็กให้แน่ใจ</h2>
       <ul>
         <li><code>prisma/schema.prisma</code> มีบล็อก <code>model Coffee</code> ครบ 4 field และ <code>@@map("coffee")</code></li>
         <li>ผลของ <code>npx prisma db push</code> ขึ้น <q>Your database is now in sync</q> โดยไม่มี error</li>
@@ -85,11 +85,11 @@ npx prisma generate
       <li><a href="https://docs.nestjs.com/recipes/prisma">Prisma Recipe (NestJS Docs)</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
-      <a class="lesson-navigation__link" href="22_introducing-prisma.html" rel="prev">← บทก่อนหน้า</a>
-      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="22_introducing-prisma.html" rel="prev">← บทก่อน</a>
+      <a class="lesson-navigation__link" href="index.html">ดูบทเรียนทั้งหมด</a>
       <a class="lesson-navigation__link" href="24_using-prisma-client-to-access-database.html" rel="next">บทถัดไป →</a>
     </nav>
   </main>
-  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+  <footer><p>NestJS Fundamentals Workshop · เนื้อหาตรวจทานล่าสุด 1 กันยายน 2026</p></footer>
 </body>
 </html>

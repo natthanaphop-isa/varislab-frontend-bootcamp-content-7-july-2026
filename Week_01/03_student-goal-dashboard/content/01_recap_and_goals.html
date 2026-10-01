@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ทบทวนพื้นฐาน HTML, CSS, JavaScript และ form แล้วดูว่าคอร์สนี้จะพาเราขยับไปทำงานกับข้อมูลหลายรายการอย่างไร" />
+    <title>ทบทวนพื้นฐานและเป้าหมายของคอร์ส | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 01 · ทบทวนและการ Debug (Recap &amp; Debugging)</p>
+          <h1>ทบทวนพื้นฐานและเป้าหมายของคอร์ส</h1>
+          <p class="lesson-original-title" lang="en">Recap &amp; Goals</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ทบทวนได้ว่า HTML, CSS และ JavaScript ทำหน้าที่อะไรในหน้าเว็บ</li>
+            <li>นึกออกว่าคำสั่ง JavaScript พื้นฐานที่ใช้กับหน้าเว็บและ form แต่ละตัวใช้ทำอะไร</li>
+            <li>อธิบายได้ว่าทำไมเว็บจริงถึงต้องจัดการ “ข้อมูลหลายรายการ”</li>
+            <li>รู้ว่าคอร์สนี้จะพาไปเรียนอะไรและสร้างอะไร</li>
+          </ul>
+        </section>
+
+        <h2>พื้นฐานที่ควรมีก่อนเริ่ม</h2>
+        <p>คอร์สนี้ต่อยอดจากพื้นฐานหน้าเว็บ: <strong>HTML</strong> คือโครงสร้าง <strong>CSS</strong> คือหน้าตา และ <strong>JavaScript</strong> คือพฤติกรรมของหน้าเว็บ ก่อนเริ่มเรื่องใหม่ ลองไล่เช็กดูว่าคุณยังจำสิ่งเหล่านี้ได้หรือไม่</p>
+
+        <h3>JavaScript กับหน้าเว็บ (จากการทำ Profile Card)</h3>
+        <ul>
+          <li>HTML ใช้สร้างโครงสร้าง, CSS ใช้จัดหน้าตา, JavaScript ใช้ทำ interaction</li>
+          <li><code>document.getElementById("...")</code> — หา element จาก <code>id</code></li>
+          <li><code>addEventListener</code> — รอฟังเหตุการณ์ เช่น การคลิกปุ่ม</li>
+          <li><code>textContent</code> — เปลี่ยนข้อความใน element</li>
+        </ul>
+
+        <h3>รับข้อมูลจากผู้ใช้ผ่าน Form</h3>
+        <ul>
+          <li><code>&lt;form&gt;</code> ใช้รับข้อมูลจากผู้ใช้</li>
+          <li><code>.value</code> ใช้อ่านค่าที่ผู้ใช้กรอกใน input</li>
+          <li>ตัวแปรใช้เก็บข้อมูลไว้ใช้ต่อ</li>
+          <li><code>if</code> ใช้ตรวจสอบว่าข้อมูลครบหรือไม่</li>
+          <li><code>event.preventDefault()</code> ใช้ไม่ให้หน้าเว็บ refresh ตอนกด submit</li>
+        </ul>
+
+        <p>ตัวอย่างสั้น ๆ ที่รวมหลายอย่างข้างบนไว้ด้วยกัน:</p>
+        <pre><code class="language-javascript">const fullNameInput = document.getElementById("fullName");
+
+// ในฟังก์ชันที่ทำงานตอน submit form
+const fullName = fullNameInput.value;
+
+if (fullName === "") {
+  // ยังไม่ได้กรอกชื่อ
+}</code></pre>
+
+        <div class="note">
+          <p>ถ้ามีคำสั่งไหนที่นึกไม่ออก ไม่เป็นไร ในบทต่อ ๆ ไปเราจะได้ใช้ <code>getElementById</code> และ <code>console.log</code> อีกหลายครั้ง พร้อมคำอธิบายทีละบรรทัด</p>
+        </div>
+
+        <h2>คำถามสำคัญ: ถ้ามีข้อมูลหลายรายการล่ะ?</h2>
+        <p>จนถึงตอนนี้เราทำงานกับข้อมูลทีละชิ้น เช่น ชื่อคนหนึ่งคน เป้าหมายหนึ่งเป้าหมาย ข้อความหนึ่งข้อความ แต่ในเว็บจริง เราไม่ได้มีผู้ใช้แค่คนเดียว สินค้าแค่ชิ้นเดียว หรือคอร์สแค่คอร์สเดียว ข้อมูลมักมาเป็น <strong>ชุด</strong> เช่น</p>
+        <ul>
+          <li>รายชื่อนักเรียนหลายคน</li>
+          <li>รายการสินค้า</li>
+          <li>รายการบทเรียน</li>
+          <li>รายการงานที่ต้องทำ</li>
+          <li>รายการผู้สมัครงาน</li>
+          <li>รายการคำสั่งซื้อ</li>
+        </ul>
+        <p>คอร์สนี้เราจะรู้จักเครื่องมือ 3 อย่างของ JavaScript ที่ใช้จัดการข้อมูลเป็นชุด:</p>
+        <ul>
+          <li><strong>Array</strong> = รายการหลายชิ้น</li>
+          <li><strong>Object</strong> = ข้อมูลหนึ่งชิ้นที่มีหลายรายละเอียด</li>
+          <li><strong>Loop</strong> = การทำงานซ้ำกับข้อมูลแต่ละรายการ</li>
+        </ul>
+        <p>และอีกหนึ่งทักษะที่สำคัญไม่แพ้กัน:</p>
+        <ul>
+          <li><strong>Debugging</strong> = การไล่หาปัญหาอย่างเป็นขั้นตอน</li>
+        </ul>
+
+        <h2>แผนการเรียนของคู่มือนี้</h2>
+        <ol>
+          <li><strong>ทบทวนและการ Debug</strong> — ดูข้อผิดพลาดที่เจอบ่อยจากการทำ assignment และวิธีไล่หาปัญหาด้วย <code>console.log</code></li>
+          <li><strong>Array, Object และ Loop</strong> — ปูพื้นฐานการเก็บและวนผ่านข้อมูลหลายรายการ</li>
+          <li><strong>Student Goal Dashboard</strong> — สร้างหน้าเว็บที่แสดงการ์ดนักเรียนหลายคนพร้อมเป้าหมายของแต่ละคน โดยให้ JavaScript สร้างการ์ดให้จากข้อมูล</li>
+          <li><strong>ฝึกต่อยอดและสรุป</strong> — Mini Challenge และการบ้าน</li>
+        </ol>
+
+        <div class="note">
+          <p>ในคอร์สนี้เรายังฝึกเขียนโค้ดด้วยตัวเองทั้งหมด ยังไม่ใช้ AI ช่วย generate code เพราะอยากให้คุณได้ฝึกอ่านโค้ดเอง อ่าน error เอง เข้าใจ flow เอง และคิด logic เองก่อน เป้าหมายไม่ใช่การจำ syntax ให้ได้ทั้งหมด แต่คือเข้าใจว่าเวลามีข้อมูลหลายรายการ เราจะให้ JavaScript จัดการและแสดงผลซ้ำ ๆ ให้เราได้อย่างไร</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า HTML, CSS และ JavaScript ต่างกันอย่างไร</li>
+            <li>บอกได้ว่า <code>getElementById</code>, <code>textContent</code>, <code>.value</code> และ <code>event.preventDefault()</code> ใช้ทำอะไร</li>
+            <li>ยกตัวอย่างข้อมูลที่มาเป็น “ชุด” ในเว็บที่คุณใช้อยู่ทุกวันได้อย่างน้อย 2 อย่าง</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="02_common_mistakes.html" rel="next">ถัดไป: ข้อผิดพลาดที่เจอบ่อยจากการทำ Assignment</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

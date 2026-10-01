@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เข้าใจความต่างระหว่าง local repository กับ remote repository และสร้าง repository ว่างบน GitHub เพื่อเตรียมรับโค้ดจากเครื่อง" />
+    <title>Local, Remote และการสร้าง Repository บน GitHub | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 08 · ส่งงานขึ้น GitHub (GitHub &amp; Remote Repository)</p>
+          <h1>Local, Remote และการสร้าง Repository บน GitHub</h1>
+          <p class="lesson-original-title" lang="en">Create a GitHub Repository</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายความต่างระหว่าง local repository และ remote repository</li>
+            <li>สร้าง repository ว่างบน GitHub</li>
+            <li>อธิบายได้ว่าทำไมไม่ควรเลือก Add README ตอนสร้าง repository ในกรณีนี้</li>
+          </ul>
+        </section>
+
+        <h2>Local Repository และ Remote Repository</h2>
+        <p>
+          ตอนนี้ commit ทั้ง 3 ตัวของเราอยู่ในเครื่อง (ในโฟลเดอร์ <code>.git</code>) เราเรียกมันว่า <strong>Local Repository</strong>
+          ถ้าเครื่องพังหรือหาย ประวัติทั้งหมดก็หายไปด้วย ขั้นตอนต่อไปคือส่งสำเนาไปเก็บไว้บน GitHub ซึ่งเราเรียกว่า <strong>Remote Repository</strong>
+        </p>
+        <pre><code class="language-text">Local Repository
+เครื่องของเรา
+        ↓ git push
+
+Remote Repository
+GitHub</code></pre>
+        <p>คำสั่ง <code>git push</code> คือการส่ง commit จาก local ขึ้นไปยัง remote ซึ่งเราจะได้ใช้ในบทถัดไป</p>
+
+        <h2>สร้าง Repository บน GitHub</h2>
+        <p>เข้าสู่ระบบ <a href="https://github.com" target="_blank" rel="noreferrer">github.com</a> แล้วทำตามขั้นตอน:</p>
+        <ol>
+          <li>กดปุ่ม <strong>New repository</strong> (หรือปุ่ม <strong>+</strong> มุมขวาบน → New repository)</li>
+          <li>ตั้งชื่อ repository ว่า <code>developer-profile-page</code></li>
+          <li>เลือก <strong>Public</strong></li>
+          <li><strong>ไม่ต้อง</strong>เลือก Add README</li>
+          <li><strong>ไม่ต้อง</strong>เลือก <code>.gitignore</code></li>
+          <li><strong>ไม่ต้อง</strong>เลือก License</li>
+          <li>กด <strong>Create repository</strong></li>
+        </ol>
+        <p>ตั้งชื่อให้ตรงกับชื่อโฟลเดอร์ในเครื่อง จะช่วยให้จำง่ายว่า repository ไหนคู่กับโปรเจกต์ไหน</p>
+
+        <h3>ทำไมไม่สร้าง README บน GitHub</h3>
+        <p>
+          เพราะเรามี <code>README.md</code> ใน local repository อยู่แล้ว ถ้าให้ GitHub สร้าง README ให้อีก GitHub จะสร้าง commit ของมันเองขึ้นมา
+          ทำให้ local กับ remote มี<strong>ประวัติเริ่มต้นไม่ตรงกัน</strong> และการ push ครั้งแรกจะถูกปฏิเสธ ซึ่งแก้ยากสำหรับมือใหม่
+          ดังนั้นเมื่อมีโปรเจกต์ในเครื่องอยู่แล้ว ให้สร้าง <strong>Empty Repository</strong> เสมอ
+        </p>
+
+        <div class="warning">
+          <p>ถ้าเผลอติ๊ก Add README, <code>.gitignore</code> หรือ License ไปแล้ว วิธีที่ง่ายที่สุดสำหรับตอนนี้คือลบ repository นั้นทิ้ง (Settings → Danger Zone → Delete this repository) แล้วสร้างใหม่แบบว่างเปล่า</p>
+        </div>
+
+        <h2>หน้าที่ GitHub แสดงหลังสร้าง</h2>
+        <p>
+          เมื่อสร้าง repository ว่างเสร็จ GitHub จะแสดงหน้า “Quick setup” พร้อม URL ของ repository และชุดคำสั่งตัวอย่าง
+          ให้เลือกแบบ <strong>HTTPS</strong> แล้วจด URL ไว้ ซึ่งจะหน้าตาประมาณนี้ (<code>username</code> คือชื่อ GitHub ของคุณ):
+        </p>
+        <pre><code class="language-text">https://github.com/username/developer-profile-page.git</code></pre>
+        <p>เปิดหน้านี้ค้างไว้ บทถัดไปเราจะใช้ URL นี้เชื่อมเครื่องเราเข้ากับ GitHub</p>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า local repository อยู่ในเครื่อง ส่วน remote repository อยู่บน GitHub</li>
+            <li>มี repository ชื่อ <code>developer-profile-page</code> แบบ Public บน GitHub</li>
+            <li>repository นั้นว่างเปล่า (ไม่มี README, <code>.gitignore</code> หรือ License)</li>
+            <li>มี URL แบบ HTTPS ของ repository พร้อมใช้</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="07_commit_history.html" rel="prev">ก่อนหน้า: สร้าง Commit History และ README</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="09_connect_and_push.html" rel="next">ถัดไป: เชื่อม Local กับ GitHub และ Push ครั้งแรก</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

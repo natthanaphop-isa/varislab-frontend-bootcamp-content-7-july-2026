@@ -9,10 +9,10 @@
 </head>
 <body>
   <main>
-    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 20 จาก 77</p>
+    <p class="eyebrow">NestJS Fundamentals Workshop · บทที่ 20/58</p>
     <h1>รัน PostgreSQL ด้วย Docker Compose</h1>
     <section class="learning-objectives" aria-labelledby="objectives-heading">
-      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <h2 id="objectives-heading">บทนี้เราจะทำอะไรบ้าง</h2>
       <ul>
         <li>เขียน <code>docker-compose.yml</code> ที่รัน PostgreSQL container สำหรับพัฒนา</li>
         <li>อธิบายความหมายของ <code>image</code>, <code>ports</code> และ <code>environment</code> ในไฟล์ compose</li>
@@ -52,11 +52,11 @@ docker-compose ps
 docker-compose logs db</code></div>
     </section>
     <section class="expected-result" aria-labelledby="exercise-result-heading">
-      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <h2 id="exercise-result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
       <p><code>docker-compose ps</code> แสดง service <code>db</code> สถานะ <code>Up</code> ที่พอร์ต 5432 และใน log มีบรรทัด <code>database system is ready to accept connections</code> — ฐานข้อมูลพร้อมให้ NestJS ต่อในบทที่ 22</p>
     </section>
     <section class="verification" aria-labelledby="exercise-check-heading">
-      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <h2 id="exercise-check-heading">ลองเช็กให้แน่ใจ</h2>
       <ul>
         <li><code>docker-compose ps</code> เห็น container สถานะ Up และ mapping <code>0.0.0.0:5432-&gt;5432/tcp</code></li>
         <li>log ของ <code>db</code> จบด้วย <code>ready to accept connections</code> โดยไม่มี error</li>
@@ -71,11 +71,11 @@ docker-compose logs db</code></div>
       <li><a href="https://docs.docker.com/compose/">Docker Compose documentation</a></li>
     </ul>
     <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
-      <a class="lesson-navigation__link" href="19_before-we-get-started.html" rel="prev">← บทก่อนหน้า</a>
-      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="19_before-we-get-started.html" rel="prev">← บทก่อน</a>
+      <a class="lesson-navigation__link" href="index.html">ดูบทเรียนทั้งหมด</a>
       <a class="lesson-navigation__link" href="21_how-to-visualize-your-postgres-database-gui.html" rel="next">บทถัดไป →</a>
     </nav>
   </main>
-  <footer><p>NestJS Fundamentals Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 1 กันยายน 2026</p></footer>
+  <footer><p>NestJS Fundamentals Workshop · เนื้อหาตรวจทานล่าสุด 1 กันยายน 2026</p></footer>
 </body>
 </html>

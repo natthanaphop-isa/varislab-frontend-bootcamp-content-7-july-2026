@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เปิด POST /auth/login ที่ออก JWT ด้วย @nestjs/jwt อ่าน secret จาก .env ผ่าน ConfigService และตอบ 401 ด้วยข้อความเดียวกันทั้งกรณีอีเมลผิดและรหัสผ่านผิด" />
+  <title>POST /auth/login และ Access Token</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>POST /auth/login และ Access Token</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อ่าน JWT ออกทีละส่วน และอธิบายได้ว่าทำไมสิ่งที่อยู่ใน payload ถือว่า<strong>เปิดเผย</strong> ไม่ใช่ความลับ</li>
+        <li>ตั้งค่า <code>JwtModule</code> ให้อ่าน secret จาก <code>.env</code> ผ่าน <code>ConfigService</code> โดยแอปจะไม่ยอม boot ถ้าลืมตั้งค่า</li>
+        <li>ออกแบบข้อความ error ของการ login ที่ไม่บอกใบ้ว่าอีเมลไหนมีอยู่ในระบบ</li>
+      </ul>
+    </section>
+
+    <h2>JWT คืออะไร และมันไม่ได้ปกปิดอะไรเลย</h2>
+    <p>JWT คือสตริงสามท่อนคั่นด้วยจุด <code>header.payload.signature</code> สองท่อนแรกเป็น JSON ที่เข้ารหัสด้วย base64url เฉย ๆ — ใครก็ตามที่ถือ token อยู่ถอดอ่านได้ทันทีโดยไม่ต้องมีกุญแจอะไร ลองเองได้ในส่วนตรวจท้ายบท</p>
+    <p>นี่คือจุดที่เข้าใจผิดกันบ่อยที่สุด: <strong>signature ไม่ได้ปิดบังข้อมูล มันรับประกันว่าข้อมูลไม่ถูกแก้</strong> ท่อนที่สามคือลายเซ็นที่คำนวณจากสองท่อนแรกรวมกับ secret ที่มีแต่ server รู้ ถ้าใครแก้ <code>role</code> ใน payload จาก <code>USER</code> เป็น <code>ADMIN</code> ลายเซ็นเดิมจะไม่ตรงกับเนื้อหาใหม่อีกต่อไป และ server จะปฏิเสธ token นั้น — แต่เขา<em>อ่าน</em> role เดิมได้ตั้งแต่แรกอยู่ดี</p>
+    <p>ผลที่ตามมาเป็นกฎข้อเดียวที่ต้องจำ: อย่าใส่อะไรที่เป็นความลับลงใน payload ไม่ใส่รหัสผ่าน ไม่ใส่ hash ไม่ใส่เลขบัตร สิ่งที่ใส่ได้คือข้อมูลที่ถ้าเจ้าของ token อ่านเองก็ไม่เป็นไร ซึ่งสำหรับเราคือ <code>sub</code> (เลข id ของผู้ใช้ตามธรรมเนียมของ JWT), <code>email</code> และ <code>role</code></p>
+    <div class="note"><p>ที่ต้องมี <code>role</code> อยู่ใน payload เพราะเราอยากให้การตรวจสิทธิ์ทำได้โดย<em>ไม่ต้องแตะฐานข้อมูล</em>ทุก request — นั่นคือข้อดีหลักของ token แบบนี้ และเป็นข้อเสียหลักของมันพร้อมกัน เพราะ token ที่ออกไปแล้วจะถือข้อมูลเก่าติดตัวไปจนหมดอายุ เรื่องนี้จะกลับมาเป็นประเด็นจริง ๆ ในบทที่ทำ role</p></div>
+
+    <h2>สองใบ แต่บทนี้ทำใบแรกก่อน</h2>
+    <p>สัญญาใน <code>docs/auth-spec.md</code> บอกว่า <code>POST /auth/login</code> ต้องคืน token สองใบ คือ <code>accessToken</code> กับ <code>refreshToken</code> บทนี้จะทำแค่ใบแรก แล้วบทที่ว่าด้วย refresh จะมาเติมใบที่สองให้ครบสัญญา — เหมือนตอนต้นคอร์สที่เราเขียนสัญญาของสินค้าครบทุก endpoint ก่อน แล้วค่อยทยอยสร้างทีละตัว</p>
+    <p>เหตุผลที่แยกสองใบตั้งแต่ในสัญญา: access token ต้องอายุสั้นเพราะมันเดินทางไปกับทุก request จึงมีโอกาสรั่วสูงที่สุด ส่วน refresh token อายุยาวแต่ถูกใช้นาน ๆ ครั้งและเก็บไว้ที่เดียว ถ้าใช้ token ใบเดียวอายุยาวทำทั้งสองหน้าที่ เราจะได้ของที่รั่วง่ายและอยู่ได้นานพร้อมกัน ซึ่งเป็นส่วนผสมที่แย่ที่สุด</p>
+
+    <h2>secret ที่ลืมตั้งค่าต้องทำให้แอปไม่ยอม start</h2>
+    <p><code>.env</code> ของเรามีสี่บรรทัดมาตั้งแต่ตอนตั้งค่าฐานข้อมูล บทนี้เพิ่มเป็นหก</p>
+    <pre><code>JWT_SECRET=dev-only-change-me-in-production
+JWT_EXPIRES_IN=900</code></pre>
+    <p>สองเรื่องที่ตั้งใจเลือกไว้แบบนี้</p>
+    <p><strong>อายุเก็บเป็นวินาทีล้วน ๆ ไม่ใช่ <code>"15m"</code></strong> — <code>@nestjs/jwt</code> รับได้ทั้งตัวเลขและสตริงอย่าง <code>"15m"</code> แต่ชนิดของสตริงที่มันรับเป็น template literal type แบบเฉพาะเจาะจง ไม่ใช่ <code>string</code> ทั่วไป แปลว่าค่าที่อ่านมาจาก <code>.env</code> (ซึ่งเป็น <code>string</code>) จะใส่ลงไปตรง ๆ ไม่ได้ และทางลัดที่คนส่วนใหญ่ใช้คือ <code>as</code> ซึ่งกติกาของโปรเจกต์เราห้ามไว้ การเก็บเป็นวินาทีแล้วแปลงด้วย <code>Number()</code> เลี่ยงปัญหานี้ทั้งก้อน แถมทำให้ตรวจได้แม่นว่า <code>exp − iat</code> เท่ากับ 900 พอดี</p>
+    <p><strong>อ่านด้วย <code>getOrThrow</code> ไม่ใช่ <code>get</code></strong> — เหตุผลเดียวกับตอนอ่าน <code>APP_URL</code>: <code>get</code> คืน <code>undefined</code> เงียบ ๆ ถ้าไม่มีคีย์นั้น ซึ่งสำหรับ secret แปลว่าแอปจะ start ขึ้นมาได้ตามปกติแล้วเซ็น token ด้วยค่าว่าง กลายเป็นระบบที่ดูเหมือนทำงานแต่ใครก็ปลอม token ได้ ส่วน <code>getOrThrow</code> ทำให้แอปพังตั้งแต่ตอน boot ซึ่งเป็นเวลาที่ถูกต้องที่สุดที่จะพัง</p>
+    <div class="warning"><p>ค่า <code>JWT_SECRET</code> ในไฟล์ตัวอย่างนี้เป็นค่าสำหรับเครื่องเราเท่านั้น ของจริงต้องเป็นค่าสุ่มยาว ๆ ที่ไม่มีใครเดาได้ และต้องไม่ใช่ค่าเดียวกับที่ commit ลง repo — <code>.env</code> ถูก gitignore ไว้แล้วตั้งแต่ต้นคอร์ส ส่วน <code>.env.example</code> ที่ commit ไปด้วยนั้นถือเป็นแบบฟอร์ม ไม่ใช่ที่เก็บค่าจริง</p></div>
+
+    <h2>ข้อความ error ที่ช่วยเหลือมากเกินไป</h2>
+    <p>ตอน login มีสองทางที่พลาดได้: ไม่มีอีเมลนั้นในระบบ กับมีอีเมลแต่รหัสผ่านผิด สัญชาตญาณของคนเขียน API คือแยกสองข้อความให้ชัดเพื่อให้ผู้ใช้แก้ถูกจุด และนั่นคือการเปิดช่องให้ใครก็ได้ไล่ตรวจว่าอีเมลไหนสมัครไว้กับเราบ้าง โดยไม่ต้องรู้รหัสผ่านสักตัว</p>
+    <p>ข้อมูลนั้นมีค่าจริงสำหรับคนที่ตั้งใจไม่ดี: รายชื่ออีเมลที่ยืนยันแล้วว่ามีบัญชีอยู่ คือรายชื่อเป้าหมายสำหรับการลองรหัสผ่านที่รั่วมาจากที่อื่น สัญญาของเราจึงบังคับว่าทั้งสองกรณีต้องได้ <code>401</code> พร้อมข้อความ <code>Invalid credentials</code> เหมือนกันเป๊ะ</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <p>รายการด้านล่างคือไฟล์ที่เปลี่ยนใน<strong>โค้ดอ้างอิงของคอร์ส</strong> — ใช้เป็นแผนที่ตอนเทียบงาน ไม่ใช่ข้อบังคับ Cursor ของคุณอาจวางไฟล์หรือตั้งชื่อต่างไปได้ ขอแค่ผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
+    <pre><code>ecommerce-api/
+├── .env / .env.example              (แก้ไข: เพิ่ม JWT_SECRET และ JWT_EXPIRES_IN — เขียนด้วยมือ)
+└── src/
+    └── auth/
+        ├── auth.module.ts           (แก้ไข: JwtModule.registerAsync)
+        ├── auth.service.ts          (แก้ไข: เพิ่ม login)
+        ├── auth.controller.ts       (แก้ไข: เพิ่ม POST /auth/login)
+        └── dto/
+            ├── login.dto.ts         (สร้างใหม่)
+            └── auth-response.dto.ts (สร้างใหม่)</code></pre>
+    <ul>
+      <li><strong><code>.env</code> และ <code>.env.example</code></strong> — เขียนด้วยมือทั้งสองไฟล์ให้เนื้อหาเหมือนกัน · <code>diff .env .env.example</code> ต้องยังไม่มีผลต่าง</li>
+      <li><strong><code>src/auth/auth.module.ts</code></strong> — ในโค้ดอ้างอิง: <code>JwtModule.registerAsync</code> ที่ inject <code>ConfigService</code> · ไม่ต้อง <code>import ConfigModule</code> ซ้ำ เพราะมันเป็น global module มาตั้งแต่ตอนตั้งค่า Prisma</li>
+      <li><strong><code>src/auth/auth.service.ts</code></strong> — ในโค้ดอ้างอิง: เมธอด <code>login</code> ที่หาแถวจากอีเมล เทียบรหัสผ่านด้วย <code>PasswordService</code> ตัวเดิม แล้วเซ็น token · ทั้งสองทางที่พลาดโยน error ตัวเดียวกัน</li>
+      <li>ไม่มีไฟล์ใน <code>test/</code> หรือ <code>prisma/</code> เปลี่ยนในบทนี้</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="login-heading">
+      <h2 id="login-heading">สั่ง Cursor เปิด POST /auth/login</h2>
+      <p>ติดตั้ง <code>@nestjs/jwt</code> ด้วยมือก่อน</p>
+      <div class="prompt-example"><code>npm install @nestjs/jwt</code></div>
+      <p>จากนั้นเติมสองบรรทัดนี้ต่อท้าย<strong>ทั้ง</strong> <code>.env</code> และ <code>.env.example</code> ด้วยมือ ให้เนื้อหาเหมือนกันทุกตัวอักษร</p>
+      <div class="prompt-example"><code>JWT_SECRET=dev-only-change-me-in-production
+JWT_EXPIRES_IN=900</code></div>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before login"</code>)</p>
+      <div class="cursor-prompt"><code>สร้าง endpoint POST /auth/login ที่คืน access token แบบ JWT ตาม docs/auth-spec.md
+@docs/auth-spec.md @src/auth/auth.service.ts @src/auth/auth.module.ts
+
+ผลลัพธ์ที่ต้องได้:
+- POST /auth/login ด้วยอีเมลกับรหัสผ่านที่ถูกต้อง → 200 และ body เป็น { "accessToken": "&lt;JWT&gt;" }
+- payload ของ token ถอดออกมามี sub (id ของผู้ใช้), email และ role และ exp ลบ iat ได้เท่ากับ JWT_EXPIRES_IN พอดี
+- payload ต้องไม่มีรหัสผ่านหรือ hash อยู่เลย
+- secret และอายุอ่านจาก .env ผ่าน ConfigService ด้วย getOrThrow — ถ้าลบบรรทัด JWT_SECRET ทิ้งแล้ว start ใหม่ แอปต้อง boot ไม่ขึ้น ไม่ใช่ boot ขึ้นแล้วค่อยพังตอนมีคนยิง login
+- อายุเก็บใน .env เป็นจำนวนวินาที และแปลงเป็น number ก่อนส่งให้ JwtModule ห้ามใช้ as เพื่อให้ผ่าน type
+- รหัสผ่านผิด กับ อีเมลที่ไม่มีในระบบ → 401 ทั้งคู่ โดย message เป็นข้อความเดียวกันคือ Invalid credentials — ต้องแยกไม่ออกว่าอีเมลนั้นมีอยู่จริงหรือไม่
+- ใช้ PasswordService ตัวที่มีอยู่แล้วในการเทียบรหัสผ่าน ห้าม import bcrypt เพิ่มที่ไฟล์อื่น
+- POST /auth/signup ไม่เปลี่ยนพฤติกรรม และ npm run test:e2e ยังได้ Tests  11 passed (11)
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่ (@nestjs/jwt ติดตั้งแล้ว)
+- ห้ามใช้ passport หรือ @nestjs/passport
+- ห้ามแตะไฟล์ใน test/ และห้ามแก้อะไรใน prisma/
+- ห้ามแก้ .env หรือ .env.example — ผมเติมสองบรรทัดนั้นเองแล้ว
+- ยังไม่ต้องทำ guard, refresh token, logout หรือ GET /auth/me
+- ห้ามใช้ any, as หรือ !</code></div>
+    </section>
+
+    <section class="review" aria-labelledby="login-review-heading">
+      <h2 id="login-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>ทั้งสองทางที่ล้มเหลวโยน exception ตัวเดียวกันพร้อมข้อความเดียวกัน — อ่านโค้ดแล้วชี้ได้ว่าไม่มีทางแยกแยะจากภายนอก</li>
+        <li>มี <code>getOrThrow</code> ไม่ใช่ <code>get</code> และไม่มีค่า fallback แบบ <code>?? 'secret'</code> แอบอยู่ (fallback แบบนั้นทำให้บรรทัด <code>getOrThrow</code> ไร้ความหมายทันที)</li>
+        <li>อายุถูกแปลงเป็นตัวเลขด้วย <code>Number()</code> และไม่มี <code>as</code> ที่ไหนเลยในไฟล์</li>
+        <li>payload มีแค่ <code>sub</code>, <code>email</code>, <code>role</code> — ไม่มีแถมอย่าง <code>passwordHash</code> หรือ object ผู้ใช้ทั้งก้อน</li>
+        <li><code>JwtModule.registerAsync</code> ไม่ได้ <code>import ConfigModule</code> ซ้ำเข้ามา — มันเป็น global อยู่แล้ว</li>
+        <li>การเทียบรหัสผ่านเรียกผ่าน <code>PasswordService</code> — <code>grep -rn "bcrypt" src/</code> ยังเจอไฟล์เดียวเหมือนเดิม</li>
+        <li><code>git status</code> ไม่มี <code>.env</code> โผล่มา (มันถูก gitignore ไว้) แต่ <code>.env.example</code> ต้องมีบรรทัดใหม่ที่ commit ไปด้วย</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> เขียน <code>config.get&lt;string&gt;('JWT_SECRET')</code> ซึ่ง compile ผ่านและทำงานได้ตราบใดที่ค่ามีอยู่ — แล้ววันที่ deploy ขึ้น server ที่ลืมตั้ง env แอปจะ start ขึ้นตามปกติและเซ็น token ด้วย <code>undefined</code> อีกกรณีที่เจอบ่อยคือแยกข้อความ error เป็น <code>"User not found"</code> กับ <code>"Wrong password"</code> เพราะมันดูเป็นมิตรกับผู้ใช้กว่า ทั้งที่มันคือการยืนยันให้คนนอกฟรี ๆ ว่าอีเมลไหนมีบัญชีอยู่</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>// src/auth/auth.module.ts
+import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { AuthController } from './auth.controller.js';
+import { AuthService } from './auth.service.js';
+import { PasswordService } from './password.service.js';
+
+@Module({
+  imports: [
+    JwtModule.registerAsync({
+      useFactory: (config: ConfigService) =&gt; ({
+        secret: config.getOrThrow&lt;string&gt;('JWT_SECRET'),
+        signOptions: {
+          expiresIn: Number(config.getOrThrow&lt;string&gt;('JWT_EXPIRES_IN')),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, PasswordService],
+})
+export class AuthModule {}</code></pre>
+      <pre><code>// src/auth/auth.service.ts — เฉพาะส่วนที่เพิ่ม
+// (JwtService เข้ามาอยู่ใน constructor เพิ่มจาก PrismaService และ PasswordService)
+  async login(dto: LoginDto): Promise&lt;AuthResponseDto&gt; {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (user === null) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const matches = await this.passwords.compare(dto.password, user.passwordHash);
+
+    if (!matches) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { sub: user.id, email: user.email, role: user.role };
+
+    return { accessToken: await this.jwt.signAsync(payload) };
+  }</code></pre>
+      <p>สองกรณีนี้เขียนแยก <code>if</code> กันเพื่อให้อ่านง่าย แต่ทั้งคู่โยนของชิ้นเดียวกัน จากภายนอกจึงแยกไม่ออก ถ้าวันหนึ่งมีคนมาแก้ให้ข้อความต่างกัน "เพื่อ debug ง่ายขึ้น" นั่นคือการเปิดช่องโหว่กลับเข้ามา</p>
+      <pre><code>// src/auth/dto/login.dto.ts
+import { IsEmail, IsString, MinLength } from 'class-validator';
+
+export class LoginDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="login-result-heading">
+      <h2 id="login-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>log ตอน start มีเส้นทางใหม่</p>
+      <pre><code>[RouterExplorer] Mapped {/auth/login, POST} route</code></pre>
+      <p>login สำเร็จได้ token หนึ่งใบ</p>
+      <pre><code>{"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoic3R1ZGVudEBleGFtcGxlLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzg5OTkyMzEyLCJleHAiOjE3ODk5OTMyMTJ9.Dx7X0qUuGZ2bN1kFhP9sKmJ4rLvQyT3wA8cEeR5oNiU"}</code></pre>
+      <p>และทั้งสองกรณีที่พลาดได้ตอบเหมือนกันทุกตัวอักษร ต่างกันแค่ข้อมูลที่ส่งเข้าไป</p>
+      <pre><code>{"message":"Invalid credentials","error":"Unauthorized","statusCode":401}</code></pre>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>เก็บ token ไว้ในตัวแปรของ shell เพื่อใช้ต่อในบทถัด ๆ ไป
+          <pre><code>TOKEN=$(curl -s -X POST http://localhost:3000/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"student@example.com","password":"secret123"}' \
+  | node -e "let d='';process.stdin.on('data',c=&gt;d+=c).on('end',()=&gt;console.log(JSON.parse(d).accessToken))")
+echo "$TOKEN"</code></pre></li>
+        <li>ถอด payload ออกมาอ่านเอง — พิสูจน์ว่ามันเปิดเผย ไม่ต้องใช้ secret อะไรทั้งสิ้น และ <code>exp</code> ลบ <code>iat</code> ได้ <code>900</code>
+          <pre><code>node -e "const p=JSON.parse(Buffer.from(process.argv[1].split('.')[1],'base64url').toString());console.log(p);console.log('ttl =', p.exp - p.iat)" "$TOKEN"</code></pre>
+          ต้องได้ประมาณนี้
+          <pre><code>{ sub: 1, email: 'student@example.com', role: 'USER', iat: 1789992312, exp: 1789993212 }
+ttl = 900</code></pre></li>
+        <li>รหัสผ่านผิดกับอีเมลที่ไม่มีจริง ต้องได้ body เหมือนกันเป๊ะ
+          <pre><code>curl -s -X POST http://localhost:3000/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"student@example.com","password":"wrongpassword"}'
+curl -s -X POST http://localhost:3000/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"nobody@example.com","password":"secret123"}'</code></pre></li>
+        <li>พิสูจน์ว่า <code>getOrThrow</code> ทำงาน: comment บรรทัด <code>JWT_SECRET</code> ใน <code>.env</code> ทิ้งชั่วคราว แล้ว restart <code>npm run start:dev</code> — แอปต้อง<strong>ไม่ start</strong> พร้อมข้อความประมาณ <code>Configuration key "JWT_SECRET" does not exist</code> จากนั้นเอา comment ออกแล้ว start ใหม่</li>
+        <li><code>diff .env .env.example</code> ยังไม่มีผลต่าง (ตอนตั้งค่าฐานข้อมูลเรามีสี่บรรทัด ตอนนี้เป็นหก)</li>
+        <li><code>grep -rn " as \|: any\|!\." src/auth/</code> ไม่เจอการปิดปาก type checker</li>
+        <li><code>npm run build</code>, <code>npm run lint</code> ผ่าน และ <code>npm run test:e2e</code> ยังได้ <code>Tests  11 passed (11)</code></li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: login and access token"</code></li>
+      </ul>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/security/authentication">Authentication: JwtModule และการเซ็น token (NestJS Docs)</a></li>
+      <li><a href="https://github.com/nestjs/jwt#readme">@nestjs/jwt: registerAsync และ signAsync (GitHub)</a></li>
+      <li><a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1">RFC 7519: Registered Claim Names (sub, iat, exp)</a></li>
+      <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#authentication-and-error-messages">Authentication: error messages และ user enumeration (OWASP)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="22_signup-endpoint.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="24_the-jwt-auth-guard.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เปิด POST /auth/signup ที่ hash รหัสผ่านด้วย bcrypt ก่อนเก็บ ตอบ 409 เมื่ออีเมลซ้ำ และไม่ปล่อย passwordHash ออกไปกับ response เลย" />
+  <title>POST /auth/signup และการเก็บรหัสผ่าน</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>POST /auth/signup และการเก็บรหัสผ่าน</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่าทำไมรหัสผ่านต้อง <em>hash</em> ไม่ใช่ <em>เข้ารหัส</em> และ salt กับ cost factor ทำหน้าที่อะไรคนละอย่างกัน</li>
+        <li>เขียน mapper ที่กันไม่ให้ฟิลด์ลับหลุดออกไปกับ response โดยไม่ต้องพึ่งความจำของคนเขียนโค้ด</li>
+        <li>แปลง error ของฐานข้อมูลตอนอีเมลซ้ำให้กลายเป็น <code>409</code> ที่ client อ่านรู้เรื่อง แทนที่จะปล่อยเป็น <code>500</code></li>
+      </ul>
+    </section>
+
+    <h2>hash ไม่ใช่การเข้ารหัส</h2>
+    <p>การเข้ารหัส (encryption) ออกแบบมาให้ถอดกลับได้ ถ้าเราเก็บรหัสผ่านแบบเข้ารหัส แปลว่าที่ไหนสักแห่งต้องมีกุญแจที่ถอดมันกลับเป็นข้อความเดิมได้ และวันที่ฐานข้อมูลหลุด กุญแจก็มักหลุดไปด้วย</p>
+    <p>hash เดินทางเดียว: จากรหัสผ่านไปเป็นค่าที่อ่านไม่ออก แล้วไม่มีทางย้อนกลับ เวลาผู้ใช้ login เราไม่ได้ถอด hash ออกมาเทียบ แต่เอารหัสผ่านที่เพิ่งกรอกมา hash ใหม่ด้วยวิธีเดียวกันแล้วดูว่าได้ค่าเดียวกันไหม แปลว่าต่อให้ฐานข้อมูลทั้งก้อนหลุดออกไป คนที่ได้มันไปก็ยังไม่รู้รหัสผ่านของใครเลย</p>
+    <p>bcrypt เพิ่มอีกสองชั้นบนความคิดนี้</p>
+    <div class="comparison" role="region" aria-label="salt และ cost factor ของ bcrypt" tabindex="0">
+      <table>
+        <thead><tr><th>ส่วนประกอบ</th><th>กันอะไร</th><th>ถ้าไม่มี</th></tr></thead>
+        <tbody>
+          <tr><td><strong>salt</strong> — ค่าสุ่มที่ต่างกันทุกครั้ง</td><td>กันการเทียบ hash กับตารางที่คำนวณไว้ล่วงหน้า และกันการรู้ว่าสองคนใช้รหัสผ่านเดียวกัน</td><td>คนที่ได้ฐานข้อมูลไปเทียบ hash กับ rainbow table ได้ทันที และเห็นว่าใครใช้รหัสผ่านซ้ำกันบ้าง</td></tr>
+          <tr><td><strong>cost factor</strong> — จำนวนรอบการคำนวณ</td><td>กันการเดาสุ่มจำนวนมาก โดยทำให้การ hash หนึ่งครั้ง<em>ช้าโดยตั้งใจ</em></td><td>การ์ดจอหนึ่งใบเดารหัสผ่านได้หลายพันล้านครั้งต่อวินาที</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>bcrypt เก็บทั้ง salt และ cost ไว้<em>ในตัว hash เอง</em> ค่าที่ออกมาจึงยาว 60 ตัวอักษรและหน้าตาแบบนี้ <code>$2b$10$N9qo8uLOickgx2ZMRZoMye...</code> — <code>2b</code> คือเวอร์ชันของอัลกอริทึม <code>10</code> คือ cost ส่วนที่เหลือคือ salt ต่อด้วย hash ตอนเทียบรหัสผ่าน <code>compare</code> จึงอ่าน salt กับ cost ออกมาจากค่าที่เก็บไว้ได้เอง เราไม่ต้องเก็บคอลัมน์ salt แยกต่างหาก</p>
+    <div class="note"><p>cost <code>10</code> แปลว่า 2<sup>10</sup> รอบ ขยับขึ้นหนึ่งหน่วยคือช้าขึ้นเท่าตัว ตัวเลขนี้ควรปรับขึ้นตามความเร็วเครื่องในอนาคต และเพราะ cost ฝังอยู่ในตัว hash ของเก่าที่ cost ต่ำกว่าจึงยัง verify ได้ตามปกติ — ปรับขึ้นได้โดยไม่ทำให้บัญชีเดิมใช้ไม่ได้</p></div>
+
+    <h2>ฟิลด์ลับรั่วออกทาง response ได้ง่ายกว่าที่คิด</h2>
+    <p><code>prisma.user.create()</code> คืนแถวที่สร้าง<strong>ทั้งแถว</strong> รวม <code>passwordHash</code> ด้วย ถ้า service ส่งค่านั้นกลับไปตรง ๆ NestJS ก็จะ serialize มันออกไปให้ client อย่างซื่อสัตย์ นี่ไม่ใช่กรณีสมมติ — มันคือพฤติกรรมปริยายของโค้ดที่สั้นที่สุดและเขียนง่ายที่สุด</p>
+    <p>ทางกันที่ใช้ในคอร์สนี้คือตัวเดิมกับที่ใช้แปลงสินค้า: <strong>mapper</strong> ที่รับแถวจากฐานข้อมูลแล้วคืน object ที่ประกอบขึ้นใหม่ทีละฟิลด์ ข้อดีคือมันเป็น allow-list โดยธรรมชาติ — ฟิลด์ใหม่ที่เพิ่มเข้า schema ในอนาคตจะ<em>ไม่</em>ไหลออกไปเองจนกว่าจะมีคนตั้งใจเพิ่มบรรทัดให้มัน ตรงข้ามกับการเขียน <code>delete user.passwordHash</code> ซึ่งเป็น deny-list ที่ต้องมีคนจำให้ได้ทุกครั้งที่เพิ่มฟิลด์ลับตัวใหม่</p>
+
+    <h2>อีเมลซ้ำ: จับที่ไหน</h2>
+    <p>บทก่อนหน้าเราใส่ unique index ไว้ที่ฐานข้อมูลแล้ว แปลว่าการสมัครด้วยอีเมลซ้ำจะถูกปฏิเสธแน่นอน — แต่ถูกปฏิเสธในรูปของ exception จาก Prisma ซึ่งถ้าไม่มีใครจับ NestJS จะแปลงเป็น <code>500 Internal Server Error</code> และนั่นเป็นคำตอบที่ผิด เพราะความผิดอยู่ที่ข้อมูลที่ client ส่งมา ไม่ใช่ที่ server</p>
+    <p>Prisma แยกความผิดพลาดชนิดนี้ไว้เป็น <code>PrismaClientKnownRequestError</code> พร้อมรหัส <code>P2002</code> ที่แปลว่า "ชนกับ unique constraint" เราจึงจับเฉพาะกรณีนั้นแล้วโยน <code>ConflictException</code> ออกไปแทน ได้ <code>409</code> ตามสัญญา</p>
+    <div class="warning"><p>อย่าดักด้วยการ <code>findUnique</code> ก่อนแล้วค่อย <code>create</code> เป็นทางเลือก<em>แทน</em>การจับ <code>P2002</code> — ระหว่างสองคำสั่งนั้นมีช่องให้ request อีกอันสมัครอีเมลเดียวกันแทรกเข้ามาได้พอดี แล้วคุณจะได้ <code>500</code> อยู่ดีในวันที่มีคนใช้งานพร้อมกันเยอะ ๆ ซึ่งเป็นวันที่คุณอยากให้มันทำงานถูกที่สุด จะเช็คก่อนเพื่อให้ข้อความสวยก็ได้ แต่ต้องจับ <code>P2002</code> ไว้ด้วยเสมอ</p></div>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <p>รายการด้านล่างคือไฟล์ที่เปลี่ยนใน<strong>โค้ดอ้างอิงของคอร์ส</strong> — ใช้เป็นแผนที่ตอนเทียบงาน ไม่ใช่ข้อบังคับ Cursor ของคุณอาจวางไฟล์หรือตั้งชื่อต่างไปได้ ขอแค่ผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
+    <pre><code>ecommerce-api/
+└── src/
+    ├── app.module.ts                    (แก้ไข: เพิ่ม AuthModule)
+    └── auth/
+        ├── auth.module.ts               (สร้างใหม่)
+        ├── auth.controller.ts           (สร้างใหม่)
+        ├── auth.service.ts              (สร้างใหม่)
+        ├── password.service.ts          (สร้างใหม่)
+        ├── user.mapper.ts               (สร้างใหม่)
+        └── dto/
+            ├── signup.dto.ts            (สร้างใหม่)
+            └── user-response.dto.ts     (สร้างใหม่)</code></pre>
+    <ul>
+      <li><strong><code>src/auth/password.service.ts</code></strong> — ในโค้ดอ้างอิง: ห่อ bcrypt ไว้สองเมธอด <code>hash</code> กับ <code>compare</code> · ไม่มีที่ไหนอื่นในโปรเจกต์ <code>import</code> bcrypt ตรง ๆ อีก</li>
+      <li><strong><code>src/auth/user.mapper.ts</code></strong> — ในโค้ดอ้างอิง: ประกอบ <code>UserResponseDto</code> ขึ้นใหม่ทีละฟิลด์จากแถวของ Prisma · ไม่มี <code>passwordHash</code> อยู่ในนั้น</li>
+      <li><strong><code>src/auth/auth.service.ts</code></strong> — ในโค้ดอ้างอิง: hash รหัสผ่านแล้วสร้างแถว จับ <code>P2002</code> โยน <code>ConflictException</code> · ไม่ส่งแถวดิบจาก Prisma ออกไป</li>
+      <li><strong><code>src/app.module.ts</code></strong> — ในโค้ดอ้างอิง: เพิ่ม <code>AuthModule</code> ต่อท้าย <code>OrdersModule</code> · ไม่แตะ <code>ConfigModule</code> หรือรายการเดิม</li>
+      <li>ไม่มีไฟล์ใน <code>test/</code> หรือ <code>prisma/</code> เปลี่ยนในบทนี้</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="signup-heading">
+      <h2 id="signup-heading">สั่ง Cursor เปิด POST /auth/signup</h2>
+      <p>ติดตั้ง bcrypt ด้วยมือก่อน แล้วค่อยส่ง prompt</p>
+      <div class="prompt-example"><code>npm install bcrypt
+npm install -D @types/bcrypt</code></div>
+      <div class="note"><p>bcrypt เป็น native module ที่ต้อง build ตอนติดตั้ง ถ้า npm ขึ้นข้อความว่ามี install script ที่ยังไม่ได้อนุมัติ ให้อนุมัติแล้ว build ใหม่ด้วย <code>npm install-scripts approve bcrypt</code> ตามด้วย <code>npm rebuild bcrypt</code> — ถ้า build ไม่ผ่านบนเครื่องของคุณจริง ๆ (มักเป็นเพราะไม่มี toolchain ของ C++) ใช้ <code>bcryptjs</code> แทนได้ มันเป็น JavaScript ล้วน ไม่ต้อง build และมี API ชื่อเดียวกันทุกตัว แลกกับความเร็วที่ช้ากว่า</p></div>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: before signup"</code>)</p>
+      <div class="cursor-prompt"><code>สร้าง endpoint POST /auth/signup ที่รับอีเมลกับรหัสผ่านแล้วสร้างผู้ใช้ใหม่ ตาม docs/auth-spec.md
+@docs/auth-spec.md @prisma/schema.prisma
+
+ผลลัพธ์ที่ต้องได้:
+- POST /auth/signup ด้วย {"email":"student@example.com","password":"secret123","name":"Student"} → 201 และ body เป็น { id, email, name, role, createdAt } ตาม docs/auth-spec.md
+- body ที่ตอบกลับต้องไม่มีรหัสผ่านหรือ hash ไม่ว่าจะชื่อฟิลด์อะไร — และต้องกันด้วยการประกอบ object ขึ้นใหม่ทีละฟิลด์ ไม่ใช่ลบฟิลด์ทิ้งทีหลัง
+- รหัสผ่านถูกเก็บแบบ hash ด้วย bcrypt cost 10 — ค่าในฐานข้อมูลขึ้นต้นด้วย $2b$10$ และยาว 60 ตัวอักษร ห้ามเก็บรหัสผ่านดิบ
+- สมัครด้วยอีเมลที่มีอยู่แล้ว → 409 message "Email already registered" โดยจับ error รหัส P2002 ของ Prisma ไม่ใช่ปล่อยให้กลายเป็น 500
+- email ผิดรูป, password สั้นกว่า 8 ตัว หรือ field ไหนขาด → 400 message เป็น array ตามรูปแบบเดิมของ ValidationPipe
+- โค้ดที่เรียก bcrypt อยู่ที่เดียวในโปรเจกต์ ที่อื่นเรียกผ่าน service ตัวนั้น เพราะบทถัดไปจะใช้ตอน login ด้วย
+- endpoint เดิมทั้งหกเส้นไม่เปลี่ยน — npm run test:e2e ยังได้ Tests  11 passed (11)
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่ (bcrypt ติดตั้งแล้ว)
+- ห้ามแตะไฟล์ใน test/ และห้ามแก้อะไรใน prisma/
+- ยังไม่ต้องทำ login, token, guard หรือ GET /auth/me
+- ห้าม console.log ค่า password หรือ hash
+- ห้ามใช้ any, as หรือ !</code></div>
+      <p>บรรทัด "ห้าม <code>console.log</code> ค่า password" มีไว้จริงจัง ไม่ใช่กันเผื่อ: log ของแอปมักถูกส่งต่อไปที่ระบบเก็บ log ที่คนเข้าถึงได้กว้างกว่าฐานข้อมูลมาก รหัสผ่านที่ hash อย่างดีแล้วแต่ไปโผล่ดิบ ๆ ใน log ก็เท่ากับไม่ได้ hash เลย</p>
+    </section>
+
+    <section class="review" aria-labelledby="signup-review-heading">
+      <h2 id="signup-review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>response ถูกประกอบขึ้นใหม่ทีละฟิลด์ใน mapper — <strong>ไม่ใช่</strong> <code>delete user.passwordHash</code> หรือ <code>const { passwordHash, ...rest } = user</code> ซึ่งทั้งคู่เป็น deny-list ที่ลืมได้ตอนเพิ่มฟิลด์ลับตัวถัดไป</li>
+        <li>มีที่เดียวในโปรเจกต์ที่ <code>import</code> bcrypt — ตรวจด้วย <code>grep -rn "bcrypt" src/</code> ต้องเจอไฟล์เดียว</li>
+        <li>การจับอีเมลซ้ำจับที่ <code>P2002</code> ไม่ใช่จับ <code>Error</code> ทุกชนิดแล้วตอบ 409 เหมา ๆ (ซึ่งจะกลบ error จริงอย่างฐานข้อมูลล่มให้กลายเป็น "อีเมลซ้ำ")</li>
+        <li>ตรวจชนิดของ error ด้วย <code>instanceof</code> ไม่ใช่ <code>as</code> หรือเช็ค <code>error.code</code> บน <code>any</code></li>
+        <li><code>SignupDto</code> เป็น class ที่ทุกฟิลด์มี decorator และรหัสผ่านมีความยาวขั้นต่ำตามสัญญา</li>
+        <li><code>git status</code> ไม่มีไฟล์ใน <code>test/</code> หรือ <code>prisma/</code> และ <code>package.json</code> เปลี่ยนแค่บรรทัดของ bcrypt</li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> ส่งแถวที่ <code>prisma.user.create()</code> คืนมากลับไปตรง ๆ เพราะมันมีฟิลด์ที่ต้องการครบอยู่แล้ว — โค้ดสั้นกว่า ทำงานได้ และ <code>passwordHash</code> ไหลออกไปหา client ทุก request อีกกรณีคือใส่ <code>@Exclude()</code> ของ class-transformer ที่ฟิลด์นั้นแทน ซึ่งจะได้ผลก็ต่อเมื่อเปิด <code>ClassSerializerInterceptor</code> ไว้ด้วย — โปรเจกต์นี้ไม่ได้เปิด มันจึงเงียบสนิทและไม่กันอะไรเลย</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้ (บทถัดไปจะอ้างชื่อ <code>PasswordService</code> และ <code>AuthService</code> ถ้าของคุณต่างไปก็ไม่เป็นไร Cursor ในบทนั้นจะอ่านจากโค้ดของคุณเอง):</p>
+      <pre><code>// src/auth/password.service.ts
+import { Injectable } from '@nestjs/common';
+import bcrypt from 'bcrypt';
+
+const COST = 10;
+
+@Injectable()
+export class PasswordService {
+  hash(plain: string): Promise&lt;string&gt; {
+    return bcrypt.hash(plain, COST);
+  }
+
+  compare(plain: string, hash: string): Promise&lt;boolean&gt; {
+    return bcrypt.compare(plain, hash);
+  }
+}</code></pre>
+      <div class="note"><p><code>import bcrypt from 'bcrypt'</code> เป็น default import ไม่ใช่ <code>import { hash } from 'bcrypt'</code> เพราะ bcrypt เป็นแพ็กเกจแบบ CommonJS ส่วนโปรเจกต์เราเป็น ESM การดึงชื่อออกมาตรง ๆ อาจพังตอน<em>รัน</em> ทั้งที่ compile ผ่าน ซึ่งเป็นอาการที่หาสาเหตุยากที่สุดแบบหนึ่ง</p></div>
+      <pre><code>// src/auth/user.mapper.ts
+import { UserResponseDto } from './dto/user-response.dto.js';
+
+type UserRow = {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  createdAt: Date;
+};
+
+export function toUserResponse(user: UserRow): UserResponseDto {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    createdAt: user.createdAt.toISOString(),
+  };
+}</code></pre>
+      <pre><code>// src/auth/auth.service.ts
+import { ConflictException, Injectable } from '@nestjs/common';
+import { Prisma } from '../generated/prisma/client.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { PasswordService } from './password.service.js';
+import { SignupDto } from './dto/signup.dto.js';
+import { UserResponseDto } from './dto/user-response.dto.js';
+import { toUserResponse } from './user.mapper.js';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly passwords: PasswordService,
+  ) {}
+
+  async signup(dto: SignupDto): Promise&lt;UserResponseDto&gt; {
+    const passwordHash = await this.passwords.hash(dto.password);
+
+    try {
+      const user = await this.prisma.user.create({
+        data: { email: dto.email, name: dto.name, passwordHash },
+      });
+      return toUserResponse(user);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError &amp;&amp; error.code === 'P2002') {
+        throw new ConflictException('Email already registered');
+      }
+      throw error;
+    }
+  }
+}</code></pre>
+      <p>ท่อน <code>throw error</code> ท้าย <code>catch</code> สำคัญพอ ๆ กับท่อนที่จับ: มันคือการบอกว่าเราจัดการเฉพาะกรณีที่รู้จัก ส่วนที่เหลือปล่อยให้ขึ้นไปตามปกติ ถ้าลืมบรรทัดนี้ ฐานข้อมูลล่มจะกลายเป็น "สมัครสำเร็จแต่ไม่มีอะไรเกิดขึ้น"</p>
+      <pre><code>// src/auth/auth.controller.ts
+import { Body, Controller, Post } from '@nestjs/common';
+import { AuthService } from './auth.service.js';
+import { SignupDto } from './dto/signup.dto.js';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('signup')
+  signup(@Body() dto: SignupDto) {
+    return this.authService.signup(dto);
+  }
+}</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+
+    <section class="expected-result" aria-labelledby="signup-result-heading">
+      <h2 id="signup-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p>log ตอน start มีเส้นทางใหม่เพิ่มมาหนึ่งเส้น</p>
+      <pre><code>[RouterExplorer] Mapped {/auth/signup, POST} route</code></pre>
+      <p>สมัครครั้งแรกได้ <code>201</code> พร้อมข้อมูลผู้ใช้ที่ไม่มีร่องรอยของรหัสผ่านเลย</p>
+      <pre><code>{"id":1,"email":"student@example.com","name":"Student","role":"USER","createdAt":"2026-09-21T10:45:12.371Z"}</code></pre>
+      <p>ยิงคำสั่งเดิมซ้ำอีกครั้งได้ <code>409</code> — ไม่ใช่ <code>500</code></p>
+      <pre><code>{"message":"Email already registered","error":"Conflict","statusCode":409}</code></pre>
+      <p>ส่วนรหัสผ่านที่สั้นเกินไปได้ <code>400</code> ในรูปแบบเดิมที่เห็นมาตั้งแต่ตอน validate ตะกร้า</p>
+      <pre><code>{"message":["password must be longer than or equal to 8 characters"],"error":"Bad Request","statusCode":400}</code></pre>
+    </section>
+
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>สมัครสำเร็จได้ <code>201</code> และไม่มีคำว่า <code>password</code> โผล่ใน body
+          <pre><code>curl -s -X POST http://localhost:3000/auth/signup \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"student@example.com","password":"secret123","name":"Student"}'</code></pre></li>
+        <li>ยิงซ้ำคำสั่งเดิมได้ <code>409</code>
+          <pre><code>curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:3000/auth/signup \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"student@example.com","password":"secret123","name":"Student"}'</code></pre></li>
+        <li>สิ่งที่อยู่ในฐานข้อมูลเป็น hash ของ bcrypt จริง — ขึ้นต้น <code>$2b$10$</code> และยาว <code>60</code>
+          <pre><code>docker compose exec db psql -U postgres -d ecommerce -c \
+  'SELECT id, email, role, left("passwordHash", 7) AS prefix, length("passwordHash") AS len FROM "User";'</code></pre></li>
+        <li>เอกสาร API ไม่มีคำว่า <code>passwordHash</code> เลยแม้แต่ที่เดียว
+          <pre><code>curl -s http://localhost:3000/api-json | grep -c passwordHash</code></pre>
+          ต้องได้ <code>0</code> พอดี — ส่วนคำว่า <code>password</code> เฉย ๆ <strong>จะ</strong> เจอ และนั่นถูกต้อง เพราะ <code>SignupDto</code> มีฟิลด์นั้นจริงในฐานะ body ที่รับเข้ามา สิ่งที่ต้องไม่มีคือ <em>hash</em> ไม่ใช่ชื่อฟิลด์ที่ client ส่งมา</li>
+        <li>bcrypt ถูกเรียกจากที่เดียว — <code>grep -rn "bcrypt" src/</code> เจอไฟล์เดียวคือ <code>password.service.ts</code></li>
+        <li><code>grep -rn "any\|as \| !" src/auth/</code> ไม่เจอการปิดปาก type checker</li>
+        <li><code>npm run build</code> และ <code>npm run lint</code> ผ่าน และ <code>npm run test:e2e</code> ยังได้ <code>Tests  11 passed (11)</code></li>
+        <li>commit ผลงานของบทนี้: <code>git add -A &amp;&amp; git commit -m "feat: signup endpoint"</code></li>
+      </ul>
+      <div class="note"><p>สังเกตว่าเราไม่ได้แก้ <code>.cursor/rules/project.mdc</code> ทั้งที่ <code>src/auth/</code> เป็น domain ที่สามต่อจาก products กับ orders — บรรทัดเรื่องโครงสร้างไฟล์ในกฎเขียนว่า "(products, orders)" ในฐานะ<em>ตัวอย่าง</em> ไม่ใช่รายการปิด และกฎชุดนั้นเป็นของที่ตกลงกันไว้ตั้งแต่ต้นคอร์ส ส่วนกฎเฉพาะของ auth อย่าง "ห้ามส่ง passwordHash ออกไป" อยู่ใน <code>ผลลัพธ์ที่ต้องได้</code> ของ prompt ซึ่งเป็นที่ของมันอยู่แล้ว</p></div>
+    </section>
+
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html">Password Storage Cheat Sheet (OWASP)</a></li>
+      <li><a href="https://github.com/kelektiv/node.bcrypt.js#readme">node.bcrypt.js: hash, compare และ salt rounds (GitHub)</a></li>
+      <li><a href="https://www.prisma.io/docs/orm/reference/error-reference#p2002">Error reference: P2002 unique constraint failed (Prisma Docs)</a></li>
+      <li><a href="https://docs.nestjs.com/exception-filters">Exception filters: ConflictException (NestJS Docs)</a></li>
+    </ul>
+
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="21_adding-the-user-model.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="23_login-and-access-token.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

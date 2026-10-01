@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เพิ่ม Final CTA Section ท้ายหน้าที่วางข้อความกับปุ่มซ้าย-ขวาด้วย Flexbox และเข้าใจว่าทำไม layout นี้ไม่จำเป็นต้องใช้ Grid" />
+    <title>เพิ่ม Final CTA Section | Responsive Layout Lab: Flexbox + CSS Grid</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 06 · ประกอบหน้าเว็บด้วย CSS Grid (Page Composition with CSS Grid)</p>
+          <h1>เพิ่ม Final CTA Section</h1>
+          <p class="lesson-original-title" lang="en">Final CTA Section</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายได้ว่า CTA (Call to Action) section มีไว้ทำอะไร</li>
+            <li>สร้าง layout ข้อความซ้าย + ปุ่มขวาด้วย Flexbox</li>
+            <li>ตัดสินใจเลือกระหว่าง Flexbox กับ Grid จากจำนวนและลักษณะของ element</li>
+          </ul>
+        </section>
+
+        <h2>CTA คืออะไร</h2>
+        <p><strong>CTA</strong> ย่อมาจาก <em>Call to Action</em> คือส่วนที่ชวนผู้ใช้ “ลงมือทำ” อะไรสักอย่าง เช่น สมัครเรียน หลังจากผู้ใช้อ่านรายละเอียดทั้งหน้าจนจบ เราจึงวาง Final CTA ไว้เป็น <strong>section สุดท้ายใน <code>&lt;main&gt;</code></strong> ต่อจาก Pricing Section</p>
+
+        <h2>HTML</h2>
+        <p>วาง code นี้ต่อจาก <code>&lt;/section&gt;</code> ของ pricing-section (ยังอยู่ข้างใน <code>&lt;main&gt;</code> ก่อน <code>&lt;/main&gt;</code>):</p>
+        <pre><code class="language-html">&lt;section class="cta-section"&gt;
+  &lt;div&gt;
+    &lt;p class="eyebrow"&gt;Ready to Start?&lt;/p&gt;
+
+    &lt;h2&gt;เริ่มสร้างเส้นทางสู่สายงาน Software Developer&lt;/h2&gt;
+
+    &lt;p&gt;
+      เรียนแบบ Manual First เข้าใจพื้นฐานจริง
+      แล้วค่อยใช้ AI เพื่อทำงานเร็วขึ้นอย่างมีคุณภาพ
+    &lt;/p&gt;
+  &lt;/div&gt;
+
+  &lt;a class="primary-button" href="#"&gt;สมัครเรียน Bootcamp&lt;/a&gt;
+&lt;/section&gt;</code></pre>
+        <p>โครงสร้างตั้งใจให้ <code>.cta-section</code> มี<strong>ลูกโดยตรงแค่ 2 ตัว</strong>:</p>
+        <pre><code class="language-text">ฝั่งซ้าย = &lt;div&gt; ที่ครอบ eyebrow + h2 + p (ข้อความ)
+ฝั่งขวา = &lt;a class="primary-button"&gt; (ปุ่ม)</code></pre>
+        <p>ปุ่มใช้ class <code>.primary-button</code> เดิมจาก hero ทำให้หน้าตาปุ่มทั้งหน้าเหมือนกันโดยไม่ต้องเขียน CSS เพิ่ม</p>
+
+        <h2>CSS</h2>
+        <pre><code class="language-css">/* CTA */
+.cta-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 32px;
+
+    padding: 40px;
+    border-radius: 28px;
+    background: #1e293b;
+    margin-bottom: 72px;
+}
+
+.cta-section h2 {
+    margin: 0 0 12px;
+    font-size: 36px;
+    line-height: 1.2;
+}
+
+.cta-section p {
+    margin: 0;
+    color: #cbd5e1;
+    line-height: 1.7;
+}</code></pre>
+        <ul>
+          <li><strong><code>display: flex</code> + <code>justify-content: space-between</code></strong> — ดันข้อความไปซ้ายสุด ปุ่มไปขวาสุด</li>
+          <li><strong><code>align-items: center</code></strong> — ให้ปุ่มอยู่กึ่งกลางแนวตั้งเทียบกับก้อนข้อความ</li>
+          <li><strong><code>gap: 32px</code></strong> — กันไม่ให้ข้อความยาว ๆ ชนปุ่ม</li>
+          <li><strong>บรรทัดว่างกลาง rule</strong> — แบ่งกลุ่ม “layout” กับ “หน้าตากล่อง” ให้อ่านง่าย ไม่มีผลกับการทำงาน</li>
+        </ul>
+
+        <h2>ทำไมตรงนี้ใช้ Flexbox ไม่ใช่ Grid</h2>
+        <p>CTA มีแค่ 2 ฝั่ง เรียงในแถวเดียว ซึ่งตรงกับจุดแข็งของ Flexbox พอดี นี่คือจุดที่ควรจำไว้:</p>
+        <blockquote>ไม่ใช่ทุก layout ต้องใช้ Grid — เลือกเครื่องมือให้เหมาะกับงาน</blockquote>
+
+        <div class="warning">
+          <p>ถ้าลืมครอบข้อความด้วย <code>&lt;div&gt;</code> แล้ววาง <code>&lt;p class="eyebrow"&gt;</code>, <code>&lt;h2&gt;</code> และ <code>&lt;p&gt;</code> เป็นลูกของ <code>.cta-section</code> โดยตรง Flexbox จะเห็นลูก 4 ตัวและเรียง eyebrow, หัวข้อ, คำอธิบาย และปุ่มเป็นแถวเดียวกันทั้งหมด — หน้าตาจะเพี้ยนทันที</p>
+        </div>
+
+        <div class="note">
+          <p>บนจอแคบ ข้อความกับปุ่มที่วางข้างกันจะเบียดกันมาก เราจะแก้ด้วย <code>flex-direction: column</code> ใน media query ในบทที่ 08</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>CTA เป็นกล่องมุมโค้งพื้นสี <code>#1e293b</code> อยู่ท้ายสุดของ <code>&lt;main&gt;</code> ก่อน footer</li>
+            <li>บนจอกว้าง ข้อความอยู่ซ้าย ปุ่ม “สมัครเรียน Bootcamp” อยู่ขวา และอยู่กึ่งกลางแนวตั้ง</li>
+            <li>อธิบายได้ว่าทำไม CTA ใช้ Flexbox ส่วน curriculum/audience ใช้ Grid</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="05_audience_section.html" rel="prev">ก่อนหน้า: เพิ่ม Section “Bootcamp นี้เหมาะกับใคร”</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="07_ui_polish.html" rel="next">ถัดไป: ขัดเกลา UI ให้ดูเป็นมืออาชีพ</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

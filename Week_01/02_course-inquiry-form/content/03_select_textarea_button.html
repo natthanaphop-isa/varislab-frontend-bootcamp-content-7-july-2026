@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เพิ่มช่องเลือกระดับพื้นฐานด้วย select, ช่องข้อความยาวด้วย textarea, ปุ่ม submit และกล่องแสดงผลลัพธ์ จนได้ HTML ของฟอร์มครบทั้งหน้า" />
+    <title>select, textarea, button และกล่องผลลัพธ์ | สร้างฟอร์มรับข้อมูลคอร์ส</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 03 · สร้างฟอร์มด้วย HTML และ CSS (Form Structure &amp; Styling)</p>
+          <h1>select, textarea, button และกล่องผลลัพธ์</h1>
+          <p class="lesson-original-title" lang="en">Select, Textarea, Button &amp; Result Box</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>สร้างช่องให้เลือกจากตัวเลือกด้วย <code>select</code> และ <code>option</code> และเข้าใจบทบาทของ <code>value</code></li>
+            <li>สร้างช่องกรอกข้อความยาวด้วย <code>textarea</code></li>
+            <li>เพิ่มปุ่ม <code>button type="submit"</code> และพื้นที่แสดงผลลัพธ์สำหรับ JavaScript</li>
+            <li>มีไฟล์ <code>index.html</code> ของฟอร์มที่สมบูรณ์</li>
+          </ul>
+        </section>
+
+        <h2>Step 2.5: ช่องเลือกระดับพื้นฐาน — select</h2>
+        <p>ข้อมูลบางอย่างเราไม่อยากให้ผู้ใช้พิมพ์เอง เพราะแต่ละคนจะพิมพ์ไม่เหมือนกัน เช่น ระดับพื้นฐาน เราจึงให้<strong>เลือกจากตัวเลือก</strong>แทนด้วย <code>select</code> เพิ่ม <code>form-group</code> ที่สามต่อจากช่องเป้าหมาย:</p>
+        <pre><code class="language-html">&lt;div class="form-group"&gt;
+  &lt;label for="level"&gt;พื้นฐานตอนนี้&lt;/label&gt;
+  &lt;select id="level"&gt;
+    &lt;option value=""&gt;เลือกระดับพื้นฐาน&lt;/option&gt;
+    &lt;option value="เริ่มจากศูนย์"&gt;เริ่มจากศูนย์&lt;/option&gt;
+    &lt;option value="เคยเรียนมาบ้าง"&gt;เคยเรียนมาบ้าง&lt;/option&gt;
+    &lt;option value="เคยทำโปรเจกต์เล็ก ๆ"&gt;เคยทำโปรเจกต์เล็ก ๆ&lt;/option&gt;
+  &lt;/select&gt;
+&lt;/div&gt;
+</code></pre>
+        <ul>
+          <li><code>select</code> — กล่อง dropdown ให้ผู้ใช้เลือก</li>
+          <li><code>option</code> — ตัวเลือกแต่ละตัว ข้อความระหว่างแท็กคือสิ่งที่ผู้ใช้<em>เห็น</em></li>
+          <li><code>value</code> — ค่าที่ JavaScript จะ<em>อ่านได้</em>เมื่อผู้ใช้เลือกตัวเลือกนั้น</li>
+        </ul>
+        <p>สังเกตตัวเลือกแรก <code>&lt;option value=""&gt;เลือกระดับพื้นฐาน&lt;/option&gt;</code> มี <code>value</code> เป็นข้อความว่าง นี่ตั้งใจทำ — มันเป็นแค่ข้อความชวนให้เลือก ถ้าผู้ใช้ไม่ได้เปลี่ยนตัวเลือก JavaScript จะอ่านค่าได้เป็น <code>""</code> และในบทที่ 7 เราจะใช้จุดนี้เช็กว่า "ยังไม่ได้เลือกระดับพื้นฐาน"</p>
+
+        <h2>Step 2.6: ช่องข้อความเพิ่มเติม — textarea</h2>
+        <p><code>input</code> เหมาะกับข้อความสั้นบรรทัดเดียว ถ้าอยากให้ผู้ใช้เขียนยาวหลายบรรทัด ให้ใช้ <code>textarea</code>:</p>
+        <pre><code class="language-html">&lt;div class="form-group"&gt;
+  &lt;label for="message"&gt;ข้อความเพิ่มเติม&lt;/label&gt;
+  &lt;textarea
+    id="message"
+    rows="4"
+    placeholder="อยากบอกอะไรเพิ่มเติมเกี่ยวกับเป้าหมายของคุณ"
+  &gt;&lt;/textarea&gt;
+&lt;/div&gt;
+</code></pre>
+        <ul>
+          <li><code>rows="4"</code> — กำหนดความสูงเริ่มต้นประมาณ 4 บรรทัด</li>
+          <li>ต่างจาก <code>input</code> ตรงที่ <code>textarea</code> <strong>ต้องมีแท็กปิด</strong> <code>&lt;/textarea&gt;</code> เสมอ</li>
+        </ul>
+
+        <div class="warning">
+          <p>อย่าเว้นช่องว่างหรือขึ้นบรรทัดใหม่ระหว่าง <code>&gt;</code> กับ <code>&lt;/textarea&gt;</code> เพราะอะไรที่อยู่ระหว่างแท็กจะกลายเป็นข้อความเริ่มต้นในช่อง ทำให้ placeholder ไม่แสดง</p>
+        </div>
+
+        <h2>Step 2.7: ปุ่มส่งข้อมูล</h2>
+        <p>ปิดท้ายฟอร์ม (ก่อน <code>&lt;/form&gt;</code>) ด้วยปุ่ม:</p>
+        <pre><code class="language-html">&lt;button type="submit"&gt;
+  ส่งข้อมูล
+&lt;/button&gt;
+</code></pre>
+        <p><code>type="submit"</code> บอก browser ว่าปุ่มนี้มีไว้<strong>ส่งฟอร์ม</strong> เมื่อกดแล้วฟอร์มจะเกิด event ชื่อ <code>submit</code> ซึ่ง JavaScript จะดักฟังในบทที่ 5 (ผู้ใช้กด Enter ในช่อง input ก็ส่งฟอร์มได้เช่นกัน)</p>
+
+        <h2>Step 2.8: กล่องแสดงผลลัพธ์</h2>
+        <p>สุดท้าย เราต้องมีที่ให้ JavaScript เขียนข้อความสรุปกลับมาแสดง วางไว้<strong>นอก</strong> <code>form</code> แต่ยังอยู่ในการ์ด:</p>
+        <pre><code class="language-html">&lt;div id="result" class="result-box"&gt;
+  กรุณากรอกข้อมูล แล้วกดส่งข้อมูล
+&lt;/div&gt;
+</code></pre>
+        <p><code>id="result"</code> ให้ JavaScript หยิบกล่องนี้มาเปลี่ยนข้อความ ส่วนข้อความข้างในคือข้อความเริ่มต้นก่อนผู้ใช้กดส่ง</p>
+
+        <h2>index.html ฉบับสมบูรณ์</h2>
+        <p>ประกอบทุกส่วนเข้าด้วยกัน ไฟล์ <code>index.html</code> ของคุณควรเป็นแบบนี้:</p>
+        <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="th"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+    &lt;title&gt;Course Inquiry Form&lt;/title&gt;
+    &lt;link rel="stylesheet" href="style.css" /&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+    &lt;main class="page"&gt;
+      &lt;section class="form-card"&gt;
+        &lt;p class="label"&gt;Varis Lab Bootcamp&lt;/p&gt;
+
+        &lt;h1&gt;แบบฟอร์มความสนใจเรียน&lt;/h1&gt;
+
+        &lt;p class="description"&gt;
+          กรอกข้อมูลเบื้องต้น เพื่อสรุปเป้าหมายการเรียนของคุณ
+        &lt;/p&gt;
+
+        &lt;form id="inquiryForm"&gt;
+          &lt;div class="form-group"&gt;
+            &lt;label for="fullName"&gt;ชื่อของคุณ&lt;/label&gt;
+            &lt;input
+              id="fullName"
+              type="text"
+              placeholder="เช่น Man"
+            /&gt;
+          &lt;/div&gt;
+
+          &lt;div class="form-group"&gt;
+            &lt;label for="goal"&gt;เป้าหมายของคุณ&lt;/label&gt;
+            &lt;input
+              id="goal"
+              type="text"
+              placeholder="เช่น เปลี่ยนสายงานเป็น Developer"
+            /&gt;
+          &lt;/div&gt;
+
+          &lt;div class="form-group"&gt;
+            &lt;label for="level"&gt;พื้นฐานตอนนี้&lt;/label&gt;
+            &lt;select id="level"&gt;
+              &lt;option value=""&gt;เลือกระดับพื้นฐาน&lt;/option&gt;
+              &lt;option value="เริ่มจากศูนย์"&gt;เริ่มจากศูนย์&lt;/option&gt;
+              &lt;option value="เคยเรียนมาบ้าง"&gt;เคยเรียนมาบ้าง&lt;/option&gt;
+              &lt;option value="เคยทำโปรเจกต์เล็ก ๆ"&gt;เคยทำโปรเจกต์เล็ก ๆ&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+
+          &lt;div class="form-group"&gt;
+            &lt;label for="message"&gt;ข้อความเพิ่มเติม&lt;/label&gt;
+            &lt;textarea
+              id="message"
+              rows="4"
+              placeholder="อยากบอกอะไรเพิ่มเติมเกี่ยวกับเป้าหมายของคุณ"
+            &gt;&lt;/textarea&gt;
+          &lt;/div&gt;
+
+          &lt;button type="submit"&gt;
+            ส่งข้อมูล
+          &lt;/button&gt;
+        &lt;/form&gt;
+
+        &lt;div id="result" class="result-box"&gt;
+          กรุณากรอกข้อมูล แล้วกดส่งข้อมูล
+        &lt;/div&gt;
+      &lt;/section&gt;
+    &lt;/main&gt;
+
+    &lt;script src="script.js"&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+        <h2>สรุปหน้าที่ของแต่ละแท็ก</h2>
+        <div class="comparison" role="region" aria-label="หน้าที่ของแท็กในฟอร์ม" tabindex="0">
+          <table>
+            <thead><tr><th>แท็ก</th><th>หน้าที่</th><th><code>id</code> ในโปรเจกต์นี้</th></tr></thead>
+            <tbody>
+              <tr><td><code>form</code></td><td>พื้นที่รับข้อมูลจากผู้ใช้</td><td><code>inquiryForm</code></td></tr>
+              <tr><td><code>label</code></td><td>บอกว่าช่องนี้ต้องกรอกอะไร</td><td>— (ใช้ <code>for</code> ชี้ไปหาช่อง)</td></tr>
+              <tr><td><code>input</code></td><td>ช่องกรอกข้อมูลแบบสั้น</td><td><code>fullName</code>, <code>goal</code></td></tr>
+              <tr><td><code>select</code></td><td>ช่องให้เลือกจากตัวเลือก</td><td><code>level</code></td></tr>
+              <tr><td><code>textarea</code></td><td>ช่องกรอกข้อความยาว</td><td><code>message</code></td></tr>
+              <tr><td><code>button type="submit"</code></td><td>ปุ่มสำหรับส่งฟอร์ม</td><td>—</td></tr>
+              <tr><td><code>div</code> ผลลัพธ์</td><td>พื้นที่แสดงผลหลัง JavaScript ประมวลผล</td><td><code>result</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <p>จด <code>id</code> ทั้ง 6 ตัวในตารางไว้ให้ดี (<code>inquiryForm</code>, <code>fullName</code>, <code>goal</code>, <code>level</code>, <code>message</code>, <code>result</code>) — ในบทที่ 5 เราจะพิมพ์ชื่อเหล่านี้ใน JavaScript ทุกตัว</p>
+        </div>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>เปิดใน browser แล้วเห็นฟอร์มครบ 4 ช่อง (ชื่อ, เป้าหมาย, dropdown ระดับพื้นฐาน, ช่องข้อความยาว), ปุ่ม "ส่งข้อมูล" และข้อความ "กรุณากรอกข้อมูล แล้วกดส่งข้อมูล" ด้านล่าง ยังไม่มีสไตล์ ถ้ากดปุ่มตอนนี้หน้าเว็บจะ reload เฉย ๆ — นั่นคือพฤติกรรมปกติของ form ที่เราจะจัดการด้วย JavaScript</p>
+        </section>
+
+        <div class="verification">
+          <ul>
+            <li>dropdown มี 4 ตัวเลือก และตัวแรกมี <code>value=""</code></li>
+            <li>อธิบายความต่างระหว่างข้อความที่ผู้ใช้เห็นใน <code>option</code> กับ <code>value</code> ได้</li>
+            <li><code>textarea</code> มีแท็กปิด และ placeholder แสดงผล</li>
+            <li>ปุ่มมี <code>type="submit"</code> และกล่องผลลัพธ์มี <code>id="result"</code> อยู่นอก <code>form</code></li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="02_form_label_input.html" rel="prev">ก่อนหน้า: form, label และ input</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="04_styling_the_form.html" rel="next">ถัดไป: ตกแต่งฟอร์มด้วย CSS</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

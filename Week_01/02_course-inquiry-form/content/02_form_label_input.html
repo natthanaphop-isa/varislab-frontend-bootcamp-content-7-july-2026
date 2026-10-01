@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เขียนโครง HTML ของการ์ดฟอร์ม แล้วเพิ่มช่องกรอกชื่อและเป้าหมายด้วย form, label และ input ที่เชื่อมกันด้วย for และ id" />
+    <title>form, label และ input | สร้างฟอร์มรับข้อมูลคอร์ส</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 02 · สร้างฟอร์มด้วย HTML และ CSS (Form Structure &amp; Styling)</p>
+          <h1>form, label และ input</h1>
+          <p class="lesson-original-title" lang="en">Form, Label &amp; Input</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เขียนโครง HTML ของหน้าเว็บและการ์ดฟอร์ม พร้อมเชื่อม <code>style.css</code> และ <code>script.js</code></li>
+            <li>อธิบายหน้าที่ของ <code>form</code>, <code>label</code> และ <code>input</code></li>
+            <li>เชื่อม <code>label</code> กับ <code>input</code> ด้วย <code>for</code> และ <code>id</code> และเข้าใจว่าทำไม <code>id</code> สำคัญกับ JavaScript</li>
+          </ul>
+        </section>
+
+        <h2>Step 2.1: โครงหน้าเว็บและหัวการ์ด</h2>
+        <p>เปิดไฟล์ <code>index.html</code> แล้วเริ่มจากโครง HTML พื้นฐานที่เราคุ้นเคย ภายใน <code>body</code> เราจะมี <code>main</code> เป็นพื้นที่ทั้งหน้า และ <code>section</code> เป็นตัวการ์ดฟอร์ม:</p>
+        <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="th"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+    &lt;title&gt;Course Inquiry Form&lt;/title&gt;
+    &lt;link rel="stylesheet" href="style.css" /&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+    &lt;main class="page"&gt;
+      &lt;section class="form-card"&gt;
+        &lt;p class="label"&gt;Varis Lab Bootcamp&lt;/p&gt;
+
+        &lt;h1&gt;แบบฟอร์มความสนใจเรียน&lt;/h1&gt;
+
+        &lt;p class="description"&gt;
+          กรอกข้อมูลเบื้องต้น เพื่อสรุปเป้าหมายการเรียนของคุณ
+        &lt;/p&gt;
+
+        &lt;!-- ฟอร์มจะอยู่ตรงนี้ --&gt;
+      &lt;/section&gt;
+    &lt;/main&gt;
+
+    &lt;script src="script.js"&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+        <ul>
+          <li><code>&lt;link rel="stylesheet" href="style.css" /&gt;</code> ใน <code>head</code> — ดึง CSS มาใช้</li>
+          <li><code>&lt;script src="script.js"&gt;&lt;/script&gt;</code> วางไว้<strong>ท้าย</strong> <code>body</code> — เพื่อให้ HTML ทุกส่วนถูกสร้างเสร็จก่อน JavaScript เริ่มทำงาน JavaScript จะได้หา element เจอ</li>
+          <li><code>class</code> อย่าง <code>page</code>, <code>form-card</code>, <code>label</code>, <code>description</code> มีไว้ให้ CSS ใช้ตกแต่งในบทที่ 4</li>
+        </ul>
+
+        <h2>Step 2.2: เพิ่ม form</h2>
+        <p><code>form</code> คือพื้นที่สำหรับรับข้อมูลจากผู้ใช้ ทุกช่องกรอกข้อมูลและปุ่มส่งจะอยู่ข้างในนี้ แทนที่ comment <code>&lt;!-- ฟอร์มจะอยู่ตรงนี้ --&gt;</code> ด้วย:</p>
+        <pre><code class="language-html">&lt;form id="inquiryForm"&gt;
+&lt;/form&gt;
+</code></pre>
+        <p>เราตั้ง <code>id="inquiryForm"</code> ไว้ เพราะในบทที่ 5 JavaScript จะใช้ <code>id</code> นี้ไปหยิบฟอร์มมา แล้ว "รอฟัง" ว่าผู้ใช้กดส่งฟอร์มเมื่อไหร่</p>
+
+        <h2>Step 2.3: ช่องกรอกชื่อ — label + input</h2>
+        <p>ข้างใน <code>form</code> ให้เพิ่มช่องแรก:</p>
+        <pre><code class="language-html">&lt;form id="inquiryForm"&gt;
+  &lt;div class="form-group"&gt;
+    &lt;label for="fullName"&gt;ชื่อของคุณ&lt;/label&gt;
+    &lt;input
+      id="fullName"
+      type="text"
+      placeholder="เช่น Man"
+    /&gt;
+  &lt;/div&gt;
+&lt;/form&gt;
+</code></pre>
+        <ul>
+          <li><code>label</code> — ข้อความบอกผู้ใช้ว่าช่องนี้ต้องกรอกอะไร</li>
+          <li><code>input</code> — ช่องกรอกข้อมูลแบบสั้น (บรรทัดเดียว) <code>type="text"</code> บอกว่าเป็นข้อความทั่วไป</li>
+          <li><code>placeholder</code> — ข้อความตัวอย่างสีจาง ๆ ที่หายไปเมื่อผู้ใช้เริ่มพิมพ์</li>
+          <li><code>div class="form-group"</code> — กล่องที่จับ label กับ input ของช่องเดียวกันไว้ด้วยกัน ช่วยให้จัดระยะห่างด้วย CSS ได้ง่าย</li>
+        </ul>
+
+        <h2>for กับ id: สายที่เชื่อม label กับ input</h2>
+        <p>จุดที่ต้องจำให้ขึ้นใจของบทนี้:</p>
+        <blockquote><code>label for="fullName"</code> เชื่อมกับ <code>input id="fullName"</code></blockquote>
+        <p>ค่าของ <code>for</code> ต้องตรงกับ <code>id</code> ของช่องที่ label นั้นอธิบาย เมื่อเชื่อมกันแล้ว ลองคลิกที่ข้อความ "ชื่อของคุณ" — cursor จะกระโดดเข้าไปในช่องกรอกทันที</p>
+        <p>และ <code>id</code> ยังสำคัญมากอีกเรื่อง: <strong>JavaScript จะใช้ <code>id</code> เพื่อไปหยิบค่าจากช่องกรอกแต่ละช่อง</strong> ดังนั้นตั้งชื่อ <code>id</code> ให้สื่อความหมาย และสะกดให้ตรงกันทุกที่</p>
+
+        <div class="warning">
+          <p><code>id</code> แยกตัวพิมพ์เล็ก-ใหญ่ <code>fullName</code> กับ <code>fullname</code> ถือเป็นคนละชื่อกัน และ <code>id</code> ต้องไม่ซ้ำกันภายในหน้าเดียว</p>
+        </div>
+
+        <h2>Step 2.4: ช่องกรอกเป้าหมาย</h2>
+        <p>เพิ่ม <code>form-group</code> ที่สองต่อจากช่องชื่อ ใช้ pattern เดิมทุกอย่าง เปลี่ยนแค่ข้อความและ <code>id</code>:</p>
+        <pre><code class="language-html">&lt;div class="form-group"&gt;
+  &lt;label for="goal"&gt;เป้าหมายของคุณ&lt;/label&gt;
+  &lt;input
+    id="goal"
+    type="text"
+    placeholder="เช่น เปลี่ยนสายงานเป็น Developer"
+  /&gt;
+&lt;/div&gt;
+</code></pre>
+
+        <p>บันทึกไฟล์แล้วเปิด <code>index.html</code> ใน browser ตอนนี้หน้าเว็บยังไม่มีสไตล์ (พื้นขาว ตัวอักษรธรรมดา) ซึ่งถูกต้องแล้ว เพราะเรายังไม่ได้เขียน CSS</p>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>เห็นป้าย "Varis Lab Bootcamp", หัวข้อ "แบบฟอร์มความสนใจเรียน", คำอธิบาย และช่องกรอก 2 ช่องที่มีข้อความตัวอย่างสีจาง ๆ คลิกที่คำว่า "ชื่อของคุณ" หรือ "เป้าหมายของคุณ" แล้ว cursor เข้าไปอยู่ในช่องที่ถูกต้อง</p>
+        </section>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า <code>form</code>, <code>label</code>, <code>input</code> ทำหน้าที่อะไร</li>
+            <li>ค่า <code>for</code> ของ label ทุกตัวตรงกับ <code>id</code> ของ input ที่คู่กัน</li>
+            <li>คลิก label แล้ว cursor เข้าไปในช่องกรอกที่ถูกต้อง</li>
+            <li>บอกได้ว่าทำไม <code>&lt;script&gt;</code> ถึงวางไว้ท้าย <code>body</code></li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="01_project_overview.html" rel="prev">ก่อนหน้า: ภาพรวมโปรเจกต์และการเตรียมไฟล์</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="03_select_textarea_button.html" rel="next">ถัดไป: select, textarea, button และกล่องผลลัพธ์</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

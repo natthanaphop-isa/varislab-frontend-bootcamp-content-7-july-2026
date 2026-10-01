@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ใช้ display: flex, gap, justify-content, align-items และ flex: 1 จัด navbar และ feature cards ให้เรียงเป็นแถว" />
+    <title>จัดแถวด้วย display: flex | Semantic HTML และ CSS Box Model</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 07 · Layout และรายละเอียดที่ทำให้หน้าเว็บดูเป็นมืออาชีพ</p>
+          <h1>จัดแถวด้วย display: flex</h1>
+          <p class="lesson-original-title" lang="en">Flexbox Basics</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ใช้ <code>display: flex</code> ที่ container เพื่อจัด element ลูกให้เรียงเป็นแถว</li>
+            <li>ใช้ <code>gap</code> กำหนดระยะห่างระหว่างลูก และ <code>flex: 1</code> ให้ลูกแบ่งพื้นที่เท่า ๆ กัน</li>
+            <li>จัด navbar ให้โลโก้อยู่ซ้าย เมนูอยู่ขวา ด้วย <code>justify-content</code> และ <code>align-items</code></li>
+          </ul>
+        </section>
+
+        <h2>ทำไมต้อง flex</h2>
+
+        <p>โดยปกติ block element อย่าง <code>article</code>, <code>section</code> หรือ <code>div</code> จะเรียง<strong>จากบนลงล่าง</strong> ตัวละบรรทัด นั่นคือเหตุผลที่การ์ดทั้งสามของเราตอนนี้ยังซ้อนกันเป็นแนวตั้ง ถ้าเราอยากให้การ์ดหลายใบเรียง<strong>ในแถวเดียวกัน</strong> วิธีที่ง่ายที่สุดคือ <code>display: flex</code></p>
+
+        <p>Flexbox มีสองบทบาทที่ต้องแยกให้ออก:</p>
+
+        <ul>
+          <li><strong>Container (parent)</strong> — กล่องที่เราใส่ <code>display: flex</code> เช่น <code>.features-section</code></li>
+          <li><strong>Item (ลูก)</strong> — element ที่อยู่ข้างใน container โดยตรง เช่น <code>.feature-card</code> แต่ละใบ</li>
+        </ul>
+
+        <h2>ขั้นที่ 1: Feature Cards เรียงเป็นแถว</h2>
+
+        <p>เพิ่ม <code>.features-section</code> ไว้<strong>ก่อน</strong> <code>.feature-card</code> ใน <code>style.css</code> แล้วเพิ่ม <code>flex: 1</code> เป็นบรรทัดแรกของ <code>.feature-card</code>:</p>
+
+        <pre><code class="language-css">.features-section {
+  display: flex;
+  gap: 20px;
+}
+
+.feature-card {
+  flex: 1;
+  padding: 24px;
+  border-radius: 20px;
+  background: #1e293b;
+}</code></pre>
+
+        <ul>
+          <li><code>display: flex</code> — ทำให้ลูกทุกตัวของ <code>.features-section</code> เรียงเป็นแถวแนวนอน</li>
+          <li><code>gap: 20px</code> — ระยะห่างระหว่าง card แต่ละใบ 20px (ไม่มีระยะเกินที่ขอบซ้ายสุดหรือขวาสุด)</li>
+          <li><code>flex: 1</code> — ให้ card แต่ละใบแบ่งพื้นที่ในแถวเท่า ๆ กัน มี 3 ใบก็แบ่งเป็น 3 ส่วนใกล้เคียงกัน</li>
+        </ul>
+
+        <div class="note">
+          <p>ลำดับของ rule ใน CSS ไม่ได้บังคับ แต่การวาง container (<code>.features-section</code>) ไว้ก่อน item (<code>.feature-card</code>) ทำให้อ่านไฟล์แล้วเข้าใจตามลำดับโครงสร้าง HTML</p>
+        </div>
+
+        <h2>ขั้นที่ 2: Navbar โลโก้ซ้าย เมนูขวา</h2>
+
+        <p>ใน <code>nav.navbar</code> มีลูกสองตัว คือ <code>p.logo</code> และ <code>div.nav-links</code> เราอยากให้สองตัวนี้อยู่แถวเดียวกัน โดยโลโก้ชิดซ้าย เมนูชิดขวา แก้ <code>.navbar</code> ให้เป็นแบบนี้:</p>
+
+        <pre><code class="language-css">.navbar {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}</code></pre>
+
+        <ul>
+          <li><code>justify-content: space-between</code> — ดันลูกตัวแรกไปชิดซ้ายสุด ตัวสุดท้ายไปชิดขวาสุด แล้วเอาพื้นที่ที่เหลือไว้ตรงกลาง</li>
+          <li><code>align-items: center</code> — จัดลูกให้อยู่กึ่งกลางในแนวตั้ง โลโก้กับเมนูจึงอยู่ระดับเดียวกัน</li>
+        </ul>
+
+        <p>ต่อจาก <code>.navbar</code> ให้เพิ่มสไตล์ของโลโก้และกลุ่มลิงก์:</p>
+
+        <pre><code class="language-css">.logo {
+  margin: 0;
+  color: #38bdf8;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}</code></pre>
+
+        <ul>
+          <li><code>.logo</code> — <code>margin: 0</code> ล้าง margin เริ่มต้นของ <code>p</code> ซึ่งไม่อย่างนั้นจะดัน navbar ให้สูงเกินจำเป็น</li>
+          <li><code>.nav-links</code> — เป็น flex container <strong>อีกชั้นหนึ่ง</strong> ซ้อนอยู่ใน navbar ทำให้ลิงก์ทั้งสามเรียงเป็นแถวพร้อมระยะห่าง 20px — นี่คือเหตุผลที่เราครอบลิงก์ด้วย <code>div.nav-links</code> ในบทที่ 03</li>
+        </ul>
+
+        <div class="expected-result">
+          <p>navbar มีโลโก้ "Varis Lab" สีฟ้าอยู่ซ้าย และลิงก์สามลิงก์อยู่ขวาในแถวเดียวกัน การ์ดทั้งสามเรียงเป็นแถวแนวนอน กว้างเท่า ๆ กัน มีช่องว่างระหว่างกัน 20px</p>
+        </div>
+
+        <h2>ข้อผิดพลาดที่พบบ่อย</h2>
+
+        <div class="warning">
+          <p><strong>ใส่ <code>display: flex</code> ผิดที่</strong> — flex ต้องใส่ที่ <strong>parent/container</strong> ไม่ใช่ที่ลูก ถ้าเราใส่ <code>display: flex</code> ที่ <code>.feature-card</code> การ์ดจะยังซ้อนกันเป็นแนวตั้งเหมือนเดิม (สิ่งที่เปลี่ยนคือ <code>h2</code> กับ <code>p</code> <em>ข้างใน</em> card จะเรียงเป็นแถวแทน) ถ้าอยากให้ card เรียงกัน ต้องใส่ที่ <code>.features-section</code> ซึ่งเป็นกล่องที่ครอบ card ทั้งหมด</p>
+        </div>
+
+        <pre><code class="language-css">/* ถูก: ใส่ที่ container */
+.features-section {
+  display: flex;
+}</code></pre>
+
+        <h3>ลองทำดู</h3>
+
+        <ul>
+          <li>ลบ <code>flex: 1</code> ออกจาก <code>.feature-card</code> ชั่วคราว แล้วสังเกตว่าความกว้างของการ์ดแต่ละใบเปลี่ยนตามความยาวของข้อความอย่างไร จากนั้นใส่กลับคืน</li>
+          <li>ลองเปลี่ยน <code>gap</code> ของ <code>.features-section</code> เป็น <code>40px</code> แล้วเปลี่ยนกลับเป็น <code>20px</code></li>
+          <li>ลองลบ <code>justify-content: space-between</code> ออกจาก <code>.navbar</code> แล้วดูว่าเมนูไปอยู่ตรงไหน จากนั้นใส่กลับคืน</li>
+        </ul>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า <code>display: flex</code> ต้องใส่ที่ container และส่งผลกับลูกโดยตรง</li>
+            <li>อธิบายหน้าที่ของ <code>gap</code>, <code>flex: 1</code>, <code>justify-content: space-between</code> และ <code>align-items: center</code> ได้</li>
+            <li>navbar มีโลโก้ซ้าย เมนูขวา และการ์ดทั้งสามเรียงเป็นแถวกว้างเท่ากัน</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="06_padding_vs_margin.html" rel="prev">ก่อนหน้า: padding กับ margin ต่างกันอย่างไร</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="08_links_buttons_readability.html" rel="next">ถัดไป: Class Selector, ปุ่ม, hover และความอ่านง่าย</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

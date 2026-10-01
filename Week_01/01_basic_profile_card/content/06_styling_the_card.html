@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เขียน CSS ส่วนที่เหลือให้การ์ด label หัวข้อ ข้อความแนะนำตัว และปุ่ม รวมถึงเอฟเฟกต์ตอนเอาเมาส์ชี้ปุ่ม" />
+    <title>ตกแต่งการ์ด ข้อความ และปุ่ม | สร้าง Professional Profile Card</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 06 · ตกแต่งด้วย CSS (Styling with CSS)</p>
+          <h1>ตกแต่งการ์ด ข้อความ และปุ่ม</h1>
+          <p class="lesson-original-title" lang="en">Styling the Card</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ตกแต่งการ์ดด้วยความกว้าง <code>padding</code> มุมโค้ง และเงา</li>
+            <li>จัดรูปแบบข้อความด้วยสี ขนาด น้ำหนัก และระยะบรรทัด</li>
+            <li>ตกแต่งปุ่มและเพิ่มเอฟเฟกต์ตอน hover ด้วย <code>button:hover</code></li>
+          </ul>
+        </section>
+
+        <h2>ตกแต่งตัวการ์ด</h2>
+        <p>ต่อท้ายไฟล์ <code>style.css</code> ด้วยกฎของการ์ด:</p>
+        <pre><code class="language-css">.profile-card {
+  width: 460px;
+  padding: 32px;
+  border-radius: 24px;
+  background: #1e293b;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}</code></pre>
+        <p>จุดข้างหน้า <code>.profile-card</code> แปลว่าเรากำลังเลือก class ชื่อ <code>profile-card</code> ซึ่งมาจาก <code>&lt;main class="profile-card"&gt;</code> ใน HTML</p>
+        <ul>
+          <li><code>width: 460px</code> — การ์ดกว้าง 460 pixel</li>
+          <li><code>padding: 32px</code> — ระยะห่างระหว่างขอบการ์ดกับเนื้อหาข้างใน</li>
+          <li><code>border-radius: 24px</code> — ทำมุมการ์ดให้โค้ง</li>
+          <li><code>background: #1e293b</code> — สีการ์ดที่สว่างกว่าพื้นหลังหน้าเล็กน้อย จึงดูแยกออกมา</li>
+          <li><code>box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35)</code> — เงาใต้การ์ด ค่าตามลำดับคือ เลื่อนแนวนอน 0, เลื่อนลง 24px, ความฟุ้ง 60px และสีดำโปร่งแสง 35%</li>
+        </ul>
+
+        <h2>ตกแต่งข้อความ</h2>
+        <pre><code class="language-css">.label {
+  color: #38bdf8;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 16px 0;
+  font-size: 32px;
+}
+
+#summary {
+  color: #cbd5e1;
+  font-size: 18px;
+  line-height: 1.7;
+}</code></pre>
+        <h3><code>.label</code></h3>
+        <p>ตัวหนังสือสีฟ้า (<code>#38bdf8</code>) ตัวหนา (<code>font-weight: bold</code>) เว้นระยะห่างระหว่างตัวอักษรนิดหน่อย (<code>letter-spacing</code>) และแปลงเป็นตัวพิมพ์ใหญ่ทั้งหมด (<code>text-transform: uppercase</code>) สังเกตว่าใน HTML เราพิมพ์ <code>Aspiring Software Developer</code> แบบปกติ แต่บนจอจะเห็นเป็น <code>ASPIRING SOFTWARE DEVELOPER</code> เพราะ CSS เปลี่ยนแค่<em>การแสดงผล</em> ไม่ได้แก้ข้อความจริง</p>
+        <h3><code>h1</code></h3>
+        <p>selector ที่เป็นชื่อ tag ตรง ๆ <code>margin: 16px 0</code> คือระยะห่างด้านบนและล่าง 16px ด้านซ้ายขวา 0 และ <code>font-size: 32px</code> กำหนดขนาดตัวอักษร</p>
+        <h3><code>#summary</code></h3>
+        <p>เครื่องหมาย <code>#</code> แปลว่าเลือก id ชื่อ <code>summary</code> ซึ่งมาจาก <code>&lt;p id="summary"&gt;</code> ใช้สีเทาอ่อน (<code>#cbd5e1</code>) ให้ดูรองลงมาจากหัวข้อ ขนาด 18px และ <code>line-height: 1.7</code> เพิ่มระยะห่างระหว่างบรรทัดให้อ่านสบาย</p>
+
+        <h2>ตกแต่งปุ่ม</h2>
+        <pre><code class="language-css">button {
+  margin-top: 24px;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  background: #38bdf8;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #7dd3fc;
+}</code></pre>
+        <ul>
+          <li><code>margin-top: 24px</code> — เว้นระยะเหนือปุ่ม ไม่ให้ชิดข้อความ</li>
+          <li><code>border: none</code> — เอาเส้นขอบเริ่มต้นของปุ่มออก</li>
+          <li><code>border-radius: 999px</code> — ใส่ค่าโค้งมาก ๆ ทำให้ปุ่มกลายเป็นทรงแคปซูล</li>
+          <li><code>padding: 12px 24px</code> — ระยะในปุ่ม บน-ล่าง 12px ซ้าย-ขวา 24px</li>
+          <li><code>background</code> สีฟ้าเดียวกับ label และ <code>color</code> สีเข้มเดียวกับพื้นหลังหน้า ให้ตัวหนังสือบนปุ่มอ่านง่าย</li>
+          <li><code>cursor: pointer</code> — เปลี่ยนเคอร์เซอร์เป็นรูปมือเมื่อชี้ปุ่ม บอกผู้ใช้ว่ากดได้</li>
+        </ul>
+        <p><code>button:hover</code> คือกฎที่มีผล<strong>เฉพาะตอนเอาเมาส์ไปชี้ปุ่ม</strong> (<code>:hover</code> เรียกว่า pseudo-class) ในที่นี้เปลี่ยนพื้นหลังเป็นสีฟ้าอ่อนลง ผู้ใช้จะรู้สึกว่าปุ่มตอบสนอง</p>
+
+        <h2>ไฟล์ style.css ฉบับเต็ม</h2>
+        <p>เมื่อรวมกับบทที่แล้ว ไฟล์ <code>style.css</code> ทั้งไฟล์ควรเป็นแบบนี้:</p>
+        <pre><code class="language-css">* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-card {
+  width: 460px;
+  padding: 32px;
+  border-radius: 24px;
+  background: #1e293b;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.label {
+  color: #38bdf8;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 16px 0;
+  font-size: 32px;
+}
+
+#summary {
+  color: #cbd5e1;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+button {
+  margin-top: 24px;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  background: #38bdf8;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #7dd3fc;
+}</code></pre>
+
+        <section class="expected-result" aria-labelledby="result-heading">
+          <h2 id="result-heading">ควรได้ผลลัพธ์แบบนี้</h2>
+          <p>การ์ดสีน้ำเงินเข้มมุมโค้งมีเงา วางอยู่กลางจอ ด้านบนมี label ตัวพิมพ์ใหญ่สีฟ้า ตามด้วยชื่อตัวใหญ่สีขาว ข้อความแนะนำตัวสีเทาอ่อน และปุ่มทรงแคปซูลสีฟ้า เมื่อเอาเมาส์ชี้ปุ่ม สีจะอ่อนลงและเคอร์เซอร์เป็นรูปมือ แต่<strong>กดแล้วก็ยังไม่เกิดอะไรขึ้น</strong></p>
+        </section>
+
+        <div class="warning">
+          <p>ถ้า refresh แล้วหน้าตาไม่เปลี่ยนเลยแม้แต่จุดเดียว ให้เช็กว่า save <code>style.css</code> แล้วหรือยัง และบรรทัด <code>&lt;link rel="stylesheet" href="style.css" /&gt;</code> ใน <code>index.html</code> สะกดชื่อไฟล์ตรงกับไฟล์จริงไหม ถ้าบางกฎทำงานแต่บางกฎไม่ทำงาน ให้เช็กว่า selector สะกดตรงกับ class/id ใน HTML และมีปีกกาปิดครบ</p>
+        </div>
+
+        <section class="verification" aria-labelledby="check-heading">
+          <h2 id="check-heading">ก่อนไปบทถัดไป เช็กว่า</h2>
+          <ul>
+            <li>การ์ดอยู่กลางจอ มีมุมโค้งและเงา</li>
+            <li>label แสดงเป็นตัวพิมพ์ใหญ่สีฟ้า</li>
+            <li>ปุ่มเปลี่ยนสีตอนเอาเมาส์ชี้</li>
+            <li>ลองแก้ค่าอย่างน้อยหนึ่งค่า (เช่น <code>border-radius</code> หรือสีของปุ่ม) แล้วเห็นผลที่เปลี่ยนไป</li>
+          </ul>
+        </section>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="05_css_basics.html" rel="prev">ก่อนหน้า: พื้นฐาน CSS และการจัดพื้นหลัง</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="07_javascript_interaction.html" rel="next">ถัดไป: ทำให้ปุ่มทำงานด้วย JavaScript</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

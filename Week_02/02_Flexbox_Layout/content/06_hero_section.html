@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สร้าง hero section ที่มีข้อความด้านซ้ายและกล่องข้อมูลด้านขวา พร้อมใช้ flex ratio กำหนดสัดส่วนความกว้างของสองฝั่ง" />
+    <title>Hero Section แบบซ้าย-ขวา และ Flex Ratio | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 06 · สร้าง Landing Page ด้วย Flexbox (Building the Page)</p>
+          <h1>Hero Section แบบซ้าย-ขวา และ Flex Ratio</h1>
+          <p class="lesson-original-title" lang="en">Hero Layout &amp; Flex Ratio</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>จัด container ของเนื้อหาหลักด้วย <code>max-width</code> และ <code>margin: 0 auto</code></li>
+            <li>สร้าง layout สองฝั่งซ้าย-ขวาด้วย <code>display: flex</code>, <code>align-items</code> และ <code>gap</code></li>
+            <li>ใช้ flex ratio (<code>flex: 1.4</code> กับ <code>flex: 1</code>) กำหนดให้ฝั่งหนึ่งกว้างกว่าอีกฝั่ง</li>
+            <li>ตกแต่งข้อความ hero, ปุ่ม และกล่องข้อมูลให้ดูเป็นมืออาชีพ</li>
+          </ul>
+        </section>
+
+        <h2>container ของ <code>main</code></h2>
+        <p>เนื้อหาทุก section อยู่ใน <code>&lt;main&gt;</code> เราจัดให้กว้างไม่เกิน 1100px เท่ากับ navbar เพื่อให้ขอบซ้าย-ขวาของทั้งหน้าตรงกัน:</p>
+        <pre><code class="language-css">main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 64px 32px;
+}</code></pre>
+
+        <h2>ขั้นที่ 1: เรียงสองฝั่งซ้าย-ขวา</h2>
+        <p><code>.hero-section</code> มีลูก 2 ตัว คือ <code>.hero-content</code> (ข้อความ) และ <code>.hero-card</code> (กล่องข้อมูล):</p>
+        <pre><code class="language-css">.hero-section {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    margin-bottom: 72px;
+}</code></pre>
+        <ul>
+          <li><code>display: flex</code> — ทำให้สองฝั่งนี้เรียงซ้าย-ขวา</li>
+          <li><code>align-items: center</code> — ฝั่งข้อความสูงกว่าฝั่ง card จึงจัดให้ทั้งสองอยู่กึ่งกลางแนวตั้ง card จะไม่ถูกยืดให้สูงเท่าฝั่งข้อความ</li>
+          <li><code>gap: 40px</code> — ระยะห่างระหว่างสองฝั่ง</li>
+          <li><code>margin-bottom: 72px</code> — ระยะห่างจาก section ถัดไป (ยังไม่เกี่ยวกับ Flexbox)</li>
+        </ul>
+
+        <h2>ขั้นที่ 2: Flex Ratio</h2>
+        <p>เราอยากให้ฝั่งข้อความกว้างกว่าฝั่ง card เล็กน้อย จึงกำหนด <code>flex</code> ที่ลูกแต่ละตัวเป็นสัดส่วน:</p>
+        <pre><code class="language-css">.hero-content {
+    flex: 1.4;
+}
+
+.hero-card {
+    flex: 1;
+    padding: 28px;
+    border-radius: 24px;
+    background: #1e293b;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}</code></pre>
+        <p><code>.hero-content</code> ได้ <code>flex: 1.4</code> ส่วน <code>.hero-card</code> ได้ <code>flex: 1</code> พื้นที่จึงถูกแบ่งในอัตรา 1.4 : 1 แปลว่าฝั่งข้อความใหญ่กว่าฝั่ง card เล็กน้อย</p>
+        <p>property อื่นของ <code>.hero-card</code> คือการแต่งกล่อง: <code>padding</code> ระยะด้านใน, <code>border-radius</code> มุมโค้ง, <code>background</code> สีพื้นที่อ่อนกว่าพื้นหลังหน้า และ <code>box-shadow</code> เงาให้กล่องดูลอยขึ้นมา</p>
+
+        <div class="note">
+          <p>ลองเปลี่ยน <code>flex: 1.4</code> เป็น <code>flex: 1</code> แล้ว refresh จะเห็นว่าสองฝั่งกว้างใกล้เคียงกัน ลองเป็น <code>flex: 2</code> ฝั่งข้อความจะกว้างขึ้นอีก ตัวเลขไม่ได้เป็นหน่วย px แต่เป็น<strong>สัดส่วน</strong>เมื่อเทียบกับลูกตัวอื่น</p>
+        </div>
+
+        <h2>ขั้นที่ 3: ตกแต่งข้อความใน hero</h2>
+        <p>ป้ายเล็ก ๆ เหนือหัวข้อ (<code>.eyebrow</code>) และป้ายใน card (<code>.card-label</code>) หน้าตาเหมือนกัน เราจึงเขียน selector รวมกันด้วยเครื่องหมายจุลภาค:</p>
+        <pre><code class="language-css">.eyebrow,
+.card-label {
+    margin: 0 0 16px;
+    color: #38bdf8;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+h1 {
+    margin: 0 0 24px;
+    font-size: 52px;
+    line-height: 1.1;
+}
+
+.hero-description {
+    margin: 0 0 32px;
+    color: #cbd5e1;
+    font-size: 20px;
+    line-height: 1.7;
+}</code></pre>
+        <ul>
+          <li><code>margin: 0 0 16px</code> — เขียนแบบ 3 ค่า: บน 0, ซ้าย-ขวา 0, ล่าง 16px (ได้ผลเหมือน <code>0 0 16px 0</code> แต่สั้นกว่า)</li>
+          <li><code>text-transform: uppercase</code> และ <code>letter-spacing</code> — ทำให้ป้ายเป็นตัวพิมพ์ใหญ่และห่างขึ้นเล็กน้อย</li>
+          <li><code>line-height: 1.1</code> ที่ <code>h1</code> — หัวข้อตัวใหญ่ไม่ต้องห่างบรรทัดมาก ส่วนย่อหน้าใช้ <code>1.7</code> ให้อ่านสบาย</li>
+        </ul>
+
+        <h2>ขั้นที่ 4: ปุ่ม และรายการใน card</h2>
+        <pre><code class="language-css">.primary-button {
+    display: inline-block;
+    padding: 14px 24px;
+    border-radius: 999px;
+    background: #38bdf8;
+    color: #0f172a;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.primary-button:hover {
+    background: #7dd3fc;
+}
+
+.hero-card h2 {
+    margin: 0 0 16px;
+    font-size: 36px;
+}
+
+.hero-card ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #cbd5e1;
+    line-height: 1.8;
+}</code></pre>
+        <ul>
+          <li><code>display: inline-block</code> — <code>&lt;a&gt;</code> เป็น inline ทำให้ <code>padding</code> บน-ล่างไม่ดันพื้นที่รอบข้าง เปลี่ยนเป็น inline-block เพื่อให้ปุ่มมีขนาดตาม padding จริง</li>
+          <li><code>border-radius: 999px</code> — ค่าใหญ่มาก ๆ ทำให้ปุ่มโค้งมนเป็นทรงแคปซูล</li>
+          <li><code>.hero-card h2</code> และ <code>.hero-card ul</code> — แต่งเฉพาะหัวข้อและรายการที่อยู่ใน card เท่านั้น ไม่กระทบ <code>h2</code> ใน section อื่น</li>
+        </ul>
+
+        <div class="expected-result">
+          <p>hero section มีข้อความและปุ่มสีฟ้าทรงแคปซูลอยู่ทางซ้าย กล่อง "Bootcamp Format / 12 Weeks" พร้อมรายการ 4 ข้ออยู่ทางขวา มีเงา มุมโค้ง และฝั่งข้อความกว้างกว่าฝั่ง card เล็กน้อย</p>
+        </div>
+
+        <div class="warning">
+          <p><strong>align-items แล้วไม่เห็นผล?</strong> บางครั้ง <code>align-items</code> อาจดูเหมือนไม่มีผล เพราะลูกทุกตัวสูงใกล้กันอยู่แล้ว ใน hero นี้ลองคอมเมนต์ <code>align-items: center</code> ออก จะเห็นว่า card ถูกยืดให้สูงเท่าฝั่งข้อความ (ค่าเริ่มต้น <code>stretch</code>) ถ้ายังไม่เห็นชัด ให้ลองเพิ่มเนื้อหาในฝั่งข้อความให้ยาวขึ้น</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>ข้อความอยู่ซ้าย card อยู่ขวา มีระยะห่าง 40px</li>
+            <li>อธิบายได้ว่า <code>flex: 1.4</code> กับ <code>flex: 1</code> ทำให้สองฝั่งกว้างต่างกันอย่างไร</li>
+            <li>ปุ่มเปลี่ยนสีเมื่อ hover และ card มีเงาและมุมโค้ง</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="05_navbar.html" rel="prev">ก่อนหน้า: สร้าง Navbar ด้วย Flexbox</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="07_feature_cards.html" rel="next">ถัดไป: Feature Cards เรียงแถวด้วย flex: 1</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

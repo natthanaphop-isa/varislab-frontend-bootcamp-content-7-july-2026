@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="รู้จัก array สำหรับเก็บข้อมูลหลายรายการไว้ในตัวแปรเดียว พร้อมวิธีหยิบข้อมูลแต่ละตัวด้วย index" />
+    <title>Array: เก็บข้อมูลหลายรายการ | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 04 · ข้อมูลหลายรายการ (Arrays, Objects &amp; Loops)</p>
+          <h1>Array: เก็บข้อมูลหลายรายการ</h1>
+          <p class="lesson-original-title" lang="en">Arrays</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายได้ว่า array คืออะไรและใช้เมื่อไร</li>
+            <li>สร้าง array ด้วยวงเล็บเหลี่ยม <code>[ ]</code></li>
+            <li>หยิบข้อมูลใน array ด้วย index ที่เริ่มนับจาก <code>0</code></li>
+            <li>ดูจำนวนสมาชิกใน array ด้วย <code>.length</code></li>
+          </ul>
+        </section>
+
+        <h2>ปัญหา: ข้อมูลหลายชิ้นในตัวแปรหลายตัว</h2>
+        <p>ถ้าเราอยากเก็บเป้าหมาย 3 อย่าง ด้วยความรู้เดิม เราอาจเขียนแบบนี้:</p>
+        <pre><code class="language-javascript">const goal1 = "เปลี่ยนสายงานเป็น Developer";
+const goal2 = "สร้าง Portfolio";
+const goal3 = "เข้าใจ Full-Stack";</code></pre>
+        <p>ใช้ได้ถ้ามีแค่ 3 อย่าง แต่ถ้ามี 30 หรือ 300 อย่างล่ะ? การตั้งตัวแปรทีละตัวจะยุ่งมาก และเราไม่มีทางบอก JavaScript ได้ง่าย ๆ ว่า “ทำอะไรบางอย่างกับเป้าหมาย <em>ทุกตัว</em>” นี่คือเหตุผลที่เราต้องมี array</p>
+
+        <h2>Array คืออะไร</h2>
+        <p><strong>Array</strong> คือกล่องที่ใช้เก็บข้อมูลหลายรายการไว้ในตัวแปรเดียว ให้มอง array เหมือน <strong>list</strong> หรือรายการที่เรียงลำดับไว้</p>
+        <pre><code class="language-javascript">const goals = [
+  "เปลี่ยนสายงานเป็น Developer",
+  "สร้าง Portfolio",
+  "เข้าใจ Full-Stack",
+];</code></pre>
+        <p>ตัวแปร <code>goals</code> ไม่ได้เก็บข้อความเดียว แต่เก็บข้อความหลายอันไว้ในชุดเดียวกัน สังเกต syntax:</p>
+        <ul>
+          <li>array เริ่มด้วย <code>[</code> และจบด้วย <code>]</code></li>
+          <li>สมาชิกแต่ละตัวคั่นด้วยเครื่องหมายจุลภาค <code>,</code></li>
+          <li>จุลภาคหลังตัวสุดท้าย (เช่นหลัง <code>"เข้าใจ Full-Stack",</code>) ใส่หรือไม่ใส่ก็ได้ JavaScript ยอมรับทั้งสองแบบ</li>
+        </ul>
+
+        <h2>หยิบข้อมูลด้วย index</h2>
+        <p>สมาชิกแต่ละตัวใน array มีหมายเลขลำดับเรียกว่า <strong>index</strong> และ index <strong>เริ่มนับจาก 0</strong> ไม่ใช่ 1</p>
+        <pre><code class="language-javascript">const students = [
+  "Man",  // index 0
+  "Jane", // index 1
+  "Pond", // index 2
+];
+
+console.log(students[0]); // Man
+console.log(students[1]); // Jane
+console.log(students[2]); // Pond</code></pre>
+        <p>เราหยิบข้อมูลด้วยการเขียนชื่อ array ตามด้วยวงเล็บเหลี่ยมที่มี index อยู่ข้างใน เช่น <code>students[0]</code></p>
+
+        <div class="warning">
+          <p>ข้อผิดพลาดที่เจอบ่อย: คิดว่าตัวแรกคือ <code>students[1]</code> จริง ๆ แล้วตัวแรกคือ <code>students[0]</code> และถ้าขอ index ที่ไม่มีอยู่ เช่น <code>students[3]</code> ใน array ที่มี 3 ตัว จะได้ <code>undefined</code> (ไม่ใช่ error) ถ้าเห็นคำว่า <code>undefined</code> โผล่บนหน้าเว็บ ให้สงสัยเรื่อง index หรือชื่อข้อมูลที่เรียกผิดก่อน</p>
+        </div>
+
+        <h2>นับจำนวนด้วย <code>.length</code></h2>
+        <p>ทุก array มี <code>.length</code> บอกว่ามีสมาชิกกี่ตัว:</p>
+        <pre><code class="language-javascript">console.log(students.length); // 3</code></pre>
+        <p>ตัวสุดท้ายของ array จึงอยู่ที่ index <code>students.length - 1</code> เสมอ</p>
+
+        <div class="note">
+          <p>ใน array เก็บอะไรก็ได้ ทั้งข้อความ ตัวเลข หรือแม้แต่ array ซ้อนกัน และ (สำคัญมากสำหรับบทถัดไป) เก็บ <strong>object</strong> ได้ด้วย</p>
+        </div>
+
+        <h2>ลองทำ</h2>
+        <p>สร้างไฟล์ <code>index.html</code> ที่มี <code>&lt;script src="script.js"&gt;&lt;/script&gt;</code> แล้วเขียนใน <code>script.js</code>:</p>
+        <ol>
+          <li>สร้าง array ชื่อ <code>goals</code> ที่มีเป้าหมายของคุณเอง 4 อย่าง</li>
+          <li><code>console.log</code> เป้าหมายตัวแรกและตัวสุดท้าย</li>
+          <li><code>console.log</code> จำนวนเป้าหมายทั้งหมดด้วย <code>.length</code></li>
+          <li>ลอง <code>console.log(goals[10])</code> แล้วดูว่าได้อะไร</li>
+        </ol>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบายได้ว่า array = รายการหลายชิ้นในตัวแปรเดียว</li>
+            <li>สร้าง array ด้วย <code>[ ]</code> และคั่นสมาชิกด้วย <code>,</code> ได้</li>
+            <li>รู้ว่า index เริ่มจาก <code>0</code> และ index ที่ไม่มีอยู่จะได้ <code>undefined</code></li>
+            <li>ใช้ <code>.length</code> ดูจำนวนสมาชิกได้</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="03_debugging_steps.html" rel="prev">ก่อนหน้า: Debug อย่างเป็นขั้นตอนด้วย console.log</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="05_objects.html" rel="next">ถัดไป: Object และ Array of Objects</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

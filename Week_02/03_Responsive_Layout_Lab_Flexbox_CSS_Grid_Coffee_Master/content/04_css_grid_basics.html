@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="จัด curriculum card 6 ใบให้เป็น 3 คอลัมน์ด้วย display grid, grid-template-columns, repeat, หน่วย fr และ gap พร้อม style ของ card" />
+    <title>จัด Curriculum Cards ด้วย CSS Grid | Responsive Layout Lab: Flexbox + CSS Grid</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 04 · ประกอบหน้าเว็บด้วย CSS Grid (Page Composition with CSS Grid)</p>
+          <h1>จัด Curriculum Cards ด้วย CSS Grid</h1>
+          <p class="lesson-original-title" lang="en">CSS Grid Basics</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>เปิดใช้ Grid ด้วย <code>display: grid</code> ที่ parent ได้ถูกตัว</li>
+            <li>อธิบาย <code>grid-template-columns: repeat(3, 1fr)</code> และหน่วย <code>fr</code> ได้</li>
+            <li>ใช้ <code>gap</code> กำหนดระยะห่างระหว่าง grid items</li>
+            <li>จัด style ของ card ให้มีกรอบ มุมโค้ง และ hover effect</li>
+          </ul>
+        </section>
+
+        <h2>CSS ของ Curriculum Section</h2>
+        <p>เพิ่ม CSS ชุดนี้ลงใน <code>style.css</code> ต่อจาก style ของ <code>.feature-card</code> (ตอนนี้วางไว้ก่อน <code>@media</code> ท้ายไฟล์ก็พอ — บทที่ 09 เราจะจัดหมวดให้เรียบร้อยอีกครั้ง):</p>
+        <pre><code class="language-css">/* Curriculum */
+.curriculum-section {
+    margin-bottom: 72px;
+}
+
+.curriculum-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.curriculum-card {
+    padding: 28px;
+    border-radius: 24px;
+    background: #1e293b;
+    border: 1px solid #334155;
+}
+
+.curriculum-card:hover {
+    border-color: #38bdf8;
+}
+
+.module-number {
+    margin: 0 0 16px;
+    color: #38bdf8;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+}
+
+.curriculum-card h3 {
+    margin: 0 0 12px;
+    font-size: 22px;
+}
+
+.curriculum-card p {
+    margin: 0;
+    color: #cbd5e1;
+    line-height: 1.7;
+}</code></pre>
+        <p>save แล้ว refresh เบราว์เซอร์ card ทั้ง 6 ใบจะเรียงเป็น 2 แถว แถวละ 3 ใบทันที มาดูว่าแต่ละส่วนทำงานอย่างไร</p>
+
+        <h2>1. Grid ต้องใส่ที่ parent</h2>
+        <pre><code class="language-css">.curriculum-grid {
+    display: grid;
+}</code></pre>
+        <p>เหมือน Flexbox เลย — ถ้าอยากจัด card หลายใบ ต้องใส่ <code>display: grid</code> ที่ <strong>parent ที่ครอบ card ทั้งหมด</strong> ในตัวอย่างนี้ parent คือ <code>.curriculum-grid</code> ส่วนลูก (grid items) คือ <code>.curriculum-card</code> แต่ละใบ</p>
+
+        <h2>2. กำหนดจำนวน column</h2>
+        <pre><code class="language-css">grid-template-columns: repeat(3, 1fr);</code></pre>
+        <p>บรรทัดนี้แปลว่า “สร้าง 3 columns ที่กว้างเท่า ๆ กัน” โดย <code>repeat(3, 1fr)</code> มีความหมายเท่ากับการเขียนยาว ๆ แบบนี้ แต่สั้นกว่า:</p>
+        <pre><code class="language-css">grid-template-columns: 1fr 1fr 1fr;</code></pre>
+        <p>เมื่อมี card มากกว่าจำนวน column Grid จะขึ้นแถวใหม่ให้เอง card ใบที่ 4–6 จึงไปอยู่แถวที่สองโดยเราไม่ต้องเขียนอะไรเพิ่ม</p>
+
+        <h2>3. <code>1fr</code> คืออะไร</h2>
+        <p><code>fr</code> ย่อมาจาก <strong>fraction</strong> ให้คิดว่าเป็น “ส่วนแบ่งของพื้นที่ที่เหลือ” <code>repeat(3, 1fr)</code> จึงแปลว่าแบ่งพื้นที่เป็น 3 ส่วนเท่า ๆ กัน ถ้าลองเปลี่ยนเป็น <code>2fr 1fr 1fr</code> คอลัมน์แรกจะกว้างเป็นสองเท่าของคอลัมน์อื่น</p>
+
+        <h2>4. <code>gap</code></h2>
+        <pre><code class="language-css">gap: 24px;</code></pre>
+        <p>ใช้กำหนดระยะห่างระหว่าง card ทั้งแนวนอนและแนวตั้ง ทั้ง Flexbox และ Grid ใช้ <code>gap</code> ได้เหมือนกัน ข้อดีคือเราไม่ต้องใส่ <code>margin</code> ให้ card แต่ละใบ</p>
+
+        <h2>Style ของ card</h2>
+        <ul>
+          <li><strong>ไม่ต้องมี <code>flex: 1</code></strong> — ต่างจาก <code>.feature-card</code> เพราะความกว้างของ card ถูกกำหนดโดย column ของ parent แล้ว</li>
+          <li><strong><code>border: 1px solid #334155</code></strong> — เส้นขอบสีเทาอ่อน ๆ แยก card ออกจากพื้นหลัง</li>
+          <li><strong><code>:hover</code> เปลี่ยน <code>border-color</code> เป็น <code>#38bdf8</code></strong> — รายละเอียดเล็ก ๆ ที่ทำให้ผู้ใช้รู้สึกว่า card ตอบสนองต่อเมาส์ แม้ยังไม่ได้ใช้ JavaScript</li>
+          <li><strong><code>.module-number</code></strong> — ตัวเลข 01–06 ตัวเล็ก สีฟ้า ตัวหนา และ <code>letter-spacing</code> กว้างขึ้น ทำหน้าที่เป็น label ไม่ใช่หัวข้อ</li>
+          <li><strong><code>.curriculum-card p</code> ใส่ <code>margin: 0</code></strong> — ตัด margin เริ่มต้นของ <code>&lt;p&gt;</code> ออก แล้วคุมระยะเองผ่าน margin ของ h3 และ .module-number</li>
+        </ul>
+
+        <div class="note">
+          <p>เปิด DevTools (คลิกขวา → Inspect) แล้วเลือก <code>.curriculum-grid</code> เบราว์เซอร์ส่วนใหญ่จะมีป้าย <code>grid</code> ให้กดเพื่อแสดงเส้นแบ่ง column และ gap บนหน้าเว็บ ช่วยให้เห็นภาพ grid ชัดขึ้นมาก</p>
+        </div>
+
+        <div class="warning">
+          <p><strong>ข้อผิดพลาดที่พบบ่อย</strong></p>
+          <ul>
+            <li>ใส่ <code>display: grid</code> ที่ <code>.curriculum-card</code> แทน parent — card จะไม่เรียงเป็น 3 คอลัมน์ (เพราะเราไปจัดของ<em>ข้างใน</em> card แทน)</li>
+            <li>พิมพ์ชื่อ property ผิด เช่น <code>grid-template-column</code> (ขาด s) — CSS จะเงียบ ๆ ไม่ทำงาน ให้ดูใน DevTools ว่ามีเส้นขีดฆ่าหรือไอคอนเตือนหรือไม่</li>
+            <li>ชื่อ class ใน CSS ไม่ตรงกับ HTML เช่น <code>.curriculum-grids</code></li>
+          </ul>
+        </div>
+
+        <h2>ลองเล่นกับ Grid</h2>
+        <ul>
+          <li>เปลี่ยนเป็น <code>repeat(2, 1fr)</code> แล้วดูว่า card เรียงเป็นกี่แถว</li>
+          <li>เปลี่ยน <code>gap</code> เป็น <code>8px</code> และ <code>48px</code> แล้วเทียบกัน</li>
+          <li>ลอง <code>grid-template-columns: 2fr 1fr 1fr;</code></li>
+        </ul>
+        <p>ลองเสร็จแล้วอย่าลืมเปลี่ยนกลับเป็น <code>repeat(3, 1fr)</code> และ <code>gap: 24px</code></p>
+
+        <div class="verification">
+          <ul>
+            <li>Desktop เห็น curriculum card 6 ใบ เรียง 3 คอลัมน์ 2 แถว มีระยะห่างเท่ากัน</li>
+            <li>เอาเมาส์ชี้ card แล้วขอบเปลี่ยนเป็นสีฟ้า</li>
+            <li>อธิบายได้ว่า <code>repeat(3, 1fr)</code> เท่ากับ <code>1fr 1fr 1fr</code> และ <code>gap</code> ใช้ทำอะไร</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="03_curriculum_section_html.html" rel="prev">ก่อนหน้า: เพิ่ม HTML ของ Curriculum Section</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="05_audience_section.html" rel="next">ถัดไป: เพิ่ม Section “Bootcamp นี้เหมาะกับใคร”</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

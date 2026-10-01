@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สรุปสิ่งที่ได้เรียนเรื่อง CSS Grid, page composition, UI polish, CSS organization และ GitHub พร้อม mini challenge และงาน Complete Bootcamp Landing Page + GitHub Submission" />
+    <title>สรุปบทเรียนและการบ้าน | Responsive Layout Lab: Flexbox + CSS Grid</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 12 · ส่งงานขึ้น GitHub (GitHub Submission)</p>
+          <h1>สรุปบทเรียนและการบ้าน</h1>
+          <p class="lesson-original-title" lang="en">Wrap Up &amp; Assignment</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ทบทวนแนวคิดหลักทั้งหมดของคอร์สนี้ได้ด้วยตัวเอง</li>
+            <li>ฝึกต่อยอดหน้าเว็บด้วย mini challenge</li>
+            <li>ส่งงาน Complete Bootcamp Landing Page + GitHub Submission ได้ครบตามเงื่อนไข</li>
+          </ul>
+        </section>
+
+        <h2>สิ่งที่ได้เรียน</h2>
+        <p>เราไม่ได้สร้างหน้าใหม่จากศูนย์ แต่ฝึกวิธีทำงานที่ใกล้กับงานจริง: เอาหน้าเว็บเดิมมาเพิ่ม section ใหม่ ปรับ layout และ polish ให้ดีขึ้น แล้วส่ง code ขึ้น GitHub</p>
+        <ul>
+          <li><strong>Flexbox กับ Grid ไม่ได้แทนกัน</strong> — Flexbox เหมาะกับ layout แนวเดียว เช่น navbar, hero หรือ CTA ส่วน Grid เหมาะกับ card หลายใบ หลายแถว หลายคอลัมน์ เช่น curriculum cards หรือ audience cards</li>
+          <li><strong>CSS Grid พื้นฐาน</strong> — <code>display: grid</code> ที่ parent, <code>grid-template-columns: repeat(3, 1fr)</code>, หน่วย <code>fr</code> และ <code>gap</code></li>
+          <li><strong>Page composition</strong> — section ที่มี rhythm เดียวกัน ใช้ <code>.section-header</code> ร่วมกัน ระยะห่างเท่ากัน</li>
+          <li><strong>UI polish</strong> — เว็บที่ดูดีมาจาก spacing, typography, hover และ visual hierarchy ไม่ใช่สีอย่างเดียว</li>
+          <li><strong>Responsive Grid</strong> — 3 → 2 → 1 คอลัมน์ด้วย media query ที่เรียงลำดับถูกต้อง</li>
+          <li><strong>CSS organization</strong> — จัด CSS เป็นหมวดให้อ่านง่ายและดูแลต่อได้</li>
+          <li><strong>Git &amp; GitHub</strong> — add → commit → push และส่งงานเป็น repository link</li>
+        </ul>
+
+        <h2>Mini challenge</h2>
+        <p>ลองทำเองประมาณ 15–20 นาที เสร็จแล้ว commit และ push ขึ้น GitHub ตามขั้นตอน “ครั้งถัดไป” ในบทที่ 11</p>
+        <ol>
+          <li><strong>Challenge 1</strong> — เพิ่ม curriculum card อีก 2 ใบ</li>
+          <li><strong>Challenge 2</strong> — เปลี่ยน <code>.curriculum-grid</code> จาก 3 columns เป็น 4 columns แล้วดูผล:
+            <pre><code class="language-css">grid-template-columns: repeat(4, 1fr);</code></pre>
+          </li>
+          <li><strong>Challenge 3</strong> — เพิ่ม hover effect ให้ curriculum card ในแบบของคุณเอง</li>
+          <li><strong>Challenge 4</strong> — เพิ่ม section ใหม่ชื่อ <strong>Student Outcomes</strong> ที่มี card 3 ใบ เช่น Portfolio Project, GitHub Repository และ Interview Story</li>
+          <li><strong>Challenge 5</strong> — จัด CSS เป็นหมวดให้ชัดเจน (รวมหมวดของ section ใหม่ด้วย)</li>
+          <li><strong>Challenge 6</strong> — push งานขึ้น GitHub</li>
+        </ol>
+        <p><strong>Bonus</strong> — ทำ responsive ให้ grid ของ section ใหม่:</p>
+        <pre><code class="language-text">Desktop = 3 columns
+Tablet  = 2 columns
+Mobile  = 1 column</code></pre>
+        <div class="note">
+          <p>สำหรับ Challenge 4 ลองใช้ pattern เดิม: <code>section-header</code> + grid container + card แล้วอย่าลืมเพิ่ม grid ใหม่เข้าไปใน selector ของทั้งสอง media query</p>
+        </div>
+
+        <h2>การบ้าน: Complete Bootcamp Landing Page + GitHub Submission</h2>
+        <p>ต่อยอดหน้า Bootcamp Landing Page ให้เป็นหน้าเว็บที่สมบูรณ์ขึ้น โดยเพิ่ม section ใหม่ ใช้ CSS Grid และส่งงานผ่าน GitHub repository</p>
+
+        <h3>Requirements</h3>
+        <ol>
+          <li>ใช้ project Bootcamp Landing Page (จากโฟลเดอร์ <code>start/</code>) เป็น base</li>
+          <li>เพิ่ม Curriculum Section</li>
+          <li>Curriculum Section ต้องใช้ CSS Grid</li>
+          <li>มี card อย่างน้อย 6 ใบ</li>
+          <li>เพิ่มอีก 1 section เช่น Who This Is For, Outcomes, Testimonials หรือ FAQ</li>
+          <li>ใช้ Grid อย่างน้อย 1 จุด</li>
+          <li>ใช้ Flexbox อย่างน้อย 1 จุด</li>
+          <li>มี UI polish เช่น hover, spacing, typography หรือ consistent card style</li>
+          <li>จัด CSS เป็นหมวด</li>
+          <li>ปรับ responsive สำหรับ grid อย่างน้อย 1 breakpoint</li>
+          <li>สร้าง GitHub repository สำหรับ project นี้</li>
+          <li>Push code ขึ้น GitHub</li>
+          <li>มีไฟล์ <code>README.md</code> อธิบาย project แบบสั้น ๆ</li>
+        </ol>
+
+        <h3>สิ่งที่ต้องส่ง</h3>
+        <pre><code class="language-text">1. GitHub repository link
+2. Screenshot หน้าเว็บ
+3. Reflection answers</code></pre>
+        <p>ใน GitHub repo ต้องมีอย่างน้อย:</p>
+        <pre class="file-tree">index.html
+style.css
+README.md</pre>
+
+        <h3>Reflection</h3>
+        <p>ตอบคำถามสั้น ๆ ด้วยคำพูดของคุณเอง:</p>
+        <ol>
+          <li>Flexbox กับ Grid ต่างกันอย่างไร?</li>
+          <li>ทำไม Curriculum Section เหมาะกับ Grid?</li>
+          <li><code>grid-template-columns</code> ใช้ทำอะไร?</li>
+          <li>UI polish ที่คุณปรับมีอะไรบ้าง?</li>
+          <li>การจัด CSS เป็นหมวดช่วยอย่างไร?</li>
+          <li>Git กับ GitHub ต่างกันอย่างไร?</li>
+          <li>Commit คืออะไร?</li>
+          <li>อยากให้ผู้สอน review จุดไหน?</li>
+        </ol>
+
+        <h2>ทบทวนตัวเอง</h2>
+        <p>ลองตอบคำถามเหล่านี้โดยไม่เปิดบทเรียน ถ้าตอบไม่ได้ข้อไหน ให้กลับไปอ่านบทที่เกี่ยวข้อง:</p>
+        <ul>
+          <li><code>display: grid;</code> ควรใส่ที่ element ไหน?</li>
+          <li><code>grid-template-columns: repeat(3, 1fr);</code> หมายถึงอะไร?</li>
+          <li><code>gap</code> ใน Grid ใช้ทำอะไร?</li>
+          <li>navbar หรือ CTA ที่มี layout ซ้าย-ขวา ควรใช้ Flexbox หรือ Grid? แล้ว card 12 ใบหลายแถวล่ะ?</li>
+          <li><code>git add .</code>, <code>git commit -m "message"</code> และ <code>git push</code> แต่ละคำสั่งทำอะไร?</li>
+        </ul>
+
+        <div class="verification">
+          <ul>
+            <li>หน้าเว็บมี hero, features, curriculum (Grid 6 ใบ), audience (Grid), pricing และ CTA (Flexbox) ครบ</li>
+            <li>grid เปลี่ยนจำนวนคอลัมน์ตามขนาดจอ และ <code>style.css</code> จัดเป็นหมวดโดยมี Responsive อยู่ท้ายสุด</li>
+            <li>repository บน GitHub มี <code>index.html</code>, <code>style.css</code> และ <code>README.md</code></li>
+            <li>เตรียม repository link, screenshot และคำตอบ reflection พร้อมส่ง</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="11_push_to_github.html" rel="prev">ก่อนหน้า: Push โปรเจกต์ขึ้น GitHub</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

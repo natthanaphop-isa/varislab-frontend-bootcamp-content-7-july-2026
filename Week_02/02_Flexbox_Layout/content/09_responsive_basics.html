@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ใช้ @media, flex-direction: column และ flex-wrap ทำให้ layout ซ้าย-ขวาเปลี่ยนเป็นบน-ล่างบนจอเล็ก พร้อมเก็บงานโค้ดจากฉบับร่างให้ตรงกับฉบับสมบูรณ์" />
+    <title>Responsive เบื้องต้นด้วย @media และ flex-wrap | Flexbox Layout</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 09 · Responsive และฝึกฝน (Responsive &amp; Practice)</p>
+          <h1>Responsive เบื้องต้นด้วย @media และ flex-wrap</h1>
+          <p class="lesson-original-title" lang="en">Basic Responsive Layout</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายได้ว่า <code>@media</code> ใช้ทำอะไร</li>
+            <li>ใช้ <code>flex-direction: column</code> เปลี่ยน layout จากซ้าย-ขวาเป็นบน-ล่างบนจอเล็ก</li>
+            <li>อธิบายได้ว่าทำไมต้องใส่ <code>align-items: stretch</code> คู่กับ <code>flex-direction: column</code></li>
+            <li>ใช้ <code>flex-wrap: wrap</code> ให้เมนูขึ้นบรรทัดใหม่ได้เมื่อพื้นที่ไม่พอ</li>
+          </ul>
+        </section>
+
+        <h2>ปัญหาบนจอเล็ก</h2>
+        <p>เปิด DevTools ของเบราว์เซอร์ (คลิกขวา &gt; Inspect) แล้วเปิดโหมดจำลองอุปกรณ์มือถือ หรือย่อหน้าต่างให้แคบลงเรื่อย ๆ จะเห็นว่า:</p>
+        <ul>
+          <li>hero ยังพยายามอยู่ซ้าย-ขวา ข้อความหัวข้อตัวใหญ่ถูกบีบจนอ่านยาก</li>
+          <li>feature card 3 ใบถูกบีบจนแคบมาก</li>
+          <li>pricing card และ navbar ก็อึดอัดเช่นกัน</li>
+        </ul>
+        <p>ที่เป็นแบบนี้เพราะ Flexbox พยายามบีบลูกทุกตัวให้อยู่ในแถวเดียวโดยค่าเริ่มต้น</p>
+
+        <h2><code>@media</code> คืออะไร</h2>
+        <p><code>@media</code> ใช้กำหนด CSS ที่จะทำงานเฉพาะเมื่อตรงเงื่อนไข เช่น ขนาดหน้าจอ:</p>
+        <pre><code class="language-css">@media (max-width: 768px) {
+    /* CSS ในนี้ทำงานเฉพาะตอนหน้าจอกว้างไม่เกิน 768px */
+}</code></pre>
+        <p>ถ้าหน้าจอกว้างไม่เกิน 768px layout ที่เคยเรียงซ้าย-ขวา จะเปลี่ยนเป็นเรียงบน-ล่าง นี่คือพื้นฐานของ responsive design</p>
+
+        <h2>เพิ่ม responsive ท้ายไฟล์</h2>
+        <p>เพิ่มโค้ดนี้ไว้<strong>ท้ายสุด</strong>ของ <code>style.css</code>:</p>
+        <pre><code class="language-css">@media (max-width: 768px) {
+
+    .navbar,
+    .hero-section,
+    .features-section,
+    .pricing-cards {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    h1 {
+        font-size: 40px;
+    }
+
+    .nav-links {
+        flex-wrap: wrap;
+    }
+}</code></pre>
+
+        <h3>1. <code>flex-direction: column</code></h3>
+        <p>ค่าเริ่มต้นของ <code>flex-direction</code> คือ <code>row</code> (เรียงแนวนอน) เมื่อเปลี่ยนเป็น <code>column</code> ลูกจะเรียงจากบนลงล่างแทน เราใส่ให้ flex container ทั้ง 4 ตัวพร้อมกันด้วย selector แบบคั่นจุลภาค</p>
+        <div class="note">
+          <p>เมื่อเปลี่ยนเป็น <code>column</code> "แนวหลัก" จะกลายเป็นแนวตั้ง ส่วน <code>align-items</code> จะคุมแนวนอนแทน นี่คือเหตุผลที่ในบทที่ 03 เราพูดว่า <code>justify-content</code> คุมแนวหลัก "โดยปกติ" คือแนวนอน</p>
+        </div>
+
+        <h3>2. ทำไมต้อง <code>align-items: stretch</code></h3>
+        <p><code>.navbar</code> และ <code>.hero-section</code> ตั้ง <code>align-items: center</code> ไว้ เมื่อเปลี่ยนเป็น <code>column</code> แล้ว <code>align-items</code> คุมแนวนอน ค่า <code>center</code> จะทำให้ลูกหดเหลือกว้างเท่าเนื้อหาและลอยอยู่กลางจอ เช่น <code>.hero-card</code> ไม่เต็มความกว้าง การตั้ง <code>align-items: stretch</code> ทำให้ลูกยืดเต็มความกว้างของ container ส่วน <code>.features-section</code> และ <code>.pricing-cards</code> เป็น <code>stretch</code> อยู่แล้ว ใส่ซ้ำก็ไม่มีผลเสีย</p>
+
+        <h3>3. ลดขนาด <code>h1</code></h3>
+        <p>หัวข้อ 52px ใหญ่เกินไปบนมือถือ ลดเหลือ 40px</p>
+
+        <h3>4. <code>flex-wrap: wrap</code> ที่เมนู</h3>
+        <p>ถ้าเมนูมีหลายลิงก์จนแถวเดียวไม่พอ <code>flex-wrap: wrap</code> จะให้ลิงก์ขึ้นบรรทัดใหม่แทนที่จะล้นออกนอกจอ</p>
+
+        <div class="warning">
+          <p><strong>ผิดบ่อย:</strong> วาง <code>@media</code> ไว้<em>บนสุด</em>ของไฟล์ แล้ว responsive ไม่ทำงาน เพราะเมื่อ specificity เท่ากัน กฎที่เขียนทีหลังจะชนะ เช่น <code>h1 { font-size: 52px; }</code> ที่อยู่ด้านล่างจะทับ <code>font-size: 40px</code> ใน <code>@media</code> ให้วาง <code>@media</code> ไว้ท้ายไฟล์เสมอ</p>
+        </div>
+
+        <div class="expected-result">
+          <p>เมื่อจอกว้างไม่เกิน 768px: navbar เป็น logo อยู่บนและเมนูอยู่ล่าง, hero เป็นข้อความอยู่บนและ card อยู่ล่างเต็มความกว้าง, feature card และ pricing card เรียงลงมาทีละใบ และหัวข้อเล็กลง เมื่อขยายจอกลับเกิน 768px layout ซ้าย-ขวาจะกลับมาเหมือนเดิม</p>
+        </div>
+
+        <h2>เก็บงาน: เทียบ <code>start/</code> กับ <code>finish/</code></h2>
+        <p>โค้ดใน <code>start/</code> เป็นฉบับร่างที่หน้าตาใกล้เคียงของจริงมากแล้ว แต่ยังมีจุดที่ต้องเก็บงาน ถ้าคุณเริ่มจาก <code>start/</code> ให้แก้ตามตารางนี้ (ถ้าเขียนตามคู่มือมาตั้งแต่บทที่ 04 โค้ดของคุณเป็นแบบ <code>finish/</code> อยู่แล้ว ใช้ตารางนี้ฝึกอ่านโค้ดได้):</p>
+        <div class="comparison" role="region" aria-label="สิ่งที่ต่างกันระหว่าง start และ finish" tabindex="0">
+          <table>
+            <thead><tr><th>จุด</th><th>ใน <code>start/</code></th><th>ใน <code>finish/</code></th><th>เหตุผล</th></tr></thead>
+            <tbody>
+              <tr><td><code>@media</code> ของ <code>h1</code></td><td>เขียน <code>@media</code> ซ้อนไว้ข้างใน rule <code>h1</code></td><td>ย้ายไปรวมใน <code>@media</code> ก้อนเดียวท้ายไฟล์</td><td>CSS สำหรับจอเล็กอยู่ที่เดียว หาง่าย แก้ง่าย</td></tr>
+              <tr><td><code>@media</code> ของ flex container</td><td>มีแค่ <code>flex-direction: column</code></td><td>เพิ่ม <code>align-items: stretch</code></td><td>ให้ลูกยืดเต็มความกว้างเมื่อเรียงบน-ล่าง</td></tr>
+              <tr><td><code>.hero-description</code></td><td>ไม่มี <code>color</code></td><td><code>color: #cbd5e1</code></td><td>คำอธิบายเป็นสีเทาอ่อน ไม่แย่งความเด่นจากหัวข้อ</td></tr>
+              <tr><td><code>.nav-links</code></td><td>มี <code>list-style: none</code></td><td>ไม่มี</td><td><code>.nav-links</code> เป็น <code>&lt;div&gt;</code> ไม่ใช่ list property นี้จึงไม่มีผล</td></tr>
+              <tr><td><code>.site-header</code></td><td>เส้นขอบ <code>#334155</code></td><td>เส้นขอบ <code>#1e293b</code></td><td>สีเดียวกับเส้นขอบบนของ footer</td></tr>
+              <tr><td>ตำแหน่ง <code>.hero-card</code></td><td>อยู่ห่างจาก <code>.hero-content</code></td><td>อยู่ถัดจาก <code>.hero-content</code> ทันที</td><td>เห็น flex ratio 1.4 : 1 ของสองฝั่งได้ในที่เดียว</td></tr>
+              <tr><td><code>.pricing-card p</code></td><td>อยู่ก่อน <code>.price</code></td><td>อยู่หลัง <code>.price</code></td><td>เรียงตามลำดับที่อ่าน ผลลัพธ์เหมือนเดิมเพราะตัดสินด้วย specificity</td></tr>
+              <tr><td><code>margin</code></td><td><code>0 0 16px 0</code></td><td><code>0 0 16px</code></td><td>แบบ 3 ค่าได้ผลเหมือนกันแต่สั้นกว่า</td></tr>
+              <tr><td>HTML ราคาแผนผ่อน</td><td><code>&lt;p id="price-secondary" class="price"&gt;</code></td><td><code>&lt;p class="price"&gt;</code></td><td>ไม่มี CSS หรือโค้ดใดใช้ <code>id</code> นี้ จึงลบออก</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2><code>style.css</code> ฉบับสมบูรณ์</h2>
+        <p>เทียบกับไฟล์ของคุณได้ ควรตรงกับ <code>finish/style.css</code>:</p>
+        <pre><code class="language-css">* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+}
+
+.site-header {
+    border-bottom: 1px solid #1e293b;
+}
+
+.navbar {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 32px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    margin: 0;
+    color: #38bdf8;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.nav-links {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-links a {
+    color: #cbd5e1;
+    text-decoration: none;
+}
+
+.nav-links a:hover {
+    color: #38bdf8;
+}
+
+main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 64px 32px;
+}
+
+.hero-section {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    margin-bottom: 72px;
+}
+
+.hero-content {
+    flex: 1.4;
+}
+
+.hero-card {
+    flex: 1;
+    padding: 28px;
+    border-radius: 24px;
+    background: #1e293b;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.eyebrow,
+.card-label {
+    margin: 0 0 16px;
+    color: #38bdf8;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+h1 {
+    margin: 0 0 24px;
+    font-size: 52px;
+    line-height: 1.1;
+}
+
+.hero-description {
+    margin: 0 0 32px;
+    color: #cbd5e1;
+    font-size: 20px;
+    line-height: 1.7;
+}
+
+.primary-button {
+    display: inline-block;
+    padding: 14px 24px;
+    border-radius: 999px;
+    background: #38bdf8;
+    color: #0f172a;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.primary-button:hover {
+    background: #7dd3fc;
+}
+
+.hero-card h2 {
+    margin: 0 0 16px;
+    font-size: 36px;
+}
+
+.hero-card ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #cbd5e1;
+    line-height: 1.8;
+}
+
+.features-section {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 72px;
+}
+
+.feature-card {
+    flex: 1;
+    padding: 24px;
+    border-radius: 20px;
+    background: #1e293b;
+}
+
+.feature-card h2 {
+    margin: 0 0 12px;
+    color: #38bdf8;
+}
+
+.feature-card p {
+    margin: 0;
+    color: #cbd5e1;
+    line-height: 1.7;
+}
+
+.section-header {
+    max-width: 640px;
+    margin-bottom: 28px;
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 36px;
+}
+
+.pricing-cards {
+    display: flex;
+    gap: 20px;
+}
+
+.pricing-card {
+    flex: 1;
+    padding: 28px;
+    border-radius: 24px;
+    background: #1e293b;
+    border: 1px solid #334155;
+}
+
+.pricing-card.highlight {
+    border-color: #38bdf8;
+}
+
+.pricing-card h3 {
+    margin: 0 0 16px;
+}
+
+.price {
+    margin: 0 0 16px;
+    color: #38bdf8;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.pricing-card p {
+    color: #cbd5e1;
+    line-height: 1.7;
+}
+
+.site-footer {
+    border-top: 1px solid #1e293b;
+    padding: 24px 32px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+
+    .navbar,
+    .hero-section,
+    .features-section,
+    .pricing-cards {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    h1 {
+        font-size: 40px;
+    }
+
+    .nav-links {
+        flex-wrap: wrap;
+    }
+}</code></pre>
+
+        <div class="verification">
+          <ul>
+            <li>ย่อจอให้แคบกว่า 768px แล้วทุก section เปลี่ยนเป็นเรียงบน-ล่าง</li>
+            <li><code>.hero-card</code> กว้างเต็ม container บนจอเล็ก (ผลของ <code>align-items: stretch</code>)</li>
+            <li><code>@media</code> อยู่ท้ายไฟล์ และมีแค่ก้อนเดียว</li>
+            <li>ไฟล์ <code>style.css</code> ของคุณตรงกับฉบับสมบูรณ์ด้านบน</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="08_pricing_and_footer.html" rel="prev">ก่อนหน้า: Pricing Section และ Footer</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="10_errors_and_challenges.html" rel="next">ถัดไป: Error ที่เจอบ่อย และ Mini Challenge</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

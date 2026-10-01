@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เข้าใจ CSS Box Model ว่าทุก element คือกล่องที่มี content, padding, border และ margin พร้อมตั้งค่า box-sizing: border-box และสไตล์พื้นฐานของ body" />
+    <title>CSS Box Model และ box-sizing | Semantic HTML และ CSS Box Model</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 04 · CSS Box Model และระยะห่าง</p>
+          <h1>CSS Box Model และ box-sizing</h1>
+          <p class="lesson-original-title" lang="en">CSS Box Model</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>อธิบายส่วนประกอบทั้ง 4 ของกล่องใน CSS: content, padding, border และ margin</li>
+            <li>อธิบายว่า <code>box-sizing: border-box</code> ช่วยให้คุมขนาดกล่องง่ายขึ้นอย่างไร</li>
+            <li>เริ่มเขียน <code>style.css</code> ด้วย reset และสไตล์พื้นฐานของ <code>body</code></li>
+          </ul>
+        </section>
+
+        <p>ตอนนี้เรามีโครงสร้าง HTML ครบแล้ว ต่อไป CSS จะเข้ามาควบคุมว่าแต่ละส่วนควรมีหน้าตา ขนาด ระยะห่าง และการจัดวางอย่างไร CSS ไม่ได้มีไว้แค่เปลี่ยนสีหรือเปลี่ยน font — มันคือเครื่องมือควบคุม<strong>พื้นที่</strong>และ <strong>layout</strong> ของหน้าเว็บอย่างเป็นระบบ และก่อนจะจัด layout ได้ดี เราต้องเข้าใจ concept ที่สำคัญที่สุดก่อน นั่นคือ <strong>Box Model</strong></p>
+
+        <h2>ทุก element คือกล่อง</h2>
+
+        <p>ใน CSS ทุก element บนหน้าเว็บ — ไม่ว่าจะเป็น <code>header</code>, <code>h1</code>, <code>p</code> หรือ <code>a</code> — จะถูกมองเป็น<strong>กล่อง</strong>หนึ่งกล่อง และกล่องหนึ่งกล่องมีส่วนประกอบหลัก 4 ส่วน:</p>
+
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>ส่วนประกอบ</th>
+                <th>ความหมาย</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Content</strong></td>
+                <td>เนื้อหาข้างใน เช่น ข้อความ รูปภาพ หรือปุ่ม</td>
+              </tr>
+              <tr>
+                <td><strong>Padding</strong></td>
+                <td>ระยะห่างด้านในกล่อง ระหว่าง content กับ border</td>
+              </tr>
+              <tr>
+                <td><strong>Border</strong></td>
+                <td>เส้นขอบของกล่อง</td>
+              </tr>
+              <tr>
+                <td><strong>Margin</strong></td>
+                <td>ระยะห่างด้านนอกกล่อง ระหว่างกล่องนี้กับ element อื่น</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>ถ้าวาดเป็นชั้น ๆ จากนอกเข้าใน จะได้แบบนี้:</p>
+
+        <pre><code class="language-text">Margin
+└── Border
+    └── Padding
+        └── Content</code></pre>
+
+        <p>ถ้านึกภาพไม่ออก ให้เปรียบกับ<strong>กล่องพัสดุ</strong>:</p>
+
+        <pre><code class="language-text">Content = ของที่อยู่ในกล่อง
+Padding = โฟมหรือกันกระแทกด้านใน
+Border  = กล่องกระดาษ
+Margin  = ระยะห่างระหว่างกล่องนี้กับกล่องอื่น</code></pre>
+
+        <h2>ทำไมต้องเข้าใจ Box Model</h2>
+
+        <p>ถ้าเราไม่เข้าใจ Box Model เวลา layout เพี้ยน เราจะไม่รู้เลยว่าเพี้ยนเพราะอะไร เพราะแต่ละ property ส่งผลต่อกล่องคนละแบบ:</p>
+
+        <ul>
+          <li><code>padding</code> ดันเนื้อหาข้างในให้ห่างจากขอบ</li>
+          <li><code>margin</code> ดัน element ออกจากกัน</li>
+          <li><code>border</code> ทำให้กล่องมีขอบเพิ่มขึ้นมา</li>
+          <li><code>width</code> หรือ <code>height</code> ทำให้ขนาดกล่องเปลี่ยน</li>
+        </ul>
+
+        <h2>ปัญหาเรื่องขนาดกล่อง และ box-sizing</h2>
+
+        <p>ลองดู CSS นี้:</p>
+
+        <pre><code class="language-css">.card {
+  width: 300px;
+  padding: 20px;
+}</code></pre>
+
+        <p>เราตั้งใจให้การ์ดกว้าง 300px แต่โดยค่าเริ่มต้น <code>width</code> หมายถึงความกว้างของ <strong>content</strong> เท่านั้น เบราว์เซอร์จะเอา <code>padding</code> (และ <code>border</code> ถ้ามี) ไป<strong>บวกเพิ่ม</strong> — padding ซ้าย 20px + ขวา 20px ทำให้กล่องกินพื้นที่จริง 340px ใหญ่กว่าที่เราคิด</p>
+
+        <p>ทางแก้คือใช้ <code>box-sizing: border-box</code>:</p>
+
+        <pre><code class="language-css">.card {
+  width: 300px;
+  padding: 20px;
+  box-sizing: border-box;
+}</code></pre>
+
+        <p>เมื่อใช้ <code>border-box</code> ค่า <code>width</code> จะ<strong>รวม</strong> padding และ border เข้าไปแล้ว กล่องจึงกว้าง 300px ตามที่เขียนไว้ ส่วน content ข้างในจะหดลงเองให้พอดี ทำให้คำนวณขนาดง่ายขึ้นมาก</p>
+
+        <h2>ขั้นที่ 1: เริ่มเขียน style.css</h2>
+
+        <p>เพราะ <code>border-box</code> ใช้สะดวกกว่า developer ส่วนใหญ่จึงตั้งค่านี้ให้<strong>ทุก element</strong> ตั้งแต่บรรทัดแรกของไฟล์ CSS เปิด <code>style.css</code> แล้วเขียน:</p>
+
+        <pre><code class="language-css">* {
+  box-sizing: border-box;
+}</code></pre>
+
+        <p><code>*</code> คือ universal selector แปลว่า "เลือกทุก element ในหน้า" บรรทัดนี้จึงเป็น CSS reset ที่นิยมใช้มากในงานจริง</p>
+
+        <h2>ขั้นที่ 2: สไตล์พื้นฐานของ body</h2>
+
+        <p>ต่อจาก reset ให้กำหนดหน้าตาพื้นฐานของทั้งหน้า:</p>
+
+        <pre><code class="language-css">body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}</code></pre>
+
+        <ul>
+          <li><code>margin: 0</code> — เบราว์เซอร์ใส่ margin เริ่มต้นให้ <code>body</code> ทำให้มีขอบขาวเล็ก ๆ รอบหน้า เราตั้งเป็น 0 เพื่อให้พื้นหลังเต็มจอพอดี</li>
+          <li><code>font-family: Arial, sans-serif</code> — ใช้ฟอนต์ Arial ถ้าเครื่องไม่มี ให้ใช้ฟอนต์ sans-serif ตัวอื่นแทน</li>
+          <li><code>background: #0f172a</code> — พื้นหลังสีน้ำเงินเข้มเกือบดำ (ธีมมืดของหน้าเรา)</li>
+          <li><code>color: white</code> — ตัวอักษรสีขาว เพื่อให้อ่านได้บนพื้นหลังเข้ม</li>
+        </ul>
+
+        <div class="expected-result">
+          <p>refresh หน้าเว็บ พื้นหลังจะกลายเป็นสีเข้มเต็มจอ ตัวอักษรเป็นสีขาว ส่วนลิงก์ยังเป็นสีน้ำเงินมีขีดเส้นใต้ และเนื้อหายังชิดขอบซ้ายยาวเต็มจออยู่ — เราจะจัดการในบทถัดไป</p>
+        </div>
+
+        <div class="warning">
+          <p>ถ้าหน้าเว็บไม่เปลี่ยนเลย ให้ตรวจว่า <code>&lt;link rel="stylesheet" href="style.css" /&gt;</code> อยู่ใน <code>head</code> และชื่อไฟล์ตรงกันทุกตัวอักษร (เช่น ไม่ได้ตั้งชื่อเป็น <code>styles.css</code>) และไฟล์ทั้งสองอยู่ในโฟลเดอร์เดียวกัน</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>อธิบาย content, padding, border และ margin ได้ และเรียงลำดับจากในออกนอกได้</li>
+            <li>อธิบายได้ว่าทำไมการ์ด <code>width: 300px; padding: 20px;</code> ที่ไม่มี <code>border-box</code> จึงกว้างเกิน 300px</li>
+            <li><code>style.css</code> มี <code>* { box-sizing: border-box; }</code> และ <code>body</code> ตามโค้ดด้านบน</li>
+            <li>หน้าเว็บเป็นพื้นหลังสีเข้ม ตัวอักษรสีขาว</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="03_landing_page_structure.html" rel="prev">ก่อนหน้า: สร้างโครงสร้าง Landing Page</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="05_container_layout.html" rel="next">ถัดไป: จัด content ให้อยู่กลางหน้าด้วย max-width</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

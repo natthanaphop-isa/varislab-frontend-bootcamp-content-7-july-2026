@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ฝึก debug อย่างเป็นขั้นตอน 4 ขั้น และใช้ console.log ตรวจทั้ง element และค่าของตัวแปรใน Console ของเบราว์เซอร์" />
+    <title>Debug อย่างเป็นขั้นตอนด้วย console.log | Student Goal Dashboard และการ Debug</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 03 · ทบทวนและการ Debug (Recap &amp; Debugging)</p>
+          <h1>Debug อย่างเป็นขั้นตอนด้วย console.log</h1>
+          <p class="lesson-original-title" lang="en">Debugging Step by Step</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ไล่หาปัญหาตามขั้นตอน debug 4 ขั้น แทนการเดาไปเรื่อย ๆ</li>
+            <li>เปิด Console ของเบราว์เซอร์เพื่ออ่าน error และดูผลของ <code>console.log</code></li>
+            <li>ใช้ <code>console.log</code> ตรวจว่า JavaScript หา element เจอหรือไม่ (ได้ element หรือได้ <code>null</code>)</li>
+            <li>ใช้ <code>console.log</code> ดูค่าจริงของตัวแปรระหว่างทาง</li>
+          </ul>
+        </section>
+
+        <h2>Error เป็นเรื่องปกติ</h2>
+        <p>เวลาเขียนโปรแกรมจริง สิ่งที่ยากไม่ใช่การเขียนให้ถูกตั้งแต่แรก แต่คือการรู้ว่า <strong>เวลามันพัง เราควรเริ่มไล่จากตรงไหน</strong> Developer ทุกคนเจอ error ทุกวัน สิ่งที่แยกคนที่แก้ได้เร็วออกจากคนที่ติดอยู่นาน ๆ คือการ debug อย่างมีขั้นตอน ไม่ใช่เดาแล้วแก้มั่วไปเรื่อย ๆ</p>
+
+        <h2>หลัก debug เบื้องต้น 4 ขั้น</h2>
+        <ol>
+          <li><strong>อ่าน error หรือสังเกตอาการ</strong> — มีข้อความ error ใน Console ไหม? หน้าเว็บเป็นอย่างไร (ไม่มีอะไรเกิดขึ้นเลย, แสดงผิด, แสดงซ้ำ)?</li>
+          <li><strong>ดูว่าเพิ่งแก้อะไรไปล่าสุด</strong> — ถ้าเมื่อกี้ยังทำงานได้ ปัญหามักอยู่ในสิ่งที่เพิ่งแก้</li>
+          <li><strong>เช็กการเชื่อมโยงระหว่าง HTML, CSS, JavaScript</strong> — เชื่อมไฟล์ครบไหม? <code>id</code> และ <code>class</code> ตรงกันไหม?</li>
+          <li><strong>ใช้ <code>console.log</code> เพื่อดูค่าระหว่างทาง</strong> — อย่าเชื่อว่าค่า “น่าจะ” ถูก ให้พิมพ์ออกมาดูจริง ๆ</li>
+        </ol>
+
+        <h2>เปิด Console ของเบราว์เซอร์</h2>
+        <p>ทั้ง error และผลลัพธ์ของ <code>console.log</code> จะไปแสดงในแท็บ <strong>Console</strong> ของ DevTools วิธีเปิดใน Google Chrome:</p>
+        <ul>
+          <li>คลิกขวาบนหน้าเว็บ แล้วเลือก <strong>Inspect</strong> (ตรวจสอบ) จากนั้นเลือกแท็บ <strong>Console</strong></li>
+          <li>หรือกด <kbd>F12</kbd> (Windows) / <kbd>Cmd</kbd> + <kbd>Option</kbd> + <kbd>J</kbd> (macOS)</li>
+        </ul>
+        <div class="note">
+          <p>ทำให้เป็นนิสัย: เปิด Console ค้างไว้ตลอดเวลาที่เขียน JavaScript ข้อความสีแดงคือ error ที่บอกทั้งประเภทของปัญหาและชื่อไฟล์กับเลขบรรทัดที่เกิด (เช่น <code>script.js:12</code>) คลิกที่ชื่อไฟล์นั้นเพื่อกระโดดไปดูบรรทัดที่มีปัญหาได้เลย</p>
+        </div>
+
+        <h2><code>console.log</code> คืออะไร</h2>
+        <p><code>console.log</code> คือการสั่งให้ JavaScript แสดงค่าบางอย่างออกมาใน Console เพื่อช่วยให้เรารู้ว่าโค้ด ณ ตอนนี้ “เจอสิ่งที่เราคิดไว้หรือเปล่า” ผู้ใช้ทั่วไปจะไม่เห็นข้อความนี้บนหน้าเว็บ มันมีไว้ให้ developer ดูเท่านั้น</p>
+
+        <h3>ตรวจว่า JavaScript หา element เจอหรือไม่</h3>
+        <p>สมมติเรามี input ใน form ที่มี <code>id="fullName"</code>:</p>
+        <pre><code class="language-javascript">const fullNameInput = document.getElementById("fullName");
+
+console.log(fullNameInput);</code></pre>
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr><th>สิ่งที่เห็นใน Console</th><th>แปลว่า</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>element <code>&lt;input id="fullName" ...&gt;</code></td><td>JavaScript หา element เจอ ไปต่อได้</td></tr>
+              <tr><td><code>null</code></td><td>JavaScript หา element ไม่เจอ ให้เช็กว่า id ใน HTML ตรงกับใน JavaScript หรือไม่</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>ตรวจค่าที่ผู้ใช้กรอกจริง ๆ</h3>
+        <pre><code class="language-javascript">const fullName = fullNameInput.value;
+
+console.log(fullName);</code></pre>
+        <p>บรรทัดนี้ช่วยให้เราเห็นว่าค่าที่ผู้ใช้กรอกเข้ามาจริง ๆ คืออะไร นี่คือวิธี debug ที่สำคัญมาก เพราะบางครั้งเรา <em>คิดว่า</em> ค่ามีแล้ว แต่จริง ๆ อาจว่างอยู่ก็ได้</p>
+
+        <div class="warning">
+          <p>ระวังตำแหน่งของ <code>console.log</code> ถ้าเราอ่าน <code>.value</code> ตั้งแต่ตอนโหลดหน้าเว็บ (นอกฟังก์ชันที่ทำงานตอน submit) ค่าที่ได้จะเป็นข้อความว่าง เพราะตอนนั้นผู้ใช้ยังไม่ได้พิมพ์อะไรเลย ให้อ่านค่าและ <code>console.log</code> ภายในฟังก์ชันที่ทำงานตอนกดปุ่มหรือ submit</p>
+        </div>
+
+        <h3>ใส่ป้ายกำกับให้ <code>console.log</code></h3>
+        <p>ถ้า log หลายค่าพร้อมกัน Console จะเต็มไปด้วยค่าที่แยกไม่ออกว่าอันไหนมาจากบรรทัดไหน เราส่งข้อความนำหน้าเข้าไปได้ โดยคั่นด้วยเครื่องหมายจุลภาค:</p>
+        <pre><code class="language-javascript">console.log("fullNameInput:", fullNameInput);
+console.log("fullName:", fullName);</code></pre>
+
+        <h2>ฝึก: debug ตามขั้นตอน</h2>
+        <p>ลองกลับไปที่หน้าเว็บที่คุณทำพังไว้ในบทที่แล้ว (id สะกดผิด, ลืม script, ลืม <code>.value</code>) แล้วไล่ทีละข้อตาม 4 ขั้นด้านบน:</p>
+        <ol>
+          <li>เปิด Console แล้วดูว่ามี error สีแดงหรือไม่ อ่านข้อความและเลขบรรทัด</li>
+          <li>ใส่ <code>console.log</code> หลังบรรทัด <code>getElementById</code> ทุกบรรทัด แล้วดูว่ามีตัวไหนได้ <code>null</code></li>
+          <li>ใส่ <code>console.log</code> หลังบรรทัดที่อ่านค่าจาก input แล้วดูว่าค่าเป็นสิ่งที่คุณพิมพ์จริงหรือไม่</li>
+          <li>ถ้า Console ว่างเปล่าแม้แต่ <code>console.log</code> ก็ไม่แสดง ให้สงสัยว่าไฟล์ JavaScript ยังไม่ได้เชื่อมกับ HTML</li>
+        </ol>
+
+        <div class="note">
+          <p>เมื่อแก้ปัญหาได้แล้ว ลบ <code>console.log</code> ที่ใส่ไว้เพื่อ debug ออก หรือเก็บไว้เฉพาะตัวที่ยังมีประโยชน์ จะได้ไม่รก Console ตอนทำงานชิ้นต่อไป</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>จำหลัก debug 4 ขั้นได้: อ่าน error/สังเกตอาการ, ดูสิ่งที่เพิ่งแก้, เช็กการเชื่อมโยง, ใช้ <code>console.log</code></li>
+            <li>เปิดแท็บ Console ของเบราว์เซอร์ได้</li>
+            <li>รู้ว่าถ้า <code>console.log</code> ผลของ <code>getElementById</code> แล้วได้ <code>null</code> ต้องไปเช็ก id</li>
+            <li>ใช้ <code>console.log</code> ดูค่าจริงของตัวแปร แทนการเดาว่าค่า “น่าจะมี”</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="02_common_mistakes.html" rel="prev">ก่อนหน้า: ข้อผิดพลาดที่เจอบ่อยจากการทำ Assignment</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="04_arrays.html" rel="next">ถัดไป: Array: เก็บข้อมูลหลายรายการ</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

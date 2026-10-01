@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="เปิด CORS ให้ React app ที่พอร์ต 5173 เรียก API ได้ โดยอ่าน origin จาก environment แทนการใช้ wildcard แล้วตรวจ header ด้วย curl" />
+  <title>เปิด CORS และตั้งค่า PORT</title>
+  <link rel="stylesheet" href="lesson.css" />
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NestJS E-commerce API Workshop</p>
+    <h1>เปิด CORS และตั้งค่า PORT</h1>
+    <section class="learning-objectives" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+      <ul>
+        <li>อธิบายได้ว่า CORS ถูกบังคับที่ browser ไม่ใช่ที่ server และ preflight <code>OPTIONS</code> เกิดขึ้นเมื่อไร</li>
+        <li>เปิด CORS ด้วย <code>app.enableCors()</code> โดยอ่าน origin จาก environment แทนการใส่ <code>*</code></li>
+        <li>อ่านผลของ <code>curl -H 'Origin: …'</code> ได้ถูกต้อง — รวมถึงกรณีที่ header ไม่ได้หายไปอย่างที่หลายคนคาด</li>
+      </ul>
+    </section>
+
+    <h2>CORS เป็นกฎของ browser ไม่ใช่ของ server</h2>
+    <p>ทุกวันนี้ API ของเรารันที่ <code>http://localhost:3000</code> ส่วน React app รันที่ <code>http://localhost:5173</code> — พอร์ตต่างกันก็นับเป็น <strong>origin</strong> ต่างกันแล้ว (origin = scheme + host + port) เมื่อโค้ดในหน้าเว็บหนึ่งยิง request ข้าม origin browser จะยอมให้ JavaScript <em>อ่าน</em> response ได้เฉพาะเมื่อ response นั้นมี header <code>Access-Control-Allow-Origin</code> ที่ค่าตรงกับ origin ของหน้าเว็บที่ยิงมา ถ้าไม่ตรง request มักถูกส่งไปถึง server เรียบร้อยแล้ว แต่ browser จะทิ้ง response แล้วขึ้น error ใน console — นี่คือเหตุผลที่ปัญหา CORS มักดู <q>งง</q> เพราะ log ฝั่ง server บอกว่า 200</p>
+    <p>request บางแบบยังมีขั้น <strong>preflight</strong> ก่อนด้วย: ถ้าไม่ใช่ request แบบง่าย (เช่น <code>POST</code> ที่ส่ง <code>Content-Type: application/json</code> ซึ่งตรงกับ <code>POST /carts/add</code> ของเรา) browser จะยิง <code>OPTIONS</code> ไปที่ path เดียวกันก่อน พร้อม header <code>Access-Control-Request-Method</code> เพื่อถามว่า <q>อนุญาตไหม</q> ถ้า server ไม่ตอบให้ถูก request จริงจะไม่ถูกส่งเลย — <code>app.enableCors()</code> จัดการทั้ง preflight และ header ของ response จริงให้ในบรรทัดเดียว</p>
+    <p>ที่สำคัญ: <code>curl</code> ไม่ได้บังคับกฎนี้ มันพิมพ์ทุกอย่างที่ server ส่งมาให้เสมอ ดังนั้น <q>ยิง curl ผ่าน</q> ไม่ได้พิสูจน์ว่า React app จะเรียกได้ สิ่งที่เราตรวจด้วย curl ได้คือ <em>header ที่ server ส่งออกมา</em> เท่านั้น</p>
+
+    <h2>ทำไมไม่ใช้ <code>origin: '*'</code></h2>
+    <p>ค่า <code>origin: '*'</code> คือทางที่ง่ายที่สุดและเป็นทางที่เราจะไม่ใช้ ด้วยเหตุผลสามข้อ</p>
+    <ul>
+      <li><code>*</code> เปิดให้ทุกเว็บในอินเทอร์เน็ตเรียก API ของเราจาก browser ของผู้ใช้ได้ ซึ่งเกินความจำเป็น เพราะเรารู้อยู่แล้วว่ามี client เดียวคือ Vite ที่ <code>http://localhost:5173</code></li>
+      <li><code>*</code> ใช้ร่วมกับ cookie ไม่ได้ตามสเปก — ถ้าวันหน้าเพิ่ม auth ด้วย cookie ก็ต้องกลับมาแก้อยู่ดี ตั้ง origin ให้ตรงตัวไว้ตั้งแต่ต้นจึงประหยัดกว่า</li>
+      <li>เราเก็บค่าไว้ใน <code>.env</code> (<code>CORS_ORIGIN=http://localhost:5173</code>) เพื่อให้ตอน deploy เปลี่ยนเป็นโดเมนจริงได้โดยไม่แตะโค้ด — รูปแบบเดียวกับ <code>PORT</code></li>
+    </ul>
+    <p>ส่วน <code>PORT</code> นั้น scaffold ทำไว้ให้แล้วตั้งแต่ตอน <code>nest new</code>: บรรทัดสุดท้ายของ <code>main.ts</code> คือ <code>await app.listen(process.env.PORT ?? 3000)</code> และ <code>ConfigModule.forRoot({ isGlobal: true })</code> ที่เราใส่ใน <code>AppModule</code> ตอนติดตั้ง Prisma เป็นตัวโหลด <code>.env</code> เข้า <code>process.env</code> ให้ตอน module ถูก import — บทนี้จึงไม่ต้องแก้อะไรเรื่องพอร์ต แค่รู้ว่ามันมาจากไหน</p>
+
+    <h2>เป้าหมายของบทนี้</h2>
+    <pre><code>ecommerce-api/
+└── src/
+    └── main.ts        (แก้ไข)</code></pre>
+    <p>ไฟล์ด้านล่างมาจากโค้ดอ้างอิงของคอร์ส — Cursor อาจแก้ไฟล์ต่างออกไปได้ ขอแค่ไม่แตะไฟล์ที่ไม่เกี่ยวกับเป้าหมายและผ่านผลลัพธ์ที่ต้องได้ใน prompt</p>
+    <ul>
+      <li><strong><code>src/main.ts</code></strong> — สัญญา: ทุก response ต้องมี <code>Access-Control-Allow-Origin</code> เป็นค่าจาก <code>CORS_ORIGIN</code> ค่าเดียว / ต้องไม่เปิดให้ทุก origin (<code>*</code>) ต้องไม่เปิด credentials และ validation กับพอร์ตต้องทำงานเหมือนเดิม — โค้ดอ้างอิงใช้ <code>app.enableCors()</code> บรรทัดเดียว แต่วิธีเขียนเป็นของ Cursor</li>
+    </ul>
+
+    <section class="workshop" aria-labelledby="exercise-heading">
+      <h2 id="exercise-heading">สั่ง Cursor เปิด CORS ให้ origin เดียว</h2>
+      <p>commit งานก่อน แล้วเปิดแชทใหม่ใน Cursor โหมด Agent (<code>git add -A &amp;&amp; git commit -m "chore: checkpoint before cors"</code>) จากนั้นส่ง prompt นี้ — และจำ<a href="01_what-well-be-building.html">กติกาของคอร์ส</a>ไว้: AI พิมพ์แทนคุณได้ แต่คุณต้องอธิบายทุกบรรทัดได้</p>
+      <div class="cursor-prompt"><code>เปิด CORS ให้ React app ที่ localhost:5173 เรียก API ได้ โดยอ่าน origin จาก environment
+@src/main.ts
+
+ผลลัพธ์ที่ต้องได้:
+- origin ที่อนุญาตอ่านจาก environment variable ชื่อ CORS_ORIGIN (ใน .env มีค่า http://localhost:5173 อยู่แล้ว) ถ้าไม่ได้ตั้งค่าไว้ ให้ใช้ http://localhost:5173
+- curl -s -i -H 'Origin: http://localhost:5173' http://localhost:3000/products/categories ได้ header Access-Control-Allow-Origin: http://localhost:5173
+- ยิงด้วย Origin: http://evil.test ต้องไม่ได้ header ที่มีค่า http://evil.test หรือ * — origin ที่อนุญาตมีค่าเดียวคือค่าจาก CORS_ORIGIN
+- เปลี่ยน CORS_ORIGIN ใน .env แล้ว restart ค่าใน header ต้องเปลี่ยนตามโดยไม่แก้โค้ด
+- response ไม่มี header Access-Control-Allow-Credentials (React app เรียกด้วย axios แบบไม่ส่ง cookie)
+- validation เดิมยังทำงานเหมือนเดิม (GET /products?limit=0 ยังได้ 400) และ API ยังฟังที่พอร์ตจาก PORT
+
+ขอบเขต:
+- ห้ามติดตั้ง dependency ใหม่
+- ยังไม่ต้องตั้งค่า Swagger</code></div>
+    </section>
+    <section class="review" aria-labelledby="review-heading">
+      <h2 id="review-heading">ตรวจโค้ดที่ AI สร้าง</h2>
+      <ul>
+        <li>หลัง restart แล้ว request <em>แรก</em> ก็มี header <code>Access-Control-Allow-Origin</code> แล้ว — ถ้าไม่มี แปลว่า CORS ถูกตั้งค่าช้าเกินไป (หลัง server เริ่ม listen)</li>
+        <li>ค่า origin มาจาก <code>CORS_ORIGIN</code> ใน environment ไม่ได้ hard-code ไว้ค่าเดียวในโค้ด (มีค่าสำรองเป็น <code>http://localhost:5173</code> ได้)</li>
+        <li>ยิง curl ด้วย <code>Origin: http://evil.test</code> แล้ว header ไม่เป็น <code>*</code> และไม่สะท้อนค่า <code>http://evil.test</code> กลับมา</li>
+        <li>ไม่มี <code>Access-Control-Allow-Credentials</code> ใน response</li>
+        <li>validation และพอร์ตทำงานเหมือนเดิม — <code>GET /products?limit=0</code> ยังได้ <code>400</code></li>
+        <li><code>git status</code> ไม่มีไฟล์ที่ไม่เกี่ยวกับเป้าหมายถูกแก้ — ไม่มี dependency ใหม่ใน <code>package.json</code></li>
+      </ul>
+      <p><strong>AI มักพลาดตรงนี้:</strong> เขียน <code>app.enableCors()</code> เปล่า ๆ ซึ่งเท่ากับ <code>origin: '*'</code> — ผลลัพธ์ใน browser <q>ใช้งานได้</q> เหมือนกัน จึงหลอกตาง่ายมาก ให้ยิง curl ด้วย <code>Origin: http://evil.test</code> ทุกครั้ง ถ้าได้ <code>*</code> หรือได้ค่า <code>http://evil.test</code> สะท้อนกลับมา แปลว่าเปิดกว้างเกินไป อีกท่าที่เจอบ่อยคือแถม <code>credentials: true</code> มาให้ (เราไม่ส่ง cookie จึงไม่ต้องใช้) หรือย้าย <code>enableCors</code> ไปไว้หลัง <code>app.listen</code> ซึ่งสายเกินไปเพราะ server เริ่มรับ request ไปแล้ว</p>
+      <p>โค้ดอ้างอิงของบทนี้ — เป็นหนึ่งในวิธีที่ถูก ของคุณไม่จำเป็นต้องเหมือนทุกบรรทัด ขอแค่ผ่านผลลัพธ์ที่ต้องได้:</p>
+      <pre><code>/* src/main.ts */
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module.js';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
+  app.enableCors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173' });
+
+  await app.listen(process.env.PORT ?? 3000);
+}
+await bootstrap();</code></pre>
+      <p>ถ้าอธิบายบรรทัดไหนไม่ได้ ยังไม่ผ่านบทนี้ — กลับไปอ่านส่วนแนวคิดก่อน</p>
+    </section>
+    <section class="expected-result" aria-labelledby="exercise-result-heading">
+      <h2 id="exercise-result-heading">ผลลัพธ์ที่คาดหวัง</h2>
+      <p><code>src/main.ts</code> เพิ่มขึ้นหนึ่งบรรทัด (<code>git diff</code> ควรอ่านจบในสิบวินาที) watch mode ของ <code>npm run start:dev</code> recompile แล้วขึ้น <code>Nest application successfully started</code> ตามเดิม — ไม่มี log ใหม่เรื่อง CORS เพราะ <code>enableCors</code> ไม่ได้พิมพ์อะไรตอน bootstrap มันแค่ติด middleware ไว้ สิ่งที่เปลี่ยนคือ response ทุกตัวมี header <code>Access-Control-Allow-Origin: http://localhost:5173</code> เพิ่มเข้ามา</p>
+    </section>
+    <section class="verification" aria-labelledby="exercise-check-heading">
+      <h2 id="exercise-check-heading">ตรวจว่าใช้งานได้จริง</h2>
+      <ul>
+        <li>ยิงสองคำสั่งนี้ (ทั้งคู่ต้องพิมพ์บรรทัดเดียวกัน)</li>
+      </ul>
+      <pre><code>curl -s -i -H 'Origin: http://localhost:5173' http://localhost:3000/products/categories | grep -i access-control-allow-origin
+curl -s -i -H 'Origin: http://evil.test' http://localhost:3000/products/categories | grep -i access-control-allow-origin</code></pre>
+      <ul>
+        <li>ทั้งสองบรรทัดได้ผลเหมือนกันคือ <code>Access-Control-Allow-Origin: http://localhost:5173</code></li>
+        <li>สังเกตว่าค่าใน header <strong>ไม่เคย</strong> เป็น <code>http://evil.test</code> — server ส่งค่าที่เราตั้งไว้ค่าเดียวเสมอ</li>
+        <li>ไม่มี credentials หลุดเข้ามา: <code>curl -s -i -H 'Origin: http://localhost:5173' http://localhost:3000/products/categories | grep -i access-control-allow-credentials</code> ไม่พิมพ์อะไรเลย</li>
+        <li>commit งานนี้ด้วย <code>git add -A &amp;&amp; git commit -m "feat: cors"</code></li>
+      </ul>
+      <div class="note">
+        <p>ตอนตรวจของจริงเราพบว่า request จาก <code>http://evil.test</code> <em>ก็ยังได้ header กลับ</em> ไม่ใช่หายไป เพราะเมื่อตั้ง <code>origin</code> เป็น string ตัวเดียว middleware <code>cors</code> ที่อยู่ใต้ <code>enableCors</code> จะส่งค่านั้นออกมาแบบคงที่ โดยไม่อ่าน header <code>Origin</code> ของ request เลย — คนที่บล็อกคือ <strong>browser</strong> ไม่ใช่ server: หน้าเว็บที่อยู่บน <code>http://evil.test</code> เห็นว่าค่าใน <code>Access-Control-Allow-Origin</code> ไม่ตรงกับ origin ของตัวเอง จึงทิ้ง response นั้นทิ้ง ส่วน <code>curl</code> ไม่ได้ตรวจข้อนี้ให้ จึงพิมพ์ header ออกมาตามปกติ นี่คือเหตุผลที่บทนี้ให้คุณอ่าน <em>ค่า</em> ของ header ไม่ใช่แค่นับว่ามีหรือไม่มี</p>
+      </div>
+    </section>
+    <h2>แหล่งอ้างอิง</h2>
+    <ul class="source-list">
+      <li><a href="https://docs.nestjs.com/security/cors">Security: CORS (NestJS Docs)</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS">Cross-Origin Resource Sharing (CORS) — MDN</a></li>
+      <li><a href="https://docs.nestjs.com/techniques/configuration">Techniques: Configuration (NestJS Docs)</a></li>
+    </ul>
+    <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+      <a class="lesson-navigation__link" href="16_post-carts-add.html" rel="prev">← บทก่อนหน้า</a>
+      <a class="lesson-navigation__link" href="index.html">บทเรียนทั้งหมด</a>
+      <a class="lesson-navigation__link" href="18_adding-swagger.html" rel="next">บทถัดไป →</a>
+    </nav>
+  </main>
+  <footer><p>NestJS E-commerce API Workshop ภาษาไทย · ตรวจทานแหล่งอ้างอิงเมื่อ 12 กันยายน 2026</p></footer>
+</body>
+</html>

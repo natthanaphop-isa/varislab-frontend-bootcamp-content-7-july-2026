@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="สรุปแนวคิด Semantic HTML และ CSS Box Model ลำดับการคิดเวลาจัด layout ข้อผิดพลาดที่พบบ่อย พร้อมการบ้านสร้าง Landing Page Section และคำถามทบทวน" />
+    <title>สรุปบทเรียนและการบ้าน | Semantic HTML และ CSS Box Model</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 09 · Layout และรายละเอียดที่ทำให้หน้าเว็บดูเป็นมืออาชีพ</p>
+          <h1>สรุปบทเรียนและการบ้าน</h1>
+          <p class="lesson-original-title" lang="en">Wrap Up &amp; Homework</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ทบทวน concept หลักของ Semantic HTML และ CSS Box Model ได้ครบ</li>
+            <li>ใช้ลำดับการคิด 10 ข้อเวลาจัดหน้าเว็บ และหลีกเลี่ยงข้อผิดพลาดที่พบบ่อย</li>
+            <li>นำสิ่งที่เรียนไปสร้าง Landing Page Section ของตัวเองเป็นการบ้าน</li>
+          </ul>
+        </section>
+
+        <h2>สรุปสิ่งที่เรียนมา</h2>
+
+        <p>ตลอดคู่มือนี้เราได้เห็นแล้วว่า HTML ที่ดีไม่ใช่แค่ "แสดงผลได้" แต่ต้องมีโครงสร้างที่มีความหมาย และ CSS ไม่ใช่แค่การเปลี่ยนสี แต่เป็นการควบคุมพื้นที่และ layout ของหน้าเว็บ concept ที่สำคัญที่สุดคือ:</p>
+
+        <pre><code class="language-text">Semantic HTML คือการใช้ tag ที่มีความหมายกับเนื้อหา
+ทุก element คือกล่อง (content, padding, border, margin)
+box-sizing: border-box ช่วยให้คุมขนาดกล่องง่ายขึ้น
+padding คือระยะห่างด้านใน
+margin คือระยะห่างด้านนอก
+max-width ช่วยจำกัดความกว้าง
+margin: 0 auto ช่วยจัด content ให้อยู่กลางหน้า
+display: flex ช่วยจัด element ลูกให้อยู่ในแถว
+class selector ต้องมีจุดหน้า class</code></pre>
+
+        <p>ถ้าเข้าใจเรื่องกล่องและระยะห่างแล้ว การเรียน Flexbox แบบลึกขึ้น, Grid, Responsive Design และ React Component ต่อจากนี้จะง่ายขึ้นมาก</p>
+
+        <h2>ลำดับการคิดเวลาจัดหน้าเว็บ</h2>
+
+        <p>เมื่อเริ่มจัดหน้าเว็บใหม่ หรือเมื่อ layout เพี้ยนแล้วไม่รู้จะเริ่มแก้ตรงไหน ให้ไล่คิดตามลำดับนี้:</p>
+
+        <ol>
+          <li>โครงสร้าง HTML ชัดหรือยัง?</li>
+          <li>ต้องการจำกัดความกว้าง content ไหม?</li>
+          <li>ต้องการให้ content อยู่กลางหน้าไหม?</li>
+          <li>แต่ละ section ควรมี padding เท่าไหร่?</li>
+          <li>แต่ละกล่องควรมี margin ห่างจากกล่องอื่นเท่าไหร่?</li>
+          <li>element ลูกควรเรียงแนวตั้งหรือแนวนอน?</li>
+          <li>ถ้าเรียงแนวนอน ใช้ flex ได้ไหม?</li>
+          <li>ปุ่มและ link มี hover state ไหม?</li>
+          <li>ข้อความอ่านง่ายไหม?</li>
+          <li>class ใน CSS เลือกถูกหรือยัง?</li>
+        </ol>
+
+        <h2>ข้อผิดพลาดที่พบบ่อย</h2>
+
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>ข้อผิดพลาด</th>
+                <th>อาการ</th>
+                <th>วิธีแก้</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ลืมจุดหน้า class</td>
+                <td>เขียน CSS แล้วไม่มีอะไรเปลี่ยน</td>
+                <td>เขียน <code>.feature-card</code> ไม่ใช่ <code>feature-card</code></td>
+              </tr>
+              <tr>
+                <td>สับสน padding กับ margin</td>
+                <td>ระยะห่างไปเกิดผิดที่ เช่น card ห่างจากกันแทนที่ข้อความจะห่างจากขอบ</td>
+                <td>padding = ด้านใน, margin = ด้านนอก</td>
+              </tr>
+              <tr>
+                <td>ลืม <code>box-sizing: border-box</code></td>
+                <td>width รวมกับ padding แล้ว layout กว้างเกินคาด</td>
+                <td>ใส่ <code>* { box-sizing: border-box; }</code> ไว้บนสุดของไฟล์</td>
+              </tr>
+              <tr>
+                <td>ใส่ <code>display: flex</code> ผิดที่</td>
+                <td>card ยังซ้อนกันเป็นแนวตั้ง</td>
+                <td>ใส่ flex ที่ parent/container เช่น <code>.features-section</code> ไม่ใช่ที่ card แต่ละใบ</td>
+              </tr>
+              <tr>
+                <td>ปล่อย content กว้างเต็มจอ</td>
+                <td>บน desktop จอใหญ่ ข้อความยาวจนอ่านยาก</td>
+                <td>ใช้ <code>max-width</code> คู่กับ <code>margin: 0 auto</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>คำถามทบทวนตัวเอง</h2>
+
+        <p>ลองตอบคำถามเหล่านี้โดยไม่เปิดดูบทเรียนก่อน ถ้าข้อไหนตอบไม่ได้ ให้กลับไปอ่านบทที่เกี่ยวข้องอีกครั้ง:</p>
+
+        <ol>
+          <li>Semantic HTML คืออะไร? และ <code>header</code> กับ <code>blue-text</code> อันไหนคือ semantic tag?</li>
+          <li><code>main</code> ใช้สำหรับอะไร?</li>
+          <li>CSS Box Model มอง element บนหน้าเว็บเป็นอะไร และประกอบด้วยส่วนใดบ้าง?</li>
+          <li>ถ้าต้องการให้เนื้อหาด้านใน card ไม่ชิดขอบ ควรใช้ property ใด?</li>
+          <li>ถ้าต้องการให้ section หนึ่งห่างจาก section ถัดไป ควรใช้ property ใด?</li>
+          <li>ถ้าต้องการเลือก class ชื่อ <code>feature-card</code> และ id ชื่อ <code>hero</code> ใน CSS ต้องเขียนอย่างไร?</li>
+          <li><code>max-width</code> และ <code>margin: 0 auto;</code> มักใช้เพื่ออะไร?</li>
+          <li><code>display: flex;</code> ใช้เพื่ออะไร และ <code>gap</code> ทำหน้าที่อะไร?</li>
+        </ol>
+
+        <h2>การบ้าน: Bootcamp Landing Page Section</h2>
+
+        <p>สร้างหน้า <strong>Landing Page Section</strong> แบบง่าย ๆ ของตัวเอง โดยใช้สิ่งที่เรียนในคอร์สนี้: Semantic HTML, CSS Box Model, padding และ margin, container layout, Flexbox เบื้องต้น และการจัดโครงสร้างหน้าเว็บให้เป็นระบบ</p>
+
+        <p>หัวข้อเลือกได้เอง เช่น คอร์สเรียน, Portfolio ส่วนตัว, Product Landing Page, Service Page, Event Page หรือ Bootcamp Landing Page</p>
+
+        <p>เป้าหมายไม่ใช่แค่ทำให้หน้าเว็บ "แสดงผลได้" แต่ต้องฝึกจัดโครงสร้าง HTML ให้มีความหมาย และใช้ CSS ควบคุมระยะห่าง ขนาด และ layout อย่างเป็นระบบ</p>
+
+        <h3>Requirements</h3>
+
+        <ol>
+          <li>ใช้ <strong>Semantic HTML</strong> อย่างน้อย 4 ตัว เช่น <code>header</code>, <code>nav</code>, <code>main</code>, <code>section</code>, <code>article</code>, <code>footer</code></li>
+          <li>มี <strong>Hero Section</strong> อย่างน้อย 1 section ที่มีหัวข้อหลัก คำอธิบายสั้น ๆ และปุ่ม Call-to-Action</li>
+          <li>มี <strong>Feature Cards</strong> อย่างน้อย 3 ใบ</li>
+          <li>ใช้ <code>padding</code> จัดระยะห่างด้านในของ section หรือ card</li>
+          <li>ใช้ <code>margin</code> จัดระยะห่างระหว่าง section หรือ element</li>
+          <li>ใช้ <code>max-width</code> และ <code>margin: 0 auto</code> จัด content ให้อยู่กลางหน้า</li>
+          <li>ใช้ <code>display: flex</code> อย่างน้อย 1 จุด เช่น จัด navbar, จัด feature cards หรือจัด layout ของ section</li>
+          <li>ใช้ class selector ใน CSS อย่างถูกต้อง เช่น <code>.feature-card { padding: 24px; }</code></li>
+          <li>ปรับสี ข้อความ และเนื้อหาให้เป็นของตัวเอง</li>
+        </ol>
+
+        <h3>โครงสร้าง HTML ที่แนะนำ</h3>
+
+        <pre><code class="language-html">&lt;header&gt;
+  &lt;nav&gt;
+    &lt;!-- logo and navigation links --&gt;
+  &lt;/nav&gt;
+&lt;/header&gt;
+
+&lt;main&gt;
+  &lt;section&gt;
+    &lt;!-- hero content --&gt;
+  &lt;/section&gt;
+
+  &lt;section&gt;
+    &lt;article&gt;
+      &lt;!-- feature card 1 --&gt;
+    &lt;/article&gt;
+
+    &lt;article&gt;
+      &lt;!-- feature card 2 --&gt;
+    &lt;/article&gt;
+
+    &lt;article&gt;
+      &lt;!-- feature card 3 --&gt;
+    &lt;/article&gt;
+  &lt;/section&gt;
+&lt;/main&gt;
+
+&lt;footer&gt;
+  &lt;!-- footer content --&gt;
+&lt;/footer&gt;</code></pre>
+
+        <div class="note">
+          <p>ใช้ Landing Page ที่เราสร้างในคู่มือนี้เป็นจุดเริ่มต้นได้ แต่พยายามเปลี่ยนหัวข้อ เนื้อหา สี และระยะห่างให้เป็นของตัวเอง — การตัดสินใจเองว่าแต่ละกล่องควรมี padding และ margin เท่าไหร่ คือส่วนที่ทำให้เข้าใจ Box Model จริง</p>
+        </div>
+
+        <h3>รูปแบบการส่งงาน</h3>
+
+        <p>ส่งงานรูปแบบใดรูปแบบหนึ่ง:</p>
+
+        <ul>
+          <li><strong>Option 1: GitHub Repository</strong> — ส่งลิงก์ repository เช่น <code>https://github.com/username/bootcamp-landing-page</code></li>
+          <li><strong>Option 2: Screenshot</strong> — ถ้ายังไม่พร้อมใช้ GitHub ให้ส่ง screenshot หน้าเว็บ, screenshot โค้ด HTML และ screenshot โค้ด CSS</li>
+        </ul>
+
+        <h3>Reflection Questions</h3>
+
+        <p>ตอบคำถามสั้น ๆ แนบไปพร้อมงาน:</p>
+
+        <ol>
+          <li>Semantic HTML คืออะไร? อธิบายด้วยคำพูดของตัวเอง</li>
+          <li><code>padding</code> กับ <code>margin</code> ต่างกันอย่างไร?</li>
+          <li>CSS Box Model ช่วยให้เข้าใจ layout อย่างไร?</li>
+          <li>ตอนทำงานนี้ เจอปัญหาอะไรเกี่ยวกับ layout บ้าง?</li>
+          <li>อยากให้ผู้สอนช่วย review จุดไหนเป็นพิเศษ?</li>
+        </ol>
+
+        <h3>Bonus Challenge</h3>
+
+        <p>ถ้าทำ requirements หลักครบแล้ว ลองทำเพิ่ม:</p>
+
+        <ol>
+          <li>เพิ่ม section ใหม่ชื่อ <strong>Who is this for?</strong></li>
+          <li>เพิ่ม feature card เป็น 4 ใบ</li>
+          <li>เพิ่ม hover effect ให้ปุ่มหรือ navigation link</li>
+          <li>ปรับ layout ให้ดูดีขึ้นบนหน้าจอมือถือ</li>
+          <li>ใช้ <code>line-height</code> ทำให้ข้อความอ่านง่ายขึ้น</li>
+        </ol>
+
+        <h3>เกณฑ์การประเมิน</h3>
+
+        <div class="comparison">
+          <table>
+            <thead>
+              <tr>
+                <th>Criteria</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HTML Structure</td>
+                <td>ใช้ semantic tags ได้เหมาะสม</td>
+              </tr>
+              <tr>
+                <td>CSS Box Model</td>
+                <td>เข้าใจ padding, margin และ spacing</td>
+              </tr>
+              <tr>
+                <td>Layout</td>
+                <td>จัดหน้าเว็บเป็นระบบ อ่านง่าย</td>
+              </tr>
+              <tr>
+                <td>Code Readability</td>
+                <td>ตั้งชื่อ class ชัดเจนและอ่านโค้ดง่าย</td>
+              </tr>
+              <tr>
+                <td>Completion</td>
+                <td>ทำ requirements หลักครบ</td>
+              </tr>
+              <tr>
+                <td>Reflection</td>
+                <td>อธิบายสิ่งที่เรียนรู้และปัญหาที่เจอได้</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li>Landing Page ของคุณตรงกับไฟล์ใน <code>finish/</code> ทั้ง <code>index.html</code> และ <code>style.css</code></li>
+            <li>ตอบคำถามทบทวนตัวเองได้ครบทุกข้อ</li>
+            <li>งานการบ้านผ่าน requirements ทั้ง 9 ข้อ และตอบ reflection questions แล้ว</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="08_links_buttons_readability.html" rel="prev">ก่อนหน้า: Class Selector, ปุ่ม, hover และความอ่านง่าย</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>

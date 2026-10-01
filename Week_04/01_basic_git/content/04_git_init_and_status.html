@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="เปลี่ยนโฟลเดอร์ธรรมดาให้เป็น Git repository ด้วย git init ทำความรู้จักโฟลเดอร์ .git และอ่านสถานะไฟล์ด้วย git status" />
+    <title>เริ่ม Repository ด้วย git init และ git status | Git, GitHub, Branch &amp; Merge พื้นฐาน</title>
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body>
+    <main>
+      <article class="lesson">
+        <header class="lesson-header">
+          <p class="lesson-eyebrow">บทเรียน 04 · บันทึกประวัติใน Local Repository (Local Repository)</p>
+          <h1>เริ่ม Repository ด้วย git init และ git status</h1>
+          <p class="lesson-original-title" lang="en">git init &amp; git status</p>
+        </header>
+
+        <section class="learning-objectives" aria-labelledby="objectives-heading">
+          <h2 id="objectives-heading">เมื่อจบบทนี้ คุณจะสามารถ</h2>
+          <ul>
+            <li>ตรวจสอบว่า Terminal อยู่ในโฟลเดอร์โปรเจกต์ที่ถูกต้อง</li>
+            <li>สร้าง Git repository ด้วย <code>git init</code></li>
+            <li>อธิบายว่าโฟลเดอร์ <code>.git</code> เก็บอะไร และทำไมไม่ควรแตะมัน</li>
+            <li>อ่านผลลัพธ์ของ <code>git status</code> และเข้าใจคำว่า untracked</li>
+          </ul>
+        </section>
+
+        <h2>ตรวจสอบว่าอยู่ในโฟลเดอร์โปรเจกต์</h2>
+        <p>
+          ความผิดพลาดที่พบบ่อยที่สุดของมือใหม่คือรันคำสั่ง Git ผิดโฟลเดอร์ ก่อนเริ่มทุกครั้งให้เช็กก่อน เปิด Terminal (ใน VS Code กด <strong>Terminal → New Terminal</strong> ได้เลย) แล้วรัน:
+        </p>
+        <pre><code class="language-bash">pwd</code></pre>
+        <p><code>pwd</code> (print working directory) จะแสดง path ของโฟลเดอร์ปัจจุบัน ซึ่งควรลงท้ายด้วย <code>developer-profile-page</code> คำสั่งนี้ใช้ได้ทั้งบน macOS/Linux และ Windows PowerShell</p>
+        <p>ดูไฟล์ในโฟลเดอร์:</p>
+        <pre><code class="language-bash"># macOS หรือ Linux
+ls
+
+# Windows (PowerShell)
+dir</code></pre>
+        <p>ควรเห็น <code>index.html</code> และ <code>style.css</code></p>
+
+        <h2>เริ่ม Git Repository</h2>
+        <pre><code class="language-bash">git init</code></pre>
+        <p>ผลลัพธ์ตัวอย่าง:</p>
+        <pre><code class="language-text">Initialized empty Git repository in /Users/you/developer-profile-page/.git/</code></pre>
+        <p>
+          ตอนนี้โฟลเดอร์ธรรมดาของเรากลายเป็น <strong>Git repository</strong> แล้ว คำว่า <em>empty</em> หมายถึงยังไม่มี commit ใด ๆ — ไฟล์ของเรายังอยู่ครบ แค่ Git ยังไม่ได้บันทึกอะไรเลย
+        </p>
+
+        <div class="note">
+          <p>Git บางเวอร์ชันอาจแสดงข้อความ <code>hint:</code> ยาว ๆ เกี่ยวกับชื่อ branch เริ่มต้น (<code>master</code>) เพิ่มมาด้วย ไม่ต้องตกใจ ไม่ใช่ error เราจะจัดการชื่อ branch ให้เป็น <code>main</code> ในบทเรียนที่ 09</p>
+        </div>
+
+        <h2>โฟลเดอร์ .git</h2>
+        <p>เมื่อรัน <code>git init</code> Git จะสร้างโฟลเดอร์พิเศษชื่อ <code>.git</code> ไว้ในโปรเจกต์ โฟลเดอร์นี้ใช้เก็บ:</p>
+        <ul>
+          <li>commit history</li>
+          <li>branch</li>
+          <li>การตั้งค่าของ repository</li>
+          <li>ข้อมูล remote repository (เช่น GitHub)</li>
+          <li>สถานะภายในของ Git</li>
+        </ul>
+        <p>
+          ชื่อที่ขึ้นต้นด้วยจุดทำให้มันเป็นโฟลเดอร์ซ่อน คำสั่ง <code>ls</code> ธรรมดาจึงไม่แสดง ถ้าอยากเห็นให้ใช้ <code>ls -a</code> (macOS/Linux) หรือ <code>dir -Force</code> (PowerShell)
+        </p>
+        <pre class="file-tree">developer-profile-page/
+├── .git/        ← สมองของ Git (ห้ามแก้เอง)
+├── index.html
+└── style.css</pre>
+        <p>Git จำประวัติทั้งหมดได้ก็เพราะมีโฟลเดอร์ <code>.git</code> นี่เอง</p>
+
+        <div class="warning">
+          <p><strong>ไม่ควรแก้ไขไฟล์ใน <code>.git</code> ด้วยตัวเอง</strong> และห้ามลบทิ้ง ถ้าลบ <code>.git</code> ออก โค้ดของเรายังอยู่ แต่ commit history และ branch ทั้งหมดจะหายไป</p>
+        </div>
+
+        <h2>ตรวจสอบสถานะด้วย git status</h2>
+        <pre><code class="language-bash">git status</code></pre>
+        <p>ผลลัพธ์จะคล้ายแบบนี้:</p>
+        <pre><code class="language-text">On branch main
+
+No commits yet
+
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+        index.html
+        style.css
+
+nothing added to commit but untracked files present (use "git add" to track)</code></pre>
+        <p>บรรทัดแรกอาจเป็น <code>On branch master</code> ก็ได้ ขึ้นกับการตั้งค่าของ Git ในเครื่อง ส่วนที่สำคัญคือคำว่า <strong>Untracked</strong> ซึ่งหมายถึง:</p>
+        <pre><code class="language-text">มีไฟล์อยู่ใน Project
+แต่ Git ยังไม่ได้เริ่มติดตามไฟล์นั้น</code></pre>
+        <p>Git มองเห็นไฟล์ของเราแล้ว แต่ยังไม่ได้ “รับเข้าระบบ” — บทถัดไปเราจะบอก Git ว่าอยากให้ติดตามไฟล์ไหน</p>
+
+        <h3>คำสั่งที่ควรใช้เมื่อสับสน</h3>
+        <p>
+          ใช้ Git แล้วไม่แน่ใจว่าตอนนี้เกิดอะไรขึ้น? ให้เริ่มจาก <code>git status</code> เสมอ คำสั่งนี้บอกว่าเราอยู่ branch ไหน มีไฟล์อะไรเปลี่ยน และมีไฟล์อะไรพร้อม commit แล้ว
+          ที่สำคัญคือมัน<strong>ปลอดภัย</strong> เพราะใช้ดูข้อมูลอย่างเดียว ไม่แก้ไขไฟล์ใด ๆ รันกี่ครั้งก็ได้
+        </p>
+
+        <div class="warning">
+          <p>ถ้าเจอ <code>fatal: not a git repository (or any of the parent directories): .git</code> แปลว่าคุณอยู่ผิดโฟลเดอร์ หรือยังไม่ได้รัน <code>git init</code> ให้ใช้ <code>pwd</code> เช็กตำแหน่ง แล้ว <code>cd developer-profile-page</code> ก่อนลองใหม่</p>
+        </div>
+
+        <div class="verification">
+          <ul>
+            <li><code>pwd</code> แสดง path ที่ลงท้ายด้วย <code>developer-profile-page</code></li>
+            <li>รัน <code>git init</code> แล้วเห็น <code>Initialized empty Git repository</code></li>
+            <li><code>ls -a</code> (หรือ <code>dir -Force</code>) มองเห็นโฟลเดอร์ <code>.git</code></li>
+            <li><code>git status</code> แสดง <code>index.html</code> และ <code>style.css</code> อยู่ใต้ Untracked files</li>
+          </ul>
+        </div>
+
+        <nav class="lesson-navigation" aria-label="การนำทางบทเรียน">
+          <a href="03_create_profile_project.html" rel="prev">ก่อนหน้า: สร้าง Developer Profile Page</a>
+          <a href="index.html">สารบัญบทเรียน</a>
+          <a href="05_staging_area.html" rel="next">ถัดไป: Working Directory, Staging Area และ git add</a>
+        </nav>
+      </article>
+    </main>
+  </body>
+</html>
